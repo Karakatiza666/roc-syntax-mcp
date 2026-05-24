@@ -4,10 +4,15 @@
   "description": "MCP server that provides Roc syntax reference",
   "type": "module",
   "main": "dist/index.js",
+  "bin": {
+    "roc-syntax-mcp": "bin/roc-syntax-mcp.js"
+  },
   "scripts": {
     "build": "tsc",
+    "prepare": "tsc",
     "start": "node dist/index.js",
-    "dev": "tsx src/index.ts"
+    "dev": "tsx src/index.ts",
+    "test": "node --import tsx/esm --test src/sig_search.test.ts"
   },
   "keywords": [
     "roc",
@@ -18,11 +23,11 @@
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
     "zod": "^3.23.0"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
-    "tsx": "^4.0.0",
-    "typescript": "^5.0.0"
+    "tsx": "^4.0.0"
   }
 }

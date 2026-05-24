@@ -1,43 +1,69 @@
 # Roc Syntax MCP Server
 
-An MCP (Model Context Protocol) server that provides AI agents with access to Roc programming language syntax reference.
+An [MCP](https://modelcontextprotocol.io/) server that gives AI agents access to
+the Roc programming language's **new compiler** syntax and standard library.
 
-## What is this?
+It bundles:
 
-When an AI agent connects to this MCP server, it can query Roc syntax examples and learn valid Roc language constructs. This is useful for AI assistants that need to write or understand Roc code.
+- A verbatim mirror of [`all_syntax_test.roc`](https://github.com/roc-lang/roc/blob/main/test/echo/all_syntax_test.roc)
+- Per-topic focused syntax snippets in `examples/topics/`
+- A copy of [`Builtin.roc`](https://github.com/roc-lang/roc/blob/main/src/build/roc/Builtin.roc),
+  parsed into a lookup index of every builtin type and method (signatures + docstrings)
+
+> **Note:** This targets Roc's new compiler. See
+> [the mini tutorial](https://github.com/roc-lang/roc/blob/main/docs/mini-tutorial-new-compiler.md)
+> for what's new (`Try` replacing `Result`, `Bool.True`/`Bool.False`, `List(U8)`
+> instead of `List U8`, the `?` postfix operator, static dispatch, etc.).
 
 ## Installation
 
 ```bash
-cd mcp
 npm install
+npm run build
 ```
+
+Or install globally directly from the repo (builds automatically via the `prepare` hook):
+
+```bash
+# npm
+npm install -g git+https://github.com/Karakatiza666/roc-syntax-mcp.git
+```
+
+### Upgrading a global npm install
+
+Re-run the same install command — it replaces the existing version in-place:
+
+```bash
+# npm
+npm install -g git+https://github.com/Karakatiza666/roc-syntax-mcp.git
+```
+
+After upgrading, restart any client that uses the server (Claude Desktop, Claude Code, etc.) so it picks up the new binary.
 
 ## Usage
 
-### Running the server
-
-The server uses stdio transport, which is the standard way MCP servers communicate with clients:
-
 ```bash
-# Development mode (uses tsx for hot reloading)
+# Development mode (tsx)
 npm run dev
 
 # Production mode
-npm run build
 npm start
+
+# If installed globally:
+roc-syntax-mcp
 ```
 
 ### Configuring with Claude Desktop
 
-Add this to your Claude Desktop configuration (`~/.config/claude/claude_desktop_config.json` on Linux, `~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+`~/.config/claude/claude_desktop_config.json` (Linux) /
+`~/Library/Application Support/Claude/claude_desktop_config.json` (macOS):
 
 ```json
 {
   "mcpServers": {
     "roc-syntax": {
       "command": "node",
-      "args": ["/path/to/roc-platform-template-zig/mcp/dist/index.js"]
+      "args": ["/absolute/path/to/roc-syntax-mcp/dist/index.js"]
     }
   }
 }
@@ -50,79 +76,121 @@ Or for development:
   "mcpServers": {
     "roc-syntax": {
       "command": "npx",
-      "args": ["tsx", "/path/to/roc-platform-template-zig/mcp/src/index.ts"]
+      "args": ["tsx", "/absolute/path/to/roc-syntax-mcp/src/index.ts"]
     }
   }
 }
 ```
 
+### Configuring with Claude Code
+
+After building or installing globally, register the server from any terminal:
+
+```bash
+# If installed globally (available in all projects)
+claude mcp add --scope user roc-syntax -- roc-syntax-mcp
+
+# From a local build (project-scoped, stored in .mcp.json — commit to share with team)
+claude mcp add --scope project roc-syntax -- node /absolute/path/to/roc-syntax-mcp/dist/index.js
+```
+
+Verify with `claude mcp list`.
+
 ## Available Tools
 
-### `get_roc_syntax`
+### Syntax reference
 
-Returns the complete Roc syntax reference file demonstrating all Roc language syntax.
+| Tool | What it does |
+|------|--------------|
+| `get_roc_syntax` | Returns the full `all_roc_syntax.roc` reference file (mirror of upstream). |
+| `list_roc_topics` | Lists every available topic with a one-line description. |
+| `search_roc_syntax` | Returns a focused per-topic example. Accepts a topic name or free-text keyword. |
 
-**Input:** None
+### Builtin lookup (powered by `Builtin.roc`)
 
-**Output:** The full `all_roc_syntax.roc` file content
+| Tool | What it does |
+|------|--------------|
+| `lookup_builtin` | Look up a builtin by name. Accepts bare (`concat`, `map`) or fully-qualified (`Str.concat`, `List.map`, `U64.from_str`) names. Returns signature + docstring. |
+| `get_builtin_module` | Returns every method of a builtin module (`Str`, `List`, `Bool`, `U64`, `Dec`, `Num.F64`, ...). |
+| `list_builtin_modules` | Enumerates every available module path. |
 
-### `search_roc_syntax`
+### Unified search
 
-Search for specific Roc syntax by topic.
+| Tool | What it does |
+|------|--------------|
+| `search` | Ranked free-text search across BOTH syntax topics AND `Builtin.roc`. Returns the top-N hits with a `kind` field (`topic` or `builtin`). Use this when you don't yet know which surface area answers the question. |
+| `search_builtin_signatures` | Hoogle-style structural signature search. Type variables are renamed for isomorphism matching (`List x, (x -> y) -> List y` finds `List.map`). Prefix with `->` to search by return type only. Argument order matters. |
 
-**Input:**
-- `query` (string): Topic or keyword to search for
+### Roc CLI integration
 
-**Output:** Relevant code examples for the topic
+| Tool | What it does |
+|------|--------------|
+| `roc_check` | Runs `roc check` against either a `code` string (written to a temp file) or an absolute `path`. Returns exit code, stdout, and stderr. Requires the `roc` binary (new compiler) on PATH; returns a clear error if not found. |
+| `roc_fmt` | Runs `roc fmt` on a `code` string and returns the canonical formatting (and whether it was already canonical). Same PATH requirement as `roc_check`. |
 
-### `list_roc_topics`
+## Resources (MCP `resources/`)
 
-List all available syntax topics.
+Clients that support MCP resources (Claude Desktop, etc.) can attach these
+without going through a tool call:
 
-**Input:** None
-
-**Output:** List of topics with descriptions
+| URI | What it is |
+|-----|------------|
+| `roc-syntax://reference` | Full `all_roc_syntax.roc` reference. |
+| `roc-syntax://builtin` | Complete `Builtin.roc`. |
+| `roc-syntax://topic/{name}` | Templated — one per topic (e.g. `roc-syntax://topic/try_operator`). Supports tab-completion of `{name}`. |
 
 ## Available Topics
 
 | Topic | Description |
 |-------|-------------|
-| `operators` | Arithmetic, comparison, and boolean operators |
-| `pattern_matching` | Pattern matching with match expressions |
-| `list_patterns` | List destructuring and pattern matching |
-| `tag_unions` | Tag unions (sum types) and Result/Try types |
-| `strings` | String literals, multiline strings, and interpolation |
-| `effects` | Effectful functions (marked with !) |
-| `loops` | For loops and mutable variables |
-| `conditionals` | If/else expressions |
-| `tuples` | Tuple types and destructuring |
-| `records` | Record types, access, and updates |
-| `types` | Type annotations and constraints |
-| `numbers` | Numeric types and literals |
-| `opaque` | Opaque types for type-safe wrappers |
-| `nominal` | Nominal types with custom methods |
-| `functions` | Function definitions and early returns |
-| `imports` | Module imports and aliases |
-| `testing` | Testing with expect and test blocks |
+| `operators` | Arithmetic, comparison, and boolean operators. |
+| `pattern_matching` | `match` expressions with tuple/tag patterns. |
+| `list_patterns` | List destructuring (`..`, `as` bindings, match guards). |
+| `tag_unions` | Sum types, `Try`, multi-payload tags, open tag unions. |
+| `try_operator` | The `?` postfix operator (with err-mapping forms). |
+| `strings` | Interpolation, multi-line `\\` strings, unicode escapes. |
+| `effects` | Effectful functions (`!`, `=>`). `echo!` is built-in. |
+| `loops` | `for`, `while`, `break`, and reassignable `var $name`. |
+| `conditionals` | `if`/`else`/`else if` (always expression). |
+| `tuples` | Tuples, destructuring, `.0`/`.1` access. |
+| `records` | Records, destructuring, `{ ..base, x: y }` update. |
+| `types` | Annotations, type variables, `where`, pure (`->`) vs effectful (`=>`). |
+| `numbers` | Numeric literals (`5.U64`, `0x5`, `0o5`, `0b0101`). Default `Dec`. |
+| `opaque` | Opaque types (`::`) with optional methods. |
+| `nominal` | Nominal types (`:=`) with `is_eq` and other methods. |
+| `functions` | Anonymous functions, blocks, `return`, `...` placeholder. |
+| `static_dispatch` | `.method()` dispatch and `->fn(arg)` arrow application. |
+| `imports` | Module imports, aliases, file embedding. |
+| `testing` | `expect` (top-level and block form). |
+| `app_header` | Headerless apps and full `app [main!] { pf: ... }` headers. |
+| `dbg_crash` | `dbg`, `crash`, and `return` statements. |
+| `platforms` | Writing/maintaining a Roc platform: header, `main_for_host!`, hosted FFI (wrapper + host-direct forms), closed-vs-open `Try`, single-variant tag discriminant, field-order ABI, nested `Try`. |
+| `builder_pattern` | Fluent / builder pattern: nominal record + setter methods returning Self (Cmd-style). |
+| `error_design` | Designing error tag unions: structured payloads, per-subsystem wrappers, open `[..]`, `?` vs `? Tag` vs `.map_err`. |
 
-## Example Queries
+## Example queries an agent can make
 
-Once connected, an AI agent can ask things like:
+- "Show me the whole Roc syntax reference" → `get_roc_syntax`
+- "How does the `?` operator work in Roc?" → `search_roc_syntax` with `try_operator`
+- "What methods does `Str` have?" → `get_builtin_module` with `Str`
+- "Type signature of `List.map`?" → `lookup_builtin` with `List.map`
+- "How do I parse an integer from a string?" → `lookup_builtin` with `from_str`
+- "Find a function with signature `List a, (a -> b) -> List b`" → `search_builtin_signatures`
 
-- "Show me the Roc syntax reference" → uses `get_roc_syntax`
-- "How do I do pattern matching in Roc?" → uses `search_roc_syntax` with query "pattern_matching"
-- "What Roc syntax topics are available?" → uses `list_roc_topics`
-- "Show me Roc operators" → uses `search_roc_syntax` with query "operators"
+## Refreshing from upstream
 
-## Development
+To pick up new Roc changes, replace the two source-of-truth files:
 
 ```bash
-# Build TypeScript
-npm run build
+curl -fsSL https://raw.githubusercontent.com/roc-lang/roc/main/test/echo/all_syntax_test.roc \
+  -o examples/all_roc_syntax.roc
 
-# Run in dev mode with tsx
-npm run dev
+curl -fsSL https://raw.githubusercontent.com/roc-lang/roc/main/src/build/roc/Builtin.roc \
+  -o builtin/Builtin.roc
 ```
+
+Per-topic snippets in `examples/topics/` are hand-curated and should be reviewed
+manually when upstream syntax changes.
 
 ## License
 
