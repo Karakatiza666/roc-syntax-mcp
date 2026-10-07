@@ -1,0 +1,517 @@
+# Static Dispatch
+
+_Dispatch_ is where the same call expression can result in a different function being run,
+depending on the types of its arguments and/or return value. It's a form of [ad hoc polymorphism](https://en.wikipedia.org/wiki/Ad_hoc_polymorphism).
+
+[_Static_ dispatch](https://en.wikipedia.org/wiki/Static_dispatch) is where only types known
+at compile time affect which function gets run. This is in contrast to [_dynamic_ dispatch](https://en.wikipedia.org/wiki/Dynamic_dispatch),
+which uses runtime information to decide which function gets run.
+
+Roc's only ad hoc polymorphism system is static dispatch, and dynamic dispatch is unsupported
+by design. A major reason for this is that Roc's static dispatch has no runtime overhead;
+after compilation, it's exactly as if you had called the function directly. (In contrast,
+it's impossible to avoid runtime overhead in dynamic dispatch, because it has to process
+information at runtime to do the dispatch.)
+
+## Methods
+
+A _method_ is a function associated with a type. On a nominal type, methods are
+defined in the `.{ }` block after the type declaration:
+
+```roc
+Counter := { value: I64 }.{
+    new : () -> Counter
+    new = || { value: 0 }
+
+    increment : Counter -> Counter
+    increment = |{ value }| { value: value + 1 }
+}
+```
+
+```roc
+counter : Counter
+counter = Counter.new().increment()
+```
+
+Most method names are only used when they are called explicitly. Some names are
+also recognized by language syntax or builtin APIs. Defining one of those
+well-known methods opts the type into that syntax or API while still using
+ordinary static dispatch.
+
+## Well-Known Methods
+
+These methods are not dynamic interfaces. The checker resolves each use to a
+specific method implementation, and later compilation emits a direct call or a
+derived structural operation. This table is not a limit on method names;
+packages can define and require their own methods with `where` clauses.
+
+| Method | Used by | Implement when |
+| --- | --- | --- |
+| `to_inspect : T -> Str` | `Str.inspect(value)` | The type needs a custom debug representation. |
+| `is_eq : T, T -> Bool` | `==`, `!=` | Equality should be available or customized. |
+| `to_hash : T, Hasher -> Hasher` | `Dict`, `Set`, and hash-based APIs | Values of the type should participate in hashing. |
+| `plus`, `minus`, `times`, `div_by`, `div_trunc_by`, `rem_by` | `+`, `-`, `*`, `/`, `//`, `%` | The type has arithmetic-like operations. |
+| `is_lt`, `is_lte`, `is_gt`, `is_gte` | `<`, `<=`, `>`, `>=` | The type has an ordering. |
+| `range_exclusive_to : T, T -> Range(T)`, `range_inclusive_to : T, T -> Range(T)` | `..<`, `..=` | The type supports range syntax. |
+| `range_exclusive_from : T, T -> Range(T)`, `range_inclusive_from : T, T -> Range(T)` | `Range.iter_rev` | The type's ranges can be reversed exactly. |
+| `range_iter` | `Range.iter`, `Range.iter_rev` | The type can iterate its stored range representation. |
+| `range_len_if_known` | Numeric range constructors, `Range.step_by` | The type can provide an exact `U64` count when representable. |
+| `negate`, `not` | Unary `-`, unary `!` | The type has a unary negation or complement operation. |
+| `from_numeral : Numeral -> Try(T, [InvalidNumeral(Str)])` | Number literals with target type `T` | Plain numeric literal syntax should construct the type. |
+| `from_quote : Str -> Try(T, [BadQuotedBytes(Str)])` | Quoted string literals with target type `T` | Plain quoted literal syntax should construct the type. |
+| `from_interpolation : Str, Iter((item, Str)) -> T` | Interpolated string literals with target type `T` | Interpolation should construct the type. |
+| `iter : T -> Iter(item)` | `for item in value` | The type should be iterable in `for` loops. |
+| `next` | `for` loop iteration steps | Usually provided by `Iter`; collection authors usually implement `iter`. |
+| `parser_for : encoding -> (state -> Try({ value : T, rest : state }, err))` | Generic parser APIs such as JSON parsing | A format should be able to parse the type. |
+| `encoder_for : encoding -> (T, state -> Try(state, err))` | Generic encoder APIs such as JSON encoding | A format should be able to encode the type. |
+| `map` | Mapping a selected payload in an eligible tag union | The type should support a pure payload transformation. |
+| `map!` | Mapping a selected payload in an eligible tag union | The type should support an effectful payload transformation. |
+
+### Compiler-Derived Methods
+
+Roc can derive implementations of `is_eq`, `to_hash`, `parser_for`,
+`encoder_for`, `map`, and `map!`. Structural types receive each derived method
+automatically when their shape supports it. A nominal or opaque type must opt in
+to each desired implementation by declaring the associated method with `_` as
+its annotation:
+
+```roc
+Model := { value : Str }.{
+    is_eq : _
+    to_hash : _
+    parser_for : _
+    encoder_for : _
+}
+```
+
+Here, `_` asks the compiler to infer the method's type and synthesize its
+implementation. It is only recognized for these six associated method names;
+other declarations without bodies are errors unless they are host-provided
+platform declarations. Derived method opt-ins behave the same in application,
+package, and platform modules.
+
+Providing a method body defines an ordinary custom implementation instead of
+requesting derivation. For example, a type can define custom equality while
+still deriving its hash and codec methods.
+
+Derived `map` and `map!` apply to eligible tag unions with one selected direct
+payload. `map` takes a pure transformation, while `map!` takes an effectful one:
+
+```roc
+Maybe(a) := [Just(a), Nothing].{
+    map : _
+    map! : _
+}
+```
+
+### `to_inspect`
+
+The `to_inspect` method customizes how a value is rendered by `Str.inspect`.
+Use it for debug, logging, and test-failure output.
+
+```roc
+Color := [Red, Green, Blue].{
+    to_inspect : Color -> Str
+    to_inspect = |color| match color {
+        Red => "Color.Red"
+        Green => "Color.Green"
+        Blue => "Color.Blue"
+    }
+}
+```
+
+When `Str.inspect` is called on a `Color` value, it uses `Color.to_inspect`:
+
+```roc
+red : Color
+red = Red
+
+Str.inspect(red)  # "Color.Red"
+```
+
+Without `to_inspect`, `Str.inspect` uses Roc's built-in structural
+representation for the value.
+
+`Str.inspect` only uses a `to_inspect` method whose type is exactly `T -> Str`,
+where any type parameters of `T` are left as distinct, unconstrained type
+variables. For example, `Wrap(a) := [W(a)]` can use
+`to_inspect : Wrap(a) -> Str`, but not `to_inspect : Wrap(I64) -> Str` or one
+with a `where` clause. A `to_inspect` method with any other type is still an
+ordinary method that you can call directly; `Str.inspect` just renders the
+value with the built-in representation instead. To render a value's contents
+from inside `to_inspect`, call `Str.inspect` on them, which works for any type:
+
+```roc
+Wrap(a) := [W(a)].{
+    to_inspect : Wrap(a) -> Str
+    to_inspect = |Wrap.W(value)| "Wrap(${Str.inspect(value)})"
+}
+```
+
+### Equality and Hashing
+
+The `is_eq` method customizes how equality is checked using the `==` and `!=` operators.
+
+```roc
+Point := { x: I64, y: I64 }.{
+    is_eq : Point, Point -> Bool
+    is_eq = |a, b| a.x == b.x and a.y == b.y
+}
+```
+
+When `==` is used on `Point` values, it calls the `is_eq` method:
+
+```roc
+p1 : Point
+p1 = { x: 1, y: 2 }
+
+p2 : Point
+p2 = { x: 1, y: 2 }
+
+expect p1 == p2  # calls Point.is_eq(p1, p2)
+expect (p1 != p2) == False
+```
+
+For `!=`, Roc calls `is_eq` and negates the `Bool` result.
+
+The `to_hash` method feeds a value into a `Hasher`:
+
+```roc
+to_hash : T, Hasher -> Hasher
+```
+
+Hash-based APIs use `to_hash` together with `is_eq`. For example, dictionary
+keys must be hashable and comparable. If you define custom equality, make sure
+the hash is consistent with it: equal values must feed the same hash data.
+
+Roc can derive structural equality and hashing for supported structural shapes.
+Define explicit methods when the derived behavior is not the behavior you want,
+or when a nominal type should expose a stable custom definition.
+
+### Operators
+
+Binary arithmetic operators dispatch to methods on the left operand. The return
+type is the left operand's type, but the right operand can have a different
+type if the method signature allows it.
+
+```roc
+Vec := { x: I64, y: I64 }.{
+    plus : Vec, Vec -> Vec
+    plus = |a, b| { x: a.x + b.x, y: a.y + b.y }
+}
+```
+
+When `+` is used on `Vec` values, it calls the `plus` method:
+
+```roc
+v1 : Vec
+v1 = { x: 1, y: 2 }
+
+v2 : Vec
+v2 = { x: 3, y: 4 }
+
+# v1 + v2 calls Vec.plus(v1, v2)
+```
+
+The arithmetic operator mapping is:
+
+| Operator | Method |
+| --- | --- |
+| `+` | `plus` |
+| `-` | `minus` |
+| `*` | `times` |
+| `/` | `div_by` |
+| `//` | `div_trunc_by` |
+| `%` | `rem_by` |
+
+Comparison operators dispatch to methods whose result is `Bool`. Both operands
+must have the same type.
+
+| Operator | Method |
+| --- | --- |
+| `<` | `is_lt` |
+| `<=` | `is_lte` |
+| `>` | `is_gt` |
+| `>=` | `is_gte` |
+
+Range operators dispatch to methods whose result is a `Range` of the operand
+type. Both operands must have the same type.
+
+| Operator | Method |
+| --- | --- |
+| `..<` | `range_exclusive_to` |
+| `..=` | `range_inclusive_to` |
+
+All the builtin number types have these methods, and a custom type can support
+range syntax by defining them:
+
+```roc
+PageNum := { num : U32 }.{
+    range_exclusive_to : PageNum, PageNum -> Range(PageNum)
+    range_exclusive_to = |start, end|
+        Range.custom({
+            lower: start,
+            upper: end,
+            step: PageNum.{ num: 1 },
+            upper_bound: Exclusive,
+            direction: To,
+            len_if_known: Unknown,
+        })
+}
+
+pages : Range(PageNum)
+pages = first_page..<last_page
+```
+
+To iterate that value, `PageNum` also defines `range_iter` in terms of its own
+representation. Defining the two `_from` constructors opts it into
+`Range.iter_rev`; types whose stepping is not exactly reversible can omit them.
+
+Unary operators dispatch to methods whose argument and return type are the same:
+
+| Operator | Method |
+| --- | --- |
+| `-x` | `negate` |
+| `!x` | `not` |
+
+```roc
+Duration := { millis : I64 }.{
+    times : Duration, I64 -> Duration
+    times = |duration, scale| { millis: duration.millis * scale }
+}
+
+longer : Duration
+longer = Duration.{ millis: 10 } * 3
+```
+
+### Literal Conversion
+
+Number literals dispatch the `from_numeral` method when the target type is a
+nominal type that defines it:
+
+```roc
+Celsius := { degrees: I64 }.{
+    from_numeral : Numeral -> Try(Celsius, [InvalidNumeral(Str)])
+    from_numeral = |n| match I64.from_numeral(n) {
+        Ok(degrees) => Ok({ degrees: degrees })
+        Err(err) => Err(err)
+    }
+}
+
+temp : Celsius
+temp = 21  # calls Celsius.from_numeral
+```
+
+`Numeral` carries the literal's exact digits, so a custom type can accept
+the literal range its representation supports and reject the rest with
+`InvalidNumeral`.
+
+Quoted string literals dispatch `from_quote` when the target type defines it:
+
+```roc
+HttpMethod := [Get, Post, Put, Delete].{
+    from_quote : Str -> Try(HttpMethod, [BadQuotedBytes(Str)])
+    from_quote = |raw| match raw {
+        "GET" => Ok(Get)
+        "POST" => Ok(Post)
+        "PUT" => Ok(Put)
+        "DELETE" => Ok(Delete)
+        _ => Err(BadQuotedBytes("expected GET, POST, PUT, or DELETE"))
+    }
+}
+
+method : HttpMethod
+method = "POST"  # calls HttpMethod.from_quote
+```
+
+If the method returns `Err(BadQuotedBytes(message))`, the compiler reports the
+literal conversion error before the program runs.
+
+Interpolated string literals dispatch `from_interpolation` based on the result
+type. The first argument is the literal segment before the first interpolation.
+The iterator yields each interpolated value paired with the literal segment that
+follows it.
+
+```roc
+# For a target type named Html:
+from_interpolation : Str, Iter((Html, Str)) -> Html
+```
+
+Plain quoted string segments inside an interpolation are always `Str` values;
+the interpolated values are the `item` type in `Iter((item, Str))`.
+
+### Iteration
+
+A `for` loop calls `iter` on the value after `in`. The `iter` method must return
+an `Iter(item)` whose item type matches the loop pattern.
+
+```roc
+Rows := { items : List(Row) }.{
+    iter : Rows -> Iter(Row)
+    iter = |rows| rows.items.iter()
+}
+
+for row in rows {
+    process(row)
+}
+```
+
+The loop then repeatedly calls `next` on the `Iter(item)` value:
+
+```roc
+next : Iter(item) -> [One({ item : item, rest : Iter(item) }), Skip({ rest : Iter(item) }), Done]
+```
+
+Package authors usually implement `iter` for their collection type and build
+the returned iterator with the `Iter` APIs. The `next` method is the hook on the
+iterator value itself.
+
+### Parsing and Encoding
+
+Generic parser and encoder APIs use `parser_for` and `encoder_for` to ask a type
+how it should be read or written for a particular format.
+
+```roc
+Token := { raw : Str }.{
+    parser_for : encoding -> (state -> Try({ value : Token, rest : state }, err))
+        where [
+            encoding.parse_str : encoding, state -> Try({ value : Str, rest : state }, err),
+        ]
+    parser_for = |encoding| {
+        Encoding : encoding
+
+        |state| {
+            parsed = Encoding.parse_str(encoding, state)?
+            Ok({ value: Token.{ raw: parsed.value }, rest: parsed.rest })
+        }
+    }
+
+    encoder_for : encoding -> (Token, state -> Try(state, err))
+        where [
+            encoding.encode_str : encoding, Str, state -> Try(state, err),
+        ]
+    encoder_for = |encoding| {
+        Encoding : encoding
+
+        |token, state| Encoding.encode_str(encoding, token.raw, state)
+    }
+}
+```
+
+Structural records, tag unions, lists, sets, dictionaries, and supported
+builtins can use derived parser and encoder implementations when the selected
+format supports their shape. A nominal type can provide explicit `parser_for`
+or `encoder_for` methods when it wants a custom representation or when its
+backing should remain hidden.
+
+### Number Literal Defaulting
+
+When nothing in the program pins a literal's type, the compiler commits the
+first type in `Dec, I64, U64, I128, U128, I32, U32, I16, U16, I8, U8, F64,
+F32` that satisfies all of the literal's constraints. A plain `5` defaults to
+`Dec`; a `5` whose surrounding code demands an integer gets the first integer
+type that fits.
+
+If committing a default narrows a function's inferred type, the compiler
+emits a `LITERAL DEFAULTED` warning. To pick a different type, add a type
+annotation or a suffix (`5.U64`).
+
+## Where Clauses
+
+A function that calls a method on a value whose type is a type variable needs to say which methods
+that type must have. This is what `where` clauses are for:
+
+```roc
+show_all : List(a) -> Str where [a.to_str : a -> Str]
+show_all = |items| {
+    var $out = ""
+
+    for item in items {
+        $out = $out.concat(item.to_str()).concat(" ")
+    }
+
+    $out
+}
+```
+
+The `where [a.to_str : a -> Str]` clause says that `show_all` accepts a list of any type `a`,
+as long as `a` has a `to_str` method with the type `a -> Str`. Inside the function, that's what
+makes it possible to call `item.to_str()`, and at each call site, the compiler checks that the
+list's element type actually has that method. For example, `show_all([1.U8, 2, 3])` works because
+`U8` has a `to_str` method, whereas `show_all([{ x: 1 }])` gives an error because records don't.
+
+Since this is static dispatch, each call site knows exactly which `to_str` implementation it's using,
+and the compiled program calls it directly.
+
+If a function calls a method on a type variable, but its annotation doesn't have a `where` clause
+listing that method, the compiler reports an error. If the function doesn't have an annotation,
+the compiler infers the `where` clause automatically.
+
+A `where` clause can list multiple constraints, separated by commas, and they can involve different
+type variables:
+
+```roc
+convert_all : List(a) -> List(b) where [a.to_b : a -> b, b.is_valid : b -> Bool]
+```
+
+See [Where Clauses](types#where-clauses) in the types page for more on the syntax.
+
+### Calling Methods on Type Variables
+
+Some methods don't take a value of the type as an argument; for example, a method which creates a
+new value of the type from scratch. To call one of those on a type variable, first give the type
+variable an uppercase name by writing `UppercaseName : lowercase_type_variable` inside the function
+body. After that, the uppercase name can be used to call the type variable's methods:
+
+```roc
+make_default : {} -> thing where [thing.default : () -> thing]
+make_default = |_| {
+    Thing : thing
+
+    Thing.default()
+}
+```
+
+Here, `Thing.default()` calls whichever `default` method belongs to the type that `thing` turns out
+to be at the call site. The [`parser_for` example](#parsing-and-encoding) above uses this technique
+to call `Encoding.parse_str(…)`.
+
+## Aliases
+
+When the same group of `where` constraints is needed in many places, you can give the group a name
+with a _where alias_:
+
+```roc
+a.Showable : where [a.to_str : a -> Str]
+```
+
+This declares a where alias named `Showable`. Now, instead of repeating the constraint, you can
+write `a.Showable` in a `where` clause:
+
+```roc
+show_one : a -> Str where [a.Showable]
+show_one = |value| value.to_str()
+```
+
+This means exactly the same thing as `where [a.to_str : a -> Str]`. Any type that has the required
+methods satisfies the alias; there's no need to declare that a type "implements" `Showable`.
+
+A where alias can combine other where aliases, as well as individual method constraints:
+
+```roc
+a.Comparable : where [a.is_lt : a, a -> Bool]
+
+a.Sortable : where [a.Showable, a.Comparable]
+```
+
+Where aliases can also take parameters, which their constraints can mention:
+
+```roc
+a.Encodable(fmt) : where [a.encode : a, fmt -> fmt]
+
+encode_twice : a, fmt -> fmt where [a.Encodable(fmt)]
+encode_twice = |value, fmt| value.encode(value.encode(fmt))
+```
+
+A where alias describes constraints on a type, not a type itself, so it can only be used inside a
+`where` clause. Writing something like `describe : Showable -> Str` is an error.

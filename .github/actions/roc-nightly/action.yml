@@ -1,0 +1,63 @@
+# SPDX-FileCopyrightText: 2026 Heorhii Bulakh and subsequent roc-syntax-mcp authors
+# SPDX-License-Identifier: MPL-2.0
+
+# Puts one roc nightly on PATH, from the cache when it can.
+#
+# GitHub evicts a cache entry that no run read for 7 days, and this period is
+# not configurable. A nightly stays in the cache while a file pins it and CI
+# runs at least once a week. GitHub evicts a nightly that a file no longer pins
+# 7 days after the last run that used it.
+
+name: Roc nightly
+description: Download a roc-lang/nightlies release and put roc on PATH.
+
+inputs:
+  tag:
+    description: The release tag, for example nightly-2026-10-04-130536d.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Name the nightly
+      id: nightly
+      shell: bash
+      env:
+        TAG: ${{ inputs.tag }}
+      run: |
+        name="roc_nightly-linux_arm64-${TAG#nightly-}"
+        echo "name=$name" >> "$GITHUB_OUTPUT"
+        echo "dir=$RUNNER_TOOL_CACHE/roc/$name" >> "$GITHUB_OUTPUT"
+    - name: Restore the nightly
+      id: restore
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.nightly.outputs.dir }}
+        key: ${{ steps.nightly.outputs.name }}
+    - name: Download the nightly
+      if: steps.restore.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        TAG: ${{ inputs.tag }}
+        NAME: ${{ steps.nightly.outputs.name }}
+        DIR: ${{ steps.nightly.outputs.dir }}
+      run: |
+        mkdir -p "$(dirname "$DIR")"
+        curl -fsSL "https://github.com/roc-lang/nightlies/releases/download/$TAG/$NAME.tar.gz" \
+          | tar xz -C "$(dirname "$DIR")"
+        test -x "$DIR/roc"
+    # Save the nightly before any gate runs, so that the cache keeps the
+    # download even if a gate fails.
+    - name: Save the nightly
+      if: steps.restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.nightly.outputs.dir }}
+        key: ${{ steps.nightly.outputs.name }}
+    - name: Put roc on PATH
+      shell: bash
+      env:
+        DIR: ${{ steps.nightly.outputs.dir }}
+      run: |
+        echo "$DIR" >> "$GITHUB_PATH"
+        "$DIR/roc" version

@@ -1,0 +1,16 @@
+# Provenance of the bundled roc-lang/http package.
+#
+# basic-webserver and basic-cli both re-export these types and both pin this
+# exact tarball. So this directory indexes the package once, and each platform
+# scope lists it. Neither platform corpus has a copy.
+
+repo     https://github.com/roc-lang/http
+tag      1.0.0
+tarball  6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst
+
+index.json <- the tarball root, parsed by `npm run build:index` from the
+              compiler's package cache. No source is vendored
+
+# This file has no `compiler` line. The compiler never checks this package
+# alone. `roc check` sees it only as a dependency of the platform that an app
+# pins, so the gates tested it with the nightly in corpus/language/UPSTREAM.

@@ -1,0 +1,39 @@
+This package holds files under two terms. The file decides which one applies.
+
+  index.json, examples/   Upstream's text: the signatures and doc comments of
+                          lukewilliamboswell/weaver 0.9.0, and its examples.
+                          Copyright Luke Boswell, Sam Mohr and subsequent
+                          weaver authors. No license is granted for these
+                          files. See "Upstream's files" below.
+
+  Every other file        Ours: the overview, the topics and the verify
+                          programs. Copyright 2026 Heorhii Bulakh and
+                          subsequent roc-syntax-mcp authors. UPL-1.0, full
+                          text below.
+
+
+Upstream's files
+----------------
+
+lukewilliamboswell/weaver ships no LICENSE file at tag 0.9.0, and neither does
+the repository it forks, smores56/weaver. These files are published in the
+expectation that upstream adopts UPL-1.0, the license of the rest of the Roc
+ecosystem. If you are one of weaver's authors and want them removed, open an
+issue at https://github.com/Karakatiza666/roc-syntax-mcp/issues.
+
+
+The Universal Permissive License (UPL), Version 1.0
+
+Subject to the condition set forth below, permission is hereby granted to any person obtaining a copy of this software, associated documentation and/or data (collectively the "Software"), free of charge and under any and all copyright rights in the Software, and any and all patent rights owned or freely licensable by each licensor hereunder covering either (i) the unmodified Software as contributed to or provided by such licensor, or (ii) the Larger Works (as defined below), to deal in both
+
+(a) the Software, and
+
+(b) any piece of software and/or hardware listed in the lrgrwrks.txt file if one is included with the Software (each a “Larger Work” to which the Software is contributed by such licensors),
+
+without restriction, including without limitation the rights to copy, create derivative works of, display, perform, and distribute the Software and make, use, sell, offer for sale, import, export, have made, and have sold the Software and the Larger Work(s), and to sublicense the foregoing rights on either these or other terms.
+
+This license is subject to the following condition:
+
+The above copyright notice and either this complete permission notice or at a minimum a reference to the UPL must be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

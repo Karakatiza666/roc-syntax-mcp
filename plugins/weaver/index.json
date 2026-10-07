@@ -1,0 +1,2675 @@
+{
+ "format": 1,
+ "releases": {
+  "7j6KBFBEZ8pNMLQHkx9xiwyZ2PmwQPgKNDPUih6gKe77": {
+   "url": "https://github.com/lukewilliamboswell/weaver/releases/download/0.9.0/7j6KBFBEZ8pNMLQHkx9xiwyZ2PmwQPgKNDPUih6gKe77.tar.zst",
+   "snapshot": {
+    "kind": "package",
+    "exposes": [
+     "Base",
+     "Builder",
+     "Cli",
+     "ErrorFormatter",
+     "Help",
+     "Opt",
+     "Param",
+     "SubCmd",
+     "Validate"
+    ],
+    "deps": [
+     {
+      "alias": "ansi",
+      "url": "https://github.com/lukewilliamboswell/roc-ansi/releases/download/0.13.0/JXLM47L6CzrLXB5HBfqc27VnU6CD4jMm5Mk6dgbbovL.tar.zst"
+     },
+     {
+      "alias": "path",
+      "url": "https://github.com/roc-lang/path/releases/download/4.0.0/7YfABZPwJAXtLBY2vm8FqMyGAtNxncCJ65HdNKHFGNnE.tar.zst"
+     }
+    ],
+    "modules": [
+     {
+      "name": "Base",
+      "imports": [
+       "path"
+      ],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "ArgParserResult",
+        "modulePath": "Base",
+        "fullName": "Base.ArgParserResult",
+        "signature": "[\n\t\tShowHelp({ subcommand_path : List(Str) }),\n\t\tShowVersion,\n\t\tIncorrectUsage(ArgExtractErr, { subcommand_path : List(Str) }),\n\t\tSuccessfullyParsed(a),\n\t]",
+        "docs": "The result of attempting to parse args into config data.",
+        "line": 7,
+        "decl": ":=",
+        "head": "ArgParserResult(a)"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "is_eq",
+        "modulePath": "Base.ArgParserResult",
+        "fullName": "Base.ArgParserResult.is_eq",
+        "signature": "_",
+        "docs": "",
+        "line": 13
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "ArgParserParams",
+        "modulePath": "Base",
+        "fullName": "Base.ArgParserParams",
+        "signature": "{ args : List(ParsedArg), subcommand_path : List(Str) }",
+        "docs": "The parameters that an `ArgParser` takes to extract data from args.",
+        "line": 17,
+        "decl": ":",
+        "head": "ArgParserParams"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "ArgParserState",
+        "modulePath": "Base",
+        "fullName": "Base.ArgParserState",
+        "signature": "{ data : a, remaining_args : List(ParsedArg), subcommand_path : List(Str) }",
+        "docs": "The intermediate state that an `ArgParser` passes between steps.",
+        "line": 20,
+        "decl": ":",
+        "head": "ArgParserState(a)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "ArgParser",
+        "modulePath": "Base",
+        "fullName": "Base.ArgParser",
+        "signature": "ArgParserParams -> ArgParserResult(ArgParserState(a))",
+        "docs": "A function that extracts configuration data from parsed arguments.",
+        "line": 23,
+        "decl": ":",
+        "head": "ArgParser(a)"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "on_successful_arg_parse",
+        "modulePath": "Base",
+        "fullName": "Base.on_successful_arg_parse",
+        "signature": "ArgParser(a), (ArgParserState(a) -> ArgParserResult(ArgParserState(b))) -> ArgParser(b)",
+        "docs": "A bind operation for `ArgParserState`.",
+        "line": 26
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "map_successfully_parsed",
+        "modulePath": "Base",
+        "fullName": "Base.map_successfully_parsed",
+        "signature": "ArgParserResult(a), (a -> b) -> ArgParserResult(b)",
+        "docs": "Maps successfully parsed data in an `ArgParserResult`.",
+        "line": 39
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "ArgExtractErr",
+        "modulePath": "Base",
+        "fullName": "Base.ArgExtractErr",
+        "signature": "[\n\t\tNoSubcommandCalled,\n\t\tMissingOption(OptionConfig),\n\t\tOptionCanOnlyBeSetOnce(OptionConfig),\n\t\tNoValueProvidedForOption(OptionConfig),\n\t\tOptionDoesNotExpectValue(OptionConfig),\n\t\tCannotUsePartialShortGroupAsValue(OptionConfig, List(Str)),\n\t\tValueOptionMustBeLastInShortGroup(OptionConfig, List(Str)),\n\t\tInvalidOptionValue(InvalidValue, OptionConfig),\n\t\tInvalidParamValue(InvalidValue, ParameterConfig),\n\t\tMissingParam(ParameterConfig),\n\t\tUnrecognizedSubcommand(Path),\n\t\tUnrecognizedShortArg(Str),\n\t\tUnrecognizedLongArg(Str),\n\t\tExtraParamProvided(Path),\n\t]",
+        "docs": "Errors that can occur while extracting values from command line arguments.",
+        "line": 49,
+        "decl": ":",
+        "head": "ArgExtractErr"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "str_type_name",
+        "modulePath": "Base",
+        "fullName": "Base.str_type_name",
+        "signature": "Str",
+        "docs": "",
+        "line": 66
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "num_type_name",
+        "modulePath": "Base",
+        "fullName": "Base.num_type_name",
+        "signature": "Str",
+        "docs": "",
+        "line": 69
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "arg_to_bytes",
+        "modulePath": "Base",
+        "fullName": "Base.arg_to_bytes",
+        "signature": "Path -> List(U8)",
+        "docs": "Convert an OS-aware argument to bytes, using big-endian code units on Windows.",
+        "line": 73
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "TextStyle",
+        "modulePath": "Base",
+        "fullName": "Base.TextStyle",
+        "signature": "[Color, Plain]",
+        "docs": "Whether help text should have fancy styling.",
+        "line": 91,
+        "decl": ":",
+        "head": "TextStyle"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "ExpectedValue",
+        "modulePath": "Base",
+        "fullName": "Base.ExpectedValue",
+        "signature": "[ExpectsValue(Str), NothingExpected]",
+        "docs": "The type of value that an option expects to parse.",
+        "line": 94,
+        "decl": ":",
+        "head": "ExpectedValue"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Plurality",
+        "modulePath": "Base",
+        "fullName": "Base.Plurality",
+        "signature": "[Optional, One, Many]",
+        "docs": "How many values an option/parameter can take.",
+        "line": 97,
+        "decl": ":",
+        "head": "Plurality"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "SpecialFlags",
+        "modulePath": "Base",
+        "fullName": "Base.SpecialFlags",
+        "signature": "{ help : Bool, version : Bool }",
+        "docs": "The two built-in flags that we parse automatically.",
+        "line": 100,
+        "decl": ":",
+        "head": "SpecialFlags"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "InvalidValue",
+        "modulePath": "Base",
+        "fullName": "Base.InvalidValue",
+        "signature": "[InvalidNumStr, InvalidValue(Str), InvalidUtf8]",
+        "docs": "",
+        "line": 102,
+        "decl": ":",
+        "head": "InvalidValue"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "DefaultValue",
+        "modulePath": "Base",
+        "fullName": "Base.DefaultValue",
+        "signature": "[NoDefault, Value(a), Generate({} -> a)]",
+        "docs": "",
+        "line": 104,
+        "decl": ":",
+        "head": "DefaultValue(a)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "ValueParser",
+        "modulePath": "Base",
+        "fullName": "Base.ValueParser",
+        "signature": "Path -> Try(a, InvalidValue)",
+        "docs": "A parser that extracts an argument value.",
+        "line": 107,
+        "decl": ":",
+        "head": "ValueParser(a)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "OptionConfigBaseParams",
+        "modulePath": "Base",
+        "fullName": "Base.OptionConfigBaseParams",
+        "signature": "{ short : Str, long : Str, help : Str }",
+        "docs": "",
+        "line": 109,
+        "decl": ":",
+        "head": "OptionConfigBaseParams"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "DefaultableOptionConfigBaseParams",
+        "modulePath": "Base",
+        "fullName": "Base.DefaultableOptionConfigBaseParams",
+        "signature": "{\n\t\tshort : Str,\n\t\tlong : Str,\n\t\thelp : Str,\n\t\tdefault : DefaultValue(a),\n\t}",
+        "docs": "",
+        "line": 111,
+        "decl": ":",
+        "head": "DefaultableOptionConfigBaseParams(a)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "OptionConfigParams",
+        "modulePath": "Base",
+        "fullName": "Base.OptionConfigParams",
+        "signature": "{\n\t\tshort : Str,\n\t\tlong : Str,\n\t\thelp : Str,\n\t\ttype : Str,\n\t\tparser : ValueParser(a),\n\t}",
+        "docs": "Options for creating an option with a custom parser.",
+        "line": 119,
+        "decl": ":",
+        "head": "OptionConfigParams(a)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "DefaultableOptionConfigParams",
+        "modulePath": "Base",
+        "fullName": "Base.DefaultableOptionConfigParams",
+        "signature": "{\n\t\tshort : Str,\n\t\tlong : Str,\n\t\thelp : Str,\n\t\ttype : Str,\n\t\tparser : ValueParser(a),\n\t\tdefault : DefaultValue(a),\n\t}",
+        "docs": "Options for creating an option with a custom parser and default.",
+        "line": 128,
+        "decl": ":",
+        "head": "DefaultableOptionConfigParams(a)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "OptionConfig",
+        "modulePath": "Base",
+        "fullName": "Base.OptionConfig",
+        "signature": "{\n\t\texpected_value : ExpectedValue,\n\t\tplurality : Plurality,\n\t\trequired : Bool,\n\t\tshort : Str,\n\t\tlong : Str,\n\t\thelp : Str,\n\t}",
+        "docs": "Metadata for options in our CLI building system.",
+        "line": 138,
+        "decl": ":",
+        "head": "OptionConfig"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "help_option",
+        "modulePath": "Base",
+        "fullName": "Base.help_option",
+        "signature": "OptionConfig",
+        "docs": "Metadata for the `-h/--help` option that we parse automatically.",
+        "line": 148
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "version_option",
+        "modulePath": "Base",
+        "fullName": "Base.version_option",
+        "signature": "OptionConfig",
+        "docs": "Metadata for the `-V/--version` option that we parse automatically.",
+        "line": 159
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "ParameterConfigBaseParams",
+        "modulePath": "Base",
+        "fullName": "Base.ParameterConfigBaseParams",
+        "signature": "{ name : Str, help : Str }",
+        "docs": "",
+        "line": 169,
+        "decl": ":",
+        "head": "ParameterConfigBaseParams"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "DefaultableParameterConfigBaseParams",
+        "modulePath": "Base",
+        "fullName": "Base.DefaultableParameterConfigBaseParams",
+        "signature": "{ name : Str, help : Str, default : DefaultValue(a) }",
+        "docs": "",
+        "line": 171,
+        "decl": ":",
+        "head": "DefaultableParameterConfigBaseParams(a)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "ParameterConfigParams",
+        "modulePath": "Base",
+        "fullName": "Base.ParameterConfigParams",
+        "signature": "{\n\t\tname : Str,\n\t\thelp : Str,\n\t\ttype : Str,\n\t\tparser : ValueParser(a),\n\t}",
+        "docs": "Options for creating a parameter with a custom parser.",
+        "line": 174,
+        "decl": ":",
+        "head": "ParameterConfigParams(a)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "DefaultableParameterConfigParams",
+        "modulePath": "Base",
+        "fullName": "Base.DefaultableParameterConfigParams",
+        "signature": "{\n\t\tname : Str,\n\t\thelp : Str,\n\t\ttype : Str,\n\t\tparser : ValueParser(a),\n\t\tdefault : DefaultValue(a),\n\t}",
+        "docs": "Options for creating a parameter with a custom parser and default.",
+        "line": 182,
+        "decl": ":",
+        "head": "DefaultableParameterConfigParams(a)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "ParameterConfig",
+        "modulePath": "Base",
+        "fullName": "Base.ParameterConfig",
+        "signature": "{\n\t\tname : Str,\n\t\thelp : Str,\n\t\ttype : Str,\n\t\tplurality : Plurality,\n\t\trequired : Bool,\n\t}",
+        "docs": "Metadata for parameters in our CLI building system.",
+        "line": 191,
+        "decl": ":",
+        "head": "ParameterConfig"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "CliConfigParams",
+        "modulePath": "Base",
+        "fullName": "Base.CliConfigParams",
+        "signature": "{\n\t\tname : Str,\n\t\tauthors : List(Str),\n\t\tversion : Str,\n\t\tdescription : Str,\n\t\ttext_style : TextStyle,\n\t}",
+        "docs": "Options for bundling a CLI.",
+        "line": 200,
+        "decl": ":",
+        "head": "CliConfigParams"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "CliConfig",
+        "modulePath": "Base",
+        "fullName": "Base.CliConfig",
+        "signature": "{\n\t\tname : Str,\n\t\tauthors : List(Str),\n\t\tversion : Str,\n\t\tdescription : Str,\n\t\tsubcommands : SubcommandsConfig,\n\t\toptions : List(OptionConfig),\n\t\tparameters : List(ParameterConfig),\n\t}",
+        "docs": "Metadata for a root-level CLI.",
+        "line": 209,
+        "decl": ":",
+        "head": "CliConfig"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "SubcommandConfigParams",
+        "modulePath": "Base",
+        "fullName": "Base.SubcommandConfigParams",
+        "signature": "{ name : Str, description : Str }",
+        "docs": "Options for bundling a subcommand.",
+        "line": 220,
+        "decl": ":",
+        "head": "SubcommandConfigParams"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "SubcommandConfig",
+        "modulePath": "Base",
+        "fullName": "Base.SubcommandConfig",
+        "signature": "{\n\t\tdescription : Str,\n\t\toptions : List(OptionConfig),\n\t\tparameters : List(ParameterConfig),\n\t\tsubcommands : SubcommandsConfig,\n\t}",
+        "docs": "Metadata for a subcommand.",
+        "line": 223,
+        "decl": ":",
+        "head": "SubcommandConfig"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "SubcommandsConfig",
+        "modulePath": "Base",
+        "fullName": "Base.SubcommandsConfig",
+        "signature": "[\n\t\tNoSubcommands,\n\t\tHasSubcommands(\n\t\t\t{\n\t\t\t\tcommands : List((Str, SubcommandConfig)),\n\t\t\t\trequired : Bool,\n\t\t\t},\n\t\t),\n\t]",
+        "docs": "Subcommands retain declaration order and duplicate names for validation.",
+        "line": 231,
+        "decl": ":=",
+        "head": "SubcommandsConfig"
+       }
+      ]
+     },
+     {
+      "name": "Builder",
+      "imports": [
+       "path"
+      ],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Builder",
+        "modulePath": "",
+        "fullName": "Builder",
+        "signature": "{\n\tparser : ArgParser(data),\n\toptions : List(OptionConfig),\n\tparameters : List(ParameterConfig),\n\tsubcommands : SubcommandsConfig,\n}",
+        "docs": "",
+        "line": 18,
+        "decl": ":=",
+        "head": "Builder(data, from_action, to_action)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "GetOptionsAction",
+        "modulePath": "Builder",
+        "fullName": "Builder.GetOptionsAction",
+        "signature": "{ get_options : {} }",
+        "docs": "",
+        "line": 24,
+        "decl": ":",
+        "head": "GetOptionsAction"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "GetParamsAction",
+        "modulePath": "Builder",
+        "fullName": "Builder.GetParamsAction",
+        "signature": "{ get_params : {} }",
+        "docs": "",
+        "line": 25,
+        "decl": ":",
+        "head": "GetParamsAction"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "CliBuilder",
+        "modulePath": "Builder",
+        "fullName": "Builder.CliBuilder",
+        "signature": "Builder(data, from_action, to_action)",
+        "docs": "",
+        "line": 28,
+        "decl": ":",
+        "head": "CliBuilder(data, from_action, to_action)"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "from_arg_parser",
+        "modulePath": "Builder",
+        "fullName": "Builder.from_arg_parser",
+        "signature": "(List(ParsedArg) -> Try({ data : data, remaining_args : List(ParsedArg) }, ArgExtractErr)) -> CliBuilder(data, from_action, to_action)",
+        "docs": "",
+        "line": 30
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "from_full_parser",
+        "modulePath": "Builder",
+        "fullName": "Builder.from_full_parser",
+        "signature": "ArgParser(data) -> CliBuilder(data, from_action, to_action)",
+        "docs": "",
+        "line": 49
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "add_option",
+        "modulePath": "Builder",
+        "fullName": "Builder.add_option",
+        "signature": "CliBuilder(state, from_action, to_action), OptionConfig -> CliBuilder(state, from_action, to_action)",
+        "docs": "",
+        "line": 57
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "add_parameter",
+        "modulePath": "Builder",
+        "fullName": "Builder.add_parameter",
+        "signature": "CliBuilder(state, from_action, to_action), ParameterConfig -> CliBuilder(state, from_action, to_action)",
+        "docs": "",
+        "line": 65
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "add_subcommands",
+        "modulePath": "Builder",
+        "fullName": "Builder.add_subcommands",
+        "signature": "CliBuilder(state, from_action, to_action), SubcommandsConfig -> CliBuilder(state, from_action, to_action)",
+        "docs": "",
+        "line": 73
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "set_parser",
+        "modulePath": "Builder",
+        "fullName": "Builder.set_parser",
+        "signature": "CliBuilder(state, from_action, to_action), ArgParser(next_state) -> CliBuilder(next_state, from_action, to_action)",
+        "docs": "",
+        "line": 81
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "update_parser",
+        "modulePath": "Builder",
+        "fullName": "Builder.update_parser",
+        "signature": "CliBuilder(state, from_action, to_action), ({ data : state, remaining_args : List(ParsedArg) } -> Try({ data : next_state, remaining_args : List(ParsedArg) }, ArgExtractErr)) -> CliBuilder(next_state, from_action, to_action)",
+        "docs": "",
+        "line": 89
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "bind_parser",
+        "modulePath": "Builder",
+        "fullName": "Builder.bind_parser",
+        "signature": "CliBuilder(state, from_action, to_action), (ArgParserState(state) -> ArgParserResult(ArgParserState(next_state))) -> CliBuilder(next_state, from_action, to_action)",
+        "docs": "",
+        "line": 105
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "into_parts",
+        "modulePath": "Builder",
+        "fullName": "Builder.into_parts",
+        "signature": "|{ parser, options, parameters, subcommands }|",
+        "docs": "",
+        "line": 125,
+        "unannotated": true
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "map",
+        "modulePath": "Builder",
+        "fullName": "Builder.map",
+        "signature": "CliBuilder(a, from_action, to_action), (a -> b) -> CliBuilder(b, from_action, to_action)",
+        "docs": "",
+        "line": 132
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "combine",
+        "modulePath": "Builder",
+        "fullName": "Builder.combine",
+        "signature": "CliBuilder(a, action1, action2), CliBuilder(b, action2, action3), (a, b -> c) -> CliBuilder(c, action1, action3)",
+        "docs": "",
+        "line": 149
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "flag_was_passed",
+        "modulePath": "Builder",
+        "fullName": "Builder.flag_was_passed",
+        "signature": "OptionConfig, List(ParsedArg) -> Bool",
+        "docs": "",
+        "line": 174
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "check_for_help_and_version",
+        "modulePath": "Builder",
+        "fullName": "Builder.check_for_help_and_version",
+        "signature": "CliBuilder(state, from_action, to_action) -> CliBuilder(state, from_action, to_action)",
+        "docs": "",
+        "line": 186
+       }
+      ]
+     },
+     {
+      "name": "Cli",
+      "imports": [
+       "path"
+      ],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "CliParser",
+        "modulePath": "Cli",
+        "fullName": "Cli.CliParser",
+        "signature": "{\n\t\tconfig : CliConfig,\n\t\tparser : List(Path) -> ArgParserResult(state),\n\t\ttext_style : TextStyle,\n\t}",
+        "docs": "A parser that interprets command line arguments and returns typed data.",
+        "line": 23,
+        "decl": ":",
+        "head": "CliParser(state)"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "map",
+        "modulePath": "Cli",
+        "fullName": "Cli.map",
+        "signature": "CliBuilder(a, from_action, to_action), (a -> b) -> CliBuilder(b, from_action, to_action)",
+        "docs": "Map over the parsed value of a Weaver field.",
+        "line": 30
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "map2",
+        "modulePath": "Cli",
+        "fullName": "Cli.map2",
+        "signature": "CliBuilder(a, action1, action2), CliBuilder(b, action2, action3), (a, b -> c) -> CliBuilder(c, action1, action3)",
+        "docs": "Combine two CLI builders. This powers current Roc record-builder syntax:\n`{ name: Param.str(...), verbose: Opt.flag(...) }.Cli`.",
+        "line": 36
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "weave",
+        "modulePath": "Cli",
+        "fullName": "Cli.weave",
+        "signature": "CliBuilder(a, action1, action2), CliBuilder(b, action2, action3), (a, b -> c) -> CliBuilder(c, action1, action3)",
+        "docs": "Alias for `map2` for code that wants a descriptive function name.",
+        "line": 41
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "ensure_all_args_were_parsed",
+        "modulePath": "Cli",
+        "fullName": "Cli.ensure_all_args_were_parsed",
+        "signature": "List(ParsedArg) -> Try({}, ArgExtractErr)",
+        "docs": "Fail the parsing process if any arguments are left over after parsing.",
+        "line": 46
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "finish",
+        "modulePath": "Cli",
+        "fullName": "Cli.finish",
+        "signature": "CliBuilder(data, from_action, to_action), CliConfigParams -> Try(CliParser(data), CliValidationErr)",
+        "docs": "Bundle a CLI builder into a parser, ensuring its configuration is valid.",
+        "line": 65
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "finish_without_validating",
+        "modulePath": "Cli",
+        "fullName": "Cli.finish_without_validating",
+        "signature": "CliBuilder(data, from_action, to_action), CliConfigParams -> CliParser(data)",
+        "docs": "Bundle a CLI builder into a parser without validating its configuration.",
+        "line": 74
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "assert_valid",
+        "modulePath": "Cli",
+        "fullName": "Cli.assert_valid",
+        "signature": "Try(CliParser(data), CliValidationErr) -> CliParser(data)",
+        "docs": "Assert that a CLI is properly configured, crashing your program if not.\nHandle `Cli.finish` directly to render its validation error.",
+        "line": 122
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_or_display_message",
+        "modulePath": "Cli",
+        "fullName": "Cli.parse_or_display_message",
+        "signature": "CliParser(data), List(arg), (arg -> [Utf8(Str), UnixBytes(List(U8)), WindowsU16s(List(U16))]) -> Try(data, [Help(Str), Version(Str), InvalidUsage(Str)])",
+        "docs": "Parse arguments, or return a typed help, version, or usage message.",
+        "line": 132
+       }
+      ]
+     },
+     {
+      "name": "CliTest",
+      "imports": [
+       "path"
+      ],
+      "items": []
+     },
+     {
+      "name": "ErrorFormatter",
+      "imports": [
+       "path"
+      ],
+      "items": [
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "format_arg_extract_err",
+        "modulePath": "ErrorFormatter",
+        "fullName": "ErrorFormatter.format_arg_extract_err",
+        "signature": "ArgExtractErr -> Str",
+        "docs": "Render `ArgExtractErr` errors as readable messages.",
+        "line": 9
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "render_arg_extract_err",
+        "modulePath": "ErrorFormatter",
+        "fullName": "ErrorFormatter.render_arg_extract_err",
+        "signature": "ArgExtractErr, { command : Str, usage : Str }, TextStyle -> Str",
+        "docs": "Render an argument extraction failure as a complete terminal report.",
+        "line": 80
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "format_cli_validation_err",
+        "modulePath": "ErrorFormatter",
+        "fullName": "ErrorFormatter.format_cli_validation_err",
+        "signature": "CliValidationErr -> Str",
+        "docs": "Render `CliValidationErr` errors as readable messages.",
+        "line": 93
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "render_cli_validation_err",
+        "modulePath": "ErrorFormatter",
+        "fullName": "ErrorFormatter.render_cli_validation_err",
+        "signature": "CliValidationErr, TextStyle -> Str",
+        "docs": "Render a CLI configuration failure as a complete terminal report.",
+        "line": 172
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "DiagnosticMetadata",
+        "modulePath": "",
+        "fullName": "DiagnosticMetadata",
+        "signature": "{ title : Str, hint : Str }",
+        "docs": "",
+        "line": 185,
+        "decl": ":",
+        "head": "DiagnosticMetadata"
+       }
+      ]
+     },
+     {
+      "name": "Extract",
+      "imports": [
+       "path"
+      ],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "ExtractParamValuesParams",
+        "modulePath": "Extract",
+        "fullName": "Extract.ExtractParamValuesParams",
+        "signature": "{\n\t\targs : List(ParsedArg),\n\t\tparam : ParameterConfig,\n\t}",
+        "docs": "",
+        "line": 6,
+        "decl": ":",
+        "head": "ExtractParamValuesParams"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "ExtractParamValuesState",
+        "modulePath": "Extract",
+        "fullName": "Extract.ExtractParamValuesState",
+        "signature": "{\n\t\taction : [GetParam, StopParsing],\n\t\tvalues : List(Path),\n\t\tremaining_args : List(ParsedArg),\n\t}",
+        "docs": "",
+        "line": 11,
+        "decl": ":",
+        "head": "ExtractParamValuesState"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "ExtractParamValuesOutput",
+        "modulePath": "Extract",
+        "fullName": "Extract.ExtractParamValuesOutput",
+        "signature": "{\n\t\tvalues : List(Path),\n\t\tremaining_args : List(ParsedArg),\n\t}",
+        "docs": "",
+        "line": 17,
+        "decl": ":",
+        "head": "ExtractParamValuesOutput"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "extract_param_values",
+        "modulePath": "Extract",
+        "fullName": "Extract.extract_param_values",
+        "signature": "ExtractParamValuesParams -> Try(ExtractParamValuesOutput, ArgExtractErr)",
+        "docs": "",
+        "line": 22
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "extract_param_loop",
+        "modulePath": "Extract",
+        "fullName": "Extract.extract_param_loop",
+        "signature": "List(ParsedArg), ExtractParamValuesState, ParameterConfig -> Try(ExtractParamValuesState, ArgExtractErr)",
+        "docs": "",
+        "line": 35
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "extract_single_param",
+        "modulePath": "Extract",
+        "fullName": "Extract.extract_single_param",
+        "signature": "ExtractParamValuesState, ParameterConfig, ParsedArg -> Try(ExtractParamValuesState, ArgExtractErr)",
+        "docs": "",
+        "line": 50
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "ExtractOptionValuesParams",
+        "modulePath": "Extract",
+        "fullName": "Extract.ExtractOptionValuesParams",
+        "signature": "{\n\t\targs : List(ParsedArg),\n\t\toption : OptionConfig,\n\t}",
+        "docs": "",
+        "line": 74,
+        "decl": ":",
+        "head": "ExtractOptionValuesParams"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "ExtractOptionValuesOutput",
+        "modulePath": "Extract",
+        "fullName": "Extract.ExtractOptionValuesOutput",
+        "signature": "{\n\t\tvalues : List(ArgValue),\n\t\tremaining_args : List(ParsedArg),\n\t}",
+        "docs": "",
+        "line": 79,
+        "decl": ":",
+        "head": "ExtractOptionValuesOutput"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "ExtractOptionValueWalkerState",
+        "modulePath": "Extract",
+        "fullName": "Extract.ExtractOptionValueWalkerState",
+        "signature": "{\n\t\taction : [FindOption, GetValue],\n\t\tvalues : List(ArgValue),\n\t\tremaining_args : List(ParsedArg),\n\t}",
+        "docs": "",
+        "line": 84,
+        "decl": ":",
+        "head": "ExtractOptionValueWalkerState"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "extract_option_values",
+        "modulePath": "Extract",
+        "fullName": "Extract.extract_option_values",
+        "signature": "ExtractOptionValuesParams -> Try(ExtractOptionValuesOutput, ArgExtractErr)",
+        "docs": "",
+        "line": 90
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "extract_option_loop",
+        "modulePath": "Extract",
+        "fullName": "Extract.extract_option_loop",
+        "signature": "List(ParsedArg), ExtractOptionValueWalkerState, OptionConfig -> Try(ExtractOptionValueWalkerState, ArgExtractErr)",
+        "docs": "",
+        "line": 106
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "find_option_for_extraction",
+        "modulePath": "Extract",
+        "fullName": "Extract.find_option_for_extraction",
+        "signature": "ExtractOptionValueWalkerState, ParsedArg, OptionConfig -> Try(ExtractOptionValueWalkerState, ArgExtractErr)",
+        "docs": "",
+        "line": 121
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "find_options_in_short_group",
+        "modulePath": "Extract",
+        "fullName": "Extract.find_options_in_short_group",
+        "signature": "ExtractOptionValueWalkerState, OptionConfig, { names : List(Str), complete : [Partial, Complete] } -> Try(ExtractOptionValueWalkerState, ArgExtractErr)",
+        "docs": "",
+        "line": 159
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "get_value_for_extraction",
+        "modulePath": "Extract",
+        "fullName": "Extract.get_value_for_extraction",
+        "signature": "ExtractOptionValueWalkerState, ParsedArg, OptionConfig -> Try(ExtractOptionValueWalkerState, ArgExtractErr)",
+        "docs": "",
+        "line": 197
+       }
+      ]
+     },
+     {
+      "name": "Help",
+      "imports": [],
+      "items": [
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "find_subcommand_or_default",
+        "modulePath": "Help",
+        "fullName": "Help.find_subcommand_or_default",
+        "signature": "CliConfig, List(Str) -> { config : CliConfig, subcommand_path : List(Str) }",
+        "docs": "Walks the subcommand tree from the root CLI config and returns the target\ncommand config, falling back to the root command if the path is invalid.",
+        "line": 19
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "find_subcommand",
+        "modulePath": "Help",
+        "fullName": "Help.find_subcommand",
+        "signature": "SubcommandConfig, List(Str) -> Try(SubcommandConfig, [KeyNotFound])",
+        "docs": "Searches a command's config for subcommands recursively.",
+        "line": 46
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "help_text",
+        "modulePath": "Help",
+        "fullName": "Help.help_text",
+        "signature": "CliConfig, List(Str), TextStyle -> Str",
+        "docs": "Render the help text for a command at or under the root config.",
+        "line": 61
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "usage_help",
+        "modulePath": "Help",
+        "fullName": "Help.usage_help",
+        "signature": "CliConfig, List(Str), TextStyle -> Str",
+        "docs": "Render just the usage text for a command at or under the root config.",
+        "line": 127
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "HelpColumn",
+        "modulePath": "",
+        "fullName": "HelpColumn",
+        "signature": "{ label : Str, help : Str }",
+        "docs": "",
+        "line": 322,
+        "decl": ":",
+        "head": "HelpColumn"
+       }
+      ]
+     },
+     {
+      "name": "Opt",
+      "imports": [
+       "path"
+      ],
+      "items": [
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "builder_with_option_parser",
+        "modulePath": "Opt",
+        "fullName": "Opt.builder_with_option_parser",
+        "signature": "OptionConfig, (List(ArgValue) -> Try(data, ArgExtractErr)) -> CliBuilder(data, GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 22
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "get_maybe_value",
+        "modulePath": "Opt",
+        "fullName": "Opt.get_maybe_value",
+        "signature": "List(ArgValue), OptionConfig -> Try(Try(ArgValue, [NoValue]), ArgExtractErr)",
+        "docs": "",
+        "line": 34
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "single",
+        "modulePath": "Opt",
+        "fullName": "Opt.single",
+        "signature": "DefaultableOptionConfigParams(a) -> CliBuilder(a, GetOptionsAction, GetOptionsAction)",
+        "docs": "Add a required option that takes a custom type.",
+        "line": 43
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "maybe",
+        "modulePath": "Opt",
+        "fullName": "Opt.maybe",
+        "signature": "OptionConfigParams(data) -> CliBuilder(Try(data, [NoValue]), GetOptionsAction, GetOptionsAction)",
+        "docs": "Add an optional option that takes a custom type.",
+        "line": 78
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "list",
+        "modulePath": "Opt",
+        "fullName": "Opt.list",
+        "signature": "OptionConfigParams(data) -> CliBuilder(List(data), GetOptionsAction, GetOptionsAction)",
+        "docs": "Add an option that takes a custom type and can be given multiple times.",
+        "line": 100
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "flag",
+        "modulePath": "Opt",
+        "fullName": "Opt.flag",
+        "signature": "OptionConfigBaseParams -> CliBuilder(Bool, GetOptionsAction, GetOptionsAction)",
+        "docs": "Add an optional flag.",
+        "line": 111
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "count",
+        "modulePath": "Opt",
+        "fullName": "Opt.count",
+        "signature": "OptionConfigBaseParams -> CliBuilder(U64, GetOptionsAction, GetOptionsAction)",
+        "docs": "Add a flag that can be given multiple times.",
+        "line": 129
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "arg",
+        "modulePath": "Opt",
+        "fullName": "Opt.arg",
+        "signature": "DefaultableOptionConfigBaseParams(Path) -> CliBuilder(Path, GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 149
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "maybe_arg",
+        "modulePath": "Opt",
+        "fullName": "Opt.maybe_arg",
+        "signature": "OptionConfigBaseParams -> CliBuilder(Try(Path, [NoValue]), GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 152
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "arg_list",
+        "modulePath": "Opt",
+        "fullName": "Opt.arg_list",
+        "signature": "OptionConfigBaseParams -> CliBuilder(List(Path), GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 155
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "bytes",
+        "modulePath": "Opt",
+        "fullName": "Opt.bytes",
+        "signature": "DefaultableOptionConfigBaseParams(List(U8)) -> CliBuilder(List(U8), GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 158
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "maybe_bytes",
+        "modulePath": "Opt",
+        "fullName": "Opt.maybe_bytes",
+        "signature": "OptionConfigBaseParams -> CliBuilder(Try(List(U8), [NoValue]), GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 161
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "bytes_list",
+        "modulePath": "Opt",
+        "fullName": "Opt.bytes_list",
+        "signature": "OptionConfigBaseParams -> CliBuilder(List(List(U8)), GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 164
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "str",
+        "modulePath": "Opt",
+        "fullName": "Opt.str",
+        "signature": "DefaultableOptionConfigBaseParams(Str) -> CliBuilder(Str, GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 167
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "maybe_str",
+        "modulePath": "Opt",
+        "fullName": "Opt.maybe_str",
+        "signature": "OptionConfigBaseParams -> CliBuilder(Try(Str, [NoValue]), GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 170
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "str_list",
+        "modulePath": "Opt",
+        "fullName": "Opt.str_list",
+        "signature": "OptionConfigBaseParams -> CliBuilder(List(Str), GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 173
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "dec",
+        "modulePath": "Opt",
+        "fullName": "Opt.dec",
+        "signature": "DefaultableOptionConfigBaseParams(Dec) -> CliBuilder(Dec, GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 176
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "maybe_dec",
+        "modulePath": "Opt",
+        "fullName": "Opt.maybe_dec",
+        "signature": "OptionConfigBaseParams -> CliBuilder(Try(Dec, [NoValue]), GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 179
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "dec_list",
+        "modulePath": "Opt",
+        "fullName": "Opt.dec_list",
+        "signature": "OptionConfigBaseParams -> CliBuilder(List(Dec), GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 182
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "f32",
+        "modulePath": "Opt",
+        "fullName": "Opt.f32",
+        "signature": "DefaultableOptionConfigBaseParams(F32) -> CliBuilder(F32, GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 185
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "maybe_f32",
+        "modulePath": "Opt",
+        "fullName": "Opt.maybe_f32",
+        "signature": "OptionConfigBaseParams -> CliBuilder(Try(F32, [NoValue]), GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 188
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "f32_list",
+        "modulePath": "Opt",
+        "fullName": "Opt.f32_list",
+        "signature": "OptionConfigBaseParams -> CliBuilder(List(F32), GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 191
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "f64",
+        "modulePath": "Opt",
+        "fullName": "Opt.f64",
+        "signature": "DefaultableOptionConfigBaseParams(F64) -> CliBuilder(F64, GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 194
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "maybe_f64",
+        "modulePath": "Opt",
+        "fullName": "Opt.maybe_f64",
+        "signature": "OptionConfigBaseParams -> CliBuilder(Try(F64, [NoValue]), GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 197
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "f64_list",
+        "modulePath": "Opt",
+        "fullName": "Opt.f64_list",
+        "signature": "OptionConfigBaseParams -> CliBuilder(List(F64), GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 200
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "u8",
+        "modulePath": "Opt",
+        "fullName": "Opt.u8",
+        "signature": "DefaultableOptionConfigBaseParams(U8) -> CliBuilder(U8, GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 203
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "maybe_u8",
+        "modulePath": "Opt",
+        "fullName": "Opt.maybe_u8",
+        "signature": "OptionConfigBaseParams -> CliBuilder(Try(U8, [NoValue]), GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 206
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "u8_list",
+        "modulePath": "Opt",
+        "fullName": "Opt.u8_list",
+        "signature": "OptionConfigBaseParams -> CliBuilder(List(U8), GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 209
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "u16",
+        "modulePath": "Opt",
+        "fullName": "Opt.u16",
+        "signature": "DefaultableOptionConfigBaseParams(U16) -> CliBuilder(U16, GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 212
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "maybe_u16",
+        "modulePath": "Opt",
+        "fullName": "Opt.maybe_u16",
+        "signature": "OptionConfigBaseParams -> CliBuilder(Try(U16, [NoValue]), GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 215
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "u16_list",
+        "modulePath": "Opt",
+        "fullName": "Opt.u16_list",
+        "signature": "OptionConfigBaseParams -> CliBuilder(List(U16), GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 218
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "u32",
+        "modulePath": "Opt",
+        "fullName": "Opt.u32",
+        "signature": "DefaultableOptionConfigBaseParams(U32) -> CliBuilder(U32, GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 221
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "maybe_u32",
+        "modulePath": "Opt",
+        "fullName": "Opt.maybe_u32",
+        "signature": "OptionConfigBaseParams -> CliBuilder(Try(U32, [NoValue]), GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 224
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "u32_list",
+        "modulePath": "Opt",
+        "fullName": "Opt.u32_list",
+        "signature": "OptionConfigBaseParams -> CliBuilder(List(U32), GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 227
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "u64",
+        "modulePath": "Opt",
+        "fullName": "Opt.u64",
+        "signature": "DefaultableOptionConfigBaseParams(U64) -> CliBuilder(U64, GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 230
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "maybe_u64",
+        "modulePath": "Opt",
+        "fullName": "Opt.maybe_u64",
+        "signature": "OptionConfigBaseParams -> CliBuilder(Try(U64, [NoValue]), GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 233
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "u64_list",
+        "modulePath": "Opt",
+        "fullName": "Opt.u64_list",
+        "signature": "OptionConfigBaseParams -> CliBuilder(List(U64), GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 236
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "u128",
+        "modulePath": "Opt",
+        "fullName": "Opt.u128",
+        "signature": "DefaultableOptionConfigBaseParams(U128) -> CliBuilder(U128, GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 239
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "maybe_u128",
+        "modulePath": "Opt",
+        "fullName": "Opt.maybe_u128",
+        "signature": "OptionConfigBaseParams -> CliBuilder(Try(U128, [NoValue]), GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 242
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "u128_list",
+        "modulePath": "Opt",
+        "fullName": "Opt.u128_list",
+        "signature": "OptionConfigBaseParams -> CliBuilder(List(U128), GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 245
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "i8",
+        "modulePath": "Opt",
+        "fullName": "Opt.i8",
+        "signature": "DefaultableOptionConfigBaseParams(I8) -> CliBuilder(I8, GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 248
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "maybe_i8",
+        "modulePath": "Opt",
+        "fullName": "Opt.maybe_i8",
+        "signature": "OptionConfigBaseParams -> CliBuilder(Try(I8, [NoValue]), GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 251
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "i8_list",
+        "modulePath": "Opt",
+        "fullName": "Opt.i8_list",
+        "signature": "OptionConfigBaseParams -> CliBuilder(List(I8), GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 254
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "i16",
+        "modulePath": "Opt",
+        "fullName": "Opt.i16",
+        "signature": "DefaultableOptionConfigBaseParams(I16) -> CliBuilder(I16, GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 257
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "maybe_i16",
+        "modulePath": "Opt",
+        "fullName": "Opt.maybe_i16",
+        "signature": "OptionConfigBaseParams -> CliBuilder(Try(I16, [NoValue]), GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 260
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "i16_list",
+        "modulePath": "Opt",
+        "fullName": "Opt.i16_list",
+        "signature": "OptionConfigBaseParams -> CliBuilder(List(I16), GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 263
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "i32",
+        "modulePath": "Opt",
+        "fullName": "Opt.i32",
+        "signature": "DefaultableOptionConfigBaseParams(I32) -> CliBuilder(I32, GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 266
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "maybe_i32",
+        "modulePath": "Opt",
+        "fullName": "Opt.maybe_i32",
+        "signature": "OptionConfigBaseParams -> CliBuilder(Try(I32, [NoValue]), GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 269
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "i32_list",
+        "modulePath": "Opt",
+        "fullName": "Opt.i32_list",
+        "signature": "OptionConfigBaseParams -> CliBuilder(List(I32), GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 272
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "i64",
+        "modulePath": "Opt",
+        "fullName": "Opt.i64",
+        "signature": "DefaultableOptionConfigBaseParams(I64) -> CliBuilder(I64, GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 275
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "maybe_i64",
+        "modulePath": "Opt",
+        "fullName": "Opt.maybe_i64",
+        "signature": "OptionConfigBaseParams -> CliBuilder(Try(I64, [NoValue]), GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 278
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "i64_list",
+        "modulePath": "Opt",
+        "fullName": "Opt.i64_list",
+        "signature": "OptionConfigBaseParams -> CliBuilder(List(I64), GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 281
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "i128",
+        "modulePath": "Opt",
+        "fullName": "Opt.i128",
+        "signature": "DefaultableOptionConfigBaseParams(I128) -> CliBuilder(I128, GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 284
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "maybe_i128",
+        "modulePath": "Opt",
+        "fullName": "Opt.maybe_i128",
+        "signature": "OptionConfigBaseParams -> CliBuilder(Try(I128, [NoValue]), GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 287
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "i128_list",
+        "modulePath": "Opt",
+        "fullName": "Opt.i128_list",
+        "signature": "OptionConfigBaseParams -> CliBuilder(List(I128), GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 290
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "number_single",
+        "modulePath": "Opt",
+        "fullName": "Opt.number_single",
+        "signature": "DefaultableOptionConfigBaseParams(a), (Str -> Try(a, _)) -> CliBuilder(a, GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 293
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "number_maybe",
+        "modulePath": "Opt",
+        "fullName": "Opt.number_maybe",
+        "signature": "OptionConfigBaseParams, (Str -> Try(a, _)) -> CliBuilder(Try(a, [NoValue]), GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 297
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "number_list",
+        "modulePath": "Opt",
+        "fullName": "Opt.number_list",
+        "signature": "OptionConfigBaseParams, (Str -> Try(a, _)) -> CliBuilder(List(a), GetOptionsAction, GetOptionsAction)",
+        "docs": "",
+        "line": 301
+       }
+      ]
+     },
+     {
+      "name": "Param",
+      "imports": [
+       "path"
+      ],
+      "items": [
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "builder_with_parameter_parser",
+        "modulePath": "Param",
+        "fullName": "Param.builder_with_parameter_parser",
+        "signature": "ParameterConfig, (List(Path) -> Try(data, ArgExtractErr)) -> CliBuilder(data, from_action, to_action)",
+        "docs": "",
+        "line": 21
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "single",
+        "modulePath": "Param",
+        "fullName": "Param.single",
+        "signature": "DefaultableParameterConfigParams(data) -> CliBuilder(data, { ..action }, GetParamsAction)",
+        "docs": "Add a required parameter of a custom type.",
+        "line": 34
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "maybe",
+        "modulePath": "Param",
+        "fullName": "Param.maybe",
+        "signature": "ParameterConfigParams(data) -> CliBuilder(Try(data, [NoValue]), { ..action }, GetParamsAction)",
+        "docs": "Add an optional parameter of a custom type.",
+        "line": 65
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "list",
+        "modulePath": "Param",
+        "fullName": "Param.list",
+        "signature": "ParameterConfigParams(data) -> CliBuilder(List(data), { ..action }, StopCollectingAction)",
+        "docs": "Add a parameter that can be provided multiple times.",
+        "line": 83
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "arg",
+        "modulePath": "Param",
+        "fullName": "Param.arg",
+        "signature": "DefaultableParameterConfigBaseParams(Path) -> CliBuilder(Path, { ..action }, GetParamsAction)",
+        "docs": "",
+        "line": 93
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "maybe_arg",
+        "modulePath": "Param",
+        "fullName": "Param.maybe_arg",
+        "signature": "ParameterConfigBaseParams -> CliBuilder(ArgValue, { ..action }, GetParamsAction)",
+        "docs": "",
+        "line": 96
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "arg_list",
+        "modulePath": "Param",
+        "fullName": "Param.arg_list",
+        "signature": "ParameterConfigBaseParams -> CliBuilder(List(Path), { ..action }, StopCollectingAction)",
+        "docs": "",
+        "line": 99
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "bytes",
+        "modulePath": "Param",
+        "fullName": "Param.bytes",
+        "signature": "DefaultableParameterConfigBaseParams(List(U8)) -> CliBuilder(List(U8), { ..action }, GetParamsAction)",
+        "docs": "",
+        "line": 102
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "maybe_bytes",
+        "modulePath": "Param",
+        "fullName": "Param.maybe_bytes",
+        "signature": "ParameterConfigBaseParams -> CliBuilder(Try(List(U8), [NoValue]), { ..action }, GetParamsAction)",
+        "docs": "",
+        "line": 105
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "bytes_list",
+        "modulePath": "Param",
+        "fullName": "Param.bytes_list",
+        "signature": "ParameterConfigBaseParams -> CliBuilder(List(List(U8)), { ..action }, StopCollectingAction)",
+        "docs": "",
+        "line": 108
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "str",
+        "modulePath": "Param",
+        "fullName": "Param.str",
+        "signature": "DefaultableParameterConfigBaseParams(Str) -> CliBuilder(Str, { ..action }, GetParamsAction)",
+        "docs": "",
+        "line": 111
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "maybe_str",
+        "modulePath": "Param",
+        "fullName": "Param.maybe_str",
+        "signature": "ParameterConfigBaseParams -> CliBuilder(Try(Str, [NoValue]), { ..action }, GetParamsAction)",
+        "docs": "",
+        "line": 114
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "str_list",
+        "modulePath": "Param",
+        "fullName": "Param.str_list",
+        "signature": "ParameterConfigBaseParams -> CliBuilder(List(Str), { ..action }, StopCollectingAction)",
+        "docs": "",
+        "line": 117
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "dec",
+        "modulePath": "Param",
+        "fullName": "Param.dec",
+        "signature": "DefaultableParameterConfigBaseParams(Dec) -> CliBuilder(Dec, { ..action }, GetParamsAction)",
+        "docs": "",
+        "line": 120
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "maybe_dec",
+        "modulePath": "Param",
+        "fullName": "Param.maybe_dec",
+        "signature": "ParameterConfigBaseParams -> CliBuilder(Try(Dec, [NoValue]), { ..action }, GetParamsAction)",
+        "docs": "",
+        "line": 123
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "dec_list",
+        "modulePath": "Param",
+        "fullName": "Param.dec_list",
+        "signature": "ParameterConfigBaseParams -> CliBuilder(List(Dec), { ..action }, StopCollectingAction)",
+        "docs": "",
+        "line": 126
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "f32",
+        "modulePath": "Param",
+        "fullName": "Param.f32",
+        "signature": "DefaultableParameterConfigBaseParams(F32) -> CliBuilder(F32, { ..action }, GetParamsAction)",
+        "docs": "",
+        "line": 129
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "maybe_f32",
+        "modulePath": "Param",
+        "fullName": "Param.maybe_f32",
+        "signature": "ParameterConfigBaseParams -> CliBuilder(Try(F32, [NoValue]), { ..action }, GetParamsAction)",
+        "docs": "",
+        "line": 132
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "f32_list",
+        "modulePath": "Param",
+        "fullName": "Param.f32_list",
+        "signature": "ParameterConfigBaseParams -> CliBuilder(List(F32), { ..action }, StopCollectingAction)",
+        "docs": "",
+        "line": 135
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "f64",
+        "modulePath": "Param",
+        "fullName": "Param.f64",
+        "signature": "DefaultableParameterConfigBaseParams(F64) -> CliBuilder(F64, { ..action }, GetParamsAction)",
+        "docs": "",
+        "line": 138
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "maybe_f64",
+        "modulePath": "Param",
+        "fullName": "Param.maybe_f64",
+        "signature": "ParameterConfigBaseParams -> CliBuilder(Try(F64, [NoValue]), { ..action }, GetParamsAction)",
+        "docs": "",
+        "line": 141
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "f64_list",
+        "modulePath": "Param",
+        "fullName": "Param.f64_list",
+        "signature": "ParameterConfigBaseParams -> CliBuilder(List(F64), { ..action }, StopCollectingAction)",
+        "docs": "",
+        "line": 144
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "u8",
+        "modulePath": "Param",
+        "fullName": "Param.u8",
+        "signature": "DefaultableParameterConfigBaseParams(U8) -> CliBuilder(U8, { ..action }, GetParamsAction)",
+        "docs": "",
+        "line": 147
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "maybe_u8",
+        "modulePath": "Param",
+        "fullName": "Param.maybe_u8",
+        "signature": "ParameterConfigBaseParams -> CliBuilder(Try(U8, [NoValue]), { ..action }, GetParamsAction)",
+        "docs": "",
+        "line": 150
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "u8_list",
+        "modulePath": "Param",
+        "fullName": "Param.u8_list",
+        "signature": "ParameterConfigBaseParams -> CliBuilder(List(U8), { ..action }, StopCollectingAction)",
+        "docs": "",
+        "line": 153
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "u16",
+        "modulePath": "Param",
+        "fullName": "Param.u16",
+        "signature": "DefaultableParameterConfigBaseParams(U16) -> CliBuilder(U16, { ..action }, GetParamsAction)",
+        "docs": "",
+        "line": 156
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "maybe_u16",
+        "modulePath": "Param",
+        "fullName": "Param.maybe_u16",
+        "signature": "ParameterConfigBaseParams -> CliBuilder(Try(U16, [NoValue]), { ..action }, GetParamsAction)",
+        "docs": "",
+        "line": 159
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "u16_list",
+        "modulePath": "Param",
+        "fullName": "Param.u16_list",
+        "signature": "ParameterConfigBaseParams -> CliBuilder(List(U16), { ..action }, StopCollectingAction)",
+        "docs": "",
+        "line": 162
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "u32",
+        "modulePath": "Param",
+        "fullName": "Param.u32",
+        "signature": "DefaultableParameterConfigBaseParams(U32) -> CliBuilder(U32, { ..action }, GetParamsAction)",
+        "docs": "",
+        "line": 165
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "maybe_u32",
+        "modulePath": "Param",
+        "fullName": "Param.maybe_u32",
+        "signature": "ParameterConfigBaseParams -> CliBuilder(Try(U32, [NoValue]), { ..action }, GetParamsAction)",
+        "docs": "",
+        "line": 168
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "u32_list",
+        "modulePath": "Param",
+        "fullName": "Param.u32_list",
+        "signature": "ParameterConfigBaseParams -> CliBuilder(List(U32), { ..action }, StopCollectingAction)",
+        "docs": "",
+        "line": 171
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "u64",
+        "modulePath": "Param",
+        "fullName": "Param.u64",
+        "signature": "DefaultableParameterConfigBaseParams(U64) -> CliBuilder(U64, { ..action }, GetParamsAction)",
+        "docs": "",
+        "line": 174
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "maybe_u64",
+        "modulePath": "Param",
+        "fullName": "Param.maybe_u64",
+        "signature": "ParameterConfigBaseParams -> CliBuilder(Try(U64, [NoValue]), { ..action }, GetParamsAction)",
+        "docs": "",
+        "line": 177
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "u64_list",
+        "modulePath": "Param",
+        "fullName": "Param.u64_list",
+        "signature": "ParameterConfigBaseParams -> CliBuilder(List(U64), { ..action }, StopCollectingAction)",
+        "docs": "",
+        "line": 180
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "u128",
+        "modulePath": "Param",
+        "fullName": "Param.u128",
+        "signature": "DefaultableParameterConfigBaseParams(U128) -> CliBuilder(U128, { ..action }, GetParamsAction)",
+        "docs": "",
+        "line": 183
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "maybe_u128",
+        "modulePath": "Param",
+        "fullName": "Param.maybe_u128",
+        "signature": "ParameterConfigBaseParams -> CliBuilder(Try(U128, [NoValue]), { ..action }, GetParamsAction)",
+        "docs": "",
+        "line": 186
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "u128_list",
+        "modulePath": "Param",
+        "fullName": "Param.u128_list",
+        "signature": "ParameterConfigBaseParams -> CliBuilder(List(U128), { ..action }, StopCollectingAction)",
+        "docs": "",
+        "line": 189
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "i8",
+        "modulePath": "Param",
+        "fullName": "Param.i8",
+        "signature": "DefaultableParameterConfigBaseParams(I8) -> CliBuilder(I8, { ..action }, GetParamsAction)",
+        "docs": "",
+        "line": 192
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "maybe_i8",
+        "modulePath": "Param",
+        "fullName": "Param.maybe_i8",
+        "signature": "ParameterConfigBaseParams -> CliBuilder(Try(I8, [NoValue]), { ..action }, GetParamsAction)",
+        "docs": "",
+        "line": 195
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "i8_list",
+        "modulePath": "Param",
+        "fullName": "Param.i8_list",
+        "signature": "ParameterConfigBaseParams -> CliBuilder(List(I8), { ..action }, StopCollectingAction)",
+        "docs": "",
+        "line": 198
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "i16",
+        "modulePath": "Param",
+        "fullName": "Param.i16",
+        "signature": "DefaultableParameterConfigBaseParams(I16) -> CliBuilder(I16, { ..action }, GetParamsAction)",
+        "docs": "",
+        "line": 201
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "maybe_i16",
+        "modulePath": "Param",
+        "fullName": "Param.maybe_i16",
+        "signature": "ParameterConfigBaseParams -> CliBuilder(Try(I16, [NoValue]), { ..action }, GetParamsAction)",
+        "docs": "",
+        "line": 204
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "i16_list",
+        "modulePath": "Param",
+        "fullName": "Param.i16_list",
+        "signature": "ParameterConfigBaseParams -> CliBuilder(List(I16), { ..action }, StopCollectingAction)",
+        "docs": "",
+        "line": 207
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "i32",
+        "modulePath": "Param",
+        "fullName": "Param.i32",
+        "signature": "DefaultableParameterConfigBaseParams(I32) -> CliBuilder(I32, { ..action }, GetParamsAction)",
+        "docs": "",
+        "line": 210
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "maybe_i32",
+        "modulePath": "Param",
+        "fullName": "Param.maybe_i32",
+        "signature": "ParameterConfigBaseParams -> CliBuilder(Try(I32, [NoValue]), { ..action }, GetParamsAction)",
+        "docs": "",
+        "line": 213
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "i32_list",
+        "modulePath": "Param",
+        "fullName": "Param.i32_list",
+        "signature": "ParameterConfigBaseParams -> CliBuilder(List(I32), { ..action }, StopCollectingAction)",
+        "docs": "",
+        "line": 216
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "i64",
+        "modulePath": "Param",
+        "fullName": "Param.i64",
+        "signature": "DefaultableParameterConfigBaseParams(I64) -> CliBuilder(I64, { ..action }, GetParamsAction)",
+        "docs": "",
+        "line": 219
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "maybe_i64",
+        "modulePath": "Param",
+        "fullName": "Param.maybe_i64",
+        "signature": "ParameterConfigBaseParams -> CliBuilder(Try(I64, [NoValue]), { ..action }, GetParamsAction)",
+        "docs": "",
+        "line": 222
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "i64_list",
+        "modulePath": "Param",
+        "fullName": "Param.i64_list",
+        "signature": "ParameterConfigBaseParams -> CliBuilder(List(I64), { ..action }, StopCollectingAction)",
+        "docs": "",
+        "line": 225
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "i128",
+        "modulePath": "Param",
+        "fullName": "Param.i128",
+        "signature": "DefaultableParameterConfigBaseParams(I128) -> CliBuilder(I128, { ..action }, GetParamsAction)",
+        "docs": "",
+        "line": 228
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "maybe_i128",
+        "modulePath": "Param",
+        "fullName": "Param.maybe_i128",
+        "signature": "ParameterConfigBaseParams -> CliBuilder(Try(I128, [NoValue]), { ..action }, GetParamsAction)",
+        "docs": "",
+        "line": 231
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "i128_list",
+        "modulePath": "Param",
+        "fullName": "Param.i128_list",
+        "signature": "ParameterConfigBaseParams -> CliBuilder(List(I128), { ..action }, StopCollectingAction)",
+        "docs": "",
+        "line": 234
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "number_single",
+        "modulePath": "Param",
+        "fullName": "Param.number_single",
+        "signature": "DefaultableParameterConfigBaseParams(a), (Str -> Try(a, _)) -> CliBuilder(a, { ..action }, GetParamsAction)",
+        "docs": "",
+        "line": 237
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "number_maybe",
+        "modulePath": "Param",
+        "fullName": "Param.number_maybe",
+        "signature": "ParameterConfigBaseParams, (Str -> Try(a, _)) -> CliBuilder(Try(a, [NoValue]), { ..action }, GetParamsAction)",
+        "docs": "",
+        "line": 241
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "number_list",
+        "modulePath": "Param",
+        "fullName": "Param.number_list",
+        "signature": "ParameterConfigBaseParams, (Str -> Try(a, _)) -> CliBuilder(List(a), { ..action }, StopCollectingAction)",
+        "docs": "",
+        "line": 245
+       }
+      ]
+     },
+     {
+      "name": "Parser",
+      "imports": [
+       "path"
+      ],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "ArgValue",
+        "modulePath": "Parser",
+        "fullName": "Parser.ArgValue",
+        "signature": "Try(Path, [NoValue])",
+        "docs": "",
+        "line": 4,
+        "decl": ":",
+        "head": "ArgValue"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "ParsedArg",
+        "modulePath": "Parser",
+        "fullName": "Parser.ParsedArg",
+        "signature": "[\n\t\tShort(Str),\n\t\tShortGroup({ names : List(Str), complete : [Complete, Partial] }),\n\t\tLong({ name : Str, value : ArgValue }),\n\t\tParameter(Path),\n\t\tPassedThrough(Path),\n\t]",
+        "docs": "",
+        "line": 6,
+        "decl": ":",
+        "head": "ParsedArg"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_args",
+        "modulePath": "Parser",
+        "fullName": "Parser.parse_args",
+        "signature": "List(Path) -> List(ParsedArg)",
+        "docs": "",
+        "line": 14
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_arg",
+        "modulePath": "Parser",
+        "fullName": "Parser.parse_arg",
+        "signature": "Path -> ParsedArg",
+        "docs": "",
+        "line": 50
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_decoded_arg",
+        "modulePath": "Parser",
+        "fullName": "Parser.parse_decoded_arg",
+        "signature": "Path, Str -> ParsedArg",
+        "docs": "",
+        "line": 73
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_long_arg",
+        "modulePath": "Parser",
+        "fullName": "Parser.parse_long_arg",
+        "signature": "Str -> ParsedArg",
+        "docs": "",
+        "line": 92
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "construct_set_of_options",
+        "modulePath": "Parser",
+        "fullName": "Parser.construct_set_of_options",
+        "signature": "Str -> ParsedArg",
+        "docs": "",
+        "line": 101
+       }
+      ]
+     },
+     {
+      "name": "SubCmd",
+      "imports": [
+       "path"
+      ],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "SubcommandParserConfig",
+        "modulePath": "SubCmd",
+        "fullName": "SubCmd.SubcommandParserConfig",
+        "signature": "{\n\t\tname : Str,\n\t\tparser : ArgParser(sub_state),\n\t\tconfig : SubcommandConfig,\n\t}",
+        "docs": "",
+        "line": 13,
+        "decl": ":",
+        "head": "SubcommandParserConfig(sub_state)"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "empty",
+        "modulePath": "SubCmd",
+        "fullName": "SubCmd.empty",
+        "signature": "{ name : Str, description : Str, value : common_state } -> SubcommandParserConfig(common_state)",
+        "docs": "Create an empty subcommand.",
+        "line": 20
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "finish",
+        "modulePath": "SubCmd",
+        "fullName": "SubCmd.finish",
+        "signature": "CliBuilder(state, from_action, to_action), { name : Str, description : Str, mapper : state -> common_state } -> SubcommandParserConfig(common_state)",
+        "docs": "Bundle a CLI builder into a subcommand.",
+        "line": 40
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "get_first_arg_to_check_for_subcommand_call",
+        "modulePath": "SubCmd",
+        "fullName": "SubCmd.get_first_arg_to_check_for_subcommand_call",
+        "signature": "|{ remaining_args, subcommand_path, .. }, subcommand_parsers, callback|",
+        "docs": "",
+        "line": 62,
+        "unannotated": true
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "optional",
+        "modulePath": "SubCmd",
+        "fullName": "SubCmd.optional",
+        "signature": "List(SubcommandParserConfig(sub_state)) -> CliBuilder(Try(sub_state, [NoSubcommand]), GetOptionsAction, GetParamsAction)",
+        "docs": "Use previously defined subcommands as optional data in a parent CLI.",
+        "line": 91
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "required",
+        "modulePath": "SubCmd",
+        "fullName": "SubCmd.required",
+        "signature": "List(SubcommandParserConfig(sub_data)) -> CliBuilder(sub_data, GetOptionsAction, GetParamsAction)",
+        "docs": "Use previously defined subcommands as required data in a parent CLI.",
+        "line": 128
+       }
+      ]
+     },
+     {
+      "name": "Terminal",
+      "imports": [
+       "ansi"
+      ],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Segment",
+        "modulePath": "Terminal",
+        "fullName": "Terminal.Segment",
+        "signature": "{\n\t\ttext : Str,\n\t\tstyle : [Accent, ErrorText, Frame, Heading, Hint, Label, Literal, Muted, PlainText, Section, Strong],\n\t}",
+        "docs": "A piece of text carrying a semantic terminal style.",
+        "line": 10,
+        "decl": ":",
+        "head": "Segment"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "WrapConfig",
+        "modulePath": "Terminal",
+        "fullName": "Terminal.WrapConfig",
+        "signature": "{\n\t\tfirst_indent : Str,\n\t\tcontinuation_indent : Str,\n\t\twidth : U64,\n\t}",
+        "docs": "Configuration for conservative word-boundary wrapping.",
+        "line": 16,
+        "decl": ":",
+        "head": "WrapConfig"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "plain",
+        "modulePath": "Terminal",
+        "fullName": "Terminal.plain",
+        "signature": "Str -> Terminal.Segment",
+        "docs": "",
+        "line": 22
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "strong",
+        "modulePath": "Terminal",
+        "fullName": "Terminal.strong",
+        "signature": "Str -> Terminal.Segment",
+        "docs": "",
+        "line": 25
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "heading",
+        "modulePath": "Terminal",
+        "fullName": "Terminal.heading",
+        "signature": "Str -> Terminal.Segment",
+        "docs": "",
+        "line": 28
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "section",
+        "modulePath": "Terminal",
+        "fullName": "Terminal.section",
+        "signature": "Str -> Terminal.Segment",
+        "docs": "",
+        "line": 31
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "accent",
+        "modulePath": "Terminal",
+        "fullName": "Terminal.accent",
+        "signature": "Str -> Terminal.Segment",
+        "docs": "",
+        "line": 34
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "label",
+        "modulePath": "Terminal",
+        "fullName": "Terminal.label",
+        "signature": "Str -> Terminal.Segment",
+        "docs": "",
+        "line": 37
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "error",
+        "modulePath": "Terminal",
+        "fullName": "Terminal.error",
+        "signature": "Str -> Terminal.Segment",
+        "docs": "",
+        "line": 40
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "literal",
+        "modulePath": "Terminal",
+        "fullName": "Terminal.literal",
+        "signature": "Str -> Terminal.Segment",
+        "docs": "",
+        "line": 43
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "hint",
+        "modulePath": "Terminal",
+        "fullName": "Terminal.hint",
+        "signature": "Str -> Terminal.Segment",
+        "docs": "",
+        "line": 46
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "muted",
+        "modulePath": "Terminal",
+        "fullName": "Terminal.muted",
+        "signature": "Str -> Terminal.Segment",
+        "docs": "",
+        "line": 49
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "frame",
+        "modulePath": "Terminal",
+        "fullName": "Terminal.frame",
+        "signature": "Str -> Terminal.Segment",
+        "docs": "",
+        "line": 52
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "render",
+        "modulePath": "Terminal",
+        "fullName": "Terminal.render",
+        "signature": "List(Terminal.Segment), TextStyle -> Str",
+        "docs": "Render semantic text, adding ANSI sequences only when color is requested.",
+        "line": 56
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "wrap",
+        "modulePath": "Terminal",
+        "fullName": "Terminal.wrap",
+        "signature": "Str, Terminal.WrapConfig -> Str",
+        "docs": "Wrap prose at whitespace boundaries without splitting UTF-8 tokens.\nByte length is deliberately conservative for non-ASCII terminal text.",
+        "line": 62
+       }
+      ]
+     },
+     {
+      "name": "Utils",
+      "imports": [],
+      "items": [
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "is_kebab_case",
+        "modulePath": "Utils",
+        "fullName": "Utils.is_kebab_case",
+        "signature": "Str -> Bool",
+        "docs": "",
+        "line": 2
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_upper_case",
+        "modulePath": "Utils",
+        "fullName": "Utils.to_upper_case",
+        "signature": "Str -> Str",
+        "docs": "",
+        "line": 35
+       }
+      ]
+     },
+     {
+      "name": "Validate",
+      "imports": [],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "NameAtSubcommand",
+        "modulePath": "Validate",
+        "fullName": "Validate.NameAtSubcommand",
+        "signature": "{ name : Str, subcommand_path : List(Str) }",
+        "docs": "",
+        "line": 13,
+        "decl": ":",
+        "head": "NameAtSubcommand"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "OptionAtSubcommand",
+        "modulePath": "Validate",
+        "fullName": "Validate.OptionAtSubcommand",
+        "signature": "{ option : OptionConfig, subcommand_path : List(Str) }",
+        "docs": "",
+        "line": 14,
+        "decl": ":",
+        "head": "OptionAtSubcommand"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "ParamAtSubcommand",
+        "modulePath": "Validate",
+        "fullName": "Validate.ParamAtSubcommand",
+        "signature": "{ param : ParameterConfig, subcommand_path : List(Str) }",
+        "docs": "",
+        "line": 15,
+        "decl": ":",
+        "head": "ParamAtSubcommand"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "CliValidationErr",
+        "modulePath": "Validate",
+        "fullName": "Validate.CliValidationErr",
+        "signature": "[\n\t\tOverlappingParameterNames({ first : Str, second : Str, subcommand_path : List(Str) }),\n\t\tOverlappingOptionNames({ left : OptionAtSubcommand, right : OptionAtSubcommand }),\n\t\tDuplicateSubcommandName(NameAtSubcommand),\n\t\tRequiredSubcommandsCannotBeEmpty(List(Str)),\n\t\tInvalidShortFlagName(NameAtSubcommand),\n\t\tInvalidLongFlagName(NameAtSubcommand),\n\t\tInvalidCommandName(NameAtSubcommand),\n\t\tInvalidParameterName(NameAtSubcommand),\n\t\tOptionMustHaveShortOrLongName({ subcommand_path : List(Str) }),\n\t\tInvalidOptionValueType(OptionAtSubcommand),\n\t\tInvalidParameterValueType(ParamAtSubcommand),\n\t\tOverrodeSpecialHelpFlag(OptionAtSubcommand),\n\t\tOverrodeSpecialVersionFlag(OptionAtSubcommand),\n\t]",
+        "docs": "The types of errors that might be found in a misconfigured CLI.",
+        "line": 18,
+        "decl": ":",
+        "head": "CliValidationErr"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "validate_cli",
+        "modulePath": "Validate",
+        "fullName": "Validate.validate_cli",
+        "signature": "CliConfig -> Try({}, CliValidationErr)",
+        "docs": "Ensure that a CLI's configuration is valid.",
+        "line": 35
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "validate_command",
+        "modulePath": "Validate",
+        "fullName": "Validate.validate_command",
+        "signature": "|{ name, options, parent_options, parameters, subcommands, subcommand_path }|",
+        "docs": "",
+        "line": 55,
+        "unannotated": true
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "ensure_command_is_well_named",
+        "modulePath": "Validate",
+        "fullName": "Validate.ensure_command_is_well_named",
+        "signature": "NameAtSubcommand -> Try({}, CliValidationErr)",
+        "docs": "",
+        "line": 93
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "ensure_param_is_well_named",
+        "modulePath": "Validate",
+        "fullName": "Validate.ensure_param_is_well_named",
+        "signature": "NameAtSubcommand -> Try({}, CliValidationErr)",
+        "docs": "",
+        "line": 101
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "ensure_option_is_well_named",
+        "modulePath": "Validate",
+        "fullName": "Validate.ensure_option_is_well_named",
+        "signature": "OptionAtSubcommand -> Try({}, CliValidationErr)",
+        "docs": "",
+        "line": 109
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "ensure_option_value_type_is_well_named",
+        "modulePath": "Validate",
+        "fullName": "Validate.ensure_option_value_type_is_well_named",
+        "signature": "OptionAtSubcommand -> Try({}, CliValidationErr)",
+        "docs": "",
+        "line": 121
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "ensure_param_value_type_is_well_named",
+        "modulePath": "Validate",
+        "fullName": "Validate.ensure_param_value_type_is_well_named",
+        "signature": "ParamAtSubcommand -> Try({}, CliValidationErr)",
+        "docs": "",
+        "line": 134
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "ensure_short_flag_is_well_named",
+        "modulePath": "Validate",
+        "fullName": "Validate.ensure_short_flag_is_well_named",
+        "signature": "NameAtSubcommand -> Try({}, CliValidationErr)",
+        "docs": "",
+        "line": 142
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "ensure_long_flag_is_well_named",
+        "modulePath": "Validate",
+        "fullName": "Validate.ensure_long_flag_is_well_named",
+        "signature": "NameAtSubcommand -> Try({}, CliValidationErr)",
+        "docs": "",
+        "line": 150
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "check_if_there_are_overlapping_options",
+        "modulePath": "Validate",
+        "fullName": "Validate.check_if_there_are_overlapping_options",
+        "signature": "List(OptionAtSubcommand) -> Try({}, CliValidationErr)",
+        "docs": "",
+        "line": 158
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "check_if_there_are_overlapping_parameters",
+        "modulePath": "Validate",
+        "fullName": "Validate.check_if_there_are_overlapping_parameters",
+        "signature": "List(ParameterConfig), List(Str) -> Try({}, CliValidationErr)",
+        "docs": "",
+        "line": 162
+       }
+      ]
+     },
+     {
+      "name": "main",
+      "imports": [],
+      "items": []
+     }
+    ]
+   }
+  }
+ }
+}

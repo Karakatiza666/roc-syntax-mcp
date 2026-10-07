@@ -1,0 +1,27 @@
+# Provenance of the bundled kili-ilo/roc-random package. Paths are relative to
+# this directory.
+
+repo     https://github.com/kili-ilo/roc-random
+tag      0.9.2
+commit   6d16260
+tarball  2ZXLX8WRqrosGu1V3VL5aXqgtfTRvJmjFPx8a26ecVmc.tar.zst
+compiler nightly-2026-10-06-c34079d
+
+# This file stays at the release that roc-ray 0.10.0 pins. roc-ray's exposed
+# Random module uses this package's State, Generator and Generation types, so
+# an app that passes them across that platform boundary must pin this exact
+# release. Change the pin only when the platforms that pin this package change
+# theirs. corpus/packages/http/ follows the same rule.
+
+index.json <- the tarball root, parsed by `npm run build:index` from the
+              compiler's package cache. No source is vendored  (Random.roc + main.roc)
+verify/  <- ours: one basic-cli app that calls the package, so
+            scripts/check-platform-examples.sh measures this tag and the
+            nightly above as a pair
+topics/  <- ours: random_generators.roc, compiled by the same gate
+overview.md <- ours: the page search_roc_syntax("roc-random") returns
+
+# No platform that this server bundles pins this package. The server bundles it
+# so that the namespace has a provider when no plugin is installed. roc-ray's
+# header pins it, and an app that pins it next to any platform gets the same
+# provider.

@@ -1,0 +1,2684 @@
+{
+ "format": 1,
+ "releases": {
+  "2B3sC6U2dWkVUK2VY2gJS5Wej9YCDo3ZYq2e7tMWUCNp": {
+   "url": "https://github.com/niclas-ahden/joy/releases/download/0.34.0/2B3sC6U2dWkVUK2VY2gJS5Wej9YCDo3ZYq2e7tMWUCNp.tar.zst",
+   "snapshot": {
+    "kind": "platform",
+    "exposes": [
+     "Effect",
+     "Sub",
+     "Http",
+     "Time",
+     "Keyboard",
+     "Console",
+     "DOM",
+     "Port",
+     "WebCrypto"
+    ],
+    "deps": [
+     {
+      "alias": "html",
+      "url": "https://github.com/niclas-ahden/joy-html/releases/download/0.17.0/AcmwFzyfbsf5RALWNdX6cXw1cuuDXt96YfcysNqgFqoG.tar.zst"
+     }
+    ],
+    "modules": [
+     {
+      "name": "Console",
+      "imports": [],
+      "items": [
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "log",
+        "modulePath": "Console",
+        "fullName": "Console.log",
+        "signature": "Str -> Effect(msg)",
+        "docs": "Log a message: the message reaches the console queue when the\nreturned effects run.",
+        "line": 20
+       }
+      ]
+     },
+     {
+      "name": "DOM",
+      "imports": [],
+      "items": [
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "show_modal",
+        "modulePath": "DOM",
+        "fullName": "DOM.show_modal",
+        "signature": "Str -> Effect(msg)",
+        "docs": "Open the `<dialog>` element matching this CSS selector as a modal\n(the element's `showModal()`): centered, on the top layer, with\neverything behind it inert. Render the dialog and its contents from\nyour model like any other element; only the open/closed state lives\noutside the model, which is why it is driven by an effect rather than\nan attribute. No-op when the selector matches nothing or the element\nis not a dialog. Note the user can dismiss a modal with Escape, so pair\nit with a \"close\" msg that also returns `close_modal` and your model never\ndisagrees with what is on screen for long.",
+        "line": 25
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "close_modal",
+        "modulePath": "DOM",
+        "fullName": "DOM.close_modal",
+        "signature": "Str -> Effect(msg)",
+        "docs": "Close the `<dialog>` element matching this CSS selector (the\nelement's `close()`). No-op when it is not open.",
+        "line": 30
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "navigate",
+        "modulePath": "DOM",
+        "fullName": "DOM.navigate",
+        "signature": "Str -> Effect(msg)",
+        "docs": "A full page load. The app re-initialises, so the model is lost.",
+        "line": 34
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "push_url",
+        "modulePath": "DOM",
+        "fullName": "DOM.push_url",
+        "signature": "Str -> Effect(msg)",
+        "docs": "Change the URL without reloading and add a history entry, so Back\nreturns to the previous URL. Pair with `on_url_change` so the view\nreacts when the user steps back through those entries.",
+        "line": 40
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "replace_url",
+        "modulePath": "DOM",
+        "fullName": "DOM.replace_url",
+        "signature": "Str -> Effect(msg)",
+        "docs": "Rewrite the URL in place: no reload and no history entry. Built for\nthings like keeping \"?q=...\" in sync with a search box, where Back\nshould not step through every keystroke.",
+        "line": 46
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "on_url_change",
+        "modulePath": "DOM",
+        "fullName": "DOM.on_url_change",
+        "signature": "(Str -> msg) -> Sub(msg)",
+        "docs": "Fire a message when the browser's back/forward buttons change the URL\n(the `popstate` event), with the new path (path + query + fragment).\nProgrammatic changes (`push_url`, `replace_url`) do not fire it\nbecause the app already knows about those.",
+        "line": 53
+       }
+      ]
+     },
+     {
+      "name": "Effect",
+      "imports": [],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Effect",
+        "modulePath": "",
+        "fullName": "Effect",
+        "signature": "[\n\t## CSS selector of the `<dialog>` to close (see `DOM.close_modal`)\n\tCloseModal(Str),\n\t## message drained to the browser console (see `Console.log`)\n\tConsoleLog(Str),\n\t## algorithm (a Web Crypto name: \"SHA-1\", \"SHA-256\", \"SHA-384\", \"SHA-512\"),\n\t## bytes to hash, on_hash (called with the hash bytes; empty on failure)\n\tCryptoDigest(Str, List(U8), Box((List(U8) -> Box(msg)))),\n\t## algorithm, file id, start byte, byte count (0 = through end of file),\n\t## on_hash (called with the hash bytes; empty on failure/unknown file)\n\tCryptoDigestFile(Str, U32, U64, U64, Box((List(U8) -> Box(msg)))),\n\t## method, url, headers, body, timeout in ms (0 = no timeout),\n\t## on_response. The raw status doubles as the transport channel: 0 means\n\t## the request never completed and 1 means it timed out (real HTTP\n\t## statuses start at 100). Http decodes that into a Try before the app\n\t## sees it.\n\tHttpSend(Str, Str, List({ name : Str, value : Str }), List(U8), U64, Box(({ status : U16, headers : List({ name : Str, value : Str }), body : List(U8) } -> Box(msg)))),\n\t## method, url, headers, file id, start byte, byte count (0 = through end\n\t## of file), timeout in ms (0 = no timeout), on_response. The file's\n\t## bytes are streamed by the browser and never enter wasm memory.\n\tHttpSendFile(Str, Str, List({ name : Str, value : Str }), U32, U64, U64, U64, Box(({ status : U16, headers : List({ name : Str, value : Str }), body : List(U8) } -> Box(msg)))),\n\t## url for a full page load (see `DOM.navigate`)\n\tNavigate(Str),\n\t## port name, value delivered to the JS handler registered for that name\n\tPortSend(Str, Str),\n\t## url for a history entry without a reload (see `DOM.push_url`)\n\tPushUrl(Str),\n\t## url rewritten in place, no reload, no history entry (see\n\t## `DOM.replace_url`)\n\tReplaceUrl(Str),\n\t## CSS selector of the `<dialog>` to open as a modal (see\n\t## `DOM.show_modal`)\n\tShowModal(Str),\n\t## delay in ms, on_fire (called once with the current time in ms since epoch)\n\tTimeAfter(U32, Box((I64 -> Box(msg)))),\n\t## debounce key whose pending timer is discarded (see `Time.cancel`)\n\tTimeCancel(Str),\n\t## debounce key, delay in ms, on_fire. Issuing the effect re-arms the\n\t## pending timer with the same key, so only the last of a burst fires;\n\t## `Time.cancel` discards a pending key entirely.\n\tTimeDebounce(Str, U32, Box((I64 -> Box(msg)))),\n]",
+        "docs": "An effect: an asynchronous action described as *data*, returned from `init`\nor `update` and executed by the host. The response callback is a real typed\nfunction (`... -> msg`), boxed so the host can store and call it without\nknowing the app's Msg layout.\n\nWhy data instead of effectful platform functions: hosted functions are\nmonomorphic C symbols, so they cannot accept a callback that is generic\nover the app's `msg`. Effects flow through `update`'s return type, where\n`msg` is properly in scope. Msg-free effects (logging, navigation,\nmodals, timer cancellation) are data too: as data they can be matched\non, so a pure test can assert exactly which effects an update produced.\nThe boundary rule: every app entrypoint is pure and the compiler\nenforces it, every observable effect is an `Effect` value returned from\n`init` or `update`, and `init` receives the app's flags string, into\nwhich the embedder puts any boot data the app needs (time, url,\nwhatever). Recurring event sources are subscriptions (see `Sub`).\n\nApps normally use the constructors in `Http`, `Time` and `WebCrypto` rather\nthan these variants directly. Payload fields are positional for a simpler\nhost walk. File ids come from a file input's `Attribute.on_file`; the\nbrowser side holds the actual File object, so its bytes never cross into\nwasm unless you hash or upload them.",
+        "line": 23,
+        "decl": ":=",
+        "head": "Effect(msg)"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "map",
+        "modulePath": "Effect",
+        "fullName": "Effect.map",
+        "signature": "Effect(a), (a -> b) -> Effect(b)",
+        "docs": "Re-target an effect to a parent message type: the response callback's\nmessage is passed through `f` on its way to `update`, so components can\nown their effects too.",
+        "line": 83
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "close_modal",
+        "modulePath": "Effect",
+        "fullName": "Effect.close_modal",
+        "signature": "Str -> Effect(msg)",
+        "docs": "",
+        "line": 171
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "console_log",
+        "modulePath": "Effect",
+        "fullName": "Effect.console_log",
+        "signature": "Str -> Effect(msg)",
+        "docs": "",
+        "line": 174
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "crypto_digest",
+        "modulePath": "Effect",
+        "fullName": "Effect.crypto_digest",
+        "signature": "Str, List(U8), (List(U8) -> msg) -> Effect(msg)",
+        "docs": "",
+        "line": 177
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "crypto_digest_file",
+        "modulePath": "Effect",
+        "fullName": "Effect.crypto_digest_file",
+        "signature": "Str, U32, U64, U64, (List(U8) -> msg) -> Effect(msg)",
+        "docs": "",
+        "line": 181
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "http_send",
+        "modulePath": "Effect",
+        "fullName": "Effect.http_send",
+        "signature": "Str, Str, List({ name : Str, value : Str }), List(U8), U64, ({ status : U16, headers : List({ name : Str, value : Str }), body : List(U8) } -> msg) -> Effect(msg)",
+        "docs": "",
+        "line": 185
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "http_send_file",
+        "modulePath": "Effect",
+        "fullName": "Effect.http_send_file",
+        "signature": "Str, Str, List({ name : Str, value : Str }), U32, U64, U64, U64, ({ status : U16, headers : List({ name : Str, value : Str }), body : List(U8) } -> msg) -> Effect(msg)",
+        "docs": "",
+        "line": 189
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "navigate",
+        "modulePath": "Effect",
+        "fullName": "Effect.navigate",
+        "signature": "Str -> Effect(msg)",
+        "docs": "",
+        "line": 193
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "port_send",
+        "modulePath": "Effect",
+        "fullName": "Effect.port_send",
+        "signature": "Str, Str -> Effect(msg)",
+        "docs": "",
+        "line": 196
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "push_url",
+        "modulePath": "Effect",
+        "fullName": "Effect.push_url",
+        "signature": "Str -> Effect(msg)",
+        "docs": "",
+        "line": 199
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "replace_url",
+        "modulePath": "Effect",
+        "fullName": "Effect.replace_url",
+        "signature": "Str -> Effect(msg)",
+        "docs": "",
+        "line": 202
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "show_modal",
+        "modulePath": "Effect",
+        "fullName": "Effect.show_modal",
+        "signature": "Str -> Effect(msg)",
+        "docs": "",
+        "line": 205
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "time_after",
+        "modulePath": "Effect",
+        "fullName": "Effect.time_after",
+        "signature": "U32, (I64 -> msg) -> Effect(msg)",
+        "docs": "",
+        "line": 208
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "time_cancel",
+        "modulePath": "Effect",
+        "fullName": "Effect.time_cancel",
+        "signature": "Str -> Effect(msg)",
+        "docs": "",
+        "line": 211
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "time_debounce",
+        "modulePath": "Effect",
+        "fullName": "Effect.time_debounce",
+        "signature": "Str, U32, (I64 -> msg) -> Effect(msg)",
+        "docs": "",
+        "line": 214
+       }
+      ]
+     },
+     {
+      "name": "Http",
+      "imports": [],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Method",
+        "modulePath": "",
+        "fullName": "Method",
+        "signature": "[OPTIONS, GET, POST, PUT, DELETE, HEAD, TRACE, CONNECT, PATCH, EXTENSION(Str)]",
+        "docs": "",
+        "line": 15,
+        "decl": ":",
+        "head": "Method"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Header",
+        "modulePath": "Http",
+        "fullName": "Http.Header",
+        "signature": "{ name : Str, value : Str }",
+        "docs": "An HTTP header, e.g. `{ name: \"Content-Type\", value: \"application/json\" }`.",
+        "line": 41,
+        "decl": ":",
+        "head": "Header"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Response",
+        "modulePath": "Http",
+        "fullName": "Http.Response",
+        "signature": "{ status : U16, headers : List(Header), body : List(U8) }",
+        "docs": "An HTTP response. Any status the server sent lands here, 4xx and 5xx\nincluded, while transport failures never produce a `Response` at all.",
+        "line": 45,
+        "decl": ":",
+        "head": "Response"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Request",
+        "modulePath": "Http",
+        "fullName": "Http.Request",
+        "signature": "{\n\t\tmethod : Method,\n\t\turi : Str,\n\t\theaders : List(Header),\n\t\tbody : List(U8),\n\t\ttimeout_ms : [TimeoutMilliseconds(U64), NoTimeout],\n\t}",
+        "docs": "An HTTP request, for `Http.request`.",
+        "line": 48,
+        "decl": ":",
+        "head": "Request"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "default_request",
+        "modulePath": "Http",
+        "fullName": "Http.default_request",
+        "signature": "Request",
+        "docs": "A `GET` request with empty headers/body, no timeout, and an empty URI.\nOverride the fields you need, e.g.\n`{ ..Http.default_request, uri: \"https://example.com\" }`.",
+        "line": 59
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "method_to_str",
+        "modulePath": "Http",
+        "fullName": "Http.method_to_str",
+        "signature": "Method -> Str",
+        "docs": "The request method as it appears on the wire.",
+        "line": 69
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "get",
+        "modulePath": "Http",
+        "fullName": "Http.get",
+        "signature": "Str, (Try(Response, [HttpErr([Timeout, NetworkError])]) -> msg) -> Effect(msg)",
+        "docs": "",
+        "line": 84
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "post",
+        "modulePath": "Http",
+        "fullName": "Http.post",
+        "signature": "Str, List(U8), (Try(Response, [HttpErr([Timeout, NetworkError])]) -> msg) -> Effect(msg)",
+        "docs": "",
+        "line": 88
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "request",
+        "modulePath": "Http",
+        "fullName": "Http.request",
+        "signature": "Request, (Try(Response, [HttpErr([Timeout, NetworkError])]) -> msg) -> Effect(msg)",
+        "docs": "Full control: method, uri, headers, body, timeout.",
+        "line": 93
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "post_file",
+        "modulePath": "Http",
+        "fullName": "Http.post_file",
+        "signature": "Str, U32, List(Header), (Try(Response, [HttpErr([Timeout, NetworkError])]) -> msg) -> Effect(msg)",
+        "docs": "POST a user-picked file as the request body. The file id comes from\n`Attribute.on_file`; the browser streams the File object directly, so\nthe bytes never enter wasm memory (uploads of any size cost no wasm\nheap).",
+        "line": 108
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "put_file",
+        "modulePath": "Http",
+        "fullName": "Http.put_file",
+        "signature": "Str, U32, List(Header), (Try(Response, [HttpErr([Timeout, NetworkError])]) -> msg) -> Effect(msg)",
+        "docs": "PUT a user-picked file as the request body (see `post_file`).",
+        "line": 113
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "request_file",
+        "modulePath": "Http",
+        "fullName": "Http.request_file",
+        "signature": "{ method : Method, uri : Str, headers : List(Header), file : U32, start : U64, len : U64, timeout_ms : [TimeoutMilliseconds(U64), NoTimeout] }, (Try(Response, [HttpErr([Timeout, NetworkError])]) -> msg) -> Effect(msg)",
+        "docs": "Full control over a file-body request, including a byte range and a\ntimeout. `start` and `len` slice the file (`len` 0 means through the\nend), the building block for chunked uploads of large files.",
+        "line": 120
+       }
+      ]
+     },
+     {
+      "name": "Keyboard",
+      "imports": [],
+      "items": [
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "on_down",
+        "modulePath": "Keyboard",
+        "fullName": "Keyboard.on_down",
+        "signature": "(Sub.KeyEvent -> msg) -> Sub(msg)",
+        "docs": "Msg for every keydown.",
+        "line": 23
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "on_down_keys",
+        "modulePath": "Keyboard",
+        "fullName": "Keyboard.on_down_keys",
+        "signature": "List(Str), (Sub.KeyEvent -> msg) -> Sub(msg)",
+        "docs": "Keydown for these keys only.",
+        "line": 27
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "on_down_keys_prevent_default",
+        "modulePath": "Keyboard",
+        "fullName": "Keyboard.on_down_keys_prevent_default",
+        "signature": "List(Str), (Sub.KeyEvent -> msg) -> Sub(msg)",
+        "docs": "Like `on_down_keys`, and preventDefault on the matching events.",
+        "line": 31
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "on_up",
+        "modulePath": "Keyboard",
+        "fullName": "Keyboard.on_up",
+        "signature": "(Sub.KeyEvent -> msg) -> Sub(msg)",
+        "docs": "Msg for every keyup.",
+        "line": 35
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "on_up_keys",
+        "modulePath": "Keyboard",
+        "fullName": "Keyboard.on_up_keys",
+        "signature": "List(Str), (Sub.KeyEvent -> msg) -> Sub(msg)",
+        "docs": "Keyup for these keys only.",
+        "line": 39
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "on_up_keys_prevent_default",
+        "modulePath": "Keyboard",
+        "fullName": "Keyboard.on_up_keys_prevent_default",
+        "signature": "List(Str), (Sub.KeyEvent -> msg) -> Sub(msg)",
+        "docs": "Like `on_up_keys`, and preventDefault on the matching events.",
+        "line": 43
+       }
+      ]
+     },
+     {
+      "name": "Port",
+      "imports": [],
+      "items": [
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "listen",
+        "modulePath": "Port",
+        "fullName": "Port.listen",
+        "signature": "Str, (Str -> msg) -> Sub(msg)",
+        "docs": "",
+        "line": 34
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "send",
+        "modulePath": "Port",
+        "fullName": "Port.send",
+        "signature": "Str, Str -> Effect(msg)",
+        "docs": "",
+        "line": 37
+       }
+      ]
+     },
+     {
+      "name": "Sub",
+      "imports": [],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Sub",
+        "modulePath": "",
+        "fullName": "Sub",
+        "signature": "[\n\t## Fire every `ms` milliseconds with the current time in ms since the\n\t## Unix epoch.\n\tEvery({ ms : U32, on_tick : Box((I64 -> Box(msg))) }),\n\t## Fire on a document-level keyboard event (\"keydown\" or \"keyup\") with\n\t## the `KeyEvent` record (key, physical code, modifiers, repeat). An\n\t## empty `keys` list matches every key; a non-empty one fires (and, when\n\t## `prevent_default` is set, suppresses the browser default) only when\n\t## the event's `key` is listed.\n\tKeyboard({ event : Str, keys : List(Str), prevent_default : Bool, on_key : Box((KeyEvent -> Box(msg))) }),\n\t## Fire whenever JavaScript sends a value to the named port (see the\n\t## `Port` module). Identity is the name, so listening stops when the\n\t## subscription leaves the list, and two listeners on one name both fire.\n\tPortListen({ name : Str, on_value : Box((Str -> Box(msg))) }),\n\t## Fire when the browser's back/forward buttons change the URL (the\n\t## `popstate` event), with the new path (path + query + fragment). See\n\t## `DOM.on_url_change`.\n\tUrlChanged({ on_change : Box((Str -> Box(msg))) }),\n]",
+        "docs": "A subscription: a recurring event source declared as *data*, returned from\n`subscriptions` and managed by the host. While a subscription stays in the\nreturned list it keeps firing; leaving it out of the list stops it, so\ncancellation is by omission and nothing leaks. The callback is a real typed\nfunction, boxed so the host can store and call it without knowing the app's\nMsg layout.\n\nIdentity is the variant plus its parameters (for `Every` the interval, for\n`PortListen` the port name). A model change that alters the parameters\nstops the old source and starts a fresh one; re-declaring the same\nidentity keeps the running source and only swaps in the new callbacks\n(which may capture new model state). Two subscriptions with identical\nparameters share one underlying source (timer, document listener, port\nregistration), and each firing delivers every declared callback's message,\nin declaration order.\n\nApps normally use the constructors in `Time`, `Keyboard`, `Port` and `DOM`\nrather than these variants directly. Payloads are records so the host\nreads named fields.",
+        "line": 20,
+        "decl": ":=",
+        "head": "Sub(msg)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "KeyEvent",
+        "modulePath": "Sub",
+        "fullName": "Sub.KeyEvent",
+        "signature": "{\n\t\tkey : Str,\n\t\tcode : Str,\n\t\tctrl : Bool,\n\t\tshift : Bool,\n\t\talt : Bool,\n\t\tmeta : Bool,\n\t\trepeat : Bool,\n\t\tis_composing : Bool,\n\t}",
+        "docs": "The keyboard event record delivered to key handlers, document-level\n(the `Keyboard` module) and element-level (`Attribute.on_key` and\nfriends) alike; annotate handlers as `Sub.KeyEvent`. `key` is the\nlogical key (\"a\", \"Enter\", \"Escape\", ...): it follows the active\nlayout and modifiers, so Shift makes \"a\" arrive as \"A\". `code` is the\nphysical key (\"KeyA\", \"Space\", \"ControlLeft\", ...): it ignores both,\nwhich is what layout-independent controls (say, WASD movement) want.\n`repeat` is true on the auto-repeated firings of a held key; skip\nthose to react once per press. The four modifier flags say whether\nthat modifier was held when the event fired, so a Ctrl+S shortcut is\n`if e.ctrl and e.key == \"s\"`. `is_composing` is true while an IME\ncomposition session is in progress (the browser reports such keydowns\nas key \"Process\"); skip those to ignore the intermediate keystrokes\ninternational text input is assembled from.",
+        "line": 58,
+        "decl": ":",
+        "head": "KeyEvent"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "map",
+        "modulePath": "Sub",
+        "fullName": "Sub.map",
+        "signature": "Sub(a), (a -> b) -> Sub(b)",
+        "docs": "Re-target a subscription to a parent message type.\nNote the mapped callback is a new box each render, which is fine: sub\nidentity comes from the variant's parameters, never the callback.",
+        "line": 72
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "every",
+        "modulePath": "Sub",
+        "fullName": "Sub.every",
+        "signature": "U32, (I64 -> msg) -> Sub(msg)",
+        "docs": "",
+        "line": 118
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "keyboard",
+        "modulePath": "Sub",
+        "fullName": "Sub.keyboard",
+        "signature": "Str, List(Str), Bool, (KeyEvent -> msg) -> Sub(msg)",
+        "docs": "",
+        "line": 121
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "port_listen",
+        "modulePath": "Sub",
+        "fullName": "Sub.port_listen",
+        "signature": "Str, (Str -> msg) -> Sub(msg)",
+        "docs": "",
+        "line": 125
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "url_changed",
+        "modulePath": "Sub",
+        "fullName": "Sub.url_changed",
+        "signature": "(Str -> msg) -> Sub(msg)",
+        "docs": "",
+        "line": 128
+       }
+      ]
+     },
+     {
+      "name": "Time",
+      "imports": [],
+      "items": [
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "after",
+        "modulePath": "Time",
+        "fullName": "Time.after",
+        "signature": "U32, (I64 -> msg) -> Effect(msg)",
+        "docs": "Produce a msg once, `ms` milliseconds from now.",
+        "line": 21
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "every",
+        "modulePath": "Time",
+        "fullName": "Time.every",
+        "signature": "U32, (I64 -> msg) -> Sub(msg)",
+        "docs": "Produce a msg every `ms` milliseconds, while subscribed.",
+        "line": 25
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "debounce",
+        "modulePath": "Time",
+        "fullName": "Time.debounce",
+        "signature": "Str, U32, (I64 -> msg) -> Effect(msg)",
+        "docs": "Produce a msg once, `ms` milliseconds after the LAST `debounce` with\nthis key: issuing the effect again re-arms the pending timer, so only\nthe final call of a burst fires. The classic use is search-as-you-type,\nwhere every keystroke returns `Time.debounce(\"search\", 300, ...)` and\nthe query runs 300ms after typing pauses. Keys are global to the app,\nso pick one per debounced action, and prefix it with the component name\nwhen writing reusable components, so two instances cannot swallow each\nother's timers.",
+        "line": 36
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "cancel",
+        "modulePath": "Time",
+        "fullName": "Time.cancel",
+        "signature": "Str -> Effect(msg)",
+        "docs": "Discard the pending `debounce` timer with this key, so it never\nfires. No-op when nothing is pending.",
+        "line": 41
+       }
+      ]
+     },
+     {
+      "name": "WebCrypto",
+      "imports": [],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Algorithm",
+        "modulePath": "WebCrypto",
+        "fullName": "WebCrypto.Algorithm",
+        "signature": "[Sha1, Sha256, Sha384, Sha512]",
+        "docs": "Web Crypto's supported digest algorithms. Sha1 is broken for\ncollision resistance; it is here for interop with systems keyed on\nit, not for anything security-sensitive.",
+        "line": 26,
+        "decl": ":",
+        "head": "Algorithm"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "algorithm_name",
+        "modulePath": "WebCrypto",
+        "fullName": "WebCrypto.algorithm_name",
+        "signature": "Algorithm -> Str",
+        "docs": "The Web Crypto name of an algorithm (\"SHA-256\", ...).",
+        "line": 29
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "digest",
+        "modulePath": "WebCrypto",
+        "fullName": "WebCrypto.digest",
+        "signature": "Algorithm, List(U8), (List(U8) -> msg) -> Effect(msg)",
+        "docs": "Hash bytes: `WebCrypto.digest(Sha384, bytes, |hash| GotHash(hash))`.\n(For Sha256, the built-in `Crypto.SHA256.hash` is the better tool.)",
+        "line": 40
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "digest_file",
+        "modulePath": "WebCrypto",
+        "fullName": "WebCrypto.digest_file",
+        "signature": "Algorithm, U32, (List(U8) -> msg) -> Effect(msg)",
+        "docs": "Hash a user-picked file by its `Attribute.FileInfo` id.",
+        "line": 45
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "digest_file_slice",
+        "modulePath": "WebCrypto",
+        "fullName": "WebCrypto.digest_file_slice",
+        "signature": "Algorithm, { file : U32, start : U64, len : U64 }, (List(U8) -> msg) -> Effect(msg)",
+        "docs": "Hash a byte range of a user-picked file (`len` 0 means through the\nend). One call per chunk gives chunked hashing with progress.",
+        "line": 51
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_hex",
+        "modulePath": "WebCrypto",
+        "fullName": "WebCrypto.to_hex",
+        "signature": "List(U8) -> Str",
+        "docs": "The conventional lowercase-hex rendering of a hash.",
+        "line": 56
+       }
+      ]
+     },
+     {
+      "name": "main",
+      "imports": [
+       "html"
+      ],
+      "items": []
+     }
+    ]
+   }
+  },
+  "AcmwFzyfbsf5RALWNdX6cXw1cuuDXt96YfcysNqgFqoG": {
+   "url": "https://github.com/niclas-ahden/joy-html/releases/download/0.17.0/AcmwFzyfbsf5RALWNdX6cXw1cuuDXt96YfcysNqgFqoG.tar.zst",
+   "snapshot": {
+    "kind": "package",
+    "exposes": [
+     "Attribute",
+     "Event",
+     "Html"
+    ],
+    "deps": [],
+    "modules": [
+     {
+      "name": "Attribute",
+      "imports": [],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Attribute",
+        "modulePath": "",
+        "fullName": "Attribute",
+        "signature": "[\n\tBoolean(Str, Bool),\n\tString(Str, Str),\n\t## decoder of the `FileInfo` record, fired when a file input's selection\n\t## changes. See `on_file`.\n\tFileHandler(Box(FileInfo -> Box(msg))),\n\t## event name, key filter (empty matches all), prevent_default,\n\t## stop_propagation, decoder of the `KeyEvent` record. See `on_keydown`.\n\tKeyHandler(Str, List(Str), Bool, Bool, Box(KeyEvent -> Box(msg))),\n\t## event name, prevent_default, stop_propagation, msg\n\tMsgHandler(Str, Bool, Bool, Box(msg)),\n\t## event name, prevent_default, stop_propagation, decoder of the\n\t## `PointerEvent` record. See `on_pointer_down`.\n\tPointerHandler(Str, Bool, Bool, Box(PointerEvent -> Box(msg))),\n\t## event name, DOM property to read off the event target, prevent_default,\n\t## stop_propagation, decoder of the property's stringified value. See\n\t## `on_property`.\n\tPropertyHandler(Str, Str, Bool, Bool, Box(Str -> Box(msg))),\n\t## root_margin, rearm_key, msg. See `on_visible`.\n\tVisibilityHandler(Str, Str, Box(msg)),\n]",
+        "docs": "Attributes for HTML elements.\n\nMost attributes take a string, like `class(\"btn\")` and `href(\"/about\")`.\nBoolean ones take a `Bool` and only appear when true, like\n`disabled(Bool.True)`. Anything without a helper goes through\n`attribute(\"data-foo\", \"bar\")`, and `data`, `aria`, `classes`,\n`class_list` and `style` cover the usual dynamic cases.\n\nEvent handlers are attributes too, carrying a typed message instead of a\nhandler string: `on_click(Saved)` sends `Saved` to your update function,\nand `on_input(|s| Typed(s))` builds the message from the input's current\nvalue. The second one takes a function rather than a bare `Typed`\nbecause Roc tag constructors are not functions. The everyday handlers\nare also re-exported from the shorter `Event` module.\n\nValues are escaped and names are sanitized when rendered, so a dynamic\nstring cannot break out of its attribute.",
+        "line": 19,
+        "decl": ":=",
+        "head": "Attribute(msg)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "PointerEvent",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.PointerEvent",
+        "signature": "{\n\t\tclient_x : F64,\n\t\tclient_y : F64,\n\t\tpage_x : F64,\n\t\tpage_y : F64,\n\t\toffset_x : F64,\n\t\toffset_y : F64,\n\t\tbutton : U8,\n\t\tbuttons : U8,\n\t\tctrl : Bool,\n\t\tshift : Bool,\n\t\talt : Bool,\n\t\tmeta : Bool,\n\t}",
+        "docs": "The record `on_pointer` handlers receive, annotated as\n`Attribute.PointerEvent`. `client_x`/`client_y` are viewport\ncoordinates, `page_x`/`page_y` include scroll and\n`offset_x`/`offset_y` are relative to the element itself. `button` is\nthe button that caused a press (0 left or touch, 1 middle, 2 right),\nwhile `buttons` is the bitmask of buttons held right now, which is\nwhat move handlers want: `e.buttons != 0` means a drag is under way.",
+        "line": 54,
+        "decl": ":",
+        "head": "PointerEvent"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "KeyEvent",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.KeyEvent",
+        "signature": "{\n\t\tkey : Str,\n\t\tcode : Str,\n\t\tctrl : Bool,\n\t\tshift : Bool,\n\t\talt : Bool,\n\t\tmeta : Bool,\n\t\trepeat : Bool,\n\t\tis_composing : Bool,\n\t}",
+        "docs": "The record `on_key` handlers receive, annotated as\n`Attribute.KeyEvent`. `key` is what the keypress produced (\"a\", \"A\")\nor the name of a non-printing key (\"Enter\", \"ArrowLeft\"), so it\nfollows the keyboard layout and Shift. `code` is the physical key\n(\"KeyA\"), the one to match for WASD-style controls. `repeat` is true\nwhile a held key auto-repeats, and `is_composing` is true mid-IME\ncomposition, where the keystroke should usually be ignored.",
+        "line": 76,
+        "decl": ":",
+        "head": "KeyEvent"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "FileInfo",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.FileInfo",
+        "signature": "{\n\t\tid : U32,\n\t\tname : Str,\n\t\tmime : Str,\n\t\tsize : U64,\n\t}",
+        "docs": "The record delivered by `on_file` when the user picks a file. `id` is\nan opaque handle to the browser-held File object. `size` is in bytes\nand `mime` is the browser-reported content type (\"\" when unknown).",
+        "line": 90,
+        "decl": ":",
+        "head": "FileInfo"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "map",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.map",
+        "signature": "Attribute(a), (a -> b) -> Attribute(b)",
+        "docs": "Re-target an attribute to a parent message type by passing every\nmessage its handler produces through `f`. This is the plumbing under\n`Html.map`, apps rarely call it directly.",
+        "line": 100
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_ssr_str",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.to_ssr_str",
+        "signature": "Attribute(msg) -> Str",
+        "docs": "SSR text for one attribute, used by `Html.render`. String attributes\nrender as `name=\"escaped value\"`, boolean ones as the bare name when\ntrue and nothing when false. Handlers and visibility observers are a\nclient-side concern and render as \"\", which the caller drops. So does\nan attribute Joy's client refuses to set (see `ssr_allowed`): the\nserver's page carries exactly what the client would.",
+        "line": 162
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "value_of",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.value_of",
+        "signature": "List(Attribute(msg)) -> Try(Str, [NoValue])",
+        "docs": "The value an attribute list sets: its last `value` string attribute,\nthe one a client applying them in order would end on. `Html.render`\nwrites a textarea's value as its text, because HTML has no value\nattribute for one.",
+        "line": 184
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "without_value",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.without_value",
+        "signature": "List(Attribute(msg)) -> List(Attribute(msg))",
+        "docs": "The attribute list without its `value` string attributes (see\n`value_of`).",
+        "line": 189
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "stop_propagation",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.stop_propagation",
+        "signature": "Attribute(msg) -> Attribute(msg)",
+        "docs": "Stop the event here instead of letting it bubble on to ancestor\nhandlers: `on_click(Ignored).stop_propagation()`. This is what keeps a\nclick inside a modal from reaching the backdrop that closes it.\nIgnored on anything that is not an event handler, and in SSR.",
+        "line": 196
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "prevent_default",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.prevent_default",
+        "signature": "Attribute(msg) -> Attribute(msg)",
+        "docs": "Suppress the browser's default action for this event:\n`on_click(Navigate).prevent_default()` on a link keeps the browser\nfrom following its href. On a key handler with a key filter only the\nlisted keys are suppressed. Ignored on anything that is not an event\nhandler, and in SSR.",
+        "line": 211
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "stops_propagation",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.stops_propagation",
+        "signature": "Attribute(msg) -> Bool",
+        "docs": "Whether this attribute stops the event at its element, the flag the\nclient runtime reads to decide on a stopPropagation call. False for\nanything that is not an event handler. Exposed because the variants\nare private to this module, so this is the only way a renderer or a\nfacade like `Event` can see the flag.",
+        "line": 226
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "prevents_default",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.prevents_default",
+        "signature": "Attribute(msg) -> Bool",
+        "docs": "Whether this attribute suppresses the browser default for its event,\nthe flag the client runtime reads to decide on a preventDefault call.\nExposed for the same reason as `stops_propagation`.",
+        "line": 239
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "sanitize_name",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.sanitize_name",
+        "signature": "Str -> Str",
+        "docs": "Strip every character that is not an ASCII letter, digit, `-`, `_`,\n`.` or `:` from a tag or attribute name. A space or `>` in a name\nbreaks out of the tag however the value is escaped, and no quoting can\nmake it safe there, so it is removed instead. Applied by\n`Html.element`, `attribute`, `data` and `aria` as the string enters\nthe tree, which covers both SSR and client rendering.",
+        "line": 255
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "attribute",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.attribute",
+        "signature": "Str, Str -> Attribute(msg)",
+        "docs": "An arbitrary string attribute, e.g. `attribute(\"data-id\", \"42\")`.\nThe key is sanitized (see `sanitize_name`).",
+        "line": 265
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "boolean",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.boolean",
+        "signature": "Str, Bool -> Attribute(msg)",
+        "docs": "An arbitrary boolean attribute, e.g. `boolean(\"hidden\", Bool.True)`.\nRendered as present/absent (HTML boolean attribute semantics).",
+        "line": 270
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "style",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.style",
+        "signature": "List((Str, Str)) -> Attribute(msg)",
+        "docs": "Inline styles: `style([(\"display\", \"flex\"), (\"padding\", \"20px\")])`.",
+        "line": 274
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "classes",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.classes",
+        "signature": "List(Str) -> Attribute(msg)",
+        "docs": "A class attribute from a list of names, joined with spaces.",
+        "line": 278
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "class_list",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.class_list",
+        "signature": "List((Str, Bool)) -> Attribute(msg)",
+        "docs": "A class attribute from (name, active) pairs, keeping only the active\nnames: `class_list([(\"btn\", Bool.True), (\"hidden\", is_hidden)])`.",
+        "line": 283
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "data",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.data",
+        "signature": "Str, Str -> Attribute(msg)",
+        "docs": "A `data-*` attribute: `data(\"id\", \"42\")` is `data-id=\"42\"`. The name\nis sanitized (see `sanitize_name`).",
+        "line": 288
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "aria",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.aria",
+        "signature": "Str, Str -> Attribute(msg)",
+        "docs": "An `aria-*` attribute: `aria(\"label\", \"Close\")` is `aria-label=\"Close\"`.\nThe name is sanitized (see `sanitize_name`).",
+        "line": 293
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "class",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.class",
+        "signature": "Str -> Attribute(msg)",
+        "docs": "",
+        "line": 296
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "id",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.id",
+        "signature": "Str -> Attribute(msg)",
+        "docs": "",
+        "line": 299
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "value",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.value",
+        "signature": "Str -> Attribute(msg)",
+        "docs": "",
+        "line": 302
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "placeholder",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.placeholder",
+        "signature": "Str -> Attribute(msg)",
+        "docs": "",
+        "line": 305
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "name",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.name",
+        "signature": "Str -> Attribute(msg)",
+        "docs": "",
+        "line": 308
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "href",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.href",
+        "signature": "Str -> Attribute(msg)",
+        "docs": "",
+        "line": 311
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "src",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.src",
+        "signature": "Str -> Attribute(msg)",
+        "docs": "",
+        "line": 314
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "alt",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.alt",
+        "signature": "Str -> Attribute(msg)",
+        "docs": "",
+        "line": 317
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "for_",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.for_",
+        "signature": "Str -> Attribute(msg)",
+        "docs": "The `for` attribute on labels. Named `for_` because `for` is a Roc keyword.",
+        "line": 321
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "type",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.type",
+        "signature": "Str -> Attribute(msg)",
+        "docs": "The `type` attribute, as on `input([type(\"checkbox\")])`.",
+        "line": 325
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "lang",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.lang",
+        "signature": "Str -> Attribute(msg)",
+        "docs": "The document language, as `html([lang(\"en\")])`. Set it on the `html`\nelement: screen readers and hyphenation depend on it.",
+        "line": 330
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "accept",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.accept",
+        "signature": "Str -> Attribute(msg)",
+        "docs": "",
+        "line": 333
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "accept_charset",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.accept_charset",
+        "signature": "Str -> Attribute(msg)",
+        "docs": "Renders as `accept-charset`, the character encodings a form accepts.",
+        "line": 337
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "action",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.action",
+        "signature": "Str -> Attribute(msg)",
+        "docs": "",
+        "line": 340
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "autocapitalize",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.autocapitalize",
+        "signature": "Str -> Attribute(msg)",
+        "docs": "Whether a touch keyboard capitalizes automatically: \"none\",\n\"sentences\", \"words\" or \"characters\".",
+        "line": 345
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "autocomplete",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.autocomplete",
+        "signature": "Str -> Attribute(msg)",
+        "docs": "",
+        "line": 348
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "content",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.content",
+        "signature": "Str -> Attribute(msg)",
+        "docs": "",
+        "line": 351
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "crossorigin",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.crossorigin",
+        "signature": "Str -> Attribute(msg)",
+        "docs": "CORS mode for a fetched subresource: \"anonymous\" or\n\"use-credentials\". Needed on `script` and `img` when you want error\ndetails or canvas access for a cross-origin file.",
+        "line": 357
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "datetime",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.datetime",
+        "signature": "Str -> Attribute(msg)",
+        "docs": "",
+        "line": 360
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "decoding",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.decoding",
+        "signature": "Str -> Attribute(msg)",
+        "docs": "Image decoding hint: \"sync\", \"async\" or \"auto\".",
+        "line": 364
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "download",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.download",
+        "signature": "Str -> Attribute(msg)",
+        "docs": "Turns a link into a download rather than a navigation. The value is\nthe suggested filename, and `download(\"\")` keeps the server's.",
+        "line": 369
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "http_equiv",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.http_equiv",
+        "signature": "Str -> Attribute(msg)",
+        "docs": "Renders as `http-equiv`, for `meta` directives.",
+        "line": 373
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "inputmode",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.inputmode",
+        "signature": "Str -> Attribute(msg)",
+        "docs": "Which touch keyboard to show: \"numeric\", \"decimal\", \"tel\", \"email\",\n\"url\", \"search\" or \"text\". A hint only, it does not validate.",
+        "line": 378
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "itemprop",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.itemprop",
+        "signature": "Str -> Attribute(msg)",
+        "docs": "Microdata property name, paired with `itemscope` and `itemtype`.",
+        "line": 382
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "itemtype",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.itemtype",
+        "signature": "Str -> Attribute(msg)",
+        "docs": "Microdata vocabulary URL, e.g. \"https://schema.org/Person\".",
+        "line": 386
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "loading",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.loading",
+        "signature": "Str -> Attribute(msg)",
+        "docs": "Deferred loading for `img` and `iframe`: \"lazy\" or \"eager\".",
+        "line": 390
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "max",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.max",
+        "signature": "Str -> Attribute(msg)",
+        "docs": "The upper bound of an input's range. A `Str` because the bound follows\nthe input's type: \"10\" for `number`, \"2026-12-31\" for `date`, \"23:59\"\nfor `time`. See also `min`.",
+        "line": 396
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "media",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.media",
+        "signature": "Str -> Attribute(msg)",
+        "docs": "",
+        "line": 399
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "method",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.method",
+        "signature": "Str -> Attribute(msg)",
+        "docs": "",
+        "line": 402
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "min",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.min",
+        "signature": "Str -> Attribute(msg)",
+        "docs": "The lower bound of an input's range. A `Str` for the same reason as\n`max`.",
+        "line": 407
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "pattern",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.pattern",
+        "signature": "Str -> Attribute(msg)",
+        "docs": "",
+        "line": 410
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "property",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.property",
+        "signature": "Str -> Attribute(msg)",
+        "docs": "Open Graph and RDFa property name, as on `meta`. Unrelated to DOM\nproperties, which `on_property` reads.",
+        "line": 415
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "rel",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.rel",
+        "signature": "Str -> Attribute(msg)",
+        "docs": "",
+        "line": 418
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "role",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.role",
+        "signature": "Str -> Attribute(msg)",
+        "docs": "",
+        "line": 421
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "sizes",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.sizes",
+        "signature": "Str -> Attribute(msg)",
+        "docs": "",
+        "line": 424
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "srcset",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.srcset",
+        "signature": "Str -> Attribute(msg)",
+        "docs": "",
+        "line": 427
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "step",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.step",
+        "signature": "Str -> Attribute(msg)",
+        "docs": "The granularity an input's value must fall on. A `Str` because it\ntakes \"any\" as well as numbers, and because the unit follows the\ninput's type as it does for `min` and `max`.",
+        "line": 433
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "target",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.target",
+        "signature": "Str -> Attribute(msg)",
+        "docs": "",
+        "line": 436
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "title",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.title",
+        "signature": "Str -> Attribute(msg)",
+        "docs": "The `title` attribute, which browsers show as a tooltip. For the\npage title use the `Html.title` element instead.",
+        "line": 441
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "cols",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.cols",
+        "signature": "U64 -> Attribute(msg)",
+        "docs": "Visible width of a `textarea`, in characters.",
+        "line": 450
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "rows",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.rows",
+        "signature": "U64 -> Attribute(msg)",
+        "docs": "Visible height of a `textarea`, in lines.",
+        "line": 454
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "colspan",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.colspan",
+        "signature": "U64 -> Attribute(msg)",
+        "docs": "How many columns a table cell spans.",
+        "line": 458
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "rowspan",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.rowspan",
+        "signature": "U64 -> Attribute(msg)",
+        "docs": "How many rows a table cell spans.",
+        "line": 462
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "maxlength",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.maxlength",
+        "signature": "U64 -> Attribute(msg)",
+        "docs": "Longest accepted input, in characters.",
+        "line": 466
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "width",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.width",
+        "signature": "U64 -> Attribute(msg)",
+        "docs": "Intrinsic width in pixels, for `img`, `video` and `canvas`. Setting it\nwith `height` reserves the right space before the image loads. For a\npercentage or any other CSS length use `style` instead.",
+        "line": 472
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "height",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.height",
+        "signature": "U64 -> Attribute(msg)",
+        "docs": "Intrinsic height in pixels. See `width`.",
+        "line": 476
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "tabindex",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.tabindex",
+        "signature": "I32 -> Attribute(msg)",
+        "docs": "Keyboard navigation order. `0` puts the element in document order and\n`-1` makes it focusable by script or click while skipping the tab\norder. Positive values jump the queue and are best avoided.",
+        "line": 482
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "allowfullscreen",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.allowfullscreen",
+        "signature": "Bool -> Attribute(msg)",
+        "docs": "",
+        "line": 489
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "autofocus",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.autofocus",
+        "signature": "Bool -> Attribute(msg)",
+        "docs": "Focus this element when the page loads. At most one per document.",
+        "line": 493
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "autoplay",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.autoplay",
+        "signature": "Bool -> Attribute(msg)",
+        "docs": "",
+        "line": 496
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "checked",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.checked",
+        "signature": "Bool -> Attribute(msg)",
+        "docs": "Whether a checkbox or radio starts checked. Read the live state back\nwith `on_check`.",
+        "line": 501
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "controls",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.controls",
+        "signature": "Bool -> Attribute(msg)",
+        "docs": "Show the browser's built-in play and volume controls on `video`.",
+        "line": 505
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "defer",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.defer",
+        "signature": "Bool -> Attribute(msg)",
+        "docs": "",
+        "line": 508
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "disabled",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.disabled",
+        "signature": "Bool -> Attribute(msg)",
+        "docs": "",
+        "line": 511
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "hidden",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.hidden",
+        "signature": "Bool -> Attribute(msg)",
+        "docs": "Hide the element from rendering and from assistive technology. CSS\n`display` overrides it, so prefer `class_list` when you style it\nanyway.",
+        "line": 517
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "itemscope",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.itemscope",
+        "signature": "Bool -> Attribute(msg)",
+        "docs": "Start a microdata item, scoping the `itemprop`s inside it.",
+        "line": 521
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "multiple",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.multiple",
+        "signature": "Bool -> Attribute(msg)",
+        "docs": "Accept more than one value, on `select` and on `input([type(\"file\")])`.",
+        "line": 525
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "muted",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.muted",
+        "signature": "Bool -> Attribute(msg)",
+        "docs": "",
+        "line": 528
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "novalidate",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.novalidate",
+        "signature": "Bool -> Attribute(msg)",
+        "docs": "Skip the browser's own form validation on submit, leaving it to your\nupdate function.",
+        "line": 533
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "open",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.open",
+        "signature": "Bool -> Attribute(msg)",
+        "docs": "Whether a `details` element starts expanded.",
+        "line": 537
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "readonly",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.readonly",
+        "signature": "Bool -> Attribute(msg)",
+        "docs": "",
+        "line": 540
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "required",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.required",
+        "signature": "Bool -> Attribute(msg)",
+        "docs": "",
+        "line": 543
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "selected",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.selected",
+        "signature": "Bool -> Attribute(msg)",
+        "docs": "Which `option` a `select` starts on. Without it a rendered dropdown\nalways opens on its first entry.",
+        "line": 548
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "on",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.on",
+        "signature": "Str, msg -> Attribute(msg)",
+        "docs": "Send `msg` when the named DOM event fires: `on(\"mousedown\", Grab)`.\nNever rendered in SSR.",
+        "line": 553
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "on_click",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.on_click",
+        "signature": "msg -> Attribute(msg)",
+        "docs": "Send `msg` when the element is clicked, by mouse, touch or by keyboard\nactivation on a focusable element.",
+        "line": 558
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "on_submit",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.on_submit",
+        "signature": "msg -> Attribute(msg)",
+        "docs": "Send `msg` when a form submits, suppressing the browser's default\n(which would reload the page and lose the model). Put it on the\n`form` element and submission by Enter or a submit button both fire.",
+        "line": 564
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "on_property",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.on_property",
+        "signature": "Str, Str, (Str -> msg) -> Attribute(msg)",
+        "docs": "Send the message built from a DOM property of the event target when\nthe named event fires:\n`on_property(\"change\", \"checked\", |s| Toggled(s == \"true\"))`. The\nproperty arrives stringified, so booleans read as \"true\"/\"false\",\nnumbers as decimal text, and anything missing, null or NaN as \"\".",
+        "line": 572
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "on_value",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.on_value",
+        "signature": "Str, (Str -> msg) -> Attribute(msg)",
+        "docs": "Send the message produced from the event target's `value` when the named\nevent fires: `on_value(\"input\", |s| UserTyped(s))`.",
+        "line": 578
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "on_input",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.on_input",
+        "signature": "(Str -> msg) -> Attribute(msg)",
+        "docs": "Send the message built from the control's `value` on every keystroke,\nas `on_input(|s| NameTyped(s))`. For a value read only once the edit\nis committed, use `on_change`.",
+        "line": 584
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "on_change",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.on_change",
+        "signature": "(Str -> msg) -> Attribute(msg)",
+        "docs": "Send the message produced from the control's `value` when it commits a\nchange. Reads `value` for every element type, so one handler on a radio\ngroup receives the selected radio's value. For a checkbox's on/off\nstate use `on_check`.",
+        "line": 591
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "on_check",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.on_check",
+        "signature": "(Bool -> msg) -> Attribute(msg)",
+        "docs": "Send the message produced from a checkbox's checked state when it\nchanges: `on_check(|now| UserToggled(now))`. Don't combine with\n`on_change` on the same element: both bind the change event, and the\nruntime keeps one handler per event, so the last one wins.",
+        "line": 598
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "on_key",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.on_key",
+        "signature": "Str, List(Str), (KeyEvent -> msg) -> Attribute(msg)",
+        "docs": "Send the message built from the `KeyEvent` when a keyboard event fires\non this element: `on_key(\"keydown\", [\"Enter\"], |_| UserSubmitted)`. An\nempty key list matches every key, a non-empty one only the keys listed\n(matched case-sensitively), and `.prevent_default()` then applies to\njust those keys.",
+        "line": 606
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "on_keydown",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.on_keydown",
+        "signature": "(KeyEvent -> msg) -> Attribute(msg)",
+        "docs": "Every key pressed down on this element, browser defaults left intact.\nChaining `.prevent_default()` here suppresses Tab and the browser's\nown shortcuts along with everything else, so prefer a key filter:\n`on_key(\"keydown\", [\"Enter\"], to_msg).prevent_default()`.",
+        "line": 614
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "on_keyup",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.on_keyup",
+        "signature": "(KeyEvent -> msg) -> Attribute(msg)",
+        "docs": "Every key released on this element. Unlike keydown it does not repeat\nwhile a key is held.",
+        "line": 619
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "on_pointer",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.on_pointer",
+        "signature": "Str, (PointerEvent -> msg) -> Attribute(msg)",
+        "docs": "Send the message produced from the `PointerEvent` record (coordinates,\nbuttons, modifiers) when the named pointer event fires on this element.\nPointer events unify mouse, touch and pen input. Chain\n`.prevent_default()` to suppress the browser default (text selection\nwhile dragging, touch scrolling).",
+        "line": 627
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "on_pointer_down",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.on_pointer_down",
+        "signature": "(PointerEvent -> msg) -> Attribute(msg)",
+        "docs": "A mouse button, finger or pen made contact. The start of a drag.",
+        "line": 632
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "on_pointer_move",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.on_pointer_move",
+        "signature": "(PointerEvent -> msg) -> Attribute(msg)",
+        "docs": "The pointer moved over this element. Fires whether or not a button is\nheld, so drag handlers should check `e.buttons != 0` first.",
+        "line": 637
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "on_pointer_up",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.on_pointer_up",
+        "signature": "(PointerEvent -> msg) -> Attribute(msg)",
+        "docs": "Contact ended over this element. A drag can also end outside it, so\npair this with `on_pointer_leave` and `on_pointer_cancel`.",
+        "line": 642
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "on_pointer_leave",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.on_pointer_leave",
+        "signature": "(PointerEvent -> msg) -> Attribute(msg)",
+        "docs": "The pointer left the element (or was lifted, on touch). Dragging code\nshould usually handle this like `on_pointer_up`.",
+        "line": 647
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "on_pointer_enter",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.on_pointer_enter",
+        "signature": "(PointerEvent -> msg) -> Attribute(msg)",
+        "docs": "The pointer entered the element. Unlike a bubbling hover event this\ndoes not fire again as the pointer crosses into a child.",
+        "line": 652
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "on_pointer_cancel",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.on_pointer_cancel",
+        "signature": "(PointerEvent -> msg) -> Attribute(msg)",
+        "docs": "The browser canceled the pointer stream (e.g. it decided a touch was a\nscroll). Treat like `on_pointer_up`.",
+        "line": 657
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "on_file",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.on_file",
+        "signature": "(FileInfo -> msg) -> Attribute(msg)",
+        "docs": "Send the message produced from the `FileInfo` record when the user\npicks a file in this `<input type=\"file\">`:\n`input([type(\"file\"), on_file(|f| UserPickedFile(f))])`.",
+        "line": 663
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "on_visible",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.on_visible",
+        "signature": "msg, { root_margin : Str, rearm_key : Str } -> Attribute(msg)",
+        "docs": "Send `msg` when this element scrolls into view, the usual way to load\nthe next page of an endless list. `root_margin` grows the viewport for\nthe check, so \"200px\" fires 200px before the element really shows.\n\nThe observer fires only on the crossing into view, so an element that\nstays on screen after the re-render never fires again and the loading\nstalls. Give `rearm_key` something that changes when you want another\ncheck (the number of items shown, say) and the observer re-arms with\nit. Keep it constant to fire once per crossing.",
+        "line": 675
+       }
+      ]
+     },
+     {
+      "name": "Event",
+      "imports": [],
+      "items": [
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "on_click",
+        "modulePath": "Event",
+        "fullName": "Event.on_click",
+        "signature": "msg -> Attribute(msg)",
+        "docs": "Send `msg` on click.",
+        "line": 27
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "on_input",
+        "modulePath": "Event",
+        "fullName": "Event.on_input",
+        "signature": "(Str -> msg) -> Attribute(msg)",
+        "docs": "Send the message produced from the input's value on every keystroke.",
+        "line": 31
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "on_change",
+        "modulePath": "Event",
+        "fullName": "Event.on_change",
+        "signature": "(Str -> msg) -> Attribute(msg)",
+        "docs": "Send the message produced from the control's `value` when it commits a\nchange. Reads `value` for every element type, so one handler on a\nradio group receives the selected radio's value. For a checkbox's\non/off state use `on_check`.",
+        "line": 38
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "on_check",
+        "modulePath": "Event",
+        "fullName": "Event.on_check",
+        "signature": "(Bool -> msg) -> Attribute(msg)",
+        "docs": "Send the message produced from a checkbox's checked state when it\nchanges: `on_check(|now| UserToggled(now))`. Don't combine with\n`on_change` on the same element, see `Attribute.on_check`.",
+        "line": 44
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "on_touchstart",
+        "modulePath": "Event",
+        "fullName": "Event.on_touchstart",
+        "signature": "msg -> Attribute(msg)",
+        "docs": "Send `msg` when a touch starts on this element.",
+        "line": 48
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "on_touchend",
+        "modulePath": "Event",
+        "fullName": "Event.on_touchend",
+        "signature": "msg -> Attribute(msg)",
+        "docs": "Send `msg` when a touch ends on this element.",
+        "line": 52
+       }
+      ]
+     },
+     {
+      "name": "Html",
+      "imports": [],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Html",
+        "modulePath": "",
+        "fullName": "Html",
+        "signature": "[\n\tText(Str),\n\tElement(Str, List(Attribute(msg)), List(Html(msg))),\n\tKeyed(Str, Box(Html(msg))),\n\tLazy(Box(({} -> Html(msg)))),\n]",
+        "docs": "",
+        "line": 27,
+        "decl": ":=",
+        "head": "Html(msg)"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "map",
+        "modulePath": "Html",
+        "fullName": "Html.map",
+        "signature": "Html(a), (a -> b) -> Html(b)",
+        "docs": "Use a view that has its own message type. Every message its handlers\nproduce goes through `f` on the way to `update!`, so a component can\nown a Msg union and the parent wraps it:\n`Html.map(counter_view(model.left), |m| LeftCounter(m))`.",
+        "line": 38
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "text",
+        "modulePath": "Html",
+        "fullName": "Html.text",
+        "signature": "Str -> Html(msg)",
+        "docs": "A text node. The string is entity-escaped when rendered, so it shows\nup exactly as written and never as markup.",
+        "line": 53
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "lazy",
+        "modulePath": "Html",
+        "fullName": "Html.lazy",
+        "signature": "(a -> Html(msg)), a -> Html(msg)",
+        "docs": "Skip re-rendering a region whose inputs did not change. Wrap an\nexpensive part of the view and pass the model fields it reads:\n`Html.lazy2(render_cards, model.users, model.category)`. While both\nfields stay the same, the previous subtree is kept and `render_cards`\nnever runs.\n\nPass fields and not the whole model: everything you pass is compared,\nso one unrelated field changing costs you the skip. The view has to be\na named function too, because a lambda written at the call site is a\nnew value every render and never matches. Same for arguments built\nduring the render, like a mapped list or an interpolated string. They\nare safe to pass, they just never skip.\n\n`lazy2` through `lazy8` take more inputs. Past eight, pass a record.",
+        "line": 70
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "lazy2",
+        "modulePath": "Html",
+        "fullName": "Html.lazy2",
+        "signature": "(a, b -> Html(msg)), a, b -> Html(msg)",
+        "docs": "`lazy` for a view of two inputs. See `lazy`.",
+        "line": 74
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "lazy3",
+        "modulePath": "Html",
+        "fullName": "Html.lazy3",
+        "signature": "(a, b, c -> Html(msg)), a, b, c -> Html(msg)",
+        "docs": "`lazy` for a view of three inputs. See `lazy`.",
+        "line": 78
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "lazy4",
+        "modulePath": "Html",
+        "fullName": "Html.lazy4",
+        "signature": "(a, b, c, d -> Html(msg)), a, b, c, d -> Html(msg)",
+        "docs": "`lazy` for a view of four inputs. See `lazy`.",
+        "line": 82
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "lazy5",
+        "modulePath": "Html",
+        "fullName": "Html.lazy5",
+        "signature": "(a, b, c, d, e -> Html(msg)), a, b, c, d, e -> Html(msg)",
+        "docs": "`lazy` for a view of five inputs. See `lazy`.",
+        "line": 86
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "lazy6",
+        "modulePath": "Html",
+        "fullName": "Html.lazy6",
+        "signature": "(a, b, c, d, e, f -> Html(msg)), a, b, c, d, e, f -> Html(msg)",
+        "docs": "`lazy` for a view of six inputs. See `lazy`.",
+        "line": 90
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "lazy7",
+        "modulePath": "Html",
+        "fullName": "Html.lazy7",
+        "signature": "(a, b, c, d, e, f, g -> Html(msg)), a, b, c, d, e, f, g -> Html(msg)",
+        "docs": "`lazy` for a view of seven inputs. See `lazy`.",
+        "line": 94
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "lazy8",
+        "modulePath": "Html",
+        "fullName": "Html.lazy8",
+        "signature": "(a, b, c, d, e, f, g, h -> Html(msg)), a, b, c, d, e, f, g, h -> Html(msg)",
+        "docs": "`lazy` for a view of eight inputs. See `lazy`.",
+        "line": 98
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "keyed",
+        "modulePath": "Html",
+        "fullName": "Html.keyed",
+        "signature": "Str, Html(msg) -> Html(msg)",
+        "docs": "Keep a list item tied to its data when the list changes. Children with\nno key are matched by position, so removing the first row shifts every\nrow below it and whatever the browser holds (typed text, focus, scroll\nposition, a running animation) stays behind at the old position. A key\nmakes those move with the item instead:\n\n```roc\nHtml.ul([], model.rows.map(|row| Html.keyed(row.id, render_row(row))))\n```\n\nKey every child of the list rather than a few, and use something from\nthe data that is unique among siblings and survives a reorder, so not\nthe list index. The key itself is never rendered. Rows that are also\nexpensive to build can skip that too:\n`Html.keyed(row.id, Html.lazy2(render_row, row, is_selected))`.\n\n(Elm and Lustre put the key on the container. Here it goes on the\nchild, so there is no separate keyed container helper.)",
+        "line": 119
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "element",
+        "modulePath": "Html",
+        "fullName": "Html.element",
+        "signature": "Str, List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "Create an element with an arbitrary tag name. The name is sanitized.\nCharacters other than ASCII letters, digits, `-`, `_`, `.` and `:`\nare stripped so a caller-supplied string cannot inject markup.",
+        "line": 125
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "render",
+        "modulePath": "Html",
+        "fullName": "Html.render",
+        "signature": "Html(msg) -> Str",
+        "docs": "Render a tree to an HTML string (server-side rendering). Text and\nattribute values are escaped, event handlers are skipped and void\nelements render as `<tag />`. Inline `script` text is escaped like any\nother text and so cannot run, while `style` text is emitted raw.",
+        "line": 132
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "ssr_document",
+        "modulePath": "Html",
+        "fullName": "Html.ssr_document",
+        "signature": "Html(msg) -> Str",
+        "docs": "A full SSR page: \"<!DOCTYPE html>\" plus the rendered tree.",
+        "line": 136
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "a",
+        "modulePath": "Html",
+        "fullName": "Html.a",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 141
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "article",
+        "modulePath": "Html",
+        "fullName": "Html.article",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 144
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "aside",
+        "modulePath": "Html",
+        "fullName": "Html.aside",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 147
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "blockquote",
+        "modulePath": "Html",
+        "fullName": "Html.blockquote",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 150
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "body",
+        "modulePath": "Html",
+        "fullName": "Html.body",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 153
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "button",
+        "modulePath": "Html",
+        "fullName": "Html.button",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 156
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "caption",
+        "modulePath": "Html",
+        "fullName": "Html.caption",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 159
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "code",
+        "modulePath": "Html",
+        "fullName": "Html.code",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 162
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "dd",
+        "modulePath": "Html",
+        "fullName": "Html.dd",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 165
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "details",
+        "modulePath": "Html",
+        "fullName": "Html.details",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 168
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "dialog",
+        "modulePath": "Html",
+        "fullName": "Html.dialog",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 171
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "div",
+        "modulePath": "Html",
+        "fullName": "Html.div",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 174
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "dl",
+        "modulePath": "Html",
+        "fullName": "Html.dl",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 177
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "dt",
+        "modulePath": "Html",
+        "fullName": "Html.dt",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 180
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "em",
+        "modulePath": "Html",
+        "fullName": "Html.em",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 183
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "fieldset",
+        "modulePath": "Html",
+        "fullName": "Html.fieldset",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 186
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "figure",
+        "modulePath": "Html",
+        "fullName": "Html.figure",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 189
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "footer",
+        "modulePath": "Html",
+        "fullName": "Html.footer",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 192
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "form",
+        "modulePath": "Html",
+        "fullName": "Html.form",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 195
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "h1",
+        "modulePath": "Html",
+        "fullName": "Html.h1",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 198
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "h2",
+        "modulePath": "Html",
+        "fullName": "Html.h2",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 201
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "h3",
+        "modulePath": "Html",
+        "fullName": "Html.h3",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 204
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "h4",
+        "modulePath": "Html",
+        "fullName": "Html.h4",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 207
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "h5",
+        "modulePath": "Html",
+        "fullName": "Html.h5",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 210
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "h6",
+        "modulePath": "Html",
+        "fullName": "Html.h6",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 213
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "head",
+        "modulePath": "Html",
+        "fullName": "Html.head",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 216
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "header",
+        "modulePath": "Html",
+        "fullName": "Html.header",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 219
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "html",
+        "modulePath": "Html",
+        "fullName": "Html.html",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 222
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "iframe",
+        "modulePath": "Html",
+        "fullName": "Html.iframe",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 225
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "label",
+        "modulePath": "Html",
+        "fullName": "Html.label",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 228
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "legend",
+        "modulePath": "Html",
+        "fullName": "Html.legend",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 231
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "li",
+        "modulePath": "Html",
+        "fullName": "Html.li",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 234
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "main",
+        "modulePath": "Html",
+        "fullName": "Html.main",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 237
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "nav",
+        "modulePath": "Html",
+        "fullName": "Html.nav",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 240
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "ol",
+        "modulePath": "Html",
+        "fullName": "Html.ol",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 243
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "option",
+        "modulePath": "Html",
+        "fullName": "Html.option",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "One choice in a `select`. The label is a text child and the submitted\nstring is `Attribute.value`. Mark the current choice with\n`Attribute.selected`, which is what SSR needs to render a preselected\ndropdown.",
+        "line": 250
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "p",
+        "modulePath": "Html",
+        "fullName": "Html.p",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 253
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "pre",
+        "modulePath": "Html",
+        "fullName": "Html.pre",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 256
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "progress",
+        "modulePath": "Html",
+        "fullName": "Html.progress",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 259
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "script",
+        "modulePath": "Html",
+        "fullName": "Html.script",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "Load JavaScript with the `src` attribute. Inline script text is\nescaped like any other text, and browsers do not decode entities\ninside `<script>`, so an inline script never runs.",
+        "line": 265
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "section",
+        "modulePath": "Html",
+        "fullName": "Html.section",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 268
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "select",
+        "modulePath": "Html",
+        "fullName": "Html.select",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "A dropdown of `option` children. Put `Event.on_change` on the select\nitself, not on the options: it reports the chosen option's `value`.",
+        "line": 273
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "small",
+        "modulePath": "Html",
+        "fullName": "Html.small",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 276
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "span",
+        "modulePath": "Html",
+        "fullName": "Html.span",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 279
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "strong",
+        "modulePath": "Html",
+        "fullName": "Html.strong",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 282
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "style",
+        "modulePath": "Html",
+        "fullName": "Html.style",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "Style text is emitted raw, not escaped, so inline CSS works as\nwritten. The one rewrite is `</` to `<\\/` (the CSS escape for `/`), so\nthe text cannot close the element early.",
+        "line": 288
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "summary",
+        "modulePath": "Html",
+        "fullName": "Html.summary",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 291
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "svg",
+        "modulePath": "Html",
+        "fullName": "Html.svg",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "An SVG root. Inner SVG tags have no helpers here, so build them with\n`element(\"path\", ...)`. Camel-cased SVG attribute names survive\nsanitizing, so `Attribute.attribute(\"viewBox\", \"0 0 24 24\")` works.",
+        "line": 297
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "table",
+        "modulePath": "Html",
+        "fullName": "Html.table",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 300
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "tbody",
+        "modulePath": "Html",
+        "fullName": "Html.tbody",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 303
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "td",
+        "modulePath": "Html",
+        "fullName": "Html.td",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 306
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "template",
+        "modulePath": "Html",
+        "fullName": "Html.template",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "Markup the browser parses but does not render or run until a script\nclones it. Its children are ordinary `Html` and are escaped like any\nother, so this is a holding pen, not a raw-markup escape hatch.",
+        "line": 312
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "textarea",
+        "modulePath": "Html",
+        "fullName": "Html.textarea",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "Give a textarea its value with `Attribute.value`, like an input:\n`textarea([value(model.draft), on_input(|s| Typed(s))], [])`. The\nclient then keeps what it shows in step with the model, and `render`\nwrites the value as the textarea's text, which is how HTML carries\none. A text child only sets the initial content, which the browser\nstops following once the user has typed. Whitespace inside the tag is\nsignificant, so do not pad the text for readability.",
+        "line": 322
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "tfoot",
+        "modulePath": "Html",
+        "fullName": "Html.tfoot",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 325
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "th",
+        "modulePath": "Html",
+        "fullName": "Html.th",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 328
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "thead",
+        "modulePath": "Html",
+        "fullName": "Html.thead",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 331
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "time",
+        "modulePath": "Html",
+        "fullName": "Html.time",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 334
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "title",
+        "modulePath": "Html",
+        "fullName": "Html.title",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 337
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "tr",
+        "modulePath": "Html",
+        "fullName": "Html.tr",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 340
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "ul",
+        "modulePath": "Html",
+        "fullName": "Html.ul",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 343
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "use",
+        "modulePath": "Html",
+        "fullName": "Html.use",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "Reference another SVG node by id, the usual way to stamp out a sprite\nfrom a symbol: `use([Attribute.href(\"#icon-close\")], [])`.",
+        "line": 348
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "video",
+        "modulePath": "Html",
+        "fullName": "Html.video",
+        "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 351
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "br",
+        "modulePath": "Html",
+        "fullName": "Html.br",
+        "signature": "List(Attribute(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 357
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "hr",
+        "modulePath": "Html",
+        "fullName": "Html.hr",
+        "signature": "List(Attribute(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 360
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "img",
+        "modulePath": "Html",
+        "fullName": "Html.img",
+        "signature": "List(Attribute(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 363
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "input",
+        "modulePath": "Html",
+        "fullName": "Html.input",
+        "signature": "List(Attribute(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 366
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "link",
+        "modulePath": "Html",
+        "fullName": "Html.link",
+        "signature": "List(Attribute(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 369
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "meta",
+        "modulePath": "Html",
+        "fullName": "Html.meta",
+        "signature": "List(Attribute(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 372
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "source",
+        "modulePath": "Html",
+        "fullName": "Html.source",
+        "signature": "List(Attribute(msg)) -> Html(msg)",
+        "docs": "",
+        "line": 375
+       }
+      ]
+     },
+     {
+      "name": "main",
+      "imports": [],
+      "items": []
+     }
+    ]
+   }
+  }
+ }
+}

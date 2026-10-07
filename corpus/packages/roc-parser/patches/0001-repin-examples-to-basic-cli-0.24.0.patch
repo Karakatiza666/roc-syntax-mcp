@@ -1,0 +1,50 @@
+diff -ruN a/examples/csv-movies.roc b/examples/csv-movies.roc
+--- a/examples/csv-movies.roc	2026-10-08 02:19:49.971189515 +0400
++++ b/examples/csv-movies.roc	2026-10-08 02:19:49.975650918 +0400
+@@ -1,5 +1,5 @@
+ app [main!] {
+-	cli: platform "https://github.com/roc-lang/basic-cli/releases/download/0.23.0/GNN5tt2gKdX4dhawg4915C4YB193woHFdcCkz31fhGxv.tar.zst",
++	cli: platform "https://github.com/roc-lang/basic-cli/releases/download/0.24.0/AEjfyaMFFbh8FJrkkHJy68riVNPr3Qp6c6PawWQjBwMH.tar.zst",
+ 	parser: "https://github.com/lukewilliamboswell/roc-parser/releases/download/2.0.0/7CLzCK6qUz7zmj6nvBxMEFu11HPwQTnCovKiyWzDSLTW.tar.zst",
+ }
+ 
+diff -ruN a/examples/letters.roc b/examples/letters.roc
+--- a/examples/letters.roc	2026-10-08 02:19:49.971247955 +0400
++++ b/examples/letters.roc	2026-10-08 02:19:49.976514282 +0400
+@@ -1,5 +1,5 @@
+ app [main!] {
+-	cli: platform "https://github.com/roc-lang/basic-cli/releases/download/0.23.0/GNN5tt2gKdX4dhawg4915C4YB193woHFdcCkz31fhGxv.tar.zst",
++	cli: platform "https://github.com/roc-lang/basic-cli/releases/download/0.24.0/AEjfyaMFFbh8FJrkkHJy68riVNPr3Qp6c6PawWQjBwMH.tar.zst",
+ 	parser: "https://github.com/lukewilliamboswell/roc-parser/releases/download/2.0.0/7CLzCK6qUz7zmj6nvBxMEFu11HPwQTnCovKiyWzDSLTW.tar.zst",
+ }
+ 
+diff -ruN a/examples/markdown.roc b/examples/markdown.roc
+--- a/examples/markdown.roc	2026-10-08 02:19:49.971272200 +0400
++++ b/examples/markdown.roc	2026-10-08 02:19:49.976625050 +0400
+@@ -1,5 +1,5 @@
+ app [main!] {
+-	cli: platform "https://github.com/roc-lang/basic-cli/releases/download/0.23.0/GNN5tt2gKdX4dhawg4915C4YB193woHFdcCkz31fhGxv.tar.zst",
++	cli: platform "https://github.com/roc-lang/basic-cli/releases/download/0.24.0/AEjfyaMFFbh8FJrkkHJy68riVNPr3Qp6c6PawWQjBwMH.tar.zst",
+ 	parser: "https://github.com/lukewilliamboswell/roc-parser/releases/download/2.0.0/7CLzCK6qUz7zmj6nvBxMEFu11HPwQTnCovKiyWzDSLTW.tar.zst",
+ }
+ 
+diff -ruN a/examples/numbers.roc b/examples/numbers.roc
+--- a/examples/numbers.roc	2026-10-08 02:19:49.971297828 +0400
++++ b/examples/numbers.roc	2026-10-08 02:19:49.976737230 +0400
+@@ -1,5 +1,5 @@
+ app [main!] {
+-	cli: platform "https://github.com/roc-lang/basic-cli/releases/download/0.23.0/GNN5tt2gKdX4dhawg4915C4YB193woHFdcCkz31fhGxv.tar.zst",
++	cli: platform "https://github.com/roc-lang/basic-cli/releases/download/0.24.0/AEjfyaMFFbh8FJrkkHJy68riVNPr3Qp6c6PawWQjBwMH.tar.zst",
+ 	parser: "https://github.com/lukewilliamboswell/roc-parser/releases/download/2.0.0/7CLzCK6qUz7zmj6nvBxMEFu11HPwQTnCovKiyWzDSLTW.tar.zst",
+ }
+ 
+diff -ruN a/examples/xml-svg.roc b/examples/xml-svg.roc
+--- a/examples/xml-svg.roc	2026-10-08 02:19:49.971317736 +0400
++++ b/examples/xml-svg.roc	2026-10-08 02:19:49.976846846 +0400
+@@ -1,5 +1,5 @@
+ app [main!] {
+-	cli: platform "https://github.com/roc-lang/basic-cli/releases/download/0.23.0/GNN5tt2gKdX4dhawg4915C4YB193woHFdcCkz31fhGxv.tar.zst",
++	cli: platform "https://github.com/roc-lang/basic-cli/releases/download/0.24.0/AEjfyaMFFbh8FJrkkHJy68riVNPr3Qp6c6PawWQjBwMH.tar.zst",
+ 	parser: "https://github.com/lukewilliamboswell/roc-parser/releases/download/2.0.0/7CLzCK6qUz7zmj6nvBxMEFu11HPwQTnCovKiyWzDSLTW.tar.zst",
+ }
+ 

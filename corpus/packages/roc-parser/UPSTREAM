@@ -1,0 +1,39 @@
+# Provenance of the bundled lukewilliamboswell/roc-parser package. Paths are
+# relative to this directory.
+
+repo     https://github.com/lukewilliamboswell/roc-parser
+tag      2.0.0
+commit   0c67c54
+tarball  7CLzCK6qUz7zmj6nvBxMEFu11HPwQTnCovKiyWzDSLTW.tar.zst
+compiler nightly-2026-10-06-c34079d
+depends  roc-lang/unicode 4.2.0 (4W8SHzvwet9hH9qZewJ1J1CVQoH7YKA6zyijWFTB3y1w), used by Markdown
+
+index.json <- the tarball root, parsed by `npm run build:index` from the
+              compiler's package cache. No source is vendored
+examples/  <- the release's examples archive, roc-parser-examples-2.0.0.zip,
+              with one change:
+                patch -p1 < patches/0001-repin-examples-*.patch
+              The archive pins basic-cli 0.23.0, which has the same
+              redundant-expose error as Yaml.roc below on this nightly. Only
+              the platform line changed. The programs in the release's
+              docs/examples/ are not bundled: the topics are made from them
+topics/    <- ours: one per module family, compiled by check:platforms. Each
+              ends with links to the manual pages at tag 2.0.0. The manual
+              itself is not bundled
+verify/    <- ours: every snippet on overview.md, in one app
+overview.md <- ours: the page search_roc_syntax("roc-parser") returns
+
+# Yaml.roc:1 at this tag is `import Parser exposing [Parser]`. Nightlies from
+# 2026-10-04 reject that line with a redundant-expose error. The compiler loads
+# only the modules that an app imports, so only an app that imports parser.Yaml
+# fails: parser_yaml, parser_markdown, and basic-cli's scripting topic.
+#
+# The fix is upstream (8d20a47, branch automation/roc-nightly, PR #87), but no
+# release has it. Every file here pins 2.0.0. When those three programs fail as
+# written, scripts/gate-overrides.json lets check:platforms compile them
+# against a copy of 2.0.0 with patches/gate-0001-yaml-redundant-expose.patch
+# applied. The server serves no patched file.
+#
+# When a release has the fix, repin every file that names the tarball above,
+# and point the manual links at the new tag. Then remove the override entry
+# and the gate- patch. src/gate_overrides.test.ts fails until both are gone.

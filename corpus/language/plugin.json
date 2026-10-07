@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "corpora": [
+    {
+      "name": "language",
+      "description": "The language itself: syntax, types, modules, operators, and the upstream language reference.",
+      "purpose": "the language itself, on no platform",
+      "overview": "overview/language.md"
+    },
+    {
+      "name": "builtin",
+      "dir": ".",
+      "origin": "Builtin.roc",
+      "description": "The standard library. Every builtin module, in scope with no import.",
+      "purpose": "the standard library, on no platform",
+      "overview": "overview/builtins.md"
+    }
+  ]
+}

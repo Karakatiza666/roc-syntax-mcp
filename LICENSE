@@ -1,0 +1,102 @@
+Copyright (c) 2026 Heorhii Bulakh and subsequent roc-syntax-mcp authors
+
+This repository is distributed under two licenses. Which one applies is decided
+by the file, not by the package: a single npm tarball carries both.
+
+  SPDX-License-Identifier: MPL-2.0 AND UPL-1.0
+
+REUSE.toml is the machine-readable form of the table below and the authority
+when the two disagree.
+
+
+The server: MPL-2.0
+-------------------
+
+  src/            the MCP server, its parsers, indexes and tests
+  bin/            the launcher and the type stripper
+  scripts/        the gates and the commit signer
+  .github/        the CI checks
+  eval/           the agentic eval fixture
+  docs/design/    how the server is put together
+  docs/plans/     how a scope was scoped
+  docs/evals/     what the eval measured
+  dist/           the build of src/, when one exists
+  tsconfig.json, package.json, package-lock.json
+
+Full text in LICENSES/MPL-2.0.txt.
+
+MPL-2.0 applies file by file. A distributed copy keeps these files, with any
+changes to them, under MPL-2.0 and open source. Files added beside them can
+have any license.
+
+
+The corpus: UPL-1.0
+-------------------
+
+  bugs/                          repros for what is broken in the pinned nightly
+  corpus/language/               Builtin.roc, langref/ and
+                                 examples/all_roc_syntax.roc mirrored from
+                                 roc-lang/roc; langref/local/, overview/ and
+                                 topics/ ours
+  corpus/platforms/              each platform release's examples and
+                                 signature index (index.json), and our
+                                 overviews, topics and scaffolds written
+                                 against them
+  corpus/packages/               each package release's signature index
+                                 (index.json), and our overviews and topics
+  README.md, CLA.md, plugins/README.md, the UPSTREAM files
+
+Full text in LICENSES/UPL-1.0.txt. Upstream copyright lines, releases and
+provenance are in THIRD-PARTY-NOTICES.md.
+
+The corpus is permissive on purpose. An agent reads these files and reproduces
+what it finds into somebody's application, and no snippet an agent hands you
+should arrive carrying an obligation. UPL is also what the Roc ecosystem uses,
+which is what every tree mirrored here was already published under.
+
+
+Commercial use
+--------------
+
+This project aims to help grow the Roc community. Commercial use is permitted.
+Using, modifying and hosting the server carry no obligations. Obligations
+attach only when you distribute copies, and only to the server's own files.
+
+Using the server does not license what you write with it. The corpus is UPL-1.0,
+so a snippet an agent lifts out of a topic file carries nothing into your
+codebase.
+
+  Closed-source, commercial or client work         None
+  Shipping what an agent wrote with its help       None. The output is yours
+  Team-wide installs, CI                           None
+  Modifying it for internal use                    None. Internal use is not
+                                                   distribution
+  Hosting it, modified or not                      None. Hosting is not
+                                                   distribution
+  Paid consulting, training, support or services   None
+  Redistributing it unmodified, in an image or     Keep the copyright notices,
+  an internal mirror                               and pass on LICENSE and
+                                                   LICENSES/
+  Distributing a modified copy                     The same, and make the
+                                                   source of the server files
+                                                   you changed available under
+                                                   MPL-2.0
+  Shipping it inside a larger closed-source        The same. Your own files
+  product                                          stay closed
+  Publishing a plugin under any license,           None. A plugin is a separate
+  including for your own commercial platform       package, not a derivative.
+                                                   What it vendors carries its
+                                                   own license
+
+Not permitted: distributing the server's own files without their source, or
+under terms that remove MPL-2.0 from them, and removing the copyright notices.
+
+
+plugins/
+--------
+
+Each directory under plugins/ is a separate npm package with its own license.
+None is part of this package: the `files` list in package.json does not name
+plugins/. See plugins/roc-ray/LICENSE (UPL-1.0), plugins/joy/LICENSE
+(Apache-2.0), and plugins/weaver/LICENSE, which says which of its files are
+UPL-1.0 and which are upstream's, for which upstream states no license yet.

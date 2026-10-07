@@ -1,0 +1,47 @@
+# SPDX-FileCopyrightText: 2026 Heorhii Bulakh and subsequent roc-syntax-mcp authors
+# SPDX-License-Identifier: MPL-2.0
+
+# Fails a pull request if a commit in it does not have the CLA.md line (the
+# `Contribution-License` trailer) on a line of its own in the commit message.
+#
+# pull_request_target runs this file as it is on main, so a pull request cannot
+# edit the check that it must pass. The job reads commit messages through the
+# API and never checks out pull request code. It holds only a read-only token.
+
+name: Contribution license
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  cla:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Every commit carries the CLA.md line
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          OWNER: ${{ github.repository_owner }}
+          TRAILER: "Contribution-License: UPL-1.0 (CLA.md v1)"
+        run: |
+          # The maintainer's own commits and bot commits need no line.
+          missing="$(gh api --paginate "repos/$REPO/pulls/$PR/commits" --jq '
+            .[]
+            | select(.author.login != env.OWNER and .author.type != "Bot")
+            | select(.commit.message | split("\n") | any(rtrimstr("\r") == env.TRAILER) | not)
+            | "\(.sha[0:12]) \(.commit.author.name): \(.commit.message | split("\n")[0])"')"
+          if [ -n "$missing" ]; then
+            echo "These commits lack the line '$TRAILER':"
+            echo "$missing"
+            echo
+            echo "Read CLA.md, then run scripts/sign-branch.sh and force-push."
+            echo "See CONTRIBUTING.md, section 'Contribution license'."
+            exit 1
+          fi
+          echo "Every commit carries the line."

@@ -1,0 +1,36 @@
+{
+  "name": "@roc-syntax/roc-ray",
+  "version": "0.0.1",
+  "description": "The RocRay platform: a frame loop over raylib, with drawing, input devices, audio, assets, tilemaps, physics, tasks, declared permissions, files, HTTP, UDP, SQLite, commands, and capture.",
+  "author": "Heorhii Bulakh",
+  "license": "UPL-1.0",
+  "files": [
+    "LICENSE",
+    "README.md",
+    "UPSTREAM",
+    "examples",
+    "sample.roc",
+    "index.json",
+    "overview.md",
+    "plugin.json",
+    "scaffold.roc",
+    "topics",
+    "verify"
+  ],
+  "keywords": [
+    "roc",
+    "roc-syntax-mcp",
+    "roc-syntax-mcp-plugin",
+    "roc-ray",
+    "raylib",
+    "gamedev"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Karakatiza666/roc-syntax-mcp.git",
+    "directory": "plugins/roc-ray"
+  }
+}

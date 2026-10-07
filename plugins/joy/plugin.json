@@ -1,0 +1,58 @@
+{
+  "schema": 1,
+  "maintainer": "roc-syntax-mcp, from the niclas-ahden/joy and niclas-ahden/joy-html releases",
+  "compiler": "nightly-2026-10-06-c34079d",
+  "corpora": [
+    {
+      "release": "https://github.com/niclas-ahden/joy/releases/download/0.34.0/2B3sC6U2dWkVUK2VY2gJS5Wej9YCDo3ZYq2e7tMWUCNp.tar.zst",
+      "description": "The Joy platform: browser apps in WebAssembly in the Elm architecture, with effects as data for HTTP, timers, the URL, modals, the console, JavaScript ports and Web Crypto, and subscriptions for keyboard, intervals and ports.",
+      "purpose": "web apps in the browser",
+      "overview": "joy-overview.md",
+      "examples": "examples",
+      "scaffold": "scaffold.roc",
+      "sample": "sample.roc",
+      "checks": ["topics"],
+      "topics": [
+        {
+          "name": "joy_app",
+          "file": "topics/joy_app.roc",
+          "description": "The shape of a Joy app: the four required functions and the Model and Msg types, the flags init receives, effects as data, callbacks as lambdas, a component mapped with Html.map and Effect.map, and a test of what update returns.",
+          "keywords": ["joy", "app", "start", "new project", "getting started", "init", "update", "render", "subscriptions", "flags", "Model", "Msg", "component", "Html.map", "Effect.map", "elm architecture", "dbg", "test update", "expect"]
+        },
+        {
+          "name": "joy_http",
+          "file": "topics/joy_http.roc",
+          "description": "HTTP from a Joy app: Http.get, Http.request from default_request with headers, a JSON body and a timeout, why a 404 is Ok, matching HttpErr, and a test that answers a request as the host does.",
+          "keywords": ["http", "fetch", "request", "get", "post", "json", "headers", "timeout", "status", "404", "HttpErr", "NetworkError", "Timeout", "default_request", "api call"]
+        },
+        {
+          "name": "joy_subscriptions",
+          "file": "topics/joy_subscriptions.roc",
+          "description": "Keyboard, intervals, URL changes and JavaScript ports in Joy: which are subscriptions and which are effects, timer units, Sub.KeyEvent, debouncing, and switching a subscription off.",
+          "keywords": ["subscription", "subscriptions", "Sub", "keyboard", "key", "shortcut", "interval", "timer", "every", "after", "debounce", "url", "routing", "on_url_change", "port", "javascript", "interop", "KeyEvent"]
+        }
+      ]
+    },
+    {
+      "release": "https://github.com/niclas-ahden/joy-html/releases/download/0.17.0/AcmwFzyfbsf5RALWNdX6cXw1cuuDXt96YfcysNqgFqoG.tar.zst",
+      "description": "The joy-html package: an HTML tree typed by its message, with typed attributes and events, keyed and lazy regions, and rendering to a string for the server.",
+      "purpose": "HTML views, for Joy apps and server pages",
+      "overview": "html-overview.md",
+      "checks": ["topics"],
+      "topics": [
+        {
+          "name": "html_views",
+          "file": "topics/html_views.roc",
+          "description": "Writing views with joy-html: element and void-element shapes, style pairs, Bool attributes, for_, events and stop_propagation, forms, keyed lists, lazy regions, and the import lists that collide.",
+          "keywords": ["html", "view", "element", "div", "input", "form", "attribute", "class", "style", "checkbox", "event", "on_click", "on_input", "on_submit", "keyed", "lazy", "list", "stop_propagation"]
+        },
+        {
+          "name": "html_ssr",
+          "file": "topics/html_ssr.roc",
+          "description": "Server rendering with joy-html: a basic-webserver app answering with Html.ssr_document, escaping, dropped handlers, and the Html name basic-webserver also has.",
+          "keywords": ["ssr", "server side rendering", "server render", "render to string", "ssr_document", "basic-webserver", "html page", "template"]
+        }
+      ]
+    }
+  ]
+}

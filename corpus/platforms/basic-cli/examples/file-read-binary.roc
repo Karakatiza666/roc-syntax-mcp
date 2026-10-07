@@ -1,0 +1,38 @@
+## Count binary file bytes in bounded chunks after inspecting its header.
+app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.24.0/AEjfyaMFFbh8FJrkkHJy68riVNPr3Qp6c6PawWQjBwMH.tar.zst" }
+
+import pf.File
+import pf.OsStr
+import pf.Path
+import pf.Stdout
+
+main! : List(OsStr) => Try({}, _)
+main! = |args| {
+	path = match args {
+		[first, ..] => Path.from_os_str(first)
+		[] => return Err(MissingPathArgument)
+	}
+	reader = File.open_reader!(path)?
+	# Preview at most 16 bytes; even a short or empty file is valid.
+	header = reader.read_up_to!(16)?
+	Stdout.line!("Header bytes: ${Str.inspect(header)}")?
+	_ = reader.seek!(Start(0))?
+	var $chunks = reader.chunks(65_536)?
+	var $total = 0.U64
+	while Bool.True {
+		match Stream.next!($chunks) {
+			Done => {
+				break
+			}
+			Skip({ rest }) => {
+				$chunks = rest
+			}
+			One({ item, rest }) => {
+				bytes = item?
+				$total = $total + bytes.len()
+				$chunks = rest
+			}
+		}
+	}
+	Stdout.line!("Read ${$total.to_str()} bytes")
+}

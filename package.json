@@ -1,0 +1,72 @@
+{
+  "name": "roc-syntax-mcp",
+  "version": "0.0.1",
+  "description": "MCP server for Roc Lang: language, builtins, and platforms reference, and function signature search",
+  "type": "module",
+  "main": "dist/server.js",
+  "bin": {
+    "roc-syntax-mcp": "bin/roc-syntax-mcp.js"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "src",
+    "corpus",
+    "scripts/check-platform-examples.sh",
+    "scripts/check-roc-check.mjs",
+    "scripts/tree.mjs",
+    "LICENSES",
+    "THIRD-PARTY-NOTICES.md",
+    "REUSE.toml",
+    "tsconfig.json",
+    "!**/*.test.ts",
+    "!**/*.test.js",
+    "!**/*.test.d.ts",
+    "!src/testdata",
+    "!dist/testdata"
+  ],
+  "scripts": {
+    "build:ts": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\" && tsc",
+    "build:index": "node --import tsx/esm scripts/build-index.ts",
+    "prepublishOnly": "npm run build:ts && node scripts/registry-files.mjs --check",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "plugin": "node --import tsx/esm src/plugin_cli.ts",
+    "test": "node --import tsx/esm --import ./src/testdata/isolate.ts --test src/*.test.ts",
+    "check:roc": "scripts/check-roc.sh",
+    "check:platforms": "scripts/check-platform-examples.sh",
+    "check:detection": "scripts/check-detection.sh",
+    "check:roc-check": "node scripts/check-roc-check.mjs",
+    "check:index": "node --import tsx/esm scripts/build-index.ts --check",
+    "eval:agentic": "node scripts/eval-agentic.mjs",
+    "check": "scripts/check-all.sh"
+  },
+  "keywords": [
+    "roc",
+    "mcp",
+    "syntax",
+    "reference"
+  ],
+  "author": "Heorhii Bulakh",
+  "license": "MPL-2.0 AND UPL-1.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Karakatiza666/roc-syntax-mcp.git"
+  },
+  "homepage": "https://github.com/Karakatiza666/roc-syntax-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/Karakatiza666/roc-syntax-mcp/issues"
+  },
+  "engines": {
+    "node": ">=20.11"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "^2.0.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  }
+}

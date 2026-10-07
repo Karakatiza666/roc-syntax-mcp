@@ -1,0 +1,324 @@
+diff -ruN a/examples/command.todoroc b/examples/command.todoroc
+--- a/examples/command.todoroc	2026-10-05 17:30:31.493960052 +0400
++++ b/examples/command.todoroc	2026-10-05 17:30:31.499034140 +0400
+@@ -4,7 +4,7 @@
+ # Upstream: https://git.sr.ht/~jwoudenberg/roc/tree/main/item/gregorian
+ ## Demonstrates command execution, captured output, environment variables, timeouts, and output limits.
+ app [Context, program] {
+-	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.16.0/42jC1JT3auhHSmv2Ah8mW5F2MXiAakq1UQQ4NQceQjXw.tar.zst",
++	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+ 	gregorian: "https://cdn.jasperwoudenberg.com/roc-gregorian-v1.0.0-rc.3/3R8EMBQy6rYy3vbLY3u4CLcT8qwAPAyxaaGTA18Gknbe.tar.zst",
+ 	roc: "nightly-2026-10-03-c507926",
+diff -ruN a/examples/dir.roc b/examples/dir.roc
+--- a/examples/dir.roc	2026-10-05 17:30:31.493461687 +0400
++++ b/examples/dir.roc	2026-10-05 17:30:31.497793012 +0400
+@@ -1,7 +1,7 @@
+ ## Lists the entries in the examples directory and serves the listing over HTTP.
+ app [Context, program] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+-	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.16.0/42jC1JT3auhHSmv2Ah8mW5F2MXiAakq1UQQ4NQceQjXw.tar.zst",
++	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+ 	roc: "nightly-2026-10-04-130536d",
+ }
+ 
+diff -ruN a/examples/echo.todoroc b/examples/echo.todoroc
+--- a/examples/echo.todoroc	2026-10-05 17:30:31.493981201 +0400
++++ b/examples/echo.todoroc	2026-10-05 17:30:31.499089424 +0400
+@@ -4,7 +4,7 @@
+ # Upstream: https://git.sr.ht/~jwoudenberg/roc/tree/main/item/gregorian
+ ## Echo server: logs the request method and target, then replies with the request body.
+ app [Context, program] {
+-	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.16.0/42jC1JT3auhHSmv2Ah8mW5F2MXiAakq1UQQ4NQceQjXw.tar.zst",
++	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+ 	gregorian: "https://cdn.jasperwoudenberg.com/roc-gregorian-v1.0.0-rc.3/3R8EMBQy6rYy3vbLY3u4CLcT8qwAPAyxaaGTA18Gknbe.tar.zst",
+ 	roc: "nightly-2026-10-03-c507926",
+diff -ruN a/examples/env.roc b/examples/env.roc
+--- a/examples/env.roc	2026-10-05 17:30:31.493518393 +0400
++++ b/examples/env.roc	2026-10-05 17:30:31.498105448 +0400
+@@ -4,7 +4,7 @@
+ ## this example publicly because environment values may contain secrets.
+ app [Context, program] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+-	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.16.0/42jC1JT3auhHSmv2Ah8mW5F2MXiAakq1UQQ4NQceQjXw.tar.zst",
++	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+ 	roc: "nightly-2026-10-04-130536d",
+ }
+ 
+diff -ruN a/examples/error-handling.todoroc b/examples/error-handling.todoroc
+--- a/examples/error-handling.todoroc	2026-10-05 17:30:31.494005156 +0400
++++ b/examples/error-handling.todoroc	2026-10-05 17:30:31.499136332 +0400
+@@ -4,7 +4,7 @@
+ # Upstream: https://git.sr.ht/~jwoudenberg/roc/tree/main/item/gregorian
+ ## Demonstrates typed error handling while fetching content from a configured URL.
+ app [Context, program] {
+-	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.16.0/42jC1JT3auhHSmv2Ah8mW5F2MXiAakq1UQQ4NQceQjXw.tar.zst",
++	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+ 	gregorian: "https://cdn.jasperwoudenberg.com/roc-gregorian-v1.0.0-rc.3/3R8EMBQy6rYy3vbLY3u4CLcT8qwAPAyxaaGTA18Gknbe.tar.zst",
+ 	roc: "nightly-2026-10-03-c507926",
+diff -ruN a/examples/file-accessed-modified-created-time.todoroc b/examples/file-accessed-modified-created-time.todoroc
+--- a/examples/file-accessed-modified-created-time.todoroc	2026-10-05 17:30:31.494027629 +0400
++++ b/examples/file-accessed-modified-created-time.todoroc	2026-10-05 17:30:31.499171899 +0400
+@@ -4,7 +4,7 @@
+ # Upstream: https://git.sr.ht/~jwoudenberg/roc/tree/main/item/gregorian
+ ## Reads and serves the accessed, modified, and created timestamps of `LICENSE`.
+ app [Context, program] {
+-	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.16.0/42jC1JT3auhHSmv2Ah8mW5F2MXiAakq1UQQ4NQceQjXw.tar.zst",
++	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+ 	gregorian: "https://cdn.jasperwoudenberg.com/roc-gregorian-v1.0.0-rc.3/3R8EMBQy6rYy3vbLY3u4CLcT8qwAPAyxaaGTA18Gknbe.tar.zst",
+ 	roc: "nightly-2026-10-03-c507926",
+diff -ruN a/examples/file-permissions.roc b/examples/file-permissions.roc
+--- a/examples/file-permissions.roc	2026-10-05 17:30:31.493551055 +0400
++++ b/examples/file-permissions.roc	2026-10-05 17:30:31.498146545 +0400
+@@ -1,7 +1,7 @@
+ ## Checks and serves whether `LICENSE` is readable, writable, and executable.
+ app [Context, program] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+-	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.16.0/42jC1JT3auhHSmv2Ah8mW5F2MXiAakq1UQQ4NQceQjXw.tar.zst",
++	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+ 	roc: "nightly-2026-10-04-130536d",
+ }
+ 
+diff -ruN a/examples/file-read-buffered.roc b/examples/file-read-buffered.roc
+--- a/examples/file-read-buffered.roc	2026-10-05 17:30:31.493576452 +0400
++++ b/examples/file-read-buffered.roc	2026-10-05 17:30:31.498184566 +0400
+@@ -1,7 +1,7 @@
+ ## Reads `LICENSE` incrementally and serves its line and byte counts.
+ app [Context, program] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+-	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.16.0/42jC1JT3auhHSmv2Ah8mW5F2MXiAakq1UQQ4NQceQjXw.tar.zst",
++	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+ 	roc: "nightly-2026-10-04-130536d",
+ }
+ 
+diff -ruN a/examples/file-read.roc b/examples/file-read.roc
+--- a/examples/file-read.roc	2026-10-05 17:30:31.493601800 +0400
++++ b/examples/file-read.roc	2026-10-05 17:30:31.498215194 +0400
+@@ -1,7 +1,7 @@
+ ## Reads this example's UTF-8 source during initialization and serves it over HTTP.
+ app [Context, program] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+-	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.16.0/42jC1JT3auhHSmv2Ah8mW5F2MXiAakq1UQQ4NQceQjXw.tar.zst",
++	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+ 	roc: "nightly-2026-10-04-130536d",
+ }
+ 
+diff -ruN a/examples/file-upload.roc b/examples/file-upload.roc
+--- a/examples/file-upload.roc	2026-10-05 17:30:31.493627929 +0400
++++ b/examples/file-upload.roc	2026-10-05 17:30:31.498270147 +0400
+@@ -1,7 +1,7 @@
+ ## Authorizes bounded raw PUT uploads into a declared writable root.
+ app [Context, program] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+-	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.16.0/42jC1JT3auhHSmv2Ah8mW5F2MXiAakq1UQQ4NQceQjXw.tar.zst",
++	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+ 	roc: "nightly-2026-10-04-130536d",
+ }
+ 
+diff -ruN a/examples/form-file-upload.roc b/examples/form-file-upload.roc
+--- a/examples/form-file-upload.roc	2026-10-05 17:30:31.493649930 +0400
++++ b/examples/form-file-upload.roc	2026-10-05 17:30:31.498328917 +0400
+@@ -1,7 +1,7 @@
+ ## Parses a bounded multipart form upload and previews an uploaded PNG image.
+ app [Context, program] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+-	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.16.0/42jC1JT3auhHSmv2Ah8mW5F2MXiAakq1UQQ4NQceQjXw.tar.zst",
++	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+ 	roc: "nightly-2026-10-04-130536d",
+ }
+ 
+diff -ruN a/examples/form-url-encoded.roc b/examples/form-url-encoded.roc
+--- a/examples/form-url-encoded.roc	2026-10-05 17:30:31.493670428 +0400
++++ b/examples/form-url-encoded.roc	2026-10-05 17:30:31.498384191 +0400
+@@ -1,7 +1,7 @@
+ ## Serves an HTML form and parses bounded URL-encoded form submissions.
+ app [Context, program] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+-	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.16.0/42jC1JT3auhHSmv2Ah8mW5F2MXiAakq1UQQ4NQceQjXw.tar.zst",
++	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+ 	roc: "nightly-2026-10-04-130536d",
+ }
+ 
+diff -ruN a/examples/health.roc b/examples/health.roc
+--- a/examples/health.roc	2026-10-05 17:30:31.493689494 +0400
++++ b/examples/health.roc	2026-10-05 17:30:31.498425789 +0400
+@@ -4,7 +4,7 @@
+ ## bounded Roc handler pool and queue are occupied.
+ app [Context, program] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+-	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.16.0/42jC1JT3auhHSmv2Ah8mW5F2MXiAakq1UQQ4NQceQjXw.tar.zst",
++	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+ 	roc: "nightly-2026-10-04-130536d",
+ }
+ 
+diff -ruN a/examples/hello-web.todoroc b/examples/hello-web.todoroc
+--- a/examples/hello-web.todoroc	2026-10-05 17:30:31.494054249 +0400
++++ b/examples/hello-web.todoroc	2026-10-05 17:30:31.499205141 +0400
+@@ -4,7 +4,7 @@
+ # Upstream: https://git.sr.ht/~jwoudenberg/roc/tree/main/item/gregorian
+ ## Uses host-owned operational telemetry and responds with a simple HTML greeting.
+ app [Context, program] {
+-	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.16.0/42jC1JT3auhHSmv2Ah8mW5F2MXiAakq1UQQ4NQceQjXw.tar.zst",
++	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+ 	gregorian: "https://cdn.jasperwoudenberg.com/roc-gregorian-v1.0.0-rc.3/3R8EMBQy6rYy3vbLY3u4CLcT8qwAPAyxaaGTA18Gknbe.tar.zst",
+ 	roc: "nightly-2026-10-03-c507926",
+diff -ruN a/examples/http.roc b/examples/http.roc
+--- a/examples/http.roc	2026-10-05 17:30:31.493708991 +0400
++++ b/examples/http.roc	2026-10-05 17:30:31.498470763 +0400
+@@ -2,7 +2,7 @@
+ ## and response-size limits.
+ app [Context, program] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+-	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.16.0/42jC1JT3auhHSmv2Ah8mW5F2MXiAakq1UQQ4NQceQjXw.tar.zst",
++	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+ 	roc: "nightly-2026-10-04-130536d",
+ }
+ 
+diff -ruN a/examples/init-basic.todoroc b/examples/init-basic.todoroc
+--- a/examples/init-basic.todoroc	2026-10-05 17:30:31.494072563 +0400
++++ b/examples/init-basic.todoroc	2026-10-05 17:30:31.499237281 +0400
+@@ -4,7 +4,7 @@
+ # Upstream: https://git.sr.ht/~jwoudenberg/roc/tree/main/item/gregorian
+ ## Initializes shared context once and uses it while logging and responding to requests.
+ app [Context, program] {
+-	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.16.0/42jC1JT3auhHSmv2Ah8mW5F2MXiAakq1UQQ4NQceQjXw.tar.zst",
++	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+ 	gregorian: "https://cdn.jasperwoudenberg.com/roc-gregorian-v1.0.0-rc.3/3R8EMBQy6rYy3vbLY3u4CLcT8qwAPAyxaaGTA18Gknbe.tar.zst",
+ 	roc: "nightly-2026-10-03-c507926",
+diff -ruN a/examples/ndjson-ingest.roc b/examples/ndjson-ingest.roc
+--- a/examples/ndjson-ingest.roc	2026-10-05 17:30:31.493729018 +0400
++++ b/examples/ndjson-ingest.roc	2026-10-05 17:30:31.498520156 +0400
+@@ -2,7 +2,7 @@
+ ## batches without materializing the complete HTTP request body.
+ app [Context, program] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+-	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.16.0/42jC1JT3auhHSmv2Ah8mW5F2MXiAakq1UQQ4NQceQjXw.tar.zst",
++	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+ 	roc: "nightly-2026-10-04-130536d",
+ }
+ 
+diff -ruN a/examples/request-limits.roc b/examples/request-limits.roc
+--- a/examples/request-limits.roc	2026-10-05 17:30:31.493753544 +0400
++++ b/examples/request-limits.roc	2026-10-05 17:30:31.498624251 +0400
+@@ -1,7 +1,7 @@
+ ## Demonstrates strict, protocol-independent request metadata budgets.
+ app [Context, program] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+-	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.16.0/42jC1JT3auhHSmv2Ah8mW5F2MXiAakq1UQQ4NQceQjXw.tar.zst",
++	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+ 	roc: "nightly-2026-10-04-130536d",
+ }
+ 
+diff -ruN a/examples/server-lifecycle.roc b/examples/server-lifecycle.roc
+--- a/examples/server-lifecycle.roc	2026-10-05 17:30:31.493771929 +0400
++++ b/examples/server-lifecycle.roc	2026-10-05 17:30:31.498657674 +0400
+@@ -1,7 +1,7 @@
+ ## Demonstrates initialization, request handling with shared context, and graceful shutdown.
+ app [Context, program] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+-	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.16.0/42jC1JT3auhHSmv2Ah8mW5F2MXiAakq1UQQ4NQceQjXw.tar.zst",
++	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+ 	roc: "nightly-2026-10-04-130536d",
+ }
+ 
+diff -ruN a/examples/sleep.roc b/examples/sleep.roc
+--- a/examples/sleep.roc	2026-10-05 17:30:31.493791305 +0400
++++ b/examples/sleep.roc	2026-10-05 17:30:31.498691217 +0400
+@@ -1,7 +1,7 @@
+ ## Demonstrates bounded concurrent handlers with immediate and delayed responses.
+ app [Context, program] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+-	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.16.0/42jC1JT3auhHSmv2Ah8mW5F2MXiAakq1UQQ4NQceQjXw.tar.zst",
++	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+ 	roc: "nightly-2026-10-04-130536d",
+ }
+ 
+diff -ruN a/examples/sqlite.roc b/examples/sqlite.roc
+--- a/examples/sqlite.roc	2026-10-05 17:30:31.493816673 +0400
++++ b/examples/sqlite.roc	2026-10-05 17:30:31.498733496 +0400
+@@ -1,7 +1,7 @@
+ ## Queries completed todos from SQLite and serves their inspected records.
+ app [Context, program] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+-	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.16.0/42jC1JT3auhHSmv2Ah8mW5F2MXiAakq1UQQ4NQceQjXw.tar.zst",
++	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+ 	roc: "nightly-2026-10-04-130536d",
+ }
+ 
+diff -ruN a/examples/sse.roc b/examples/sse.roc
+--- a/examples/sse.roc	2026-10-05 17:30:31.493845878 +0400
++++ b/examples/sse.roc	2026-10-05 17:30:31.498775495 +0400
+@@ -1,7 +1,7 @@
+ ## Streams typed SSE events from a retained Roc state machine. The host owns
+ ## callback admission, timer scheduling, output framing, and cancellation.
+ app [Context, program] {
+-	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.16.0/42jC1JT3auhHSmv2Ah8mW5F2MXiAakq1UQQ4NQceQjXw.tar.zst",
++	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+ 	roc: "nightly-2026-10-04-130536d",
+ }
+ 
+diff -ruN a/examples/static-files.roc b/examples/static-files.roc
+--- a/examples/static-files.roc	2026-10-05 17:30:31.493865174 +0400
++++ b/examples/static-files.roc	2026-10-05 17:30:31.498814709 +0400
+@@ -1,7 +1,7 @@
+ ## Serves public assets without entering Roc and authorizes one attachment in Roc.
+ app [Context, program] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+-	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.16.0/42jC1JT3auhHSmv2Ah8mW5F2MXiAakq1UQQ4NQceQjXw.tar.zst",
++	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+ 	roc: "nightly-2026-10-04-130536d",
+ }
+ 
+diff -ruN a/examples/tcp.roc b/examples/tcp.roc
+--- a/examples/tcp.roc	2026-10-05 17:30:31.493883879 +0400
++++ b/examples/tcp.roc	2026-10-05 17:30:31.498859663 +0400
+@@ -1,7 +1,7 @@
+ ## Bridges bounded HTTP request bodies to a local TCP echo service.
+ app [Context, program] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+-	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.16.0/42jC1JT3auhHSmv2Ah8mW5F2MXiAakq1UQQ4NQceQjXw.tar.zst",
++	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+ 	roc: "nightly-2026-10-04-130536d",
+ }
+ 
+diff -ruN a/examples/temp-dir.roc b/examples/temp-dir.roc
+--- a/examples/temp-dir.roc	2026-10-05 17:30:31.493901362 +0400
++++ b/examples/temp-dir.roc	2026-10-05 17:30:31.498892284 +0400
+@@ -1,7 +1,7 @@
+ ## Resolves the system temporary directory and serves its path over HTTP.
+ app [Context, program] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+-	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.16.0/42jC1JT3auhHSmv2Ah8mW5F2MXiAakq1UQQ4NQceQjXw.tar.zst",
++	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+ 	roc: "nightly-2026-10-04-130536d",
+ }
+ 
+diff -ruN a/examples/todos.roc b/examples/todos.roc
+--- a/examples/todos.roc	2026-10-05 17:30:31.493920768 +0400
++++ b/examples/todos.roc	2026-10-05 17:30:31.498939643 +0400
+@@ -1,7 +1,7 @@
+ ## Implements a todo web application backed by a SQLite database.
+ app [Context, program] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+-	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.16.0/42jC1JT3auhHSmv2Ah8mW5F2MXiAakq1UQQ4NQceQjXw.tar.zst",
++	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+ 	roc: "nightly-2026-10-04-130536d",
+ }
+ 
+diff -ruN a/examples/try.roc b/examples/try.roc
+--- a/examples/try.roc	2026-10-05 17:30:31.493940986 +0400
++++ b/examples/try.roc	2026-10-05 17:30:31.498988755 +0400
+@@ -1,7 +1,7 @@
+ ## Demonstrates propagating effect failures and handling typed domain errors.
+ app [Context, program] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+-	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.16.0/42jC1JT3auhHSmv2Ah8mW5F2MXiAakq1UQQ4NQceQjXw.tar.zst",
++	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+ 	roc: "nightly-2026-10-04-130536d",
+ }
+ 

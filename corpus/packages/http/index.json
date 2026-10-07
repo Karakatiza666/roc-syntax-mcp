@@ -1,0 +1,347 @@
+{
+ "format": 1,
+ "releases": {
+  "6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS": {
+   "url": "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+   "snapshot": {
+    "kind": "package",
+    "exposes": [
+     "Header",
+     "Method",
+     "Request",
+     "Response"
+    ],
+    "deps": [],
+    "modules": [
+     {
+      "name": "Header",
+      "imports": [],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Header",
+        "modulePath": "",
+        "fullName": "Header",
+        "signature": "{\n\tname : Str,\n\tvalue : Str,\n}",
+        "docs": "",
+        "line": 1,
+        "decl": ":=",
+        "head": "Header"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_str",
+        "modulePath": "Header",
+        "fullName": "Header.to_str",
+        "signature": "Header -> Str",
+        "docs": "Convert a header to the wire-format `Name: value` string.",
+        "line": 7
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "is_eq",
+        "modulePath": "Header",
+        "fullName": "Header.is_eq",
+        "signature": "Header, Header -> Bool",
+        "docs": "Compare two headers by name and value.",
+        "line": 11
+       }
+      ]
+     },
+     {
+      "name": "Method",
+      "imports": [],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Method",
+        "modulePath": "",
+        "fullName": "Method",
+        "signature": "[OPTIONS, GET, POST, PUT, DELETE, HEAD, TRACE, CONNECT, PATCH, QUERY, Unknown(Str)]",
+        "docs": "",
+        "line": 2,
+        "decl": ":=",
+        "head": "Method"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_str",
+        "modulePath": "Method",
+        "fullName": "Method.to_str",
+        "signature": "Method -> Str",
+        "docs": "Convert an HTTP method to its wire-format string.",
+        "line": 5
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "is_eq",
+        "modulePath": "Method",
+        "fullName": "Method.is_eq",
+        "signature": "Method, Method -> Bool",
+        "docs": "Compare two methods without treating `Unknown(\"GET\")` as `GET`.",
+        "line": 22
+       }
+      ]
+     },
+     {
+      "name": "Request",
+      "imports": [],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Request",
+        "modulePath": "",
+        "fullName": "Request",
+        "signature": "{\n\tmethod : Method,\n\theaders : List(Header),\n\turi : Str,\n\tbody : List(U8),\n\ttimeout_ms : [TimeoutMilliseconds(U64), NoTimeout],\n}",
+        "docs": "",
+        "line": 4,
+        "decl": "::",
+        "head": "Request"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "from_method",
+        "modulePath": "Request",
+        "fullName": "Request.from_method",
+        "signature": "Method -> Request",
+        "docs": "Create a `Request` with the given HTTP method and empty/default values for all other fields.",
+        "line": 13
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "method",
+        "modulePath": "Request",
+        "fullName": "Request.method",
+        "signature": "Request -> Method",
+        "docs": "Get the HTTP method of the request.",
+        "line": 24
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "method_str",
+        "modulePath": "Request",
+        "fullName": "Request.method_str",
+        "signature": "Request -> Str",
+        "docs": "Get the HTTP method of the request as a string.",
+        "line": 28
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "headers",
+        "modulePath": "Request",
+        "fullName": "Request.headers",
+        "signature": "Request -> List(Header)",
+        "docs": "Get the list of HTTP headers in the request.",
+        "line": 32
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "body",
+        "modulePath": "Request",
+        "fullName": "Request.body",
+        "signature": "Request -> List(U8)",
+        "docs": "Get the body of the request.",
+        "line": 36
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "uri",
+        "modulePath": "Request",
+        "fullName": "Request.uri",
+        "signature": "Request -> Str",
+        "docs": "Get the URI of the request.",
+        "line": 40
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "timeout",
+        "modulePath": "Request",
+        "fullName": "Request.timeout",
+        "signature": "Request -> [TimeoutMilliseconds(U64), NoTimeout]",
+        "docs": "Get the timeout of the request.",
+        "line": 44
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "with_method",
+        "modulePath": "Request",
+        "fullName": "Request.with_method",
+        "signature": "Request, Method -> Request",
+        "docs": "Set the HTTP method of the request.",
+        "line": 48
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "with_headers",
+        "modulePath": "Request",
+        "fullName": "Request.with_headers",
+        "signature": "Request, List(Header) -> Request",
+        "docs": "Set the request's exact list of [HTTP headers](https://en.wikipedia.org/wiki/List_of_HTTP_header_fields).\n\nThe HTTP spec [allows](https://www.rfc-editor.org/rfc/rfc7230#section-3.2.2) multiple headers to\nhave the same name. However, some recipients may not interpret this the way you would hope\nthey would, so it's generally best to make all the header names unique.",
+        "line": 56
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "add_header",
+        "modulePath": "Request",
+        "fullName": "Request.add_header",
+        "signature": "Request, Str, Str -> Request",
+        "docs": "Add a header to the request's list of [HTTP headers](https://en.wikipedia.org/wiki/List_of_HTTP_header_fields).\n\nThe HTTP spec [allows](https://www.rfc-editor.org/rfc/rfc7230#section-3.2.2) multiple headers to\nhave the same name. However, some recipients may not interpret this the way you would hope\nthey would, so it's generally best to make all the header names unique.",
+        "line": 64
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "with_uri",
+        "modulePath": "Request",
+        "fullName": "Request.with_uri",
+        "signature": "Request, Str -> Request",
+        "docs": "Set the URI of the request.",
+        "line": 68
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "with_body",
+        "modulePath": "Request",
+        "fullName": "Request.with_body",
+        "signature": "Request, List(U8) -> Request",
+        "docs": "Set the body of the request.",
+        "line": 72
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "with_timeout",
+        "modulePath": "Request",
+        "fullName": "Request.with_timeout",
+        "signature": "Request, [TimeoutMilliseconds(U64), NoTimeout] -> Request",
+        "docs": "Set the timeout of the request.",
+        "line": 76
+       }
+      ]
+     },
+     {
+      "name": "Response",
+      "imports": [],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Response",
+        "modulePath": "",
+        "fullName": "Response",
+        "signature": "{\n\tstatus : U16,\n\theaders : List(Header),\n\tbody : List(U8),\n}",
+        "docs": "",
+        "line": 3,
+        "decl": "::",
+        "head": "Response"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "from_status",
+        "modulePath": "Response",
+        "fullName": "Response.from_status",
+        "signature": "U16 -> Response",
+        "docs": "Create a `Response` with the given HTTP status code and empty headers and body.",
+        "line": 10
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "status",
+        "modulePath": "Response",
+        "fullName": "Response.status",
+        "signature": "Response -> U16",
+        "docs": "Get the HTTP status code of the response.",
+        "line": 19
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "headers",
+        "modulePath": "Response",
+        "fullName": "Response.headers",
+        "signature": "Response -> List(Header)",
+        "docs": "Get the list of HTTP headers in the response.",
+        "line": 23
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "body",
+        "modulePath": "Response",
+        "fullName": "Response.body",
+        "signature": "Response -> List(U8)",
+        "docs": "Get the body of the response.",
+        "line": 27
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "with_status",
+        "modulePath": "Response",
+        "fullName": "Response.with_status",
+        "signature": "Response, U16 -> Response",
+        "docs": "Set the HTTP status code of the response.",
+        "line": 31
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "with_headers",
+        "modulePath": "Response",
+        "fullName": "Response.with_headers",
+        "signature": "Response, List(Header) -> Response",
+        "docs": "Set the response's exact list of [HTTP headers](https://en.wikipedia.org/wiki/List_of_HTTP_header_fields).\n\nThe HTTP spec [allows](https://www.rfc-editor.org/rfc/rfc7230#section-3.2.2) multiple headers to\nhave the same name. However, some recipients may not interpret this the way you would hope\nthey would, so it's generally best to make all the header names unique.",
+        "line": 39
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "add_header",
+        "modulePath": "Response",
+        "fullName": "Response.add_header",
+        "signature": "Response, Str, Str -> Response",
+        "docs": "Add a header to the response's list of [HTTP headers](https://en.wikipedia.org/wiki/List_of_HTTP_header_fields).\n\nThe HTTP spec [allows](https://www.rfc-editor.org/rfc/rfc7230#section-3.2.2) multiple headers to\nhave the same name. However, some recipients may not interpret this the way you would hope\nthey would, so it's generally best to make all the header names unique.",
+        "line": 47
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "with_body",
+        "modulePath": "Response",
+        "fullName": "Response.with_body",
+        "signature": "Response, List(U8) -> Response",
+        "docs": "Set the body of the response.",
+        "line": 51
+       }
+      ]
+     },
+     {
+      "name": "main",
+      "imports": [],
+      "items": []
+     }
+    ]
+   }
+  }
+ }
+}

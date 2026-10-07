@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "esModuleInterop": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "resolveJsonModule": true,
+    // Source imports use the `.ts` extension, and the emit rewrites it to
+    // `.js`. So one tree runs in two ways: from `dist/` after a build, or from
+    // `src/` with Node's type stripping when a git install ran no build.
+    // `erasableSyntaxOnly` makes the build fail on syntax that no type stripper
+    // can erase, such as a parameter property or an enum. So the error appears
+    // here, and not in an install that nobody watches.
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
+    "erasableSyntaxOnly": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

@@ -1,0 +1,351 @@
+diff --git a/examples/command.roc b/examples/command.roc
+index 7468d2d..9c0fd5c 100644
+--- a/examples/command.roc
++++ b/examples/command.roc
+@@ -2,7 +2,7 @@
+ app [Context, program] {
+ 	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+-	roc: "nightly-2026-10-03-c507926",
++	roc: "nightly-2026-10-06-c34079d",
+ }
+ 
+ import pf.Server
+diff --git a/examples/dir.roc b/examples/dir.roc
+index 6448362..60b098a 100644
+--- a/examples/dir.roc
++++ b/examples/dir.roc
+@@ -2,7 +2,7 @@
+ app [Context, program] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+ 	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+-	roc: "nightly-2026-10-04-130536d",
++	roc: "nightly-2026-10-06-c34079d",
+ }
+ 
+ import pf.Stdout
+diff --git a/examples/echo.roc b/examples/echo.roc
+index 06241e1..f5e0330 100644
+--- a/examples/echo.roc
++++ b/examples/echo.roc
+@@ -2,7 +2,7 @@
+ app [Context, program] {
+ 	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+-	roc: "nightly-2026-10-03-c507926",
++	roc: "nightly-2026-10-06-c34079d",
+ }
+ 
+ import pf.Server
+diff --git a/examples/env.roc b/examples/env.roc
+index 64e7672..32694bb 100644
+--- a/examples/env.roc
++++ b/examples/env.roc
+@@ -5,7 +5,7 @@
+ app [Context, program] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+ 	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+-	roc: "nightly-2026-10-04-130536d",
++	roc: "nightly-2026-10-06-c34079d",
+ }
+ 
+ import pf.Env
+diff --git a/examples/error-handling.roc b/examples/error-handling.roc
+index 7f85a3f..a1a8446 100644
+--- a/examples/error-handling.roc
++++ b/examples/error-handling.roc
+@@ -2,7 +2,7 @@
+ app [Context, program] {
+ 	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+-	roc: "nightly-2026-10-03-c507926",
++	roc: "nightly-2026-10-06-c34079d",
+ }
+ 
+ import pf.Stdout
+diff --git a/examples/file-accessed-modified-created-time.roc b/examples/file-accessed-modified-created-time.roc
+index db3b190..bbea2f0 100644
+--- a/examples/file-accessed-modified-created-time.roc
++++ b/examples/file-accessed-modified-created-time.roc
+@@ -2,7 +2,7 @@
+ app [Context, program] {
+ 	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+-	roc: "nightly-2026-10-03-c507926",
++	roc: "nightly-2026-10-06-c34079d",
+ }
+ 
+ import pf.Stdout
+diff --git a/examples/file-permissions.roc b/examples/file-permissions.roc
+index 3b46166..4699233 100644
+--- a/examples/file-permissions.roc
++++ b/examples/file-permissions.roc
+@@ -2,7 +2,7 @@
+ app [Context, program] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+ 	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+-	roc: "nightly-2026-10-04-130536d",
++	roc: "nightly-2026-10-06-c34079d",
+ }
+ 
+ import pf.Stdout
+diff --git a/examples/file-read-buffered.roc b/examples/file-read-buffered.roc
+index e3c0d4b..42fa4b2 100644
+--- a/examples/file-read-buffered.roc
++++ b/examples/file-read-buffered.roc
+@@ -2,7 +2,7 @@
+ app [Context, program] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+ 	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+-	roc: "nightly-2026-10-04-130536d",
++	roc: "nightly-2026-10-06-c34079d",
+ }
+ 
+ import pf.File
+diff --git a/examples/file-read.roc b/examples/file-read.roc
+index a373b93..86836c1 100644
+--- a/examples/file-read.roc
++++ b/examples/file-read.roc
+@@ -2,7 +2,7 @@
+ app [Context, program] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+ 	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+-	roc: "nightly-2026-10-04-130536d",
++	roc: "nightly-2026-10-06-c34079d",
+ }
+ 
+ import pf.Path
+diff --git a/examples/file-upload.roc b/examples/file-upload.roc
+index 38b857b..920a0e7 100644
+--- a/examples/file-upload.roc
++++ b/examples/file-upload.roc
+@@ -2,7 +2,7 @@
+ app [Context, program] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+ 	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+-	roc: "nightly-2026-10-04-130536d",
++	roc: "nightly-2026-10-06-c34079d",
+ }
+ 
+ import pf.Path
+diff --git a/examples/form-file-upload.roc b/examples/form-file-upload.roc
+index d3bcde5..3b0e806 100644
+--- a/examples/form-file-upload.roc
++++ b/examples/form-file-upload.roc
+@@ -2,7 +2,7 @@
+ app [Context, program] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+ 	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+-	roc: "nightly-2026-10-04-130536d",
++	roc: "nightly-2026-10-06-c34079d",
+ }
+ 
+ import pf.Server
+diff --git a/examples/form-url-encoded.roc b/examples/form-url-encoded.roc
+index 235fadd..e23769a 100644
+--- a/examples/form-url-encoded.roc
++++ b/examples/form-url-encoded.roc
+@@ -2,7 +2,7 @@
+ app [Context, program] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+ 	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+-	roc: "nightly-2026-10-04-130536d",
++	roc: "nightly-2026-10-06-c34079d",
+ }
+ 
+ import pf.Server
+diff --git a/examples/health.roc b/examples/health.roc
+index 0dd5839..d3b657e 100644
+--- a/examples/health.roc
++++ b/examples/health.roc
+@@ -5,7 +5,7 @@
+ app [Context, program] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+ 	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+-	roc: "nightly-2026-10-04-130536d",
++	roc: "nightly-2026-10-06-c34079d",
+ }
+ 
+ import pf.Env
+diff --git a/examples/hello-web.roc b/examples/hello-web.roc
+index 69f755c..a03f2ad 100644
+--- a/examples/hello-web.roc
++++ b/examples/hello-web.roc
+@@ -2,7 +2,7 @@
+ app [Context, program] {
+ 	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+-	roc: "nightly-2026-10-03-c507926",
++	roc: "nightly-2026-10-06-c34079d",
+ }
+ 
+ import pf.Server
+diff --git a/examples/http.roc b/examples/http.roc
+index 30e845b..581b305 100644
+--- a/examples/http.roc
++++ b/examples/http.roc
+@@ -3,7 +3,7 @@
+ app [Context, program] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+ 	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+-	roc: "nightly-2026-10-04-130536d",
++	roc: "nightly-2026-10-06-c34079d",
+ }
+ 
+ import pf.Stdout
+diff --git a/examples/init-basic.roc b/examples/init-basic.roc
+index 9e1d1a4..eb9fce5 100644
+--- a/examples/init-basic.roc
++++ b/examples/init-basic.roc
+@@ -2,7 +2,7 @@
+ app [Context, program] {
+ 	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+-	roc: "nightly-2026-10-03-c507926",
++	roc: "nightly-2026-10-06-c34079d",
+ }
+ 
+ import pf.Stdout
+diff --git a/examples/ndjson-ingest.roc b/examples/ndjson-ingest.roc
+index 15835e0..59757b8 100644
+--- a/examples/ndjson-ingest.roc
++++ b/examples/ndjson-ingest.roc
+@@ -3,7 +3,7 @@
+ app [Context, program] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+ 	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+-	roc: "nightly-2026-10-04-130536d",
++	roc: "nightly-2026-10-06-c34079d",
+ }
+ 
+ import pf.Env
+diff --git a/examples/request-limits.roc b/examples/request-limits.roc
+index 5e2373f..bde1eba 100644
+--- a/examples/request-limits.roc
++++ b/examples/request-limits.roc
+@@ -2,7 +2,7 @@
+ app [Context, program] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+ 	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+-	roc: "nightly-2026-10-04-130536d",
++	roc: "nightly-2026-10-06-c34079d",
+ }
+ 
+ import pf.Env
+diff --git a/examples/server-lifecycle.roc b/examples/server-lifecycle.roc
+index aec28df..c4ba397 100644
+--- a/examples/server-lifecycle.roc
++++ b/examples/server-lifecycle.roc
+@@ -2,7 +2,7 @@
+ app [Context, program] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+ 	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+-	roc: "nightly-2026-10-04-130536d",
++	roc: "nightly-2026-10-06-c34079d",
+ }
+ 
+ import pf.Server
+diff --git a/examples/sleep.roc b/examples/sleep.roc
+index 8caa0c0..5ed124c 100644
+--- a/examples/sleep.roc
++++ b/examples/sleep.roc
+@@ -2,7 +2,7 @@
+ app [Context, program] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+ 	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+-	roc: "nightly-2026-10-04-130536d",
++	roc: "nightly-2026-10-06-c34079d",
+ }
+ 
+ import pf.Server
+diff --git a/examples/sqlite.roc b/examples/sqlite.roc
+index cf6c676..1c02fee 100644
+--- a/examples/sqlite.roc
++++ b/examples/sqlite.roc
+@@ -2,7 +2,7 @@
+ app [Context, program] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+ 	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+-	roc: "nightly-2026-10-04-130536d",
++	roc: "nightly-2026-10-06-c34079d",
+ }
+ 
+ import pf.Server
+diff --git a/examples/sse.roc b/examples/sse.roc
+index 39e6246..ed744ef 100644
+--- a/examples/sse.roc
++++ b/examples/sse.roc
+@@ -2,7 +2,7 @@
+ ## callback admission, timer scheduling, output framing, and cancellation.
+ app [Context, program] {
+ 	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+-	roc: "nightly-2026-10-04-130536d",
++	roc: "nightly-2026-10-06-c34079d",
+ }
+ 
+ import pf.Server
+diff --git a/examples/static-files.roc b/examples/static-files.roc
+index 6d7a5a4..cc0788f 100644
+--- a/examples/static-files.roc
++++ b/examples/static-files.roc
+@@ -2,7 +2,7 @@
+ app [Context, program] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+ 	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+-	roc: "nightly-2026-10-04-130536d",
++	roc: "nightly-2026-10-06-c34079d",
+ }
+ 
+ import pf.Path
+diff --git a/examples/tcp.roc b/examples/tcp.roc
+index f4e479b..533ac02 100644
+--- a/examples/tcp.roc
++++ b/examples/tcp.roc
+@@ -2,7 +2,7 @@
+ app [Context, program] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+ 	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+-	roc: "nightly-2026-10-04-130536d",
++	roc: "nightly-2026-10-06-c34079d",
+ }
+ 
+ import pf.Server
+diff --git a/examples/temp-dir.roc b/examples/temp-dir.roc
+index 7f7880b..52df862 100644
+--- a/examples/temp-dir.roc
++++ b/examples/temp-dir.roc
+@@ -2,7 +2,7 @@
+ app [Context, program] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+ 	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+-	roc: "nightly-2026-10-04-130536d",
++	roc: "nightly-2026-10-06-c34079d",
+ }
+ 
+ import pf.Server
+diff --git a/examples/todos.roc b/examples/todos.roc
+index bd10016..54d0d88 100644
+--- a/examples/todos.roc
++++ b/examples/todos.roc
+@@ -2,7 +2,7 @@
+ app [Context, program] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+ 	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+-	roc: "nightly-2026-10-04-130536d",
++	roc: "nightly-2026-10-06-c34079d",
+ }
+ 
+ import pf.Env
+diff --git a/examples/try.roc b/examples/try.roc
+index 6398888..de4de40 100644
+--- a/examples/try.roc
++++ b/examples/try.roc
+@@ -2,7 +2,7 @@
+ app [Context, program] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+ 	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+-	roc: "nightly-2026-10-04-130536d",
++	roc: "nightly-2026-10-06-c34079d",
+ }
+ 
+ import pf.Server

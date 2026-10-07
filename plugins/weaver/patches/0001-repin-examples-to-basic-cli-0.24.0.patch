@@ -1,0 +1,172 @@
+diff -ruN a/examples/basic.roc b/examples/basic.roc
+--- a/examples/basic.roc	2026-10-05 18:26:22.879231589 +0400
++++ b/examples/basic.roc	2026-10-05 18:26:22.892721816 +0400
+@@ -1,9 +1,10 @@
+ ## A flag, a number, an optional parameter and a list, in one record builder.
+ app [main!] {
+-	pf: platform "https://github.com/lukewilliamboswell/roc-platform-template-zig/releases/download/1.0.0/AnZoxzoGPtSGQ15EQh6pBeeaHJ7aizP9MQhK81dES3Uq.tar.zst",
++	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.24.0/AEjfyaMFFbh8FJrkkHJy68riVNPr3Qp6c6PawWQjBwMH.tar.zst",
+ 	weaver: "https://github.com/lukewilliamboswell/weaver/releases/download/0.9.0/7j6KBFBEZ8pNMLQHkx9xiwyZ2PmwQPgKNDPUih6gKe77.tar.zst",
+ }
+ 
++import pf.OsStr
+ import pf.Stdout
+ import weaver.Cli
+ import weaver.Opt
+@@ -16,9 +17,9 @@
+ 	files : List(Str),
+ }
+ 
+-main! : List(Str) => Try({}, _)
++main! : List(OsStr) => Try({}, _)
+ main! = |args| {
+-	match Cli.parse_or_display_message(cli_parser, args.drop_first(1), str_to_raw_arg) {
++	match Cli.parse_or_display_message(cli_parser, args, OsStr.to_raw) {
+ 		Err(Help(message)) => {
+ 			Stdout.line!(message)?
+ 			Ok({})
+@@ -78,6 +79,3 @@
+ 			},
+ 		),
+ 	)
+-
+-str_to_raw_arg : Str -> [Utf8(Str), UnixBytes(List(U8)), WindowsU16s(List(U16))]
+-str_to_raw_arg = |arg| UnixBytes(Str.to_utf8(arg))
+diff -ruN a/examples/default_values.roc b/examples/default_values.roc
+--- a/examples/default_values.roc	2026-10-05 18:26:22.879270151 +0400
++++ b/examples/default_values.roc	2026-10-05 18:26:22.892767862 +0400
+@@ -1,9 +1,10 @@
+ ## Defaults three ways: a literal `Value`, a computed `Generate`, and `NoDefault`.
+ app [main!] {
+-	pf: platform "https://github.com/lukewilliamboswell/roc-platform-template-zig/releases/download/1.0.0/AnZoxzoGPtSGQ15EQh6pBeeaHJ7aizP9MQhK81dES3Uq.tar.zst",
++	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.24.0/AEjfyaMFFbh8FJrkkHJy68riVNPr3Qp6c6PawWQjBwMH.tar.zst",
+ 	weaver: "https://github.com/lukewilliamboswell/weaver/releases/download/0.9.0/7j6KBFBEZ8pNMLQHkx9xiwyZ2PmwQPgKNDPUih6gKe77.tar.zst",
+ }
+ 
++import pf.OsStr
+ import pf.Stdout
+ import weaver.Cli
+ import weaver.Opt
+@@ -11,9 +12,9 @@
+ 
+ DefaultValuesConfig : { alpha : U64, beta : Dec, file : Str }
+ 
+-main! : List(Str) => Try({}, _)
++main! : List(OsStr) => Try({}, _)
+ main! = |args| {
+-	match Cli.parse_or_display_message(cli_parser, args.drop_first(1), str_to_raw_arg) {
++	match Cli.parse_or_display_message(cli_parser, args, OsStr.to_raw) {
+ 		Err(Help(message)) => {
+ 			Stdout.line!(message)?
+ 			Ok({})
+@@ -80,6 +81,3 @@
+ 		Ok(path) => path
+ 		Err(NoValue) => "NONE"
+ 	}
+-
+-str_to_raw_arg : Str -> [Utf8(Str), UnixBytes(List(U8)), WindowsU16s(List(U16))]
+-str_to_raw_arg = |arg| UnixBytes(Str.to_utf8(arg))
+diff -ruN a/examples/deploy.roc b/examples/deploy.roc
+--- a/examples/deploy.roc	2026-10-05 18:26:22.879299957 +0400
++++ b/examples/deploy.roc	2026-10-05 18:26:22.892800503 +0400
+@@ -1,9 +1,10 @@
+ ## A deployment CLI whose field record is bound once and finished separately.
+ app [main!] {
+-	pf: platform "https://github.com/lukewilliamboswell/roc-platform-template-zig/releases/download/1.0.0/AnZoxzoGPtSGQ15EQh6pBeeaHJ7aizP9MQhK81dES3Uq.tar.zst",
++	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.24.0/AEjfyaMFFbh8FJrkkHJy68riVNPr3Qp6c6PawWQjBwMH.tar.zst",
+ 	weaver: "https://github.com/lukewilliamboswell/weaver/releases/download/0.9.0/7j6KBFBEZ8pNMLQHkx9xiwyZ2PmwQPgKNDPUih6gKe77.tar.zst",
+ }
+ 
++import pf.OsStr
+ import pf.Stdout
+ import weaver.Cli
+ import weaver.Opt
+@@ -30,9 +31,9 @@
+ 
+ # capture:end
+ 
+-main! : List(Str) => Try({}, _)
++main! : List(OsStr) => Try({}, _)
+ main! = |args|
+-	match Cli.parse_or_display_message(cli_parser, args.drop_first(1), str_to_raw_arg) {
++	match Cli.parse_or_display_message(cli_parser, args, OsStr.to_raw) {
+ 		Err(Help(message)) | Err(Version(message)) => Stdout.line!(message)
+ 		Err(InvalidUsage(message)) => {
+ 			Stdout.line!(message)?
+@@ -97,6 +98,3 @@
+ 	help: "Number of service replicas. [default: 3]",
+ 	default: Value(3),
+ }
+-
+-str_to_raw_arg : Str -> [Utf8(Str), UnixBytes(List(U8)), WindowsU16s(List(U16))]
+-str_to_raw_arg = |arg| UnixBytes(Str.to_utf8(arg))
+diff -ruN a/examples/single_arg.roc b/examples/single_arg.roc
+--- a/examples/single_arg.roc	2026-10-05 18:26:22.879324153 +0400
++++ b/examples/single_arg.roc	2026-10-05 18:26:22.892826773 +0400
+@@ -1,18 +1,19 @@
+ ## One option, so `Cli.map` rather than a record builder.
+ app [main!] {
+-	pf: platform "https://github.com/lukewilliamboswell/roc-platform-template-zig/releases/download/1.0.0/AnZoxzoGPtSGQ15EQh6pBeeaHJ7aizP9MQhK81dES3Uq.tar.zst",
++	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.24.0/AEjfyaMFFbh8FJrkkHJy68riVNPr3Qp6c6PawWQjBwMH.tar.zst",
+ 	weaver: "https://github.com/lukewilliamboswell/weaver/releases/download/0.9.0/7j6KBFBEZ8pNMLQHkx9xiwyZ2PmwQPgKNDPUih6gKe77.tar.zst",
+ }
+ 
++import pf.OsStr
+ import pf.Stdout
+ import weaver.Cli
+ import weaver.Opt
+ 
+ SingleArgConfig : [Alpha(U64)]
+ 
+-main! : List(Str) => Try({}, _)
++main! : List(OsStr) => Try({}, _)
+ main! = |args| {
+-	match Cli.parse_or_display_message(cli_parser, args.drop_first(1), str_to_raw_arg) {
++	match Cli.parse_or_display_message(cli_parser, args, OsStr.to_raw) {
+ 		Err(Help(message)) => {
+ 			Stdout.line!(message)?
+ 			Ok({})
+@@ -60,6 +61,3 @@
+ 			},
+ 		),
+ 	)
+-
+-str_to_raw_arg : Str -> [Utf8(Str), UnixBytes(List(U8)), WindowsU16s(List(U16))]
+-str_to_raw_arg = |arg| UnixBytes(Str.to_utf8(arg))
+diff -ruN a/examples/subcommands.roc b/examples/subcommands.roc
+--- a/examples/subcommands.roc	2026-10-05 18:26:22.879351073 +0400
++++ b/examples/subcommands.roc	2026-10-05 18:26:22.892885603 +0400
+@@ -1,9 +1,10 @@
+ ## Nested subcommands: two levels, each a tag union lifted by its own mapper.
+ app [main!] {
+-	pf: platform "https://github.com/lukewilliamboswell/roc-platform-template-zig/releases/download/1.0.0/AnZoxzoGPtSGQ15EQh6pBeeaHJ7aizP9MQhK81dES3Uq.tar.zst",
++	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.24.0/AEjfyaMFFbh8FJrkkHJy68riVNPr3Qp6c6PawWQjBwMH.tar.zst",
+ 	weaver: "https://github.com/lukewilliamboswell/weaver/releases/download/0.9.0/7j6KBFBEZ8pNMLQHkx9xiwyZ2PmwQPgKNDPUih6gKe77.tar.zst",
+ }
+ 
++import pf.OsStr
+ import pf.Stdout
+ import weaver.Cli
+ import weaver.Opt
+@@ -33,9 +34,9 @@
+ 	files : List(Str),
+ }
+ 
+-main! : List(Str) => Try({}, _)
++main! : List(OsStr) => Try({}, _)
+ main! = |args| {
+-	match Cli.parse_or_display_message(cli_parser, args.drop_first(1), str_to_raw_arg) {
++	match Cli.parse_or_display_message(cli_parser, args, OsStr.to_raw) {
+ 		Err(Help(message)) => {
+ 			Stdout.line!(message)?
+ 			Ok({})
+@@ -114,9 +115,6 @@
+ 		},
+ 	)
+ 
+-str_to_raw_arg : Str -> [Utf8(Str), UnixBytes(List(U8)), WindowsU16s(List(U16))]
+-str_to_raw_arg = |arg| UnixBytes(Str.to_utf8(arg))
+-
+ subcommand_parser2 : SubCmd.SubcommandParserConfig(SubcommandConfig)
+ subcommand_parser2 =
+ 	SubCmd.finish(

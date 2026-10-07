@@ -1,0 +1,38 @@
+{
+  "name": "@roc-syntax/joy",
+  "version": "0.0.1",
+  "description": "The Joy platform for browser apps in WebAssembly, and the joy-html package its views are written in: the Elm architecture, effects as data, subscriptions, typed HTML and server rendering.",
+  "author": "Heorhii Bulakh",
+  "license": "Apache-2.0",
+  "files": [
+    "LICENSE",
+    "README.md",
+    "UPSTREAM",
+    "examples",
+    "sample.roc",
+    "html-overview.md",
+    "index.json",
+    "joy-overview.md",
+    "plugin.json",
+    "scaffold.roc",
+    "topics"
+  ],
+  "keywords": [
+    "roc",
+    "roc-syntax-mcp",
+    "roc-syntax-mcp-plugin",
+    "joy",
+    "joy-html",
+    "wasm",
+    "web",
+    "elm-architecture"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Karakatiza666/roc-syntax-mcp.git",
+    "directory": "plugins/joy"
+  }
+}

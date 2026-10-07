@@ -1,0 +1,16 @@
+No license has been granted for this material.
+
+lukewilliamboswell/weaver ships no LICENSE file at tag 0.9.0, and neither does
+the repository it forks, smores56/weaver. Absent a grant, the default rule
+applies: the copyright holders reserve every right, and nobody else may
+redistribute the source.
+
+plugins/weaver vendors that source in index.json and examples/. It is published
+in the expectation that upstream adopts UPL-1.0, and plugins/weaver/LICENSE
+says which of its files are upstream's and which are UPL-1.0.
+
+If you are one of weaver's authors and would like this resolved, adding a
+LICENSE file upstream is the whole fix. UPL-1.0 is what the rest of the Roc
+ecosystem uses.
+
+See plugins/weaver/UPSTREAM for the pin this text refers to.

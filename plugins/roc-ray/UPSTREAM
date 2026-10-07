@@ -1,0 +1,68 @@
+# Provenance of this corpus.
+#
+# Update this file each time you repin the plugin, so that the next repin can
+# diff tag to tag.
+
+repo     https://github.com/lukewilliamboswell/roc-ray
+tag      0.10.0
+platform 5xecDmRJroKT9fnSiYsGdCKEzNWLnRKGtHJ5CxuCnpb9.tar.zst
+# The release's other bundle, DDs5HiQ8vfCk6zFwWshZ9Dyx3avmQqV9EuNkQn4VGmHi.tar.zst,
+# is the Wayland build of the same platform. Its .roc modules have the same API.
+# Nothing here pins it. There is no types bundle. In 0.10.0 the platform
+# contains the roc-ray-types package of the release candidates, so this plugin
+# has no types/ directory and the manifest has no `packages` entry.
+
+# The nightly every app here was checked under, and the manifest's `compiler`
+# line. It is the release's own "Supported compiler", and the platform bundle's
+# header pins it with a `roc: "nightly-2026-09-27-a3ce7f1"` entry.
+#
+# Because of that pin, this is not the nightly in corpus/language/UPSTREAM. Under
+# nightly-2026-10-04-130536d every app here fails the gate on exactly one
+# diagnostic, a "roc version mismatch" warning pointing at the cached
+# platform's main.roc:66, and the bundle is content-addressed, so nothing in
+# this plugin can drop it. With that one line stripped from a local copy of the
+# bundle (`roc check --replace-dep <bundle url> <copy>/main.roc`), every app
+# here checks clean under 10-04 too. Moving this pin needs a roc-ray release
+# whose bundle pins 10-04 or pins nothing.
+compiler nightly-2026-09-27-a3ce7f1
+
+index.json <- the release bundle's own .roc modules, parsed by
+              `roc-syntax-mcp plugin index`. No source is vendored: the
+              manifest names the bundle URL, and every app pins the same one
+examples/  <- examples-0.10.0.zip, one directory per example, flattened to
+              examples/<name>.roc
+topics/    <- this package's own, not upstream's: programs written against
+              this pin and declared in plugin.json so they answer by name
+overview.md <- this package's own. Its setup, permission and shipping advice
+              is drawn from the release notes and docs/*.adoc at this tag, and
+              every API claim on it is compiled by verify/overview-snippets.roc
+
+# What examples/ leaves out, and why. In a diff, an omitted example looks the
+# same as a missing one, so this list names each omitted example:
+#   breakout    imports sibling modules, and the gate compiles one file at a time
+#   cave_climb  the same
+#   snake       the same
+#   top_down    the same
+#   live_plot   statically imports a font file the compiler reads at check time
+# breakout, snake and top_down were single files at 0.10.0-rc3. 0.10.0 split
+# them into modules.
+
+# What else the release has and this package does not ship:
+#   docs/*.adoc  the RocRay manual. It is AsciiDoc, and this host serves only
+#                Markdown from a `docs` directory, so to bundle it, this
+#                package would have to convert it
+#   roc-ray-manual-0.10.0.*, roc-ray-api-docs-0.10.0.zip  rendered copies of
+#                the same manual and of the API this corpus indexes
+
+# The repin changes every vendored app in one way. It removes the
+# `roc: "nightly-2026-09-27-a3ce7f1"` entry from each header, single-line and
+# multi-line alike. The entry names the same nightly as the manifest, so it is
+# redundant here, and under any other nightly it would add a second mismatch
+# warning per file. The release zip already pins the 0.10.0 bundle URL, so
+# nothing else in any example changes.
+
+# Parsed counts at this pin, for the next repin to diff against. These are what
+# `plugin validate` reports on its `corpus` line:
+# 1260 items in 99 modules: 301 host, 37 private, 922 public.
+# At 0.10.0-rc3, with the types package: 1357 items in 112 modules: 276 host,
+# 36 private, 1045 public.

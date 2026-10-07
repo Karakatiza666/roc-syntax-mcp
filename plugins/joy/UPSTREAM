@@ -1,0 +1,48 @@
+# Provenance of this corpus.
+#
+# Update this file each time you repin the plugin, so that the next repin can
+# diff tag to tag.
+
+repo     https://github.com/niclas-ahden/joy
+tag      0.34.0
+commit   931256f145fc624d5897a9db6de9e12566b6a842
+platform 2B3sC6U2dWkVUK2VY2gJS5Wej9YCDo3ZYq2e7tMWUCNp.tar.zst
+# The corpus was written against 528f884. The release tag points at 931256f,
+# one commit later, which changes only flake.lock, so no file here differs.
+#
+# The previous release, 0.33.0 with joy-html 0.16.0, does not build under the
+# nightly below: both bundles fail on "redundant expose".
+
+repo     https://github.com/niclas-ahden/joy-html
+tag      0.17.0
+commit   e2c39ecdeb89072c73a0ddd3e85c482f7696f6f3
+package  AcmwFzyfbsf5RALWNdX6cXw1cuuDXt96YfcysNqgFqoG.tar.zst
+# The release that the joy 0.34.0 platform header pins. The loader refuses this
+# plugin if the two pins are different, because an app's `render` returns this
+# package's Html type, and a different release has a different Html type.
+
+compiler nightly-2026-10-06-c34079d
+
+index.json <- both releases' own .roc modules, parsed by
+              `roc-syntax-mcp plugin index`. No source is vendored
+examples/  <- joy's examples/ at the commit above, one file per app
+topics/    <- this package's own: programs written against these pins, for
+              the platform and for the package
+joy-overview.md, html-overview.md <- this package's own. Every Roc block on
+              them is line for line in a topic, so the gate compiles it
+
+# What examples/ leaves out, and why:
+#   todomvc   only its app.roc, as examples/todomvc.roc. The rest of the
+#             directory is a build script, a watcher, browser tests and a
+#             Caddyfile, which joy-overview.md points at in the
+#             niclas-ahden/joy-todomvc repository
+# joy-html has no examples directory.
+
+# What else the releases have and this package does not ship:
+#   docs/index.html  in both repos, a redirect to the hosted docs
+#   host/, www/, benchmarks/, tests/  the platform's own build and tests
+
+# The repin changes one line in every vendored example: the platform pin
+# "../platform/main.roc" ("../../platform/main.roc" for todomvc/app.roc) becomes
+# the release URL above. Nothing else changes, because
+# the examples already pin joy-html 0.17.0 by URL.

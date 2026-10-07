@@ -1,0 +1,4129 @@
+{
+ "format": 1,
+ "releases": {
+  "AEjfyaMFFbh8FJrkkHJy68riVNPr3Qp6c6PawWQjBwMH": {
+   "url": "https://github.com/roc-lang/basic-cli/releases/download/0.24.0/AEjfyaMFFbh8FJrkkHJy68riVNPr3Qp6c6PawWQjBwMH.tar.zst",
+   "snapshot": {
+    "kind": "platform",
+    "exposes": [
+     "Cmd",
+     "Env",
+     "File",
+     "Http",
+     "IOErr",
+     "Locale",
+     "Monotonic",
+     "OsStr",
+     "Path",
+     "Random",
+     "Sleep",
+     "Sqlite",
+     "Stderr",
+     "Stdin",
+     "Stdout",
+     "Tcp",
+     "Tty",
+     "Url",
+     "Utc"
+    ],
+    "deps": [
+     {
+      "alias": "http",
+      "url": "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst"
+     }
+    ],
+    "modules": [
+     {
+      "name": "Cmd",
+      "imports": [],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Cmd",
+        "modulePath": "",
+        "fullName": "Cmd",
+        "signature": "{\n\targs : List(OsStr),\n\tclear_envs : Bool,\n\tenvs : List((OsStr, OsStr)),\n\tprogram : OsStr,\n\tcwd_value : List(Path),\n\tstdin_value : [Default, Inherit, Null, Bytes(List(U8)), Pipe],\n\tstdout_value : [Default, Inherit, Null, Capture, Pipe, Tee],\n\tstderr_value : [Default, Inherit, Null, Capture, Pipe, Tee],\n\ttimeout_value : U64,\n\toutput_limit_value : U64,\n\tpending_limit_value : U64,\n\tmanage_tree_value : Bool,\n\tmerge_stderr_value : Bool,\n}",
+        "docs": "Build and run child processes with native-safe programs, arguments, and\nenvironment values.\n\nUse `run!` when exit status and output are data your application handles:\n\n```roc\noutput = Cmd.new(\"roc\")\n\t.arg(\"version\")\n\t.timeout_ms(5_000)\n\t.run!()?\n\nmatch output.status {\n\tExited(0) => Stdout.write_bytes!(output.stdout_bytes)\n\tExited(code) => Err(CommandFailed(code))\n\tSignaled(signal) => Err(CommandSignaled(signal))\n}\n```",
+        "line": 24,
+        "decl": "::",
+        "head": "Cmd"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "exec!",
+        "modulePath": "Cmd",
+        "fullName": "Cmd.exec!",
+        "signature": "OsStr, List(OsStr) => Try({}, [ExecFailed({ command : Str, exit_code : I32 }), FailedToGetExitCode({ command : Str, err : IOErr })])",
+        "docs": "Simplest way to execute a command by name with arguments.\nStdin, stdout, and stderr are inherited from the parent process.\n\nIf you want to capture the output, use [exec_output!] instead.\n\n```roc\nCmd.exec!(\"echo\", [\"hello world\"])?\n```",
+        "line": 48
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "exec_cmd!",
+        "modulePath": "Cmd",
+        "fullName": "Cmd.exec_cmd!",
+        "signature": "Cmd => Try({}, [ExecCmdFailed({ command : Str, exit_code : I32 }), FailedToGetExitCode({ command : Str, err : IOErr })])",
+        "docs": "Execute a Cmd (using the builder pattern).\nStdin, stdout, and stderr are inherited from the parent process.\n\nYou should prefer using [exec!] instead, only use this if you want to use [env], [envs] or [clear_envs].\nIf you want to capture the output, use [exec_output!] instead.\n\n```roc\nCmd.new(\"cargo\")\n    .arg(\"build\")\n    .env(\"RUST_BACKTRACE\", \"1\")\n    .exec_cmd!()?\n```",
+        "line": 75
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "exec_output!",
+        "modulePath": "Cmd",
+        "fullName": "Cmd.exec_output!",
+        "signature": "Cmd => Try({ stdout_utf8 : Str, stderr_utf8_lossy : Str }, [StdoutContainsInvalidUtf8({ cmd_str : Str, err : [BadUtf8({ problem : _, index : U64 })] }), NonZeroExitCode({ command : Str, exit_code : I32, stdout_utf8_lossy : Str, stderr_utf8_lossy : Str }), FailedToGetExitCode({ command : Str, err : IOErr })])",
+        "docs": "Execute command and capture stdout and stderr as UTF-8 strings.\nInvalid UTF-8 sequences are replaced with the Unicode replacement character.\n\nUse [exec_output_bytes!] instead if you want to capture the output in the original form as bytes.\n[exec_output_bytes!] may also be used for maximum performance, because you may be able to avoid unnecessary UTF-8 conversions.\n\n```roc\ncmd_output =\n    Cmd.new(\"echo\")\n        .args([\"Hi\"])\n        .exec_output!()?\n\nStdout.line!(\"Echo output: ${cmd_output.stdout_utf8}\")?\n```",
+        "line": 101
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "exec_output_bytes!",
+        "modulePath": "Cmd",
+        "fullName": "Cmd.exec_output_bytes!",
+        "signature": "Cmd => Try({ stderr_bytes : List(U8), stdout_bytes : List(U8) }, [NonZeroExitCodeB({ exit_code : I32, stdout_bytes : List(U8), stderr_bytes : List(U8) }), FailedToGetExitCodeB(IOErr)])",
+        "docs": "Execute command and capture stdout and stderr in the original form as bytes.\n\nUse [exec_output!] instead if you want to get the output as UTF-8 strings.\n\n```roc\ncmd_output =\n    Cmd.new(\"echo\")\n        .args([\"Hi\"])\n        .exec_output_bytes!()?\n\nStdout.line!(\"${Str.inspect(cmd_output)}\")? # {stderr_bytes: [], stdout_bytes: [72, 105, 10]}\n```",
+        "line": 139
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "exec_exit_code!",
+        "modulePath": "Cmd",
+        "fullName": "Cmd.exec_exit_code!",
+        "signature": "Cmd => Try(I32, [FailedToGetExitCode({ command : Str, err : IOErr })])",
+        "docs": "Execute a command and return its exit code.\nStdin, stdout, and stderr are inherited from the parent process.\n\nYou should prefer using [exec!] or [exec_cmd!] instead, only use this if you want to take a specific action based on a **specific non-zero exit code**.\nFor example, `roc check` returns exit code 1 if there are errors, and exit code 2 if there are only warnings.\nSo, you could use `exec_exit_code!` to ignore warnings on `roc check`.\n\n```roc\nexit_code = Cmd.new(\"cat\").arg(\"non_existent.txt\").exec_exit_code!()?\n```",
+        "line": 167
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "new",
+        "modulePath": "Cmd",
+        "fullName": "Cmd.new",
+        "signature": "OsStr -> Cmd",
+        "docs": "Create a new command with the given program name. Use a function that starts with `exec_` to execute it.\n\n```roc\ncmd = Cmd.new(\"ls\")\n```",
+        "line": 182
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "new_str",
+        "modulePath": "Cmd",
+        "fullName": "Cmd.new_str",
+        "signature": "Str -> Cmd",
+        "docs": "Create a new command from a dynamic `Str`. String literals can be passed\ndirectly to [new].",
+        "line": 201
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "cwd",
+        "modulePath": "Cmd",
+        "fullName": "Cmd.cwd",
+        "signature": "Cmd, Path -> Cmd",
+        "docs": "Set the child working directory without changing the parent directory.\nUse an absolute executable path or a bare PATH name: resolving a relative\nexecutable against cwd is platform-specific.",
+        "line": 207
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "stdin",
+        "modulePath": "Cmd",
+        "fullName": "Cmd.stdin",
+        "signature": "Cmd, [Default, Inherit, Null, Bytes(List(U8)), Pipe] -> Cmd",
+        "docs": "Bytes supplies and closes stdin automatically. Pipe supports Child.write!.\nDefault is Null for run!/exec_output!, Inherit for spawn!/exec_cmd!.",
+        "line": 212
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "stdout",
+        "modulePath": "Cmd",
+        "fullName": "Cmd.stdout",
+        "signature": "Cmd, [Default, Inherit, Null, Capture, Pipe, Tee] -> Cmd",
+        "docs": "Capture retains bytes; Pipe queues tagged Child.read! events; Tee captures\nand forwards to the parent. Default captures for run!/exec_output!, and\ninherits for spawn!/exec_cmd!. Tee exposes a pipe, not a terminal, to the child.",
+        "line": 218
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "stderr",
+        "modulePath": "Cmd",
+        "fullName": "Cmd.stderr",
+        "signature": "Cmd, [Default, Inherit, Null, Capture, Pipe, Tee] -> Cmd",
+        "docs": "Configure stderr independently, with the same modes and defaults as stdout.",
+        "line": 222
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "timeout_ms",
+        "modulePath": "Cmd",
+        "fullName": "Cmd.timeout_ms",
+        "signature": "Cmd, U64 -> Cmd",
+        "docs": "Zero disables the execution deadline. It covers output draining too.",
+        "line": 226
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "output_limit",
+        "modulePath": "Cmd",
+        "fullName": "Cmd.output_limit",
+        "signature": "Cmd, U64 -> Cmd",
+        "docs": "Combined capture budget in bytes (default 16 MiB). Exceeding it cancels\nthe command and returns OutputLimit with the retained partial output.",
+        "line": 231
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "pending_limit",
+        "modulePath": "Cmd",
+        "fullName": "Cmd.pending_limit",
+        "signature": "Cmd, U64 -> Cmd",
+        "docs": "Combined unread Pipe event budget (default 1 MiB). Consume events with\nChild.read! while running; exceeding this budget cancels the child.",
+        "line": 236
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "manage_tree",
+        "modulePath": "Cmd",
+        "fullName": "Cmd.manage_tree",
+        "signature": "Cmd, Bool -> Cmd",
+        "docs": "Also terminate descendants on cancellation, using a Unix process group\nor Windows Job Object. Disabled by default; descendants must not escape it.",
+        "line": 241
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "merge_stderr",
+        "modulePath": "Cmd",
+        "fullName": "Cmd.merge_stderr",
+        "signature": "Cmd, Bool -> Cmd",
+        "docs": "Send both child streams into one OS pipe using stdout's mode and budget.\nThis preserves kernel write order; separate streams have no total ordering.",
+        "line": 246
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "run!",
+        "modulePath": "Cmd",
+        "fullName": "Cmd.run!",
+        "signature": "Cmd => Try(RunOutput, RunErr)",
+        "docs": "Nonzero exits and signal termination are returned as status data.\nDefaults to null stdin and captured stdout/stderr. Successful completion\nwaits for output EOF; deadlines include draining and tee forwarding.",
+        "line": 252
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "spawn!",
+        "modulePath": "Cmd",
+        "fullName": "Cmd.spawn!",
+        "signature": "Cmd => Try(Child, IOErr)",
+        "docs": "Start a managed child immediately. Default streams are inherited.",
+        "line": 256
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "arg",
+        "modulePath": "Cmd",
+        "fullName": "Cmd.arg",
+        "signature": "Cmd, OsStr -> Cmd",
+        "docs": "Add a single argument to the command.\n❗ Shell features like variable substitution (e.g. `$FOO`), glob patterns (e.g. `*.txt`), ... are not available.\n\n```roc\ncmd = Cmd.new(\"ls\").arg(\"-l\")\n```",
+        "line": 265
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "arg_str",
+        "modulePath": "Cmd",
+        "fullName": "Cmd.arg_str",
+        "signature": "Cmd, Str -> Cmd",
+        "docs": "Add a dynamic `Str` argument. String literals can be passed directly to [arg].",
+        "line": 272
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "args",
+        "modulePath": "Cmd",
+        "fullName": "Cmd.args",
+        "signature": "Cmd, List(OsStr) -> Cmd",
+        "docs": "Add multiple arguments to the command.\n❗ Shell features like variable substitution (e.g. `$FOO`), glob patterns (e.g. `*.txt`), ... are not available.\n\n```roc\ncmd = Cmd.new(\"ls\").args([\"-l\", \"-a\"])\n```",
+        "line": 281
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "args_str",
+        "modulePath": "Cmd",
+        "fullName": "Cmd.args_str",
+        "signature": "Cmd, List(Str) -> Cmd",
+        "docs": "Add multiple dynamic `Str` arguments. Lists of string literals can be passed\ndirectly to [args].",
+        "line": 289
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "env",
+        "modulePath": "Cmd",
+        "fullName": "Cmd.env",
+        "signature": "Cmd, OsStr, OsStr -> Cmd",
+        "docs": "Add a single environment variable to the command.\n\n\n```roc\ncmd = Cmd.new(\"env\").env(\"FOO\", \"bar\") # add the environment variable \"FOO\" with value \"bar\"\n```",
+        "line": 298
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "env_str",
+        "modulePath": "Cmd",
+        "fullName": "Cmd.env_str",
+        "signature": "Cmd, Str, Str -> Cmd",
+        "docs": "Add a dynamic `Str` environment variable. String literals can be passed\ndirectly to [env].",
+        "line": 305
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "envs",
+        "modulePath": "Cmd",
+        "fullName": "Cmd.envs",
+        "signature": "Cmd, List((OsStr, OsStr)) -> Cmd",
+        "docs": "Add multiple environment variables to the command.\n\n```roc\ncmd = Cmd.new(\"env\").envs([(\"FOO\", \"bar\"), (\"BAZ\", \"qux\")])\n```",
+        "line": 313
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "envs_str",
+        "modulePath": "Cmd",
+        "fullName": "Cmd.envs_str",
+        "signature": "Cmd, List((Str, Str)) -> Cmd",
+        "docs": "Add multiple dynamic `Str` environment variables. Lists of literal pairs can\nbe passed directly to [envs].",
+        "line": 318
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "clear_envs",
+        "modulePath": "Cmd",
+        "fullName": "Cmd.clear_envs",
+        "signature": "Cmd -> Cmd",
+        "docs": "Clear all environment variables before running the command.\nOnly environment variables added via `env` or `envs` will be available.\nUseful if you want a clean command run that does not behave unexpectedly if the user has some env var set.\n\n```roc\ncmd =\n    Cmd.new(\"env\")\n        .clear_envs()\n        .env(\"ONLY_THIS\", \"visible\")\n```",
+        "line": 334
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "check_available!",
+        "modulePath": "Cmd",
+        "fullName": "Cmd.check_available!",
+        "signature": "Str => Bool",
+        "docs": "Report whether `command` can be found on the system as something runnable.\n\nA bare name (like `\"git\"`) is looked up across the `PATH` entries; a name\ncontaining a path separator is checked as-is. On Windows the candidate\nextensions come from `%PATHEXT%`.\n\nOn Unix this checks for an executable bit; a directory is not reported even\nthough it carries one, though a symbolic link to a directory is a rare\nexception.",
+        "line": 346
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_str",
+        "modulePath": "Cmd",
+        "fullName": "Cmd.to_str",
+        "signature": "Cmd -> Str",
+        "docs": "Render a command configuration as a stable, escaped string.",
+        "line": 373
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "RunOutput",
+        "modulePath": "Cmd",
+        "fullName": "Cmd.RunOutput",
+        "signature": "{ status : [Exited(I32), Signaled(I32)], stdout_bytes : List(U8), stderr_bytes : List(U8) }",
+        "docs": "The completed child status and captured output. Output is empty for streams\nconfigured as `Inherit` or `Null`.",
+        "line": 379,
+        "decl": ":",
+        "head": "RunOutput"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "PartialOutput",
+        "modulePath": "Cmd",
+        "fullName": "Cmd.PartialOutput",
+        "signature": "{ stdout_bytes : List(U8), stderr_bytes : List(U8) }",
+        "docs": "Output retained before a timeout or capture limit stopped the command.",
+        "line": 382,
+        "decl": ":",
+        "head": "PartialOutput"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "RunErr",
+        "modulePath": "Cmd",
+        "fullName": "Cmd.RunErr",
+        "signature": "[IO(IOErr), Timeout(PartialOutput), OutputLimit(PartialOutput)]",
+        "docs": "A failure to start or supervise a command, an expired deadline, or a full\ncapture budget. Nonzero exit codes are represented by `RunOutput.status`.",
+        "line": 386,
+        "decl": ":",
+        "head": "RunErr"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Child",
+        "modulePath": "Cmd",
+        "fullName": "Cmd.Child",
+        "signature": "{ host : Host.Child }",
+        "docs": "A managed child. Final reference release terminates and reaps the process.\nUse close! for deterministic cleanup before the last reference is released.",
+        "line": 390,
+        "decl": "::",
+        "head": "Child"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "pid!",
+        "modulePath": "Cmd.Child",
+        "fullName": "Cmd.Child.pid!",
+        "signature": "Child => Try(U32, IOErr)",
+        "docs": "Return the operating-system process identifier while the child is open.",
+        "line": 393
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "wait!",
+        "modulePath": "Cmd.Child",
+        "fullName": "Cmd.Child.wait!",
+        "signature": "Child => Try(RunOutput, RunErr)",
+        "docs": "Closes piped stdin before waiting; call read!/write! for an interactive exchange first.",
+        "line": 397
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "try_wait!",
+        "modulePath": "Cmd.Child",
+        "fullName": "Cmd.Child.try_wait!",
+        "signature": "Child => Try(List(RunOutput), RunErr)",
+        "docs": "Returns [] while running, or one result after exit and output draining.",
+        "line": 401
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "kill!",
+        "modulePath": "Cmd.Child",
+        "fullName": "Cmd.Child.kill!",
+        "signature": "Child => Try({}, IOErr)",
+        "docs": "Request forced termination. Use wait! to observe termination and reaping.",
+        "line": 411
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "close!",
+        "modulePath": "Cmd.Child",
+        "fullName": "Cmd.Child.close!",
+        "signature": "Child => Try({}, IOErr)",
+        "docs": "Terminate and reap, invalidating every alias. Repeated close! succeeds.",
+        "line": 415
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "close_stdin!",
+        "modulePath": "Cmd.Child",
+        "fullName": "Cmd.Child.close_stdin!",
+        "signature": "Child => Try({}, IOErr)",
+        "docs": "Close piped stdin so the child observes EOF. Repeated closes succeed.",
+        "line": 419
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "write!",
+        "modulePath": "Cmd.Child",
+        "fullName": "Cmd.Child.write!",
+        "signature": "Child, List(U8), U64 => Try({}, IOErr)",
+        "docs": "Write piped stdin within timeout milliseconds. A timed-out write may\nhave delivered a prefix; retrying the whole input can duplicate bytes.",
+        "line": 424
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "read!",
+        "modulePath": "Cmd.Child",
+        "fullName": "Cmd.Child.read!",
+        "signature": "Child, U64, U64 => Try([Stdout(List(U8)), Stderr(List(U8)), End], IOErr)",
+        "docs": "Returns one stream chunk, or End after all output drains. Timeout is an IO error.",
+        "line": 428
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_inspect",
+        "modulePath": "Cmd",
+        "fullName": "Cmd.to_inspect",
+        "signature": "Cmd -> Str",
+        "docs": "Customize command output for `Str.inspect`.",
+        "line": 442
+       }
+      ]
+     },
+     {
+      "name": "Env",
+      "imports": [],
+      "items": [
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "platform!",
+        "modulePath": "Env",
+        "fullName": "Env.platform!",
+        "signature": "() => {\n\t\tarch : [X86, X64, ARM, AARCH64, OTHER(Str)],\n\t\tos : [LINUX, MACOS, WINDOWS, OTHER(Str)],\n\t}",
+        "docs": "Report the architecture and operating system for which the host was built.",
+        "line": 19
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "dict!",
+        "modulePath": "Env",
+        "fullName": "Env.dict!",
+        "signature": "() => List((OsStr, OsStr))",
+        "docs": "Return all environment variables as native name/value pairs.\n\nNative non-Unicode values are preserved. Iteration order is unspecified\nand may differ between calls or operating systems.",
+        "line": 29
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "var!",
+        "modulePath": "Env",
+        "fullName": "Env.var!",
+        "signature": "OsStr => Try(OsStr, [VarNotFound(OsStr), EnvErr(IOErr)])",
+        "docs": "Reads the given environment variable.\n\nReturns `Err(VarNotFound(name))` if the variable is not set.",
+        "line": 36
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "var_str!",
+        "modulePath": "Env",
+        "fullName": "Env.var_str!",
+        "signature": "OsStr => Try(Str, [VarNotFound(OsStr), EnvErr(IOErr), InvalidStr(U64)])",
+        "docs": "Reads the given environment variable as a string if its native value is valid text.",
+        "line": 45
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "cwd!",
+        "modulePath": "Env",
+        "fullName": "Env.cwd!",
+        "signature": "() => Try(Path.Path, [CwdUnavailable])",
+        "docs": "Reads the [current working directory](https://en.wikipedia.org/wiki/Working_directory)\nfrom the environment.\n\nReturns `Err(CwdUnavailable)` if the cwd cannot be determined.",
+        "line": 61
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "set_cwd!",
+        "modulePath": "Env",
+        "fullName": "Env.set_cwd!",
+        "signature": "Path.Path => Try({}, [InvalidCwd(IOErr)])",
+        "docs": "Change the process current working directory.\n\nReturns `Err(InvalidCwd(err))` when the path cannot be used as a working\ndirectory. The process-wide change remains in effect until changed again.",
+        "line": 72
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "exe_path!",
+        "modulePath": "Env",
+        "fullName": "Env.exe_path!",
+        "signature": "() => Try(Path.Path, [ExePathUnavailable])",
+        "docs": "Gets the path to the currently-running executable.\n\nReturns `Err(ExePathUnavailable)` if the path cannot be determined.",
+        "line": 80
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "program_name!",
+        "modulePath": "Env",
+        "fullName": "Env.program_name!",
+        "signature": "() => Try(OsStr, [ProgramNameUnavailable])",
+        "docs": "Gets the program name supplied by the process launcher as its first argument.\n\nThis is conventionally the executable name or path, but launchers may supply\nanother value. Unlike [`exe_path!`](#exe_path!), it is returned as an\n[`OsStr`](OsStr), preserving the value exactly without treating it as a path.\nReturns `Err(ProgramNameUnavailable)` if the launcher supplied no first argument.",
+        "line": 93
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "create_temp_dir!",
+        "modulePath": "Env",
+        "fullName": "Env.create_temp_dir!",
+        "signature": "() => Try(Path.Path, [TempDirErr(IOErr)])",
+        "docs": "Atomically create a private directory in the system temporary directory.\nThe caller owns cleanup. Unix directories have mode 0700.",
+        "line": 102
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "create_temp_dir_with_prefix!",
+        "modulePath": "Env",
+        "fullName": "Env.create_temp_dir_with_prefix!",
+        "signature": "Str => Try(Path.Path, [TempDirErr(IOErr)])",
+        "docs": "Create a private temporary directory with a filename prefix.",
+        "line": 106
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "create_temp_dir_in!",
+        "modulePath": "Env",
+        "fullName": "Env.create_temp_dir_in!",
+        "signature": "Path.Path, Str => Try(Path.Path, [TempDirErr(IOErr)])",
+        "docs": "Create a private temporary directory under an existing parent directory.\nPrefixes cannot contain separators, colons, NUL, or be `.` or `..`.",
+        "line": 111
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "with_temp_dir!",
+        "modulePath": "Env",
+        "fullName": "Env.with_temp_dir!",
+        "signature": "(Path.Path => Try(a, err)) => Try(a, [TempDirErr(IOErr), CallbackErr(err), CleanupErr(IOErr, Path.Path), CallbackAndCleanupErr(err, IOErr, Path.Path)])",
+        "docs": "Run a callback with a private directory and delete the directory afterward.\nCleanup is attempted after callback success and failure. If both fail, both errors are returned.\n\n```roc\nEnv.with_temp_dir!(|directory| {\n\tfile = Path.join(directory, \"result.txt\")\n\tPath.write_utf8!(file, \"temporary data\")?\n\tPath.read_utf8!(file)\n})?\n```",
+        "line": 125
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "temp_dir!",
+        "modulePath": "Env",
+        "fullName": "Env.temp_dir!",
+        "signature": "() => Path.Path",
+        "docs": "Gets the default directory for temporary files.",
+        "line": 139
+       }
+      ]
+     },
+     {
+      "name": "File",
+      "imports": [],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "SeekFrom",
+        "modulePath": "File",
+        "fullName": "File.SeekFrom",
+        "signature": "[Start(U64), Current(I64), End(I64)]",
+        "docs": "A byte offset from the start, current logical position, or end of a file.",
+        "line": 11,
+        "decl": ":",
+        "head": "SeekFrom"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Reader",
+        "modulePath": "File",
+        "fullName": "File.Reader",
+        "signature": "{ host : Host.FileReader }",
+        "docs": "Represents a buffered file reader.\n\nThe file is automatically closed when the last reference to the reader is\ndropped. It wraps an opaque host-side `BufReader<File>` handle.\nAliases share one cursor, including bytes buffered by line or binary reads.",
+        "line": 18,
+        "decl": "::",
+        "head": "Reader"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_inspect",
+        "modulePath": "File.Reader",
+        "fullName": "File.Reader.to_inspect",
+        "signature": "Reader -> Str",
+        "docs": "Render the reader without exposing its host handle.",
+        "line": 21
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "read_line!",
+        "modulePath": "File.Reader",
+        "fullName": "File.Reader.read_line!",
+        "signature": "Reader => Try(List(U8), _)",
+        "docs": "Read bytes up to and including the next newline from this buffered reader.\n\nReturns an empty list at EOF.",
+        "line": 27
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "read_up_to!",
+        "modulePath": "File.Reader",
+        "fullName": "File.Reader.read_up_to!",
+        "signature": "Reader, U64 => Try(List(U8), [FileErr(IOErr)])",
+        "docs": "Read at most `max_bytes` bytes. Short reads are valid, even before EOF.\nFor a positive maximum, an empty list means EOF. Zero performs no I/O.\nReturned bytes remain valid after later reads or seeks.",
+        "line": 35
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "read_exactly!",
+        "modulePath": "File.Reader",
+        "fullName": "File.Reader.read_exactly!",
+        "signature": "Reader, U64 => Try(List(U8), [FileErr(IOErr), FileUnexpectedEOF])",
+        "docs": "Read exactly `count` bytes, or report `FileUnexpectedEOF`.\nZero succeeds without I/O. Errors may consume bytes; partial data is\nnot returned and the cursor is not restored.",
+        "line": 43
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "position!",
+        "modulePath": "File.Reader",
+        "fullName": "File.Reader.position!",
+        "signature": "Reader => Try(U64, [FileErr(IOErr)])",
+        "docs": "Return the byte position of the next read, accounting for buffered bytes.",
+        "line": 52
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "seek!",
+        "modulePath": "File.Reader",
+        "fullName": "File.Reader.seek!",
+        "signature": "Reader, SeekFrom => Try(U64, [FileErr(IOErr)])",
+        "docs": "Move the shared cursor and return its new absolute byte position.\nSeeking past EOF does not extend the file. Invalid offsets and sources\nthat cannot seek report FileErr. A failed seek need not restore the cursor.\nAliases of this reader observe the same cursor.",
+        "line": 61
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "chunks",
+        "modulePath": "File.Reader",
+        "fullName": "File.Reader.chunks",
+        "signature": "Reader, U64 -> Try(Stream(Try(List(U8), [FileErr(IOErr)])), [InvalidChunkSize])",
+        "docs": "Lazily read nonempty chunks of at most `max_bytes` from this reader.\nZero is rejected immediately with InvalidChunkSize. Construction does\nno I/O; each pull reads from the current shared cursor. Chunk boundaries\ndo not correspond to records, newlines, or text encoding boundaries.\nEOF ends the stream; a read error yields one Err item, then ends.\nFollow the returned continuation when pulling. To resume after EOF\nand a seek, create a new stream. Retained chunks remain valid.\nThe stream keeps the file open while it retains a reader. Its terminal\ncontinuation holds no reader. Process chunks individually to bound memory;\nStream.collect! accumulates every chunk and does not propagate Err items.",
+        "line": 76
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "open_reader!",
+        "modulePath": "File",
+        "fullName": "File.open_reader!",
+        "signature": "|path|",
+        "docs": "Open a file for buffered reading using the default buffer capacity.\n\nFailing to open reports the path, using the same `PathErr` as the\nwhole-file operations so both combine in one error type.\n\n```roc\nreader = File.open_reader!(\"LICENSE\")?\nline = reader.read_line!()?\n```",
+        "line": 111,
+        "unannotated": true
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "open_reader_with_capacity!",
+        "modulePath": "File",
+        "fullName": "File.open_reader_with_capacity!",
+        "signature": "|path, capacity|",
+        "docs": "Open a file for buffered reading using a specific buffer capacity.",
+        "line": 117,
+        "unannotated": true
+       }
+      ]
+     },
+     {
+      "name": "Host",
+      "imports": [],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "NativeOsStr",
+        "modulePath": "Host",
+        "fullName": "Host.NativeOsStr",
+        "signature": "[Utf8(Str), UnixBytes(List(U8)), WindowsU16s(List(U16))]",
+        "docs": "",
+        "line": 7,
+        "decl": ":",
+        "head": "NativeOsStr"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "NativePath",
+        "modulePath": "Host",
+        "fullName": "Host.NativePath",
+        "signature": "[Utf8(Str), UnixBytes(List(U8)), WindowsU16s(List(U16))]",
+        "docs": "",
+        "line": 8,
+        "decl": ":",
+        "head": "NativePath"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Cmd",
+        "modulePath": "Host",
+        "fullName": "Host.Cmd",
+        "signature": "{\n\t\targs : List(NativeOsStr),\n\t\tclear_envs : Bool,\n\t\tcwd : List(NativeOsStr),\n\t\tstdin_mode : U8,\n\t\tstdout_mode : U8,\n\t\tstderr_mode : U8,\n\t\tstdin_bytes : List(U8),\n\t\ttimeout_ms : U64,\n\t\toutput_limit : U64,\n\t\tpending_limit : U64,\n\t\tmanage_tree : Bool,\n\t\tmerge_stderr : Bool,\n\t\tenvs : List(NativeOsStr),\n\t\tprogram : NativeOsStr,\n\t}",
+        "docs": "",
+        "line": 10,
+        "decl": ":",
+        "head": "Cmd"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "CmdOutputSuccess",
+        "modulePath": "Host",
+        "fullName": "Host.CmdOutputSuccess",
+        "signature": "{\n\t\tstderr_bytes : List(U8),\n\t\tstdout_bytes : List(U8),\n\t}",
+        "docs": "",
+        "line": 27,
+        "decl": ":",
+        "head": "CmdOutputSuccess"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "CmdOutputFailure",
+        "modulePath": "Host",
+        "fullName": "Host.CmdOutputFailure",
+        "signature": "{\n\t\tstderr_bytes : List(U8),\n\t\tstdout_bytes : List(U8),\n\t\texit_code : I32,\n\t}",
+        "docs": "",
+        "line": 32,
+        "decl": ":",
+        "head": "CmdOutputFailure"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "FileReader",
+        "modulePath": "Host",
+        "fullName": "Host.FileReader",
+        "signature": "Box(U64)",
+        "docs": "",
+        "line": 38,
+        "decl": "::",
+        "head": "FileReader"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "PathType",
+        "modulePath": "Host",
+        "fullName": "Host.PathType",
+        "signature": "[File, Dir, SymLink, Other]",
+        "docs": "",
+        "line": 40,
+        "decl": ":",
+        "head": "PathType"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "SqliteStmt",
+        "modulePath": "Host",
+        "fullName": "Host.SqliteStmt",
+        "signature": "Box(U64)",
+        "docs": "",
+        "line": 42,
+        "decl": "::",
+        "head": "SqliteStmt"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "TcpStream",
+        "modulePath": "Host",
+        "fullName": "Host.TcpStream",
+        "signature": "Box(U64)",
+        "docs": "",
+        "line": 44,
+        "decl": "::",
+        "head": "TcpStream"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "cmd_exec_exit_code!",
+        "modulePath": "Host",
+        "fullName": "Host.cmd_exec_exit_code!",
+        "signature": "Cmd => Try(I32, IOErr)",
+        "docs": "",
+        "line": 46
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "cmd_exec_output!",
+        "modulePath": "Host",
+        "fullName": "Host.cmd_exec_output!",
+        "signature": "Cmd => Try(CmdOutputSuccess, [NonZeroExitCode(CmdOutputFailure), FailedToGetExitCode(IOErr)])",
+        "docs": "",
+        "line": 47
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "dir_create!",
+        "modulePath": "Host",
+        "fullName": "Host.dir_create!",
+        "signature": "NativePath => Try({}, [DirErr(IOErr)])",
+        "docs": "",
+        "line": 49
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "dir_create_all!",
+        "modulePath": "Host",
+        "fullName": "Host.dir_create_all!",
+        "signature": "NativePath => Try({}, [DirErr(IOErr)])",
+        "docs": "",
+        "line": 50
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "dir_delete_empty!",
+        "modulePath": "Host",
+        "fullName": "Host.dir_delete_empty!",
+        "signature": "NativePath => Try({}, [DirErr(IOErr)])",
+        "docs": "",
+        "line": 51
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "dir_delete_all!",
+        "modulePath": "Host",
+        "fullName": "Host.dir_delete_all!",
+        "signature": "NativePath => Try({}, [DirErr(IOErr)])",
+        "docs": "",
+        "line": 52
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "dir_list!",
+        "modulePath": "Host",
+        "fullName": "Host.dir_list!",
+        "signature": "NativePath => Try(List(NativePath), [DirErr(IOErr)])",
+        "docs": "",
+        "line": 53
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "env_var!",
+        "modulePath": "Host",
+        "fullName": "Host.env_var!",
+        "signature": "NativeOsStr => Try(NativeOsStr, [VarNotFound(NativeOsStr), EnvErr(IOErr)])",
+        "docs": "",
+        "line": 55
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "env_cwd!",
+        "modulePath": "Host",
+        "fullName": "Host.env_cwd!",
+        "signature": "() => Try(NativePath, [CwdUnavailable])",
+        "docs": "",
+        "line": 56
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "env_exe_path!",
+        "modulePath": "Host",
+        "fullName": "Host.env_exe_path!",
+        "signature": "() => Try(NativePath, [ExePathUnavailable])",
+        "docs": "",
+        "line": 57
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "env_temp_dir!",
+        "modulePath": "Host",
+        "fullName": "Host.env_temp_dir!",
+        "signature": "() => NativePath",
+        "docs": "",
+        "line": 58
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "file_read_bytes!",
+        "modulePath": "Host",
+        "fullName": "Host.file_read_bytes!",
+        "signature": "NativePath => Try(List(U8), [FileErr(IOErr)])",
+        "docs": "",
+        "line": 60
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "file_write_bytes!",
+        "modulePath": "Host",
+        "fullName": "Host.file_write_bytes!",
+        "signature": "NativePath, List(U8) => Try({}, [FileErr(IOErr)])",
+        "docs": "",
+        "line": 61
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "file_read_utf8!",
+        "modulePath": "Host",
+        "fullName": "Host.file_read_utf8!",
+        "signature": "NativePath => Try(Str, [FileErr(IOErr)])",
+        "docs": "",
+        "line": 62
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "file_write_utf8!",
+        "modulePath": "Host",
+        "fullName": "Host.file_write_utf8!",
+        "signature": "NativePath, Str => Try({}, [FileErr(IOErr)])",
+        "docs": "",
+        "line": 63
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "file_open_reader!",
+        "modulePath": "Host",
+        "fullName": "Host.file_open_reader!",
+        "signature": "NativePath, U64 => Try(FileReader, [FileErr(IOErr)])",
+        "docs": "",
+        "line": 64
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "file_read_line!",
+        "modulePath": "Host",
+        "fullName": "Host.file_read_line!",
+        "signature": "FileReader => Try(List(U8), [FileErr(IOErr)])",
+        "docs": "",
+        "line": 65
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "file_delete!",
+        "modulePath": "Host",
+        "fullName": "Host.file_delete!",
+        "signature": "NativePath => Try({}, [FileErr(IOErr)])",
+        "docs": "",
+        "line": 66
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "file_size_in_bytes!",
+        "modulePath": "Host",
+        "fullName": "Host.file_size_in_bytes!",
+        "signature": "NativePath => Try(U64, [FileErr(IOErr)])",
+        "docs": "",
+        "line": 67
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "file_is_executable!",
+        "modulePath": "Host",
+        "fullName": "Host.file_is_executable!",
+        "signature": "NativePath => Try(Bool, [FileErr(IOErr)])",
+        "docs": "",
+        "line": 68
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "file_is_readable!",
+        "modulePath": "Host",
+        "fullName": "Host.file_is_readable!",
+        "signature": "NativePath => Try(Bool, [FileErr(IOErr)])",
+        "docs": "",
+        "line": 69
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "file_is_writable!",
+        "modulePath": "Host",
+        "fullName": "Host.file_is_writable!",
+        "signature": "NativePath => Try(Bool, [FileErr(IOErr)])",
+        "docs": "",
+        "line": 70
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "file_time_accessed!",
+        "modulePath": "Host",
+        "fullName": "Host.file_time_accessed!",
+        "signature": "NativePath => Try(U128, [FileErr(IOErr)])",
+        "docs": "",
+        "line": 71
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "file_time_modified!",
+        "modulePath": "Host",
+        "fullName": "Host.file_time_modified!",
+        "signature": "NativePath => Try(U128, [FileErr(IOErr)])",
+        "docs": "",
+        "line": 72
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "file_time_created!",
+        "modulePath": "Host",
+        "fullName": "Host.file_time_created!",
+        "signature": "NativePath => Try(U128, [FileErr(IOErr)])",
+        "docs": "",
+        "line": 73
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "http_send_request!",
+        "modulePath": "Host",
+        "fullName": "Host.http_send_request!",
+        "signature": "InternalHttp.RequestToAndFromHost => Try(InternalHttp.ResponseToAndFromHost, InternalHttp.TransportErr)",
+        "docs": "",
+        "line": 75
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "locale_get!",
+        "modulePath": "Host",
+        "fullName": "Host.locale_get!",
+        "signature": "() => Try(Str, [NotAvailable])",
+        "docs": "",
+        "line": 77
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "locale_all!",
+        "modulePath": "Host",
+        "fullName": "Host.locale_all!",
+        "signature": "() => List(Str)",
+        "docs": "",
+        "line": 78
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "path_type!",
+        "modulePath": "Host",
+        "fullName": "Host.path_type!",
+        "signature": "NativePath => Try(PathType, IOErr)",
+        "docs": "",
+        "line": 80
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "random_seed_u64!",
+        "modulePath": "Host",
+        "fullName": "Host.random_seed_u64!",
+        "signature": "() => Try(U64, [RandomErr(IOErr)])",
+        "docs": "",
+        "line": 82
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "random_seed_u32!",
+        "modulePath": "Host",
+        "fullName": "Host.random_seed_u32!",
+        "signature": "() => Try(U32, [RandomErr(IOErr)])",
+        "docs": "",
+        "line": 83
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "sleep_millis!",
+        "modulePath": "Host",
+        "fullName": "Host.sleep_millis!",
+        "signature": "U64 => {}",
+        "docs": "",
+        "line": 85
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "sqlite_prepare!",
+        "modulePath": "Host",
+        "fullName": "Host.sqlite_prepare!",
+        "signature": "NativePath, Str => Try(SqliteStmt, InternalSqlite.SqliteError)",
+        "docs": "",
+        "line": 87
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "sqlite_bind!",
+        "modulePath": "Host",
+        "fullName": "Host.sqlite_bind!",
+        "signature": "SqliteStmt, List(InternalSqlite.SqliteBindings) => Try({}, InternalSqlite.SqliteError)",
+        "docs": "",
+        "line": 88
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "sqlite_columns!",
+        "modulePath": "Host",
+        "fullName": "Host.sqlite_columns!",
+        "signature": "SqliteStmt => List(Str)",
+        "docs": "",
+        "line": 89
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "sqlite_column_value!",
+        "modulePath": "Host",
+        "fullName": "Host.sqlite_column_value!",
+        "signature": "SqliteStmt, U64 => Try(InternalSqlite.SqliteValue, InternalSqlite.SqliteError)",
+        "docs": "",
+        "line": 90
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "sqlite_step!",
+        "modulePath": "Host",
+        "fullName": "Host.sqlite_step!",
+        "signature": "SqliteStmt => Try(Bool, InternalSqlite.SqliteError)",
+        "docs": "",
+        "line": 91
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "sqlite_reset!",
+        "modulePath": "Host",
+        "fullName": "Host.sqlite_reset!",
+        "signature": "SqliteStmt => Try({}, InternalSqlite.SqliteError)",
+        "docs": "",
+        "line": 92
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "stderr_line!",
+        "modulePath": "Host",
+        "fullName": "Host.stderr_line!",
+        "signature": "Str => Try({}, [StderrErr(IOErr)])",
+        "docs": "",
+        "line": 94
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "stderr_write!",
+        "modulePath": "Host",
+        "fullName": "Host.stderr_write!",
+        "signature": "Str => Try({}, [StderrErr(IOErr)])",
+        "docs": "",
+        "line": 95
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "stderr_write_bytes!",
+        "modulePath": "Host",
+        "fullName": "Host.stderr_write_bytes!",
+        "signature": "List(U8) => Try({}, [StderrErr(IOErr)])",
+        "docs": "",
+        "line": 96
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "stdin_line!",
+        "modulePath": "Host",
+        "fullName": "Host.stdin_line!",
+        "signature": "() => Try(Str, [EndOfFile, StdinErr(IOErr)])",
+        "docs": "",
+        "line": 98
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "stdin_bytes!",
+        "modulePath": "Host",
+        "fullName": "Host.stdin_bytes!",
+        "signature": "() => Try(List(U8), [EndOfFile, StdinErr(IOErr)])",
+        "docs": "",
+        "line": 99
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "stdin_read_to_end!",
+        "modulePath": "Host",
+        "fullName": "Host.stdin_read_to_end!",
+        "signature": "() => Try(List(U8), [StdinErr(IOErr)])",
+        "docs": "",
+        "line": 100
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "stdout_line!",
+        "modulePath": "Host",
+        "fullName": "Host.stdout_line!",
+        "signature": "Str => Try({}, [StdoutErr(IOErr)])",
+        "docs": "",
+        "line": 102
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "stdout_write!",
+        "modulePath": "Host",
+        "fullName": "Host.stdout_write!",
+        "signature": "Str => Try({}, [StdoutErr(IOErr)])",
+        "docs": "",
+        "line": 103
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "stdout_write_bytes!",
+        "modulePath": "Host",
+        "fullName": "Host.stdout_write_bytes!",
+        "signature": "List(U8) => Try({}, [StdoutErr(IOErr)])",
+        "docs": "",
+        "line": 104
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "tcp_connect!",
+        "modulePath": "Host",
+        "fullName": "Host.tcp_connect!",
+        "signature": "Str, U16, U64 => Try(TcpStream, Str)",
+        "docs": "",
+        "line": 106
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "tcp_read_up_to!",
+        "modulePath": "Host",
+        "fullName": "Host.tcp_read_up_to!",
+        "signature": "TcpStream, U64, U64 => Try(List(U8), Str)",
+        "docs": "",
+        "line": 107
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "tcp_read_exactly!",
+        "modulePath": "Host",
+        "fullName": "Host.tcp_read_exactly!",
+        "signature": "TcpStream, U64, U64 => Try(List(U8), Str)",
+        "docs": "",
+        "line": 108
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "tcp_read_until!",
+        "modulePath": "Host",
+        "fullName": "Host.tcp_read_until!",
+        "signature": "TcpStream, U8, U64, U64 => Try(List(U8), Str)",
+        "docs": "",
+        "line": 109
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "tcp_write!",
+        "modulePath": "Host",
+        "fullName": "Host.tcp_write!",
+        "signature": "TcpStream, List(U8), U64 => Try({}, Str)",
+        "docs": "",
+        "line": 110
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "tty_enable_raw_mode!",
+        "modulePath": "Host",
+        "fullName": "Host.tty_enable_raw_mode!",
+        "signature": "() => {}",
+        "docs": "",
+        "line": 112
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "tty_disable_raw_mode!",
+        "modulePath": "Host",
+        "fullName": "Host.tty_disable_raw_mode!",
+        "signature": "() => {}",
+        "docs": "",
+        "line": 113
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "utc_now!",
+        "modulePath": "Host",
+        "fullName": "Host.utc_now!",
+        "signature": "() => Try(U128, [ClockBeforeEpoch])",
+        "docs": "",
+        "line": 119
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "file_hard_link!",
+        "modulePath": "Host",
+        "fullName": "Host.file_hard_link!",
+        "signature": "NativePath, NativePath => Try({}, [FileErr(IOErr)])",
+        "docs": "",
+        "line": 123
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "file_rename!",
+        "modulePath": "Host",
+        "fullName": "Host.file_rename!",
+        "signature": "NativePath, NativePath => Try({}, [FileErr(IOErr)])",
+        "docs": "",
+        "line": 124
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "env_platform!",
+        "modulePath": "Host",
+        "fullName": "Host.env_platform!",
+        "signature": "() => {\n\t\tarch : [X86, X64, ARM, AARCH64, OTHER(Str)],\n\t\tos : [LINUX, MACOS, WINDOWS, OTHER(Str)],\n\t}",
+        "docs": "",
+        "line": 125
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "env_dict!",
+        "modulePath": "Host",
+        "fullName": "Host.env_dict!",
+        "signature": "() => List((NativeOsStr, NativeOsStr))",
+        "docs": "",
+        "line": 129
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "env_set_cwd!",
+        "modulePath": "Host",
+        "fullName": "Host.env_set_cwd!",
+        "signature": "NativePath => Try({}, IOErr)",
+        "docs": "",
+        "line": 130
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "CopyOptions",
+        "modulePath": "Host",
+        "fullName": "Host.CopyOptions",
+        "signature": "{ symlinks : [Follow, Preserve], destination : [RequireNew, Merge] }",
+        "docs": "",
+        "line": 132,
+        "decl": ":",
+        "head": "CopyOptions"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "CopyFailure",
+        "modulePath": "Host",
+        "fullName": "Host.CopyFailure",
+        "signature": "{ operation : Str, source : NativePath, destination : NativePath, error : IOErr }",
+        "docs": "",
+        "line": 133,
+        "decl": ":",
+        "head": "CopyFailure"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "path_copy!",
+        "modulePath": "Host",
+        "fullName": "Host.path_copy!",
+        "signature": "NativePath, NativePath => Try({}, CopyFailure)",
+        "docs": "",
+        "line": 134
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "path_copy_dir!",
+        "modulePath": "Host",
+        "fullName": "Host.path_copy_dir!",
+        "signature": "NativePath, NativePath, CopyOptions => Try({}, CopyFailure)",
+        "docs": "",
+        "line": 135
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "path_absolute!",
+        "modulePath": "Host",
+        "fullName": "Host.path_absolute!",
+        "signature": "NativePath => Try(NativePath, IOErr)",
+        "docs": "",
+        "line": 136
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "path_canonicalize!",
+        "modulePath": "Host",
+        "fullName": "Host.path_canonicalize!",
+        "signature": "NativePath => Try(NativePath, IOErr)",
+        "docs": "",
+        "line": 137
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "env_create_temp_dir!",
+        "modulePath": "Host",
+        "fullName": "Host.env_create_temp_dir!",
+        "signature": "NativePath, Str => Try(NativePath, IOErr)",
+        "docs": "",
+        "line": 138
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "monotonic_now!",
+        "modulePath": "Host",
+        "fullName": "Host.monotonic_now!",
+        "signature": "() => U64",
+        "docs": "",
+        "line": 139
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Child",
+        "modulePath": "Host",
+        "fullName": "Host.Child",
+        "signature": "Box(U64)",
+        "docs": "",
+        "line": 141,
+        "decl": "::",
+        "head": "Child"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "CmdRunResult",
+        "modulePath": "Host",
+        "fullName": "Host.CmdRunResult",
+        "signature": "{ exit_code : I32, signal : I32, stdout_bytes : List(U8), stderr_bytes : List(U8), failure : U8 }",
+        "docs": "",
+        "line": 142,
+        "decl": ":",
+        "head": "CmdRunResult"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "ChildEvent",
+        "modulePath": "Host",
+        "fullName": "Host.ChildEvent",
+        "signature": "{ stream : U8, bytes : List(U8) }",
+        "docs": "",
+        "line": 143,
+        "decl": ":",
+        "head": "ChildEvent"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "cmd_spawn!",
+        "modulePath": "Host",
+        "fullName": "Host.cmd_spawn!",
+        "signature": "Cmd => Try(Child, IOErr)",
+        "docs": "",
+        "line": 144
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "cmd_run!",
+        "modulePath": "Host",
+        "fullName": "Host.cmd_run!",
+        "signature": "Cmd => Try(CmdRunResult, IOErr)",
+        "docs": "",
+        "line": 145
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "child_pid!",
+        "modulePath": "Host",
+        "fullName": "Host.child_pid!",
+        "signature": "Child => Try(U32, IOErr)",
+        "docs": "",
+        "line": 146
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "child_wait!",
+        "modulePath": "Host",
+        "fullName": "Host.child_wait!",
+        "signature": "Child => Try(CmdRunResult, IOErr)",
+        "docs": "",
+        "line": 147
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "child_try_wait!",
+        "modulePath": "Host",
+        "fullName": "Host.child_try_wait!",
+        "signature": "Child => Try(List(CmdRunResult), IOErr)",
+        "docs": "",
+        "line": 148
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "child_kill!",
+        "modulePath": "Host",
+        "fullName": "Host.child_kill!",
+        "signature": "Child => Try({}, IOErr)",
+        "docs": "",
+        "line": 149
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "child_close!",
+        "modulePath": "Host",
+        "fullName": "Host.child_close!",
+        "signature": "Child => Try({}, IOErr)",
+        "docs": "",
+        "line": 150
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "child_close_stdin!",
+        "modulePath": "Host",
+        "fullName": "Host.child_close_stdin!",
+        "signature": "Child => Try({}, IOErr)",
+        "docs": "",
+        "line": 151
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "child_write!",
+        "modulePath": "Host",
+        "fullName": "Host.child_write!",
+        "signature": "Child, List(U8), U64 => Try({}, IOErr)",
+        "docs": "",
+        "line": 152
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "child_read!",
+        "modulePath": "Host",
+        "fullName": "Host.child_read!",
+        "signature": "Child, U64, U64 => Try(ChildEvent, IOErr)",
+        "docs": "",
+        "line": 153
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "TcpListener",
+        "modulePath": "Host",
+        "fullName": "Host.TcpListener",
+        "signature": "Box(U64)",
+        "docs": "",
+        "line": 155,
+        "decl": "::",
+        "head": "TcpListener"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "tcp_listen!",
+        "modulePath": "Host",
+        "fullName": "Host.tcp_listen!",
+        "signature": "Str, U16, U64 => Try(TcpListener, Str)",
+        "docs": "",
+        "line": 156
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "tcp_local_port!",
+        "modulePath": "Host",
+        "fullName": "Host.tcp_local_port!",
+        "signature": "TcpListener => Try(U16, Str)",
+        "docs": "",
+        "line": 157
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "tcp_accept!",
+        "modulePath": "Host",
+        "fullName": "Host.tcp_accept!",
+        "signature": "TcpListener, U64 => Try(TcpStream, Str)",
+        "docs": "",
+        "line": 158
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "tcp_listener_close!",
+        "modulePath": "Host",
+        "fullName": "Host.tcp_listener_close!",
+        "signature": "TcpListener => Try({}, Str)",
+        "docs": "",
+        "line": 159
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "env_program_name!",
+        "modulePath": "Host",
+        "fullName": "Host.env_program_name!",
+        "signature": "() => Try(NativeOsStr, [ProgramNameUnavailable])",
+        "docs": "",
+        "line": 161
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "file_read_up_to!",
+        "modulePath": "Host",
+        "fullName": "Host.file_read_up_to!",
+        "signature": "FileReader, U64 => Try(List(U8), [FileErr(IOErr)])",
+        "docs": "",
+        "line": 163
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "file_read_exactly!",
+        "modulePath": "Host",
+        "fullName": "Host.file_read_exactly!",
+        "signature": "FileReader, U64 => Try(List(U8), [FileErr(IOErr), FileUnexpectedEOF])",
+        "docs": "",
+        "line": 164
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "file_reader_position!",
+        "modulePath": "Host",
+        "fullName": "Host.file_reader_position!",
+        "signature": "FileReader => Try(U64, [FileErr(IOErr)])",
+        "docs": "",
+        "line": 165
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "file_reader_seek!",
+        "modulePath": "Host",
+        "fullName": "Host.file_reader_seek!",
+        "signature": "FileReader, [Start(U64), Current(I64), End(I64)] => Try(U64, [FileErr(IOErr)])",
+        "docs": "",
+        "line": 166
+       }
+      ]
+     },
+     {
+      "name": "Http",
+      "imports": [
+       "http"
+      ],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "TransportErr",
+        "modulePath": "Http",
+        "fullName": "Http.TransportErr",
+        "signature": "InternalHttp.TransportErr",
+        "docs": "Errors raised by the host while sending a request, before a real HTTP\nresponse is available.",
+        "line": 18,
+        "decl": ":",
+        "head": "TransportErr"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "send!",
+        "modulePath": "Http",
+        "fullName": "Http.send!",
+        "signature": "Request => Try(Response, [InvalidUrl(Url.ParseErr), HttpErr(TransportErr)])",
+        "docs": "Validate and send an HTTP request.\n\nThe request URI must be an absolute HTTP or HTTPS URL accepted by Url.\nInvalid URLs return InvalidUrl before any host effect occurs. Fragments\nare removed because they are client-side identifiers and are not sent.\n\n```roc\nrequest = Request.from_method(GET).with_uri(\"https://www.roc-lang.org\")\nresponse = Http.send!(request)?\n```",
+        "line": 30
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "with_json_body",
+        "modulePath": "Http",
+        "fullName": "Http.with_json_body",
+        "signature": "Request, _ => Try(Request, [JsonErr(_)])",
+        "docs": "Encode a value as JSON and set it as the request body.\n\nThis uses Roc's builtin JSON encoder, so the value's type determines the\nencoder through static dispatch.",
+        "line": 44
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "send_json!",
+        "modulePath": "Http",
+        "fullName": "Http.send_json!",
+        "signature": "Request, _ => Try(Response, [JsonErr(_), InvalidUrl(Url.ParseErr), HttpErr(TransportErr)])",
+        "docs": "Encode a value as JSON, attach it to the request body, and send it.",
+        "line": 56
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "get_utf8!",
+        "modulePath": "Http",
+        "fullName": "Http.get_utf8!",
+        "signature": "Url.Url => Try(Str, [BadBody(Str), InvalidUrl(Url.ParseErr), HttpErr(TransportErr)])",
+        "docs": "Perform an HTTP GET and decode the response body as a UTF-8 `Str`.\n\nThe argument is a validated Url. Quoted literals work through\nUrl.from_quote; dynamic strings should be passed through Url.parse.\n\n```roc\nhello_str = Http.get_utf8!(\"http://localhost:8000\")?\n```",
+        "line": 71
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "decode_json_response",
+        "modulePath": "Http",
+        "fullName": "Http.decode_json_response",
+        "signature": "Response => Try(_, [BadBody(Str), JsonErr(_)])",
+        "docs": "Decode a response body as JSON.\n\nThis uses Roc's builtin JSON parser, so the expected result type\ndetermines the parser through static dispatch.",
+        "line": 83
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "get!",
+        "modulePath": "Http",
+        "fullName": "Http.get!",
+        "signature": "Url.Url => Try(_, [BadBody(Str), InvalidUrl(Url.ParseErr), HttpErr(TransportErr), JsonErr(_)])",
+        "docs": "Perform an HTTP GET and decode the response body as JSON.\n\nThe argument is a validated Url. JSON parser failures are returned as\nJsonErr(_).\n\n```roc\npayload : Try({ foo : Str }, _)\npayload = Http.get!(\"http://localhost:8000\")\n```",
+        "line": 100
+       }
+      ]
+     },
+     {
+      "name": "IOErr",
+      "imports": [],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "IOErr",
+        "modulePath": "",
+        "fullName": "IOErr",
+        "signature": "[\n\tAlreadyExists,\n\tBrokenPipe,\n\tInterrupted,\n\tIsADirectory,\n\tNotFound,\n\tNotADirectory,\n\tOther(Str),\n\tOutOfMemory,\n\tPermissionDenied,\n\tUnsupported,\n]",
+        "docs": "Represents an I/O error that can occur during platform operations.\n\n**NotFound** - An entity was not found, often a file.\n\n**PermissionDenied** - The operation lacked the necessary privileges to complete.\n\n**BrokenPipe** - The operation failed because a pipe was closed.\n\n**AlreadyExists** - An entity already exists, often a file.\n\n**Interrupted** - This operation was interrupted. Interrupted operations can typically be retried.\n\n**IsADirectory** - A filesystem operation expected a non-directory path.\n\n**NotADirectory** - A filesystem operation expected a directory path.\n\n**Unsupported** - This operation is unsupported on this platform. This means that the operation can never succeed.\n\n**OutOfMemory** - An operation could not be completed, because it failed to allocate enough memory.\n\n**Other** - A custom error that does not fall under any other I/O error kind.",
+        "line": 22,
+        "decl": ":=",
+        "head": "IOErr"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_str",
+        "modulePath": "IOErr",
+        "fullName": "IOErr.to_str",
+        "signature": "IOErr -> Str",
+        "docs": "Convert an I/O error to a concise human-readable message.",
+        "line": 36
+       }
+      ]
+     },
+     {
+      "name": "InternalDateTime",
+      "imports": [],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "DateTime",
+        "modulePath": "InternalDateTime",
+        "fullName": "InternalDateTime.DateTime",
+        "signature": "{\n\t\tday : U128,\n\t\thours : U128,\n\t\tminutes : U128,\n\t\tmonth : U128,\n\t\tseconds : U128,\n\t\tyear : U128,\n\t}",
+        "docs": "",
+        "line": 3,
+        "decl": ":",
+        "head": "DateTime"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_iso_8601",
+        "modulePath": "InternalDateTime",
+        "fullName": "InternalDateTime.to_iso_8601",
+        "signature": "DateTime -> Str",
+        "docs": "",
+        "line": 12
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "epoch_millis_to_datetime",
+        "modulePath": "InternalDateTime",
+        "fullName": "InternalDateTime.epoch_millis_to_datetime",
+        "signature": "U128 -> DateTime",
+        "docs": "",
+        "line": 24
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "year_with_padded_zeros",
+        "modulePath": "InternalDateTime",
+        "fullName": "InternalDateTime.year_with_padded_zeros",
+        "signature": "U128 -> Str",
+        "docs": "",
+        "line": 40
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "two_digits",
+        "modulePath": "InternalDateTime",
+        "fullName": "InternalDateTime.two_digits",
+        "signature": "U128 -> Str",
+        "docs": "",
+        "line": 55
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "normalize_date",
+        "modulePath": "InternalDateTime",
+        "fullName": "InternalDateTime.normalize_date",
+        "signature": "DateTime -> DateTime",
+        "docs": "",
+        "line": 66
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "days_in_month",
+        "modulePath": "InternalDateTime",
+        "fullName": "InternalDateTime.days_in_month",
+        "signature": "U128, U128 -> U128",
+        "docs": "",
+        "line": 90
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "is_leap_year",
+        "modulePath": "InternalDateTime",
+        "fullName": "InternalDateTime.is_leap_year",
+        "signature": "U128 -> Bool",
+        "docs": "",
+        "line": 112
+       }
+      ]
+     },
+     {
+      "name": "InternalHttp",
+      "imports": [
+       "http"
+      ],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "TransportErr",
+        "modulePath": "InternalHttp",
+        "fullName": "InternalHttp.TransportErr",
+        "signature": "[Timeout, NetworkError, BadBody, Other(List(U8))]",
+        "docs": "Errors raised by the host while sending a request, before a real HTTP\nresponse is available.",
+        "line": 12,
+        "decl": ":",
+        "head": "TransportErr"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "HostHeaderTuple",
+        "modulePath": "InternalHttp",
+        "fullName": "InternalHttp.HostHeaderTuple",
+        "signature": "(Str, Str)",
+        "docs": "",
+        "line": 15,
+        "decl": ":",
+        "head": "HostHeaderTuple"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "RequestToAndFromHost",
+        "modulePath": "InternalHttp",
+        "fullName": "InternalHttp.RequestToAndFromHost",
+        "signature": "{\n\t\tmethod : U8,\n\t\tmethod_ext : Str,\n\t\theaders : List(HostHeaderTuple),\n\t\turi : Str,\n\t\tbody : List(U8),\n\t\ttimeout_ms : U64,\n\t}",
+        "docs": "",
+        "line": 17,
+        "decl": ":",
+        "head": "RequestToAndFromHost"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "ResponseToAndFromHost",
+        "modulePath": "InternalHttp",
+        "fullName": "InternalHttp.ResponseToAndFromHost",
+        "signature": "{\n\t\tstatus : U16,\n\t\theaders : List(HostHeaderTuple),\n\t\tbody : List(U8),\n\t}",
+        "docs": "",
+        "line": 26,
+        "decl": ":",
+        "head": "ResponseToAndFromHost"
+       },
+       {
+        "kind": "value",
+        "tier": "host",
+        "name": "to_host_request",
+        "modulePath": "InternalHttp",
+        "fullName": "InternalHttp.to_host_request",
+        "signature": "Request -> RequestToAndFromHost",
+        "docs": "",
+        "line": 32
+       },
+       {
+        "kind": "value",
+        "tier": "host",
+        "name": "from_host_response",
+        "modulePath": "InternalHttp",
+        "fullName": "InternalHttp.from_host_response",
+        "signature": "ResponseToAndFromHost -> Response",
+        "docs": "",
+        "line": 45
+       },
+       {
+        "kind": "value",
+        "tier": "host",
+        "name": "to_host_headers",
+        "modulePath": "InternalHttp",
+        "fullName": "InternalHttp.to_host_headers",
+        "signature": "List(Header.Header) -> List(HostHeaderTuple)",
+        "docs": "",
+        "line": 51
+       },
+       {
+        "kind": "value",
+        "tier": "host",
+        "name": "from_host_headers",
+        "modulePath": "InternalHttp",
+        "fullName": "InternalHttp.from_host_headers",
+        "signature": "List(HostHeaderTuple) -> List(Header.Header)",
+        "docs": "",
+        "line": 55
+       }
+      ]
+     },
+     {
+      "name": "InternalSqlite",
+      "imports": [],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "SqliteError",
+        "modulePath": "InternalSqlite",
+        "fullName": "InternalSqlite.SqliteError",
+        "signature": "{\n\t\tcode : I64,\n\t\tmessage : Str,\n\t}",
+        "docs": "",
+        "line": 4,
+        "decl": ":",
+        "head": "SqliteError"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "SqliteValue",
+        "modulePath": "InternalSqlite",
+        "fullName": "InternalSqlite.SqliteValue",
+        "signature": "[\n\t\tNull,\n\t\tReal(F64),\n\t\tInteger(I64),\n\t\tString(Str),\n\t\tBytes(List(U8)),\n\t]",
+        "docs": "",
+        "line": 9,
+        "decl": ":",
+        "head": "SqliteValue"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "SqliteState",
+        "modulePath": "InternalSqlite",
+        "fullName": "InternalSqlite.SqliteState",
+        "signature": "[\n\t\tRow,\n\t\tDone,\n\t]",
+        "docs": "",
+        "line": 17,
+        "decl": ":",
+        "head": "SqliteState"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "SqliteBindings",
+        "modulePath": "InternalSqlite",
+        "fullName": "InternalSqlite.SqliteBindings",
+        "signature": "{\n\t\tname : Str,\n\t\tvalue : SqliteValue,\n\t}",
+        "docs": "",
+        "line": 22,
+        "decl": ":",
+        "head": "SqliteBindings"
+       }
+      ]
+     },
+     {
+      "name": "Locale",
+      "imports": [],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Locale",
+        "modulePath": "",
+        "fullName": "Locale",
+        "signature": "{ raw : Str }",
+        "docs": "A locale represented as a pragmatically validated BCP 47 language tag.\n\nLocale spelling is preserved for display, while equality and hashing are\nASCII case-insensitive as required for language tags.",
+        "line": 7,
+        "decl": "::",
+        "head": "Locale"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "ParseErr",
+        "modulePath": "Locale",
+        "fullName": "Locale.ParseErr",
+        "signature": "[\n\t\tEmpty,\n\t\tEmptySubtag,\n\t\tInvalidCharacter,\n\t\tInvalidLanguage,\n\t\tMissingExtensionValue,\n\t\tSubtagTooLong,\n\t]",
+        "docs": "A reason a locale string could not be parsed.",
+        "line": 10,
+        "decl": ":",
+        "head": "ParseErr"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse",
+        "modulePath": "Locale",
+        "fullName": "Locale.parse",
+        "signature": "Str -> Try(Locale, ParseErr)",
+        "docs": "Parse a dynamic string as a locale.\n\nThis catches common language-tag mistakes without consulting the IANA\nregistry or implementing every structural rule in BCP 47.",
+        "line": 23
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "from_quote",
+        "modulePath": "Locale",
+        "fullName": "Locale.from_quote",
+        "signature": "Str -> Try(Locale, [BadQuotedBytes(Str)])",
+        "docs": "Parse and validate a quoted locale literal.\n\nRoc calls this automatically when a quoted literal is expected to have\ntype Locale.",
+        "line": 34
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parser_for",
+        "modulePath": "Locale",
+        "fullName": "Locale.parser_for",
+        "signature": "encoding -> (state -> Try({ value : Locale, rest : state }, err))\n\t\twhere [\n\t\t\tencoding.parse_str : encoding, state -> Try({ value : Str, rest : state }, err),\n\t\t\tencoding.invalid_value : encoding, state -> err,\n\t\t]",
+        "docs": "Parse a locale from a string value supplied by a generic encoding.",
+        "line": 42
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "encoder_for",
+        "modulePath": "Locale",
+        "fullName": "Locale.encoder_for",
+        "signature": "encoding -> (Locale, state -> Try(state, err))\n\t\twhere [\n\t\t\tencoding.encode_str : Str, state -> Try(state, err),\n\t\t]",
+        "docs": "Encode a locale using its original spelling through a generic encoding.",
+        "line": 61
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_str",
+        "modulePath": "Locale",
+        "fullName": "Locale.to_str",
+        "signature": "Locale -> Str",
+        "docs": "Return the locale using its original spelling.",
+        "line": 72
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_inspect",
+        "modulePath": "Locale",
+        "fullName": "Locale.to_inspect",
+        "signature": "Locale -> Str",
+        "docs": "Render a locale for debugging and test failures.",
+        "line": 76
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "is_eq",
+        "modulePath": "Locale",
+        "fullName": "Locale.is_eq",
+        "signature": "Locale, Locale -> Bool",
+        "docs": "Compare locale tags without ASCII case distinctions.",
+        "line": 80
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_hash",
+        "modulePath": "Locale",
+        "fullName": "Locale.to_hash",
+        "signature": "Locale, Hasher -> Hasher",
+        "docs": "Hash locale tags without ASCII case distinctions.",
+        "line": 84
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "get!",
+        "modulePath": "Locale",
+        "fullName": "Locale.get!",
+        "signature": "() => Try(Locale, [NotAvailable])",
+        "docs": "Returns the most preferred locale for the system or application.\n\nPOSIX locale names are normalized by removing encoding and modifier\nsuffixes and replacing underscores with hyphens. The special `C` and\n`POSIX` locales are not language tags and are ignored.\n\nReturns `Err(NotAvailable)` if the locale cannot be determined.",
+        "line": 94
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "all!",
+        "modulePath": "Locale",
+        "fullName": "Locale.all!",
+        "signature": "() => List(Locale)",
+        "docs": "Returns the preferred locales for the system or application.\n\nValues are normalized and validated as described by `get!`. Invalid values\nare omitted, and duplicates are removed case-insensitively while preserving\npreference order.",
+        "line": 105
+       }
+      ]
+     },
+     {
+      "name": "Monotonic",
+      "imports": [],
+      "items": [
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "now!",
+        "modulePath": "Monotonic",
+        "fullName": "Monotonic.now!",
+        "signature": "() => U64",
+        "docs": "Read the process-local monotonic clock in nanoseconds.",
+        "line": 9
+       }
+      ]
+     },
+     {
+      "name": "OsStr",
+      "imports": [],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "OsStr",
+        "modulePath": "",
+        "fullName": "OsStr",
+        "signature": "[\n\tUtf8(Str),\n\tUnixBytes(List(U8)),\n\tWindowsU16s(List(U16)),\n]",
+        "docs": "Represent operating-system strings without losing non-Unicode data.\n\nNative Unix bytes and Windows UTF-16 units roundtrip through host effects;\nuse [`display`](#display) only when a lossy representation is acceptable.",
+        "line": 5,
+        "decl": ":=",
+        "head": "OsStr"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "from_str",
+        "modulePath": "OsStr",
+        "fullName": "OsStr.from_str",
+        "signature": "Str -> OsStr",
+        "docs": "Create an OS string from a dynamic UTF-8 `Str`. String literals can be used\ndirectly wherever an `OsStr` is expected. The host lowers UTF-8 text to the\nactive OS representation.",
+        "line": 14
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "utf8",
+        "modulePath": "OsStr",
+        "fullName": "OsStr.utf8",
+        "signature": "Str -> OsStr",
+        "docs": "Create a UTF-8 OS string from a dynamic `Str`.",
+        "line": 18
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "unix",
+        "modulePath": "OsStr",
+        "fullName": "OsStr.unix",
+        "signature": "Str -> OsStr",
+        "docs": "Create a Unix OS string from a Roc string by storing its UTF-8 bytes.",
+        "line": 22
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "unix_bytes",
+        "modulePath": "OsStr",
+        "fullName": "OsStr.unix_bytes",
+        "signature": "List(U8) -> OsStr",
+        "docs": "Create a Unix OS string from raw bytes without validating UTF-8.",
+        "line": 26
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "windows",
+        "modulePath": "OsStr",
+        "fullName": "OsStr.windows",
+        "signature": "Str -> OsStr",
+        "docs": "Create a Windows OS string from a Roc string by storing its UTF-16 code units.",
+        "line": 30
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "windows_u16s",
+        "modulePath": "OsStr",
+        "fullName": "OsStr.windows_u16s",
+        "signature": "List(U16) -> OsStr",
+        "docs": "Create a Windows OS string from raw UTF-16 code units.",
+        "line": 34
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "from_quote",
+        "modulePath": "OsStr",
+        "fullName": "OsStr.from_quote",
+        "signature": "Str -> Try(OsStr, [BadQuotedBytes(Str)])",
+        "docs": "Build an OS string from a quoted string literal.",
+        "line": 38
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "from_interpolation",
+        "modulePath": "OsStr",
+        "fullName": "OsStr.from_interpolation",
+        "signature": "Str, Iter((Str, Str)) -> OsStr",
+        "docs": "Build a UTF-8 OS string from an interpolated string literal.",
+        "line": 42
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_str_try",
+        "modulePath": "OsStr",
+        "fullName": "OsStr.to_str_try",
+        "signature": "OsStr -> Try(Str, [InvalidStr(U64)])",
+        "docs": "TODO: Restore generic parser_for and encoder_for helpers when the compiler\nno longer treats auto-derived `_` declarations in platforms as hosted:\nhttps://github.com/roc-lang/roc/issues/10162\nConvert an OS string to a string if its raw representation is valid text.",
+        "line": 51
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_bytes",
+        "modulePath": "OsStr",
+        "fullName": "OsStr.to_bytes",
+        "signature": "OsStr -> List(U8)",
+        "docs": "Convert an OS string to the bytes that represent it, for writing to a byte\nstream such as [Stdout.write_bytes!] or [Stderr.write_bytes!].\n\nUTF-8 text and Unix OS strings return their exact bytes, so non-Unicode Unix\ndata is preserved. Windows OS strings are UTF-16 code units rather than bytes,\nso they are encoded as UTF-8 with unpaired surrogates replaced by U+FFFD;\nthat conversion is lossy and must not be used for roundtripping.",
+        "line": 70
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "display",
+        "modulePath": "OsStr",
+        "fullName": "OsStr.display",
+        "signature": "OsStr -> Str",
+        "docs": "Convert an OS string to a best-effort display string, replacing invalid text\nwith U+FFFD. This representation is lossy and must not be used for roundtripping.",
+        "line": 80
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_inspect",
+        "modulePath": "OsStr",
+        "fullName": "OsStr.to_inspect",
+        "signature": "OsStr -> Str",
+        "docs": "Customize debug output for `Str.inspect`.",
+        "line": 89
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "is_eq",
+        "modulePath": "OsStr",
+        "fullName": "OsStr.is_eq",
+        "signature": "OsStr, OsStr -> Bool",
+        "docs": "Compare OS strings by their exact tagged representation.",
+        "line": 106
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_hash",
+        "modulePath": "OsStr",
+        "fullName": "OsStr.to_hash",
+        "signature": "OsStr, Hasher -> Hasher",
+        "docs": "Hash OS strings consistently with exact tagged equality.",
+        "line": 110
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_raw",
+        "modulePath": "OsStr",
+        "fullName": "OsStr.to_raw",
+        "signature": "OsStr -> [Utf8(Str), UnixBytes(List(U8)), WindowsU16s(List(U16))]",
+        "docs": "Expose the host ABI representation.",
+        "line": 119
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "from_raw",
+        "modulePath": "OsStr",
+        "fullName": "OsStr.from_raw",
+        "signature": "[Utf8(Str), UnixBytes(List(U8)), WindowsU16s(List(U16))] -> OsStr",
+        "docs": "Build an OS string from the host ABI representation.",
+        "line": 128
+       }
+      ]
+     },
+     {
+      "name": "Path",
+      "imports": [],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Path",
+        "modulePath": "",
+        "fullName": "Path",
+        "signature": "[\n\tUtf8(Str),\n\tUnix(List(U8)),\n\tWindows(List(U16)),\n]",
+        "docs": "Construct and operate on byte-preserving paths. Native Unix\nbytes and Windows UTF-16 units are preserved across host effects; use\n`display` only when a lossy human-readable representation is appropriate.\n\nQuoted literals create UTF-8 paths, and `join` appends one path component:\n\n```roc\nPath.create_all!(\"config\")?\nconfig_file = Path.join(\"config\", \"app.json\")\nPath.write_utf8!(config_file, \"{}\")?\n```",
+        "line": 25,
+        "decl": ":=",
+        "head": "Path"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "from_os_str",
+        "modulePath": "Path",
+        "fullName": "Path.from_os_str",
+        "signature": "OsStr -> Path",
+        "docs": "Create a path from an OS string value, preserving raw OS units.",
+        "line": 32
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_os_str",
+        "modulePath": "Path",
+        "fullName": "Path.to_os_str",
+        "signature": "Path -> OsStr",
+        "docs": "Convert a path to an OS string value, preserving raw OS units.",
+        "line": 36
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "is_file!",
+        "modulePath": "Path",
+        "fullName": "Path.is_file!",
+        "signature": "Path => Try(Bool, [PathErr(IOErr, Path)])",
+        "docs": "Returns `Bool.True` if the path exists on disk and is pointing at a regular file.\n\nThis function does not traverse symbolic links; symbolic links (including\nbroken ones) return `Bool.False`.\nSockets, FIFOs, devices, and other special filesystem objects also return `Bool.False`.",
+        "line": 44
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "is_dir!",
+        "modulePath": "Path",
+        "fullName": "Path.is_dir!",
+        "signature": "Path => Try(Bool, [PathErr(IOErr, Path)])",
+        "docs": "Returns `Bool.True` if the path exists on disk and is pointing at a directory.\n\nThis function does not traverse symbolic links; symbolic links (including\nbroken ones) return `Bool.False`.\nSockets, FIFOs, devices, and other special filesystem objects also return `Bool.False`.",
+        "line": 58
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "is_sym_link!",
+        "modulePath": "Path",
+        "fullName": "Path.is_sym_link!",
+        "signature": "Path => Try(Bool, [PathErr(IOErr, Path)])",
+        "docs": "Returns `Bool.True` if the path exists on disk and is pointing at a symbolic link.\n\nThis function will not traverse symbolic links - it checks whether the path\nitself is a symlink.\nSockets, FIFOs, devices, and other special filesystem objects return `Bool.False`.",
+        "line": 72
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "exists!",
+        "modulePath": "Path",
+        "fullName": "Path.exists!",
+        "signature": "Path => Try(Bool, [PathErr(IOErr, Path)])",
+        "docs": "Returns `True` if the path exists on disk.",
+        "line": 82
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "type!",
+        "modulePath": "Path",
+        "fullName": "Path.type!",
+        "signature": "Path => Try([IsFile, IsDir, IsSymLink, IsOther], [PathErr(IOErr, Path)])",
+        "docs": "Return the type of the path if the path exists on disk.\n\n`IsOther` represents sockets, FIFOs, block and character devices, and any\nplatform-specific object that is not a regular file, directory, or symbolic\nlink. On Windows this includes unrecognized reparse-point types.",
+        "line": 95
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "absolute!",
+        "modulePath": "Path",
+        "fullName": "Path.absolute!",
+        "signature": "Path => Try(Path, [PathErr(IOErr, Path)])",
+        "docs": "Make a path absolute without requiring it to exist. This does not resolve symlinks.",
+        "line": 103
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "canonicalize!",
+        "modulePath": "Path",
+        "fullName": "Path.canonicalize!",
+        "signature": "Path => Try(Path, [PathErr(IOErr, Path)])",
+        "docs": "Resolve an existing path, including symbolic links, to its absolute native path.",
+        "line": 107
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "copy!",
+        "modulePath": "Path",
+        "fullName": "Path.copy!",
+        "signature": "Path, Path => Try({}, [CopyErr({ operation : Str, source : Path, destination : Path, error : IOErr })])",
+        "docs": "Copy a regular file and its permissions, replacing the destination file.\nRejects same-file copies (including hard-link aliases) and special files.",
+        "line": 112
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "copy_dir!",
+        "modulePath": "Path",
+        "fullName": "Path.copy_dir!",
+        "signature": "Path, Path => Try({}, [CopyErr({ operation : Str, source : Path, destination : Path, error : IOErr })])",
+        "docs": "Copy a directory tree into a new destination, following symbolic links.\nMissing destination parent directories are created.\nPermissions are preserved; timestamps, ownership, ACLs and other metadata are not.\nErrors may leave a partial destination. Cycles and overlapping source/destination trees are rejected.",
+        "line": 120
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "copy_dir_with!",
+        "modulePath": "Path",
+        "fullName": "Path.copy_dir_with!",
+        "signature": "Path, Path, { symlinks : [Follow, Preserve], destination : [RequireNew, Merge] } => Try({}, [CopyErr({ operation : Str, source : Path, destination : Path, error : IOErr })])",
+        "docs": "Choose whether to preserve links and whether to merge an existing destination tree.\nMerge replaces regular files. Existing destination directory symlinks are rejected.",
+        "line": 125
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "read_bytes!",
+        "modulePath": "Path",
+        "fullName": "Path.read_bytes!",
+        "signature": "Path => Try(List(U8), [PathErr(IOErr, Path)])",
+        "docs": "Read all bytes from a file at this path.",
+        "line": 130
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "write_bytes!",
+        "modulePath": "Path",
+        "fullName": "Path.write_bytes!",
+        "signature": "Path, List(U8) => Try({}, [PathErr(IOErr, Path)])",
+        "docs": "Write bytes to a file at this path, replacing any existing contents.",
+        "line": 134
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "read_utf8!",
+        "modulePath": "Path",
+        "fullName": "Path.read_utf8!",
+        "signature": "Path => Try(Str, [PathErr(IOErr, Path)])",
+        "docs": "Read a UTF-8 file at this path.",
+        "line": 138
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "write_utf8!",
+        "modulePath": "Path",
+        "fullName": "Path.write_utf8!",
+        "signature": "Path, Str => Try({}, [PathErr(IOErr, Path)])",
+        "docs": "Write a UTF-8 file at this path, replacing any existing contents.",
+        "line": 142
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "replace_utf8!",
+        "modulePath": "Path",
+        "fullName": "Path.replace_utf8!",
+        "signature": "Path, Str, Str => Try({}, [PathErr(IOErr, Path)])",
+        "docs": "Replace every occurrence of `pattern` with `replacement` in the UTF-8 file\nat this path.\n\nThis reads the whole file, substitutes, and writes it back, so it is not\natomic: a failure mid-write can leave the file partially written, exactly\nas a bare [write_utf8!] would.",
+        "line": 151
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "delete!",
+        "modulePath": "Path",
+        "fullName": "Path.delete!",
+        "signature": "Path => Try({}, [PathErr(IOErr, Path)])",
+        "docs": "Delete a file at this path.",
+        "line": 158
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "size_in_bytes!",
+        "modulePath": "Path",
+        "fullName": "Path.size_in_bytes!",
+        "signature": "Path => Try(U64, [PathErr(IOErr, Path)])",
+        "docs": "Return the size of the file at this path in bytes.",
+        "line": 162
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "is_executable!",
+        "modulePath": "Path",
+        "fullName": "Path.is_executable!",
+        "signature": "Path => Try(Bool, [PathErr(IOErr, Path)])",
+        "docs": "Check whether the file at this path has any executable bit set.",
+        "line": 166
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "is_readable!",
+        "modulePath": "Path",
+        "fullName": "Path.is_readable!",
+        "signature": "Path => Try(Bool, [PathErr(IOErr, Path)])",
+        "docs": "Check whether the file at this path has a readable owner permission bit set.",
+        "line": 170
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "is_writable!",
+        "modulePath": "Path",
+        "fullName": "Path.is_writable!",
+        "signature": "Path => Try(Bool, [PathErr(IOErr, Path)])",
+        "docs": "Check whether the file at this path has a writable owner permission bit set.",
+        "line": 174
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "time_accessed!",
+        "modulePath": "Path",
+        "fullName": "Path.time_accessed!",
+        "signature": "Path => Try(U128, [PathErr(IOErr, Path)])",
+        "docs": "Return the last accessed time as nanoseconds since the Unix epoch.",
+        "line": 178
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "time_modified!",
+        "modulePath": "Path",
+        "fullName": "Path.time_modified!",
+        "signature": "Path => Try(U128, [PathErr(IOErr, Path)])",
+        "docs": "Return the last modified time as nanoseconds since the Unix epoch.",
+        "line": 182
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "time_created!",
+        "modulePath": "Path",
+        "fullName": "Path.time_created!",
+        "signature": "Path => Try(U128, [PathErr(IOErr, Path)])",
+        "docs": "Return the creation time as nanoseconds since the Unix epoch.",
+        "line": 186
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "hard_link!",
+        "modulePath": "Path",
+        "fullName": "Path.hard_link!",
+        "signature": "Path, Path => Try({}, [PathErr(IOErr, Path)])",
+        "docs": "Create a hard link at `link` pointing to `original`.\n\nErrors report `original`, which is what a missing-file failure refers to.\nSome failures concern `link` instead, such as `AlreadyExists`.",
+        "line": 193
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "rename!",
+        "modulePath": "Path",
+        "fullName": "Path.rename!",
+        "signature": "Path, Path => Try({}, [PathErr(IOErr, Path)])",
+        "docs": "Rename a file from `from` to `to`.\n\nErrors report `from`; a failure may still concern `to`, such as its\nparent directory not existing.",
+        "line": 201
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "create_dir!",
+        "modulePath": "Path",
+        "fullName": "Path.create_dir!",
+        "signature": "Path => Try({}, [PathErr(IOErr, Path)])",
+        "docs": "Create a directory at this path.",
+        "line": 206
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "create_all!",
+        "modulePath": "Path",
+        "fullName": "Path.create_all!",
+        "signature": "Path => Try({}, [PathErr(IOErr, Path)])",
+        "docs": "Create a directory and any missing parent directories at this path.",
+        "line": 210
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "delete_empty!",
+        "modulePath": "Path",
+        "fullName": "Path.delete_empty!",
+        "signature": "Path => Try({}, [PathErr(IOErr, Path)])",
+        "docs": "Delete an empty directory at this path.",
+        "line": 214
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "delete_all!",
+        "modulePath": "Path",
+        "fullName": "Path.delete_all!",
+        "signature": "Path => Try({}, [PathErr(IOErr, Path)])",
+        "docs": "Delete a directory and all contents at this path.",
+        "line": 218
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "list!",
+        "modulePath": "Path",
+        "fullName": "Path.list!",
+        "signature": "Path => Try(List(Path), [PathErr(IOErr, Path)])",
+        "docs": "List the entries in the directory at this path.",
+        "line": 222
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "utf8",
+        "modulePath": "Path",
+        "fullName": "Path.utf8",
+        "signature": "Str -> Path",
+        "docs": "Create a UTF-8 path from a dynamic `Str`. String literals can be used\ndirectly wherever a `Path` is expected.",
+        "line": 231
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "from_quote",
+        "modulePath": "Path",
+        "fullName": "Path.from_quote",
+        "signature": "Str -> Try(Path, [BadQuotedBytes(Str)])",
+        "docs": "Create a UTF-8 text path from a quoted literal.",
+        "line": 235
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "from_interpolation",
+        "modulePath": "Path",
+        "fullName": "Path.from_interpolation",
+        "signature": "Str, Iter((Str, Str)) -> Path",
+        "docs": "Create a UTF-8 path from an interpolated string literal.\nThis performs textual concatenation; use [join] for path-component joining.",
+        "line": 240
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "unix",
+        "modulePath": "Path",
+        "fullName": "Path.unix",
+        "signature": "Str -> Path",
+        "docs": "TODO: Restore generic parser_for and encoder_for helpers when the compiler\nno longer treats auto-derived `_` declarations in platforms as hosted:\nhttps://github.com/roc-lang/roc/issues/10162\nCreate a Unix path from a Roc string by storing its UTF-8 bytes.",
+        "line": 249
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "unix_bytes",
+        "modulePath": "Path",
+        "fullName": "Path.unix_bytes",
+        "signature": "List(U8) -> Path",
+        "docs": "Create a Unix path from raw bytes without validating UTF-8.",
+        "line": 253
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "windows",
+        "modulePath": "Path",
+        "fullName": "Path.windows",
+        "signature": "Str -> Path",
+        "docs": "Create a Windows path from a Roc string by storing its UTF-16 code units.",
+        "line": 257
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "windows_u16s",
+        "modulePath": "Path",
+        "fullName": "Path.windows_u16s",
+        "signature": "List(U16) -> Path",
+        "docs": "Create a Windows path from raw UTF-16 code units.",
+        "line": 261
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_str",
+        "modulePath": "Path",
+        "fullName": "Path.to_str",
+        "signature": "Path -> Try(Str, [InvalidStr(U64)])",
+        "docs": "Convert a path to a string if its raw representation is valid text.",
+        "line": 265
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "display",
+        "modulePath": "Path",
+        "fullName": "Path.display",
+        "signature": "Path -> Str",
+        "docs": "Convert a path to a best-effort display string, replacing invalid text with\nU+FFFD. This representation is lossy and must not be used for roundtripping.",
+        "line": 281
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_inspect",
+        "modulePath": "Path",
+        "fullName": "Path.to_inspect",
+        "signature": "Path -> Str",
+        "docs": "Render a path for debugging without losing raw OS units.",
+        "line": 290
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "is_eq",
+        "modulePath": "Path",
+        "fullName": "Path.is_eq",
+        "signature": "Path, Path -> Bool",
+        "docs": "Compare paths by their exact tagged representation.",
+        "line": 307
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_hash",
+        "modulePath": "Path",
+        "fullName": "Path.to_hash",
+        "signature": "Path, Hasher -> Hasher",
+        "docs": "Hash paths consistently with exact tagged equality.",
+        "line": 311
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "filename",
+        "modulePath": "Path",
+        "fullName": "Path.filename",
+        "signature": "Path -> Try(Path, [IsDirPath, EndsInDots])",
+        "docs": "Returns everything after the last directory separator.",
+        "line": 320
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "ext",
+        "modulePath": "Path",
+        "fullName": "Path.ext",
+        "signature": "Path -> Try(Path, [IsDirPath, EndsInDots])",
+        "docs": "Returns the filename extension without the leading dot.",
+        "line": 364
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "join",
+        "modulePath": "Path",
+        "fullName": "Path.join",
+        "signature": "Path, Str -> Path",
+        "docs": "Adds a separator and a string component to the path.",
+        "line": 374
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_raw",
+        "modulePath": "Path",
+        "fullName": "Path.to_raw",
+        "signature": "Path -> [Utf8(Str), UnixBytes(List(U8)), WindowsU16s(List(U16))]",
+        "docs": "Expose the raw OS-specific representation.",
+        "line": 383
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "from_raw",
+        "modulePath": "Path",
+        "fullName": "Path.from_raw",
+        "signature": "[Utf8(Str), UnixBytes(List(U8)), WindowsU16s(List(U16))] -> Path",
+        "docs": "Build a path from the raw OS-specific representation.",
+        "line": 392
+       }
+      ]
+     },
+     {
+      "name": "Random",
+      "imports": [],
+      "items": [
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "seed_u64!",
+        "modulePath": "Random",
+        "fullName": "Random.seed_u64!",
+        "signature": "() => Try(U64, [RandomErr(IOErr)])",
+        "docs": "Generate a random 64-bit unsigned integer seed.",
+        "line": 8
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "seed_u32!",
+        "modulePath": "Random",
+        "fullName": "Random.seed_u32!",
+        "signature": "() => Try(U32, [RandomErr(IOErr)])",
+        "docs": "Generate a random 32-bit unsigned integer seed.",
+        "line": 12
+       }
+      ]
+     },
+     {
+      "name": "Sleep",
+      "imports": [],
+      "items": [
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "millis!",
+        "modulePath": "Sleep",
+        "fullName": "Sleep.millis!",
+        "signature": "U64 => {}",
+        "docs": "Sleep for the specified number of milliseconds.",
+        "line": 18
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "seconds!",
+        "modulePath": "Sleep",
+        "fullName": "Sleep.seconds!",
+        "signature": "F64 => {}",
+        "docs": "Sleep for the specified number of seconds.\n\nThe duration is truncated to whole milliseconds, so `Sleep.seconds!(1.5)`\nsleeps for 1500 ms. Negative and `NaN` durations return immediately, and\ndurations past [U64.highest] milliseconds saturate there.",
+        "line": 26
+       }
+      ]
+     },
+     {
+      "name": "Sqlite",
+      "imports": [],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Value",
+        "modulePath": "Sqlite",
+        "fullName": "Sqlite.Value",
+        "signature": "[\n\t\tNull,\n\t\tReal(F64),\n\t\tInteger(I64),\n\t\tString(Str),\n\t\tBytes(List(U8)),\n\t]",
+        "docs": "A value accepted by a SQLite binding or returned from a column.",
+        "line": 33,
+        "decl": ":",
+        "head": "Value"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Binding",
+        "modulePath": "Sqlite",
+        "fullName": "Sqlite.Binding",
+        "signature": "{\n\t\tname : Str,\n\t\tvalue : Value,\n\t}",
+        "docs": "A named parameter binding. Include SQLite's parameter prefix in `name`,\nfor example `{ name: \":id\", value: Integer(42) }`.",
+        "line": 43,
+        "decl": ":",
+        "head": "Binding"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Stmt",
+        "modulePath": "Sqlite",
+        "fullName": "Sqlite.Stmt",
+        "signature": "{ host : Host.SqliteStmt }",
+        "docs": "Represents a prepared statement that can be executed many times.",
+        "line": 49,
+        "decl": "::",
+        "head": "Stmt"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_inspect",
+        "modulePath": "Sqlite.Stmt",
+        "fullName": "Sqlite.Stmt.to_inspect",
+        "signature": "Stmt -> Str",
+        "docs": "Render the statement without exposing its host handle.",
+        "line": 52
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "execute!",
+        "modulePath": "Sqlite.Stmt",
+        "fullName": "Sqlite.Stmt.execute!",
+        "signature": "Stmt, List(Binding) => Try({}, [RowsReturnedUseQueryInstead, SqliteErr(ErrCode, Str)])",
+        "docs": "Execute this prepared statement without returning rows.",
+        "line": 56
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "query!",
+        "modulePath": "Sqlite.Stmt",
+        "fullName": "Sqlite.Stmt.query!",
+        "signature": "|stmt, bindings, decode|",
+        "docs": "Execute this prepared query and decode exactly one row.",
+        "line": 70,
+        "unannotated": true
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "query_many!",
+        "modulePath": "Sqlite.Stmt",
+        "fullName": "Sqlite.Stmt.query_many!",
+        "signature": "|stmt, bindings, decode|",
+        "docs": "Execute this prepared query and decode all returned rows.",
+        "line": 79,
+        "unannotated": true
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "ErrCode",
+        "modulePath": "Sqlite",
+        "fullName": "Sqlite.ErrCode",
+        "signature": "[\n\t\tError,\n\t\tInternal,\n\t\tPerm,\n\t\tAbort,\n\t\tBusy,\n\t\tLocked,\n\t\tNoMem,\n\t\tReadOnly,\n\t\tInterrupt,\n\t\tIOErr,\n\t\tCorrupt,\n\t\tNotFound,\n\t\tFull,\n\t\tCanNotOpen,\n\t\tProtocol,\n\t\tEmpty,\n\t\tSchema,\n\t\tTooBig,\n\t\tConstraint,\n\t\tMismatch,\n\t\tMisuse,\n\t\tNoLFS,\n\t\tAuthDenied,\n\t\tFormat,\n\t\tOutOfRange,\n\t\tNotADatabase,\n\t\tNotice,\n\t\tWarning,\n\t\tRow,\n\t\tDone,\n\t\tUnknown(I64),\n\t]",
+        "docs": "Represents various error codes that can be returned by Sqlite.",
+        "line": 89,
+        "decl": ":",
+        "head": "ErrCode"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "DecodeErr",
+        "modulePath": "Sqlite",
+        "fullName": "Sqlite.DecodeErr",
+        "signature": "[NoSuchField(Str), SqliteErr(ErrCode, Str)]",
+        "docs": "Documented shape of the errors a decoder can produce (the decoders below are\nleft unannotated and infer a subset of these structurally):\n```\n[\n    NoSuchField(Str),\n    SqliteErr(ErrCode, Str),\n    UnexpectedType([Integer, Real, String, Bytes, Null]),\n    FailedToDecodeInteger,\n    FailedToDecodeReal,\n    IntOutOfBounds,\n    NoRowsReturned,\n    TooManyRowsReturned,\n]\n```",
+        "line": 137,
+        "decl": ":",
+        "head": "DecodeErr"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "prepare!",
+        "modulePath": "Sqlite",
+        "fullName": "Sqlite.prepare!",
+        "signature": "{ path : Path.Path, query : Str } => Try(Stmt, [SqliteErr(ErrCode, Str)])",
+        "docs": "Prepare a `Stmt` for reuse by the prepared execute and query operations.",
+        "line": 140
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "execute!",
+        "modulePath": "Sqlite",
+        "fullName": "Sqlite.execute!",
+        "signature": "{ path : Path.Path, query : Str, bindings : List(Binding) } => Try({}, [RowsReturnedUseQueryInstead, SqliteErr(ErrCode, Str)])",
+        "docs": "Execute a SQL statement that **doesn't return any rows** (INSERT/UPDATE/DELETE).",
+        "line": 145
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "query!",
+        "modulePath": "Sqlite",
+        "fullName": "Sqlite.query!",
+        "signature": "|{ path, query: q, bindings, row }|",
+        "docs": "Execute a SQL query and decode exactly one row into a value. `bindings`\nis a `List(Binding)` and `row` is a decoder built from the functions below.",
+        "line": 153,
+        "unannotated": true
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "query_many!",
+        "modulePath": "Sqlite",
+        "fullName": "Sqlite.query_many!",
+        "signature": "|{ path, query: q, bindings, rows }|",
+        "docs": "Execute a SQL query and decode multiple rows into a list of values.\n`bindings` is a `List(Binding)` and `rows` is a row decoder.",
+        "line": 162,
+        "unannotated": true
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "decode_record",
+        "modulePath": "Sqlite",
+        "fullName": "Sqlite.decode_record",
+        "signature": "|gen_first, gen_second, mapper|",
+        "docs": "Decode a Sqlite row into a record by combining two decoders.",
+        "line": 172,
+        "unannotated": true
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "map_value",
+        "modulePath": "Sqlite",
+        "fullName": "Sqlite.map_value",
+        "signature": "|gen_decode, mapper|",
+        "docs": "Transform the output of a decoder by applying a function to the decoded value.",
+        "line": 185,
+        "unannotated": true
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "map_value_result",
+        "modulePath": "Sqlite",
+        "fullName": "Sqlite.map_value_result",
+        "signature": "|gen_decode, mapper|",
+        "docs": "Transform a decoder's output with a function returning a `Try`.",
+        "line": 194,
+        "unannotated": true
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "tagged_value",
+        "modulePath": "Sqlite",
+        "fullName": "Sqlite.tagged_value",
+        "signature": "|name|",
+        "docs": "Decode a `Value` keeping it tagged.",
+        "line": 205,
+        "unannotated": true
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "str",
+        "modulePath": "Sqlite",
+        "fullName": "Sqlite.str",
+        "signature": "|name|",
+        "docs": "Decode a column to a `Str`.",
+        "line": 210,
+        "unannotated": true
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "bytes",
+        "modulePath": "Sqlite",
+        "fullName": "Sqlite.bytes",
+        "signature": "|name|",
+        "docs": "Decode a column to a [List U8].",
+        "line": 220,
+        "unannotated": true
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "i64",
+        "modulePath": "Sqlite",
+        "fullName": "Sqlite.i64",
+        "signature": "|name|",
+        "docs": "Decode a column to an `I64`.",
+        "line": 230,
+        "unannotated": true
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "i32",
+        "modulePath": "Sqlite",
+        "fullName": "Sqlite.i32",
+        "signature": "|name|",
+        "docs": "Decode a column to an `I32`.",
+        "line": 233,
+        "unannotated": true
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "i16",
+        "modulePath": "Sqlite",
+        "fullName": "Sqlite.i16",
+        "signature": "|name|",
+        "docs": "Decode a column to an `I16`.",
+        "line": 236,
+        "unannotated": true
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "i8",
+        "modulePath": "Sqlite",
+        "fullName": "Sqlite.i8",
+        "signature": "|name|",
+        "docs": "Decode a column to an `I8`.",
+        "line": 239,
+        "unannotated": true
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "u64",
+        "modulePath": "Sqlite",
+        "fullName": "Sqlite.u64",
+        "signature": "|name|",
+        "docs": "Decode a column to a `U64`.",
+        "line": 242,
+        "unannotated": true
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "u32",
+        "modulePath": "Sqlite",
+        "fullName": "Sqlite.u32",
+        "signature": "|name|",
+        "docs": "Decode a column to a `U32`.",
+        "line": 245,
+        "unannotated": true
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "u16",
+        "modulePath": "Sqlite",
+        "fullName": "Sqlite.u16",
+        "signature": "|name|",
+        "docs": "Decode a column to a `U16`.",
+        "line": 248,
+        "unannotated": true
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "u8",
+        "modulePath": "Sqlite",
+        "fullName": "Sqlite.u8",
+        "signature": "|name|",
+        "docs": "Decode a column to a `U8`.",
+        "line": 251,
+        "unannotated": true
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "f64",
+        "modulePath": "Sqlite",
+        "fullName": "Sqlite.f64",
+        "signature": "|name|",
+        "docs": "Decode a column to an `F64`.",
+        "line": 254,
+        "unannotated": true
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "nullable_str",
+        "modulePath": "Sqlite",
+        "fullName": "Sqlite.nullable_str",
+        "signature": "|name|",
+        "docs": "Decode a nullable column to `[NotNull(Str), Null]`.",
+        "line": 260,
+        "unannotated": true
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "nullable_bytes",
+        "modulePath": "Sqlite",
+        "fullName": "Sqlite.nullable_bytes",
+        "signature": "|name|",
+        "docs": "Decode a nullable column to `[NotNull(List(U8)), Null]`.",
+        "line": 271,
+        "unannotated": true
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "nullable_i64",
+        "modulePath": "Sqlite",
+        "fullName": "Sqlite.nullable_i64",
+        "signature": "|name|",
+        "docs": "Decode a nullable column to `[NotNull(I64), Null]`.",
+        "line": 282,
+        "unannotated": true
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "nullable_i32",
+        "modulePath": "Sqlite",
+        "fullName": "Sqlite.nullable_i32",
+        "signature": "|name|",
+        "docs": "Decode a nullable column to `[NotNull(I32), Null]`.",
+        "line": 285,
+        "unannotated": true
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "nullable_i16",
+        "modulePath": "Sqlite",
+        "fullName": "Sqlite.nullable_i16",
+        "signature": "|name|",
+        "docs": "Decode a nullable column to `[NotNull(I16), Null]`.",
+        "line": 288,
+        "unannotated": true
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "nullable_i8",
+        "modulePath": "Sqlite",
+        "fullName": "Sqlite.nullable_i8",
+        "signature": "|name|",
+        "docs": "Decode a nullable column to `[NotNull(I8), Null]`.",
+        "line": 291,
+        "unannotated": true
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "nullable_u64",
+        "modulePath": "Sqlite",
+        "fullName": "Sqlite.nullable_u64",
+        "signature": "|name|",
+        "docs": "Decode a nullable column to `[NotNull(U64), Null]`.",
+        "line": 294,
+        "unannotated": true
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "nullable_u32",
+        "modulePath": "Sqlite",
+        "fullName": "Sqlite.nullable_u32",
+        "signature": "|name|",
+        "docs": "Decode a nullable column to `[NotNull(U32), Null]`.",
+        "line": 297,
+        "unannotated": true
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "nullable_u16",
+        "modulePath": "Sqlite",
+        "fullName": "Sqlite.nullable_u16",
+        "signature": "|name|",
+        "docs": "Decode a nullable column to `[NotNull(U16), Null]`.",
+        "line": 300,
+        "unannotated": true
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "nullable_u8",
+        "modulePath": "Sqlite",
+        "fullName": "Sqlite.nullable_u8",
+        "signature": "|name|",
+        "docs": "Decode a nullable column to `[NotNull(U8), Null]`.",
+        "line": 303,
+        "unannotated": true
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "nullable_f64",
+        "modulePath": "Sqlite",
+        "fullName": "Sqlite.nullable_f64",
+        "signature": "|name|",
+        "docs": "Decode a nullable column to `[NotNull(F64), Null]`.",
+        "line": 306,
+        "unannotated": true
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "errcode_to_str",
+        "modulePath": "Sqlite",
+        "fullName": "Sqlite.errcode_to_str",
+        "signature": "|code|",
+        "docs": "Convert an `ErrCode` to a pretty string for display purposes.",
+        "line": 309,
+        "unannotated": true
+       }
+      ]
+     },
+     {
+      "name": "Stderr",
+      "imports": [],
+      "items": [
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "line!",
+        "modulePath": "Stderr",
+        "fullName": "Stderr.line!",
+        "signature": "Str => Try({}, [StderrErr(IOErr)])",
+        "docs": "Write the given string to [standard error](https://en.wikipedia.org/wiki/Standard_streams#Standard_error_(stderr)),\nfollowed by a newline.\n\n> To write to `stderr` without the newline, see [Stderr.write!].",
+        "line": 11
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "write!",
+        "modulePath": "Stderr",
+        "fullName": "Stderr.write!",
+        "signature": "Str => Try({}, [StderrErr(IOErr)])",
+        "docs": "Write the given string to [standard error](https://en.wikipedia.org/wiki/Standard_streams#Standard_error_(stderr)).\n\nMost terminals will not actually display strings that are written to them until they receive a newline,\nso this may appear to do nothing until you write a newline!\n\n> To write to `stderr` with a newline at the end, see [Stderr.line!].",
+        "line": 20
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "write_bytes!",
+        "modulePath": "Stderr",
+        "fullName": "Stderr.write_bytes!",
+        "signature": "List(U8) => Try({}, [StderrErr(IOErr)])",
+        "docs": "Write the given bytes to [standard error](https://en.wikipedia.org/wiki/Standard_streams#Standard_error_(stderr)).\n\nMost terminals will not actually display content that are written to them until they receive a newline,\nso this may appear to do nothing until you write a newline!",
+        "line": 27
+       }
+      ]
+     },
+     {
+      "name": "Stdin",
+      "imports": [],
+      "items": [
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "line!",
+        "modulePath": "Stdin",
+        "fullName": "Stdin.line!",
+        "signature": "() => Try(Str, [EndOfFile, StdinErr(IOErr)])",
+        "docs": "Read a line from [standard input](https://en.wikipedia.org/wiki/Standard_streams#Standard_input_(stdin)).\n\n> This task will block the program from continuing until `stdin` receives a newline character\n(e.g. because the user pressed Enter in the terminal), so using it can result in the appearance of the\nprogram having gotten stuck. It's often helpful to print a prompt first, so\nthe user knows it's necessary to enter something before the program will continue.",
+        "line": 13
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "bytes!",
+        "modulePath": "Stdin",
+        "fullName": "Stdin.bytes!",
+        "signature": "() => Try(List(U8), [EndOfFile, StdinErr(IOErr)])",
+        "docs": "Read bytes from [standard input](https://en.wikipedia.org/wiki/Standard_streams#Standard_input_(stdin)).\nThis function can read no more than 16,384 bytes at a time. Use [read_to_end!] if you need more.\n\n> This is typically used in combination with [Tty.enable_raw_mode!],\nwhich disables default terminal behaviour and allows reading input\nwithout buffering until Enter key is pressed.",
+        "line": 22
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "read_to_end!",
+        "modulePath": "Stdin",
+        "fullName": "Stdin.read_to_end!",
+        "signature": "() => Try(List(U8), [StdinErr(IOErr)])",
+        "docs": "Read all bytes from [standard input](https://en.wikipedia.org/wiki/Standard_streams#Standard_input_(stdin))\nuntil [EOF](https://en.wikipedia.org/wiki/End-of-file) in this source.",
+        "line": 27
+       }
+      ]
+     },
+     {
+      "name": "Stdout",
+      "imports": [],
+      "items": [
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "line!",
+        "modulePath": "Stdout",
+        "fullName": "Stdout.line!",
+        "signature": "Str => Try({}, [StdoutErr(IOErr)])",
+        "docs": "Write the given string to [standard output](https://en.wikipedia.org/wiki/Standard_streams#Standard_output_(stdout)),\nfollowed by a newline.\n\n> To write to `stdout` without the newline, see [Stdout.write!].",
+        "line": 11
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "write!",
+        "modulePath": "Stdout",
+        "fullName": "Stdout.write!",
+        "signature": "Str => Try({}, [StdoutErr(IOErr)])",
+        "docs": "Write the given string to [standard output](https://en.wikipedia.org/wiki/Standard_streams#Standard_output_(stdout)).\n\nNote that many terminals will not actually display strings that are written to them until they receive a newline,\nso this may appear to do nothing until you write a newline!\n\n> To write to `stdout` with a newline at the end, see [Stdout.line!].",
+        "line": 20
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "write_bytes!",
+        "modulePath": "Stdout",
+        "fullName": "Stdout.write_bytes!",
+        "signature": "List(U8) => Try({}, [StdoutErr(IOErr)])",
+        "docs": "Write the given bytes to [standard output](https://en.wikipedia.org/wiki/Standard_streams#Standard_output_(stdout)).\n\nNote that many terminals will not actually display content that is written to them until they receive a newline,\nso this may appear to do nothing until you write a newline!",
+        "line": 27
+       }
+      ]
+     },
+     {
+      "name": "Tcp",
+      "imports": [],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Listener",
+        "modulePath": "Tcp",
+        "fullName": "Tcp.Listener",
+        "signature": "{ host : Host.TcpListener }",
+        "docs": "A listening socket. Final ARC release closes it; close! affects all aliases.",
+        "line": 21,
+        "decl": "::",
+        "head": "Listener"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_inspect",
+        "modulePath": "Tcp.Listener",
+        "fullName": "Tcp.Listener.to_inspect",
+        "signature": "Listener -> Str",
+        "docs": "",
+        "line": 22
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "local_port!",
+        "modulePath": "Tcp.Listener",
+        "fullName": "Tcp.Listener.local_port!",
+        "signature": "Listener => Try(U16, _)",
+        "docs": "Read the reserved local port.",
+        "line": 26
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "accept!",
+        "modulePath": "Tcp.Listener",
+        "fullName": "Tcp.Listener.accept!",
+        "signature": "Listener, U64 => Try(Stream, _)",
+        "docs": "Accept a connection within the given whole-operation timeout.",
+        "line": 30
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "close!",
+        "modulePath": "Tcp.Listener",
+        "fullName": "Tcp.Listener.close!",
+        "signature": "Listener => Try({}, _)",
+        "docs": "Close the listener. Repeated closes succeed.",
+        "line": 37
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "listen!",
+        "modulePath": "Tcp",
+        "fullName": "Tcp.listen!",
+        "signature": "Str, U16, U64 => Try(Listener, _)",
+        "docs": "Bind an address and listen. Port zero reserves an OS-assigned port until\nthis listener is closed. The timeout includes hostname resolution.",
+        "line": 43
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Stream",
+        "modulePath": "Tcp",
+        "fullName": "Tcp.Stream",
+        "signature": "{ host : Host.TcpStream }",
+        "docs": "Represents a TCP stream.\n\nThe connection is automatically closed when the last reference to the\nstream is dropped. It wraps an opaque host-side `BufReader<TcpStream>`\nhandle.",
+        "line": 54,
+        "decl": "::",
+        "head": "Stream"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_inspect",
+        "modulePath": "Tcp.Stream",
+        "fullName": "Tcp.Stream.to_inspect",
+        "signature": "Stream -> Str",
+        "docs": "Render the stream without exposing its host handle.",
+        "line": 57
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "read_up_to!",
+        "modulePath": "Tcp.Stream",
+        "fullName": "Tcp.Stream.read_up_to!",
+        "signature": "Stream, U64, U64 => Try(List(U8), _)",
+        "docs": "Read up to a number of bytes, waiting at most `timeout_ms` milliseconds.",
+        "line": 61
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "read_exactly!",
+        "modulePath": "Tcp.Stream",
+        "fullName": "Tcp.Stream.read_exactly!",
+        "signature": "Stream, U64, U64 => Try(List(U8), _)",
+        "docs": "Read an exact number of bytes, waiting at most `timeout_ms` milliseconds.\n\n`TcpUnexpectedEOF` is returned if the stream ends before the specified\nnumber of bytes is reached.",
+        "line": 70
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "read_until!",
+        "modulePath": "Tcp.Stream",
+        "fullName": "Tcp.Stream.read_until!",
+        "signature": "Stream, U8, U64, U64 => Try(List(U8), _)",
+        "docs": "Read until a delimiter or EOF is reached, consuming at most `max_bytes`\nand waiting at most `timeout_ms` milliseconds.\nIf found, the delimiter is included as the last byte. Returns\n`TcpReadLimitExceeded(max_bytes)` if the delimiter was not found within\nthe limit.",
+        "line": 83
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "read_line!",
+        "modulePath": "Tcp.Stream",
+        "fullName": "Tcp.Stream.read_line!",
+        "signature": "Stream, U64, U64 => Try(Str, _)",
+        "docs": "Read at most `max_bytes` through a newline (`\\n`, byte 10) or EOF as\nUTF-8, waiting at most `timeout_ms` milliseconds. If found, the newline\nis included as the last character.",
+        "line": 94
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "write!",
+        "modulePath": "Tcp.Stream",
+        "fullName": "Tcp.Stream.write!",
+        "signature": "Stream, List(U8), U64 => Try({}, _)",
+        "docs": "Write bytes, waiting at most `timeout_ms` milliseconds.",
+        "line": 102
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "write_utf8!",
+        "modulePath": "Tcp.Stream",
+        "fullName": "Tcp.Stream.write_utf8!",
+        "signature": "Stream, Str, U64 => Try({}, _)",
+        "docs": "Write a string as UTF-8, waiting at most `timeout_ms` milliseconds.",
+        "line": 108
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "ConnectErr",
+        "modulePath": "Tcp",
+        "fullName": "Tcp.ConnectErr",
+        "signature": "[\n\t\tPermissionDenied,\n\t\tAddrInUse,\n\t\tAddrNotAvailable,\n\t\tConnectionRefused,\n\t\tInterrupted,\n\t\tTimedOut,\n\t\tUnsupported,\n\t\tUnrecognized(Str),\n\t]",
+        "docs": "Represents errors that can occur when connecting to a remote host.",
+        "line": 114,
+        "decl": ":",
+        "head": "ConnectErr"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "StreamErr",
+        "modulePath": "Tcp",
+        "fullName": "Tcp.StreamErr",
+        "signature": "[\n\t\tStreamNotFound,\n\t\tPermissionDenied,\n\t\tConnectionRefused,\n\t\tConnectionReset,\n\t\tInterrupted,\n\t\tTimedOut,\n\t\tOutOfMemory,\n\t\tBrokenPipe,\n\t\tUnrecognized(Str),\n\t]",
+        "docs": "Represents errors that can occur when performing an effect with a `Stream`.",
+        "line": 126,
+        "decl": ":",
+        "head": "StreamErr"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "connect!",
+        "modulePath": "Tcp",
+        "fullName": "Tcp.connect!",
+        "signature": "|host, port, timeout_ms|",
+        "docs": "Opens a TCP connection, waiting at most `timeout_ms` milliseconds across\nDNS resolution and all resolved addresses. A zero timeout fails immediately.\n\n```roc\n# Connect to localhost:8080\nstream = Tcp.connect!(\"localhost\", 8080, 5_000)?\n```\n\nValid hostnames look like `127.0.0.1`, `::1`, `localhost`, or `roc-lang.org`.",
+        "line": 147,
+        "unannotated": true
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "connect_err_to_str",
+        "modulePath": "Tcp",
+        "fullName": "Tcp.connect_err_to_str",
+        "signature": "|err|",
+        "docs": "Convert a `ConnectErr` to a `Str` you can print.",
+        "line": 153,
+        "unannotated": true
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "stream_err_to_str",
+        "modulePath": "Tcp",
+        "fullName": "Tcp.stream_err_to_str",
+        "signature": "|err|",
+        "docs": "Convert a `StreamErr` to a `Str` you can print.",
+        "line": 166,
+        "unannotated": true
+       }
+      ]
+     },
+     {
+      "name": "Tty",
+      "imports": [],
+      "items": [
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "enable_raw_mode!",
+        "modulePath": "Tty",
+        "fullName": "Tty.enable_raw_mode!",
+        "signature": "() => {}",
+        "docs": "Enable terminal [raw mode](https://en.wikipedia.org/wiki/Terminal_mode) to disable some default terminal behaviour.\n\nThis leads to the following changes:\n- Input will not be echoed to the terminal screen.\n- Input will be sent straight to the program instead of being buffered (= collected) until the Enter key is pressed.\n- Special keys like Backspace and CTRL+C will not be processed by the terminal driver but will be passed to the program.",
+        "line": 13
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "disable_raw_mode!",
+        "modulePath": "Tty",
+        "fullName": "Tty.disable_raw_mode!",
+        "signature": "() => {}",
+        "docs": "Revert terminal to default behaviour",
+        "line": 17
+       }
+      ]
+     },
+     {
+      "name": "Url",
+      "imports": [],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Url",
+        "modulePath": "",
+        "fullName": "Url",
+        "signature": "{\n\tscheme : [Http, Https],\n\thost : Str,\n\tport : [None, Some(U16)],\n\tpath : Str,\n\tquery : [None, Some(Str)],\n\tfragment : [None, Some(Str)],\n}",
+        "docs": "A validated HTTP or HTTPS URL implemented entirely in Roc.\n\nThis is deliberately stricter than a browser parser. Hosts must be ASCII\nDNS names, dotted-decimal IPv4 addresses, or bracketed IPv6 addresses made\nfrom hexadecimal groups with optional :: elision. IPv4-in-IPv6 and Unicode\ndomain names are intentionally unsupported.",
+        "line": 7,
+        "decl": "::",
+        "head": "Url"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "ParseErr",
+        "modulePath": "Url",
+        "fullName": "Url.ParseErr",
+        "signature": "[\n\t\tCredentialsNotAllowed,\n\t\tEmptyHost,\n\t\tInternationalHostUnsupported,\n\t\tInvalidCharacter(U8),\n\t\tInvalidHost(Str),\n\t\tInvalidIpv4(Str),\n\t\tInvalidIpv6(Str),\n\t\tInvalidPercentEncoding(U64),\n\t\tInvalidPort(Str),\n\t\tMissingAuthority,\n\t\tMissingScheme,\n\t\tPortOutOfRange(U64),\n\t\tUnsupportedScheme(Str),\n\t]",
+        "docs": "A reason a URL or relative reference could not be parsed.\n\nThis error set describes this module's strict HTTP/HTTPS subset. Inputs\nthat browsers might repair, such as missing authority slashes or\nbackslashes, are rejected instead.",
+        "line": 21,
+        "decl": ":",
+        "head": "ParseErr"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse",
+        "modulePath": "Url",
+        "fullName": "Url.parse",
+        "signature": "Str -> Try(Url, ParseErr)",
+        "docs": "Parse a dynamic string as an absolute HTTP or HTTPS URL.\n\nThe input must contain an explicit scheme and authority. Its host is\nlowercased, default ports are removed, dot path segments are normalized,\nand non-ASCII path, query, and fragment bytes are percent-encoded.",
+        "line": 42
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "from_quote",
+        "modulePath": "Url",
+        "fullName": "Url.from_quote",
+        "signature": "Str -> Try(Url, [BadQuotedBytes(Str)])",
+        "docs": "Convert a quoted literal to a URL using the same validation as parse.\n\nRoc calls this automatically when a quoted literal is expected to have\ntype Url. A rejected literal reports a descriptive BadQuotedBytes error.",
+        "line": 49
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parser_for",
+        "modulePath": "Url",
+        "fullName": "Url.parser_for",
+        "signature": "encoding -> (state -> Try({ value : Url, rest : state }, err))\n\t\twhere [\n\t\t\tencoding.parse_str : encoding, state -> Try({ value : Str, rest : state }, err),\n\t\t\tencoding.invalid_value : encoding, state -> err,\n\t\t]",
+        "docs": "Parse a URL from a string value supplied by a generic encoding.",
+        "line": 57
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "encoder_for",
+        "modulePath": "Url",
+        "fullName": "Url.encoder_for",
+        "signature": "encoding -> (Url, state -> Try(state, err))\n\t\twhere [\n\t\t\tencoding.encode_str : Str, state -> Try(state, err),\n\t\t]",
+        "docs": "Encode a URL as its canonical string through a generic encoding.",
+        "line": 76
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_str",
+        "modulePath": "Url",
+        "fullName": "Url.to_str",
+        "signature": "Url -> Str",
+        "docs": "Serialize the URL in a stable normalized ASCII form.\n\nScheme and DNS host names are lowercase, default ports are omitted,\npaths are absolute, and IPv6 addresses use eight unpadded groups.",
+        "line": 90
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_inspect",
+        "modulePath": "Url",
+        "fullName": "Url.to_inspect",
+        "signature": "Url -> Str",
+        "docs": "Render a URL for debugging and test failures.",
+        "line": 94
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "is_eq",
+        "modulePath": "Url",
+        "fullName": "Url.is_eq",
+        "signature": "Url, Url -> Bool",
+        "docs": "Compare URLs by their canonical serialized representation.",
+        "line": 98
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_hash",
+        "modulePath": "Url",
+        "fullName": "Url.to_hash",
+        "signature": "Url, Hasher -> Hasher",
+        "docs": "Hash URLs consistently with canonical equality.",
+        "line": 102
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "scheme",
+        "modulePath": "Url",
+        "fullName": "Url.scheme",
+        "signature": "Url -> [Http, Https]",
+        "docs": "Return Http or Https.",
+        "line": 106
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "host",
+        "modulePath": "Url",
+        "fullName": "Url.host",
+        "signature": "Url -> Str",
+        "docs": "Return the canonical host.\n\nIPv6 brackets are omitted; to_str includes them where required.",
+        "line": 112
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "port",
+        "modulePath": "Url",
+        "fullName": "Url.port",
+        "signature": "Url -> [None, Some(U16)]",
+        "docs": "Return an explicit non-default port.\n\nPorts 80 for HTTP and 443 for HTTPS are canonicalized to None.",
+        "line": 123
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "path",
+        "modulePath": "Url",
+        "fullName": "Url.path",
+        "signature": "Url -> Str",
+        "docs": "Return the absolute percent-encoded path, always beginning with slash.",
+        "line": 127
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "query",
+        "modulePath": "Url",
+        "fullName": "Url.query",
+        "signature": "Url -> [None, Some(Str)]",
+        "docs": "Return the percent-encoded query without its leading question mark.\n\nNone and Some(\"\") distinguish no query from a present empty query.",
+        "line": 133
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "fragment",
+        "modulePath": "Url",
+        "fullName": "Url.fragment",
+        "signature": "Url -> [None, Some(Str)]",
+        "docs": "Return the percent-encoded fragment without its leading hash.\n\nNone and Some(\"\") distinguish no fragment from a present empty fragment.",
+        "line": 139
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "without_fragment",
+        "modulePath": "Url",
+        "fullName": "Url.without_fragment",
+        "signature": "Url -> Url",
+        "docs": "Return this URL without its fragment. HTTP never transmits fragments.",
+        "line": 143
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "resolve",
+        "modulePath": "Url",
+        "fullName": "Url.resolve",
+        "signature": "Url, Str -> Try(Url, ParseErr)",
+        "docs": "Resolve a strict relative reference or absolute web URL against this URL.\n\nRoot-relative, path-relative, query-only, and fragment-only references\nare supported. Scheme-relative references are rejected.",
+        "line": 158
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "append_path_segments",
+        "modulePath": "Url",
+        "fullName": "Url.append_path_segments",
+        "signature": "Url, List(Str) -> Url",
+        "docs": "Append unencoded path segments.\n\nEach list item is one segment, so slash characters inside an item are\npercent-encoded rather than treated as separators.",
+        "line": 165
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "append_query_param",
+        "modulePath": "Url",
+        "fullName": "Url.append_query_param",
+        "signature": "Url, Str, Str -> Url",
+        "docs": "Append one application/x-www-form-urlencoded query pair.\n\nExisting parameters, ordering, duplicate names, and the fragment are\npreserved.",
+        "line": 192
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "query_pairs",
+        "modulePath": "Url",
+        "fullName": "Url.query_pairs",
+        "signature": "Url -> List((Str, Str))",
+        "docs": "Decode the query into ordered name/value pairs.\n\nPlus signs decode as spaces, percent escapes decode as UTF-8 bytes,\nparameters without equals receive an empty value, and duplicates remain.",
+        "line": 215
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "with_query",
+        "modulePath": "Url",
+        "fullName": "Url.with_query",
+        "signature": "Url, [None, Some(Str)] -> Try(Url, ParseErr)",
+        "docs": "Replace or remove the query.\n\nSome(\"\") produces a present empty query. The supplied query may contain\nUnicode but must otherwise already obey URL query syntax.",
+        "line": 234
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "with_fragment",
+        "modulePath": "Url",
+        "fullName": "Url.with_fragment",
+        "signature": "Url, [None, Some(Str)] -> Try(Url, ParseErr)",
+        "docs": "Replace or remove the fragment.\n\nSome(\"\") produces a present empty fragment. Unicode is percent-encoded.",
+        "line": 260
+       }
+      ]
+     },
+     {
+      "name": "Utc",
+      "imports": [],
+      "items": [
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "now!",
+        "modulePath": "Utc",
+        "fullName": "Utc.now!",
+        "signature": "() => U128",
+        "docs": "Get the current UTC time as nanoseconds since the Unix epoch (January 1, 1970).",
+        "line": 8
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_millis_since_epoch",
+        "modulePath": "Utc",
+        "fullName": "Utc.to_millis_since_epoch",
+        "signature": "U128 -> U128",
+        "docs": "Convert nanoseconds since epoch to milliseconds since epoch.",
+        "line": 12
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "from_millis_since_epoch",
+        "modulePath": "Utc",
+        "fullName": "Utc.from_millis_since_epoch",
+        "signature": "U128 -> U128",
+        "docs": "Convert milliseconds since epoch to nanoseconds since epoch.",
+        "line": 16
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_nanos_since_epoch",
+        "modulePath": "Utc",
+        "fullName": "Utc.to_nanos_since_epoch",
+        "signature": "U128 -> U128",
+        "docs": "Convert a timestamp to nanoseconds since epoch.",
+        "line": 20
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "from_nanos_since_epoch",
+        "modulePath": "Utc",
+        "fullName": "Utc.from_nanos_since_epoch",
+        "signature": "U128 -> U128",
+        "docs": "Convert nanoseconds since epoch to a timestamp.",
+        "line": 24
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "delta_as_nanos",
+        "modulePath": "Utc",
+        "fullName": "Utc.delta_as_nanos",
+        "signature": "U128, U128 -> U128",
+        "docs": "Calculate the difference between two timestamps in nanoseconds.",
+        "line": 28
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "delta_as_millis",
+        "modulePath": "Utc",
+        "fullName": "Utc.delta_as_millis",
+        "signature": "U128, U128 -> U128",
+        "docs": "Calculate the difference between two timestamps in milliseconds.",
+        "line": 36
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_iso_8601",
+        "modulePath": "Utc",
+        "fullName": "Utc.to_iso_8601",
+        "signature": "U128 -> Str",
+        "docs": "Convert a timestamp to an ISO 8601 UTC string with second precision.",
+        "line": 47
+       }
+      ]
+     },
+     {
+      "name": "main",
+      "imports": [],
+      "items": []
+     }
+    ]
+   }
+  }
+ }
+}

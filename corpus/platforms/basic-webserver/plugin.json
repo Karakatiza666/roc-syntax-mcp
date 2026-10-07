@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "corpora": [
+    {
+      "release": "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+      "description": "The basic-webserver platform: HTTP server, SQLite, files, commands, SSE, plus the roc-lang/http types it re-exports.",
+      "purpose": "HTTP servers and JSON APIs",
+      "overview": "overview.md",
+      "examples": "examples",
+      "docs": "docs",
+      "scaffold": "scaffold.roc",
+      "sample": "sample.roc",
+      "checks": [
+        "topics",
+        "verify"
+      ]
+    }
+  ]
+}

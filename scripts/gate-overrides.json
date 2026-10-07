@@ -1,0 +1,8 @@
+[
+  {
+    "release": "https://github.com/lukewilliamboswell/roc-parser/releases/download/2.0.0/7CLzCK6qUz7zmj6nvBxMEFu11HPwQTnCovKiyWzDSLTW.tar.zst",
+    "patch": "corpus/packages/roc-parser/patches/gate-0001-yaml-redundant-expose.patch",
+    "reason": "Yaml.roc:1 is a redundant expose on nightlies from 2026-10-04. Fixed upstream in 8d20a47 (PR #87), not released",
+    "until": "a roc-parser release that builds on the pinned nightly"
+  }
+]

@@ -1,0 +1,129 @@
+# SPDX-FileCopyrightText: 2026 Heorhii Bulakh and subsequent roc-syntax-mcp authors
+# SPDX-License-Identifier: MPL-2.0
+
+# Runs the gates from scripts/check-all.sh, except check:detection, which needs
+# the claude CLI and spends model tokens.
+#
+# This workflow runs pull request code, so it uses pull_request with a read-only
+# token, never pull_request_target.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  # The publish workflows run these gates first.
+  workflow_call:
+
+permissions:
+  contents: read
+
+# github.workflow is the caller's name when a publish workflow calls this one,
+# so a publish never cancels the CI run of a push, or the other way around.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Build and test (Node ${{ matrix.node }})
+    runs-on: ubuntu-26.04-arm
+    strategy:
+      fail-fast: false
+      matrix:
+        # The minimum version for the npm package (engines in package.json),
+        # the minimum version for a git install (which runs the source), the
+        # current LTS, and the newest release.
+        node: ["20.11.0", "22.15.0", "24", "26"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      # Run the tests before the build, so that the tests that run from
+      # source see no dist/.
+      - run: npm test
+      - run: npm run build:ts
+      # dist/index.js is what an npm install runs. With stdin closed, the
+      # server logs that it is serving, then exits.
+      - name: The built server starts
+        run: |
+          out="$(timeout 30 node dist/index.js </dev/null 2>&1)" || true
+          echo "$out"
+          grep -qF "roc-syntax-mcp: serving MCP over stdio" <<<"$out"
+
+  bun:
+    name: Start under Bun ${{ matrix.bun }}
+    runs-on: ubuntu-26.04-arm
+    strategy:
+      fail-fast: false
+      matrix:
+        # The minimum version that the README states, and the newest release.
+        bun: ["1.1.0", "latest"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: ${{ matrix.bun }}
+      # Bun cannot migrate this package-lock.json, and this job tests only the
+      # runtime, so npm installs the dependencies.
+      - run: npm ci --omit=dev
+      # There is no dist/, so the bin runs the TypeScript source. With stdin
+      # closed, the server logs that it is serving, then exits.
+      - name: The server starts from source
+        run: |
+          out="$(timeout 30 bun bin/roc-syntax-mcp.js </dev/null 2>&1)" || true
+          echo "$out"
+          grep -qF "roc-syntax-mcp: serving MCP over stdio" <<<"$out"
+
+  roc:
+    name: Roc gates
+    runs-on: ubuntu-26.04-arm
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+
+      # corpus/language/UPSTREAM pins the nightly that every gate runs under.
+      - name: Read the pinned nightly
+        id: nightly
+        run: echo "tag=$(awk '$1 == "compiler" { print $2 }' corpus/language/UPSTREAM)" >> "$GITHUB_OUTPUT"
+      - uses: ./.github/actions/roc-nightly
+        with:
+          tag: ${{ steps.nightly.outputs.tag }}
+
+      # The platform releases that the examples pin, about 50 MB. Roc stores
+      # packages by content hash, so an older cache is a safe start for a new key.
+      - name: Restore the Roc packages
+        id: restore-packages
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/roc/packages
+          key: roc-packages-${{ hashFiles('**/*.roc', 'scripts/check-roc-check.mjs') }}
+          restore-keys: roc-packages-
+
+      # Each gate runs even when an earlier one failed, as in check-all.sh.
+      - name: check:index
+        run: npm run check:index
+      - name: check:roc
+        if: ${{ !cancelled() }}
+        run: npm run check:roc
+      - name: check:platforms
+        if: ${{ !cancelled() }}
+        run: npm run check:platforms
+      - name: check:roc-check
+        if: ${{ !cancelled() }}
+        run: npm run check:roc-check
+
+      - name: Save the Roc packages
+        if: ${{ !cancelled() && steps.restore-packages.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/roc/packages
+          key: roc-packages-${{ hashFiles('**/*.roc', 'scripts/check-roc-check.mjs') }}

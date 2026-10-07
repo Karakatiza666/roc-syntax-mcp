@@ -1,0 +1,79 @@
+app [main!] {
+	cli: platform "https://github.com/roc-lang/basic-cli/releases/download/0.24.0/AEjfyaMFFbh8FJrkkHJy68riVNPr3Qp6c6PawWQjBwMH.tar.zst",
+	parser: "https://github.com/lukewilliamboswell/roc-parser/releases/download/2.0.0/7CLzCK6qUz7zmj6nvBxMEFu11HPwQTnCovKiyWzDSLTW.tar.zst",
+}
+
+import cli.OsStr
+import cli.Stderr
+import cli.Stdout
+import parser.CSV
+import parser.Parser
+import parser.Utf8
+
+input =
+	\\Airplane!,1980,\"Robert Hays,Julie Hagerty\"
+	\\Caddyshack,1980,\"Chevy Chase,Rodney Dangerfield,Ted Knight,Michael O'Keefe,Bill Murray\"
+
+MovieInfo : { title : Str, release_year : U64, actors : List(Str) }
+
+main! : List(OsStr) => Try({}, _)
+main! = |args| {
+	csv_input = args.get(1).map_ok(OsStr.display) ?? input
+
+	match CSV.parse_with(movie_info_parser, csv_input) {
+		Ok(movies) => {
+			movies_string =
+				movies
+					.map(movie_info_explanation)
+					|> Str.join_with("\n")
+
+			n_movies = movies.len().to_str()
+
+			Stdout.line!("${n_movies} movies were found:\n\n${movies_string}\n\nParse success!\n")?
+		}
+
+		Err(InvalidCsv({ record, field, line, column, message })) => {
+			Stderr.line!("Invalid CSV at line ${line.to_str()}, column ${column.to_str()} (record ${record.to_str()}, field ${field.to_str()}): ${message}")?
+		}
+	}
+
+	Ok({})
+}
+
+movie_info_parser : Parser(CSV.Record, MovieInfo)
+movie_info_parser =
+	CSV.record(
+		|title| |release_year| |actors| {
+			{ title, release_year, actors }
+		},
+	)
+		.keep(CSV.field(CSV.string))
+		.keep(CSV.field(CSV.u64))
+		.keep(CSV.field(actors_parser))
+
+actors_parser : Parser(Utf8.Bytes, List(Str))
+actors_parser = CSV.string.map(
+	|val| {
+		val.split_on(",")
+	},
+)
+
+movie_info_explanation : MovieInfo -> Str
+movie_info_explanation = |{ title, release_year, actors }| {
+	enumerated_actors = enumerate(actors)
+	release_year_str = release_year.to_str()
+
+	"The movie '${title}' was released in ${release_year_str} and stars ${enumerated_actors}"
+}
+
+enumerate : List(Str) -> Str
+enumerate = |elements| {
+	match elements {
+		[] => ""
+		[actor] => actor
+		[.. as inits, last] =>
+			[last]
+				.prepend(inits |> Str.join_with(", "))
+				|> Str.join_with(" and ")
+	}
+}

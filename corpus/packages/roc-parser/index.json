@@ -1,0 +1,2953 @@
+{
+ "format": 1,
+ "releases": {
+  "7CLzCK6qUz7zmj6nvBxMEFu11HPwQTnCovKiyWzDSLTW": {
+   "url": "https://github.com/lukewilliamboswell/roc-parser/releases/download/2.0.0/7CLzCK6qUz7zmj6nvBxMEFu11HPwQTnCovKiyWzDSLTW.tar.zst",
+   "snapshot": {
+    "kind": "package",
+    "exposes": [
+     "Parser",
+     "Utf8",
+     "CSV",
+     "HTTP",
+     "Markdown",
+     "Xml",
+     "Yaml"
+    ],
+    "deps": [
+     {
+      "alias": "unicode",
+      "url": "https://github.com/roc-lang/unicode/releases/download/4.2.0/4W8SHzvwet9hH9qZewJ1J1CVQoH7YKA6zyijWFTB3y1w.tar.zst"
+     }
+    ],
+    "modules": [
+     {
+      "name": "CSV",
+      "imports": [],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Record",
+        "modulePath": "CSV",
+        "fullName": "CSV.Record",
+        "signature": "List(List(U8))",
+        "docs": "One CSV record: its fields as raw bytes, in column order.\n\nFields parsed from a `Str` are valid UTF-8; records built by hand may\nhold any bytes.",
+        "line": 45,
+        "decl": ":",
+        "head": "Record"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Error",
+        "modulePath": "CSV",
+        "fullName": "CSV.Error",
+        "signature": "{ record : U64, field : U64, line : U64, column : U64, message : Str }",
+        "docs": "Where and why CSV text could not be read or decoded.\n\n`record` and `field` are one-based and count every record of the input,\nincluding a header row and blank lines. `line` and `column` are the\none-based physical line and byte column of the field (or of the record,\nwhen the field does not exist); they are `0` when the source text is not\nknown, as in [CSV.decode]. `message` is bounded in length and quotes\nfield text lossily, so it is safe to show for any input.",
+        "line": 55,
+        "decl": ":",
+        "head": "Error"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_records",
+        "modulePath": "CSV",
+        "fullName": "CSV.parse_records",
+        "signature": "Str -> Try(List(Record), [InvalidCsv(Error)])",
+        "docs": "Parse CSV text into raw records without decoding them.\n\n```roc\nexpect CSV.parse_records(\"a,\\\"b,c\\\"\\n\") == Ok([[\"a\".to_utf8(), \"b,c\".to_utf8()]])\n```",
+        "line": 62
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parser",
+        "modulePath": "CSV",
+        "fullName": "CSV.parser",
+        "signature": "Parser(Utf8.Bytes, List(Record))",
+        "docs": "A parser for a whole CSV file, for use inside larger parsers.\n\nIt reads records until its input ends, so it consumes all of it or fails\nwith the offset of the malformed field. It accepts any bytes.",
+        "line": 75
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "split_header",
+        "modulePath": "CSV",
+        "fullName": "CSV.split_header",
+        "signature": "List(Record) -> { header : List(Str), rows : List(Record) }",
+        "docs": "Split off the first record as column names.\n\nNames are decoded lossily and kept verbatim. Empty input gives no names\nand no rows.\n\n```roc\nexpect {\n    records = CSV.parse_records(\"name,age\\nAda,36\\n\")?\n    CSV.split_header(records) == { header: [\"name\", \"age\"], rows: [[\"Ada\".to_utf8(), \"36\".to_utf8()]] }\n}\n```",
+        "line": 96
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_with",
+        "modulePath": "CSV",
+        "fullName": "CSV.parse_with",
+        "signature": "Parser(Record, a), Str -> Try(List(a), [InvalidCsv(Error)])",
+        "docs": "Parse CSV text and decode every record with a hand-built record parser.\n\nFails with `InvalidCsv(error)` at the first problem: text that is not\nvalid CSV, a field that does not decode, a record with too few fields,\nor a record with fields the parser did not read.\n\n```roc\nuser : Parser(CSV.Record, { name : Str, age : U64 })\nuser = CSV.record(|name| |age| { name, age }).keep(CSV.field(CSV.string)).keep(CSV.field(CSV.u64))\n\nexpect CSV.parse_with(user, \"Ada,36\\nAlan,41\\n\") == Ok([{ name: \"Ada\", age: 36 }, { name: \"Alan\", age: 41 }])\n```",
+        "line": 116
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "decode",
+        "modulePath": "CSV",
+        "fullName": "CSV.decode",
+        "signature": "Parser(Record, a), List(Record) -> Try(List(a), [InvalidCsv(Error)])",
+        "docs": "Decode already parsed records with a hand-built record parser.\n\nErrors are as for [CSV.parse_with], numbered from the first record given,\nwith `line` and `column` set to `0`.",
+        "line": 134
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "record",
+        "modulePath": "CSV",
+        "fullName": "CSV.record",
+        "signature": "a -> Parser(Record, a)",
+        "docs": "Start a record parser with a curried constructor for the desired value.\n\nAdd one `.keep(CSV.field(...))` per column, in column order:\n\n```roc\nName : { first : Str, last : Str }\n\nname : Parser(CSV.Record, Name)\nname = CSV.record(|first| |last| { first, last }).keep(CSV.field(CSV.string)).keep(CSV.field(CSV.string))\n\nexpect CSV.parse_with(name, \"Ada,Lovelace\") == Ok([{ first: \"Ada\", last: \"Lovelace\" }])\n```",
+        "line": 168
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "field",
+        "modulePath": "CSV",
+        "fullName": "CSV.field",
+        "signature": "Parser(Utf8.Bytes, a) -> Parser(Record, a)",
+        "docs": "Consume the next field of a [CSV.Record] using a parser for its bytes.\n\nThe field parser must consume the whole field. Fails when the record has\nno fields left.",
+        "line": 177
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "string",
+        "modulePath": "CSV",
+        "fullName": "CSV.string",
+        "signature": "Parser(Utf8.Bytes, Str)",
+        "docs": "Parse one field as a valid UTF-8 string, kept verbatim (no trimming).",
+        "line": 198
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "u64",
+        "modulePath": "CSV",
+        "fullName": "CSV.u64",
+        "signature": "Parser(Utf8.Bytes, U64)",
+        "docs": "Parse one field as an unsigned 64-bit integer.\n\nThe field must be ASCII decimal digits with an optional leading `+`, and\nfit in a U64 (the grammar of Rust's `u64::from_str`). Whitespace,\nunderscores, signs other than `+` and `0x`-style prefixes are rejected.",
+        "line": 213
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "f64",
+        "modulePath": "CSV",
+        "fullName": "CSV.f64",
+        "signature": "Parser(Utf8.Bytes, F64)",
+        "docs": "Parse one field as a 64-bit floating-point number.\n\nThe field is an optional sign followed by `inf`, `infinity` or `nan` in\nany case, or by a decimal number with an optional fraction and exponent\n(`12`, `1.5`, `.5`, `5.`, `1e-3`, `2.5E+10`); this is the grammar of\nRust's `f64::from_str`. Magnitudes too large for an F64 become infinity\nand too small ones become zero. Whitespace, underscores and hexadecimal\nforms are rejected.",
+        "line": 231
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse",
+        "modulePath": "CSV",
+        "fullName": "CSV.parse",
+        "signature": "Str -> Try(List(row), [InvalidCsv(Error), ..errs])\n\t\twhere [row.Parseable([InvalidCsv(Error), ..errs])]",
+        "docs": "Decode CSV text whose first record is a header row into rows of an\ninferred type, usually a record.\n\nEach record field reads the column whose header is exactly its name;\ncolumns no field names are ignored, and when two columns share a name\nthe last one wins. A field of type `Try(a, [Missing])` is\n`Err(Missing)` when its column is absent, and a field of type\n`Try(a, [Null])` is `Err(Null)` when its cell is empty. A required field\nwith no column fails with `MissingRequiredField(name)`, which the\ncompiler adds to the error type.\n\nCells decode as `Str` (verbatim), `Bool` (`true` or `false` in any\nletter case), integers (ASCII digits with an optional sign, `-` only for\nsigned types), `Dec` (an optional sign, digits and an optional fraction),\n`F32` and `F64` (as [CSV.f64]), and tags without payloads (the cell is\nthe tag name). A field that is a record, a tuple or a tag with a payload\nfails when it is decoded; a field that is a list or a dictionary does not\ncompile.\n\nBlank lines are skipped. Every other record must have exactly as many\nfields as the header; a shorter or longer record is an error naming it.\n\n```roc\nItem : { sku : Str, count : U64, note : Try(Str, [Missing]), price : Try(Dec, [Null]) }\n\nitems : Try(List(Item), [InvalidCsv(CSV.Error), MissingRequiredField(Str)])\nitems = CSV.parse(\"price,sku,count\\n1.50,A1,3\\n,B2,0\\n\")\n\nexpect items == Ok([\n    { sku: \"A1\", count: 3, note: Err(Missing), price: Ok(1.50) },\n    { sku: \"B2\", count: 0, note: Err(Missing), price: Err(Null) },\n])\n```",
+        "line": 282
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_normalized",
+        "modulePath": "CSV",
+        "fullName": "CSV.parse_normalized",
+        "signature": "Str -> Try(List(row), [InvalidCsv(Error), ..errs])\n\t\twhere [row.Parseable([InvalidCsv(Error), ..errs])]",
+        "docs": "Like [CSV.parse], but header names are normalized before they are\nmatched: surrounding spaces are removed, ASCII letters are lowercased,\nand runs of spaces, `-` and `_` become one `_`. A column headed\n`First Name`, `first-name` or `FIRST_NAME` fills a field `first_name`.\n\n```roc\nnames : Try(List({ first_name : Str }), [InvalidCsv(CSV.Error), MissingRequiredField(Str)])\nnames = CSV.parse_normalized(\" First Name \\nAda\\n\")\n\nexpect names == Ok([{ first_name: \"Ada\" }])\n```",
+        "line": 300
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_headerless",
+        "modulePath": "CSV",
+        "fullName": "CSV.parse_headerless",
+        "signature": "Str -> Try(List(row), [InvalidCsv(Error), ..errs])\n\t\twhere [row.Parseable([InvalidCsv(Error), ..errs])]",
+        "docs": "Decode CSV text without a header row into tuples, one element per\ncolumn.\n\nEvery record (blank lines excepted) must have exactly as many fields as\nthe tuple has elements. Cells decode as in [CSV.parse].\n\n```roc\npairs : Try(List((Str, U64)), [InvalidCsv(CSV.Error)])\npairs = CSV.parse_headerless(\"Ada,36\\nAlan,41\\n\")\n\nexpect pairs == Ok([(\"Ada\", 36), (\"Alan\", 41)])\n```",
+        "line": 319
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Format",
+        "modulePath": "CSV",
+        "fullName": "CSV.Format",
+        "signature": "[Default]",
+        "docs": "The CSV format for type-directed decoding. Used through [CSV.parse];\nyou do not need to name it.",
+        "line": 328,
+        "decl": "::",
+        "head": "Format"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "rename_field",
+        "modulePath": "CSV.Format",
+        "fullName": "CSV.Format.rename_field",
+        "signature": "Format, Str -> Str",
+        "docs": "Field names are matched as written; [CSV.parse_normalized] normalizes the header instead.",
+        "line": 331
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_str",
+        "modulePath": "CSV.Format",
+        "fullName": "CSV.Format.parse_str",
+        "signature": "Format, State -> Try({ value : Str, rest : State }, [InvalidCsv(Error)])",
+        "docs": "Read the cell as UTF-8 text, verbatim.",
+        "line": 335
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_bool",
+        "modulePath": "CSV.Format",
+        "fullName": "CSV.Format.parse_bool",
+        "signature": "Format, State -> Try({ value : Bool, rest : State }, [InvalidCsv(Error)])",
+        "docs": "Read `true` or `false` in any letter case.",
+        "line": 345
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_u8",
+        "modulePath": "CSV.Format",
+        "fullName": "CSV.Format.parse_u8",
+        "signature": "Format, State -> Try({ value : U8, rest : State }, [InvalidCsv(Error)])",
+        "docs": "Read ASCII digits with an optional `+` as a U8.",
+        "line": 359
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_i8",
+        "modulePath": "CSV.Format",
+        "fullName": "CSV.Format.parse_i8",
+        "signature": "Format, State -> Try({ value : I8, rest : State }, [InvalidCsv(Error)])",
+        "docs": "Read ASCII digits with an optional sign as a I8.",
+        "line": 363
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_u16",
+        "modulePath": "CSV.Format",
+        "fullName": "CSV.Format.parse_u16",
+        "signature": "Format, State -> Try({ value : U16, rest : State }, [InvalidCsv(Error)])",
+        "docs": "Read ASCII digits with an optional `+` as a U16.",
+        "line": 367
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_i16",
+        "modulePath": "CSV.Format",
+        "fullName": "CSV.Format.parse_i16",
+        "signature": "Format, State -> Try({ value : I16, rest : State }, [InvalidCsv(Error)])",
+        "docs": "Read ASCII digits with an optional sign as a I16.",
+        "line": 371
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_u32",
+        "modulePath": "CSV.Format",
+        "fullName": "CSV.Format.parse_u32",
+        "signature": "Format, State -> Try({ value : U32, rest : State }, [InvalidCsv(Error)])",
+        "docs": "Read ASCII digits with an optional `+` as a U32.",
+        "line": 375
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_i32",
+        "modulePath": "CSV.Format",
+        "fullName": "CSV.Format.parse_i32",
+        "signature": "Format, State -> Try({ value : I32, rest : State }, [InvalidCsv(Error)])",
+        "docs": "Read ASCII digits with an optional sign as a I32.",
+        "line": 379
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_u64",
+        "modulePath": "CSV.Format",
+        "fullName": "CSV.Format.parse_u64",
+        "signature": "Format, State -> Try({ value : U64, rest : State }, [InvalidCsv(Error)])",
+        "docs": "Read ASCII digits with an optional `+` as a U64.",
+        "line": 383
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_i64",
+        "modulePath": "CSV.Format",
+        "fullName": "CSV.Format.parse_i64",
+        "signature": "Format, State -> Try({ value : I64, rest : State }, [InvalidCsv(Error)])",
+        "docs": "Read ASCII digits with an optional sign as a I64.",
+        "line": 387
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_u128",
+        "modulePath": "CSV.Format",
+        "fullName": "CSV.Format.parse_u128",
+        "signature": "Format, State -> Try({ value : U128, rest : State }, [InvalidCsv(Error)])",
+        "docs": "Read ASCII digits with an optional `+` as a U128.",
+        "line": 391
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_i128",
+        "modulePath": "CSV.Format",
+        "fullName": "CSV.Format.parse_i128",
+        "signature": "Format, State -> Try({ value : I128, rest : State }, [InvalidCsv(Error)])",
+        "docs": "Read ASCII digits with an optional sign as a I128.",
+        "line": 395
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_dec",
+        "modulePath": "CSV.Format",
+        "fullName": "CSV.Format.parse_dec",
+        "signature": "Format, State -> Try({ value : Dec, rest : State }, [InvalidCsv(Error)])",
+        "docs": "Read an optional sign, digits and an optional fraction.",
+        "line": 399
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_f32",
+        "modulePath": "CSV.Format",
+        "fullName": "CSV.Format.parse_f32",
+        "signature": "Format, State -> Try({ value : F32, rest : State }, [InvalidCsv(Error)])",
+        "docs": "Read a float with the grammar of [CSV.f64].",
+        "line": 409
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_f64",
+        "modulePath": "CSV.Format",
+        "fullName": "CSV.Format.parse_f64",
+        "signature": "Format, State -> Try({ value : F64, rest : State }, [InvalidCsv(Error)])",
+        "docs": "Read a float with the grammar of [CSV.f64].",
+        "line": 419
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_null",
+        "modulePath": "CSV.Format",
+        "fullName": "CSV.Format.parse_null",
+        "signature": "Format, State -> Try(State, [InvalidCsv(Error)])",
+        "docs": "An empty cell is null, so a `Try(a, [Null])` field is `Err(Null)`.",
+        "line": 429
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_record_start",
+        "modulePath": "CSV.Format",
+        "fullName": "CSV.Format.parse_record_start",
+        "signature": "Format, State -> Try([Counted({ len : U64, rest : State }), Uncounted(State)], [InvalidCsv(Error)])",
+        "docs": "A row is one record; a record inside a row is rejected.",
+        "line": 436
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_record_field",
+        "modulePath": "CSV.Format",
+        "fullName": "CSV.Format.parse_record_field",
+        "signature": "Format,\n\t\tEncoding.FieldName.FieldNames(_shape),\n\t\tState -> Try(\n\t\t\t[\n\t\t\t\tField({ field : Encoding.FieldName(_shape), rest : State }),\n\t\t\t\tTryField({ name : Str, rest : State }),\n\t\t\t\tTryFieldCaseless({ name : Str, rest : State }),\n\t\t\t\tContinue(State),\n\t\t\t\tDone(State),\n\t\t\t],\n\t\t\t[InvalidCsv(Error)],\n\t\t)",
+        "docs": "Offer the next header name as the field to fill.",
+        "line": 446
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_record_after_field",
+        "modulePath": "CSV.Format",
+        "fullName": "CSV.Format.parse_record_after_field",
+        "signature": "Format, State -> Try([Continue(State), Done(State)], [InvalidCsv(Error)])",
+        "docs": "The record ends after the last header column.",
+        "line": 466
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "skip_record_field",
+        "modulePath": "CSV.Format",
+        "fullName": "CSV.Format.skip_record_field",
+        "signature": "Format, State -> Try(State, [InvalidCsv(Error)])",
+        "docs": "The cell to skip is chosen by the column, so nothing is consumed.",
+        "line": 472
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_tuple_start",
+        "modulePath": "CSV.Format",
+        "fullName": "CSV.Format.parse_tuple_start",
+        "signature": "Format, State, U64 -> Try(State, [InvalidCsv(Error)])",
+        "docs": "A headerless row is a tuple with one element per field.",
+        "line": 476
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_tuple_next",
+        "modulePath": "CSV.Format",
+        "fullName": "CSV.Format.parse_tuple_next",
+        "signature": "Format, State, U64, U64 -> Try(State, [InvalidCsv(Error)])",
+        "docs": "Move to the cell of the next tuple element.",
+        "line": 488
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "invalid_value",
+        "modulePath": "CSV.Format",
+        "fullName": "CSV.Format.invalid_value",
+        "signature": "Format, State -> [InvalidCsv(Error)]",
+        "docs": "The error for a cell that holds no valid value.",
+        "line": 492
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_tuple_end",
+        "modulePath": "CSV.Format",
+        "fullName": "CSV.Format.parse_tuple_end",
+        "signature": "Format, State, U64 -> Try(State, [InvalidCsv(Error)])",
+        "docs": "Finish a tuple row.",
+        "line": 496
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_tag_union",
+        "modulePath": "CSV.Format",
+        "fullName": "CSV.Format.parse_tag_union",
+        "signature": "Format, Encoding.ParseTagUnionSpec(a), State -> Try({ value : a, rest : State }, [InvalidCsv(Error)])",
+        "docs": "A tag without a payload is read from its name.",
+        "line": 500
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "State",
+        "modulePath": "CSV",
+        "fullName": "CSV.State",
+        "signature": "{ row : Record, header : List(Str), column : U64, cell : U64, record : U64, nested : Bool }",
+        "docs": "The cursor for type-directed decoding: one record, the header names,\nand indices into them. Used through [CSV.parse]; you do not need to name\nit.",
+        "line": 521,
+        "decl": "::",
+        "head": "State"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "BadField",
+        "modulePath": "",
+        "fullName": "BadField",
+        "signature": "{ record : U64, field : U64, at : U64, problem : [Unterminated, TextAfterQuote] }",
+        "docs": "A malformed quoted field: which record and field it is, where it starts\n(`at`) and what is wrong.",
+        "line": 688,
+        "decl": ":",
+        "head": "BadField"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Person",
+        "modulePath": "",
+        "fullName": "Person",
+        "signature": "{ name : Str, age : U64, admin : Bool, email : Try(Str, [Missing]) }",
+        "docs": "",
+        "line": 1047,
+        "decl": ":",
+        "head": "Person"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "PersonResult",
+        "modulePath": "",
+        "fullName": "PersonResult",
+        "signature": "Try(List(Person), [InvalidCsv(CSV.Error), MissingRequiredField(Str)])",
+        "docs": "",
+        "line": 1049,
+        "decl": ":",
+        "head": "PersonResult"
+       }
+      ]
+     },
+     {
+      "name": "HTTP",
+      "imports": [],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Method",
+        "modulePath": "HTTP",
+        "fullName": "HTTP.Method",
+        "signature": "[Options, Get, Post, Put, Delete, Head, Trace, Connect, Patch, Extension(Str)]",
+        "docs": "A request method (RFC 9110 section 9).\n\nThe methods RFC 9110 and RFC 5789 define get their own tags. Any other\nmethod token is kept as `Extension(name)`. Method names are\ncase-sensitive, so `get` is `Extension(\"get\")`, not `Get`.",
+        "line": 53,
+        "decl": ":",
+        "head": "Method"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Version",
+        "modulePath": "HTTP",
+        "fullName": "HTTP.Version",
+        "signature": "{ major : U8, minor : U8 }",
+        "docs": "An HTTP protocol version such as `HTTP/1.1`, as `{ major: 1, minor: 1 }`.\n\nEach part is a single digit, as RFC 9112 requires.",
+        "line": 58,
+        "decl": ":",
+        "head": "Version"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Header",
+        "modulePath": "HTTP",
+        "fullName": "HTTP.Header",
+        "signature": "{ name : Str, value : Str }",
+        "docs": "One header field: the `name` as written (case preserved) and the `value`\nwith surrounding whitespace removed.\n\nFields keep their order in the message, and repeated fields are kept.\nUse [HTTP.header] to look one up by name.",
+        "line": 65,
+        "decl": ":",
+        "head": "Header"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Request",
+        "modulePath": "HTTP",
+        "fullName": "HTTP.Request",
+        "signature": "{\n\t\tmethod : Method,\n\t\ttarget : Str,\n\t\tversion : Version,\n\t\theaders : List(Header),\n\t\tbody : List(U8),\n\t}",
+        "docs": "A parsed HTTP request message.\n\n`target` is the request-target exactly as written (it is not decoded or\nnormalized). `body` is the message body after any chunked transfer\ncoding has been removed.",
+        "line": 72,
+        "decl": ":",
+        "head": "Request"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Response",
+        "modulePath": "HTTP",
+        "fullName": "HTTP.Response",
+        "signature": "{\n\t\tversion : Version,\n\t\tstatus_code : U16,\n\t\treason : Str,\n\t\theaders : List(Header),\n\t\tbody : List(U8),\n\t}",
+        "docs": "A parsed HTTP response message.\n\n`status_code` is the three-digit status code and `reason` the reason\nphrase, which may be empty. `body` is decoded like a request body.",
+        "line": 84,
+        "decl": ":",
+        "head": "Response"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Error",
+        "modulePath": "HTTP",
+        "fullName": "HTTP.Error",
+        "signature": "{ offset : U64, message : Str }",
+        "docs": "Why a message was rejected: `message` names the broken rule and\n`offset` is the byte offset in the input where the problem is.\n\nProblems with the message as a whole, such as a missing `Host` field,\nare at offset 0, the start of the message.",
+        "line": 97,
+        "decl": ":",
+        "head": "Error"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "header",
+        "modulePath": "HTTP",
+        "fullName": "HTTP.header",
+        "signature": "List(Header), Str -> Try(Str, [Missing])",
+        "docs": "The value of the first header with this name, compared\ncase-insensitively, or `Err(Missing)`.\n\n```roc\nexpect {\n    headers = [{ name: \"Content-Type\", value: \"text/plain\" }]\n    HTTP.header(headers, \"content-type\") == Ok(\"text/plain\") and HTTP.header(headers, \"Host\") == Err(Missing)\n}\n```",
+        "line": 108
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_request",
+        "modulePath": "HTTP",
+        "fullName": "HTTP.parse_request",
+        "signature": "List(U8) -> Try({ request : Request, rest : List(U8) }, [InvalidHttp(Error)])",
+        "docs": "Parse one HTTP request from the start of `bytes`: request line, header\nfields, and the body its framing describes.\n\nReturns the `request` and the `rest` of the bytes after it, which is the\nnext pipelined message, if any.\n\n```roc\nexpect {\n    bytes = \"POST /notes HTTP/1.1\\r\\nHost: a\\r\\nContent-Length: 2\\r\\n\\r\\nhiGET\".to_utf8()\n    match HTTP.parse_request(bytes) {\n        Ok({ request, rest }) => request.body == \"hi\".to_utf8() and rest == \"GET\".to_utf8()\n        Err(InvalidHttp(_)) => False\n    }\n}\n```",
+        "line": 135
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_response",
+        "modulePath": "HTTP",
+        "fullName": "HTTP.parse_response",
+        "signature": "List(U8) -> Try({ response : Response, rest : List(U8) }, [InvalidHttp(Error)])",
+        "docs": "Parse one HTTP response from the start of `bytes`: status line, header\nfields, and the body its framing describes.\n\nA response with no `Content-Length` or `Transfer-Encoding` takes the\nrest of the input as its body, so its `rest` is empty.\n\n```roc\nexpect {\n    bytes = \"HTTP/1.1 404 Not Found\\r\\nContent-Length: 0\\r\\n\\r\\n\".to_utf8()\n    match HTTP.parse_response(bytes) {\n        Ok({ response, rest: _ }) => response.status_code == 404 and response.reason == \"Not Found\"\n        Err(InvalidHttp(_)) => False\n    }\n}\n```",
+        "line": 158
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_requests",
+        "modulePath": "HTTP",
+        "fullName": "HTTP.parse_requests",
+        "signature": "List(U8) -> Try(List(Request), [InvalidHttp(Error)])",
+        "docs": "Parse every request in `bytes`, a pipeline of zero or more requests\nthat must end exactly at the end of the last one.\n\nA failure's `offset` counts from the start of `bytes`.\n\n```roc\nexpect {\n    bytes = \"GET /a HTTP/1.1\\r\\nHost: a\\r\\n\\r\\nGET /b HTTP/1.1\\r\\nHost: a\\r\\n\\r\\n\".to_utf8()\n    HTTP.parse_requests(bytes).map_ok(|requests| requests.map(|r| r.target)) == Ok([\"/a\", \"/b\"])\n}\n```",
+        "line": 177
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "request",
+        "modulePath": "HTTP",
+        "fullName": "HTTP.request",
+        "signature": "Parser(Utf8.Bytes, Request)",
+        "docs": "A [Parser] for one HTTP request, like [HTTP.parse_request], for use\ninside a larger parser.\n\nIt leaves the bytes after the message unconsumed. A failure is a\n`ParseError` whose message starts with `invalid HTTP request:` and whose\noffset is where the problem is.\n\n```roc\nexpect {\n    text = \"GET /hello HTTP/1.1\\r\\nHost: example.com\\r\\n\\r\\n\"\n    match Utf8.parse_str(HTTP.request, text) {\n        Ok(req) => req.method == Get and HTTP.header(req.headers, \"host\") == Ok(\"example.com\")\n        Err(_) => False\n    }\n}\n```",
+        "line": 196
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "response",
+        "modulePath": "HTTP",
+        "fullName": "HTTP.response",
+        "signature": "Parser(Utf8.Bytes, Response)",
+        "docs": "A [Parser] for one HTTP response, like [HTTP.parse_response], for use\ninside a larger parser.\n\nA failure is a `ParseError` whose message starts with\n`invalid HTTP response:` and whose offset is where the problem is.",
+        "line": 209
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Bytes",
+        "modulePath": "",
+        "fullName": "Bytes",
+        "signature": "List(U8)",
+        "docs": "",
+        "line": 218,
+        "decl": ":",
+        "head": "Bytes"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Framing",
+        "modulePath": "",
+        "fullName": "Framing",
+        "signature": "[Length(U64), Chunked, Unframed]",
+        "docs": "",
+        "line": 220,
+        "decl": ":",
+        "head": "Framing"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Failure",
+        "modulePath": "",
+        "fullName": "Failure",
+        "signature": "HTTP.Error",
+        "docs": "",
+        "line": 224,
+        "decl": ":",
+        "head": "Failure"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Field",
+        "modulePath": "",
+        "fullName": "Field",
+        "signature": "{ kind : FieldKind, value : Bytes, offset : U64 }",
+        "docs": "",
+        "line": 229,
+        "decl": ":",
+        "head": "Field"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "FieldKind",
+        "modulePath": "",
+        "fullName": "FieldKind",
+        "signature": "[Host, TransferEncoding, ContentLength]",
+        "docs": "",
+        "line": 231,
+        "decl": ":",
+        "head": "FieldKind"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Head",
+        "modulePath": "",
+        "fullName": "Head",
+        "signature": "{ headers : List(HTTP.Header), fields : List(Field), rest : Bytes }",
+        "docs": "",
+        "line": 235,
+        "decl": ":",
+        "head": "Head"
+       }
+      ]
+     },
+     {
+      "name": "Markdown",
+      "imports": [
+       "unicode"
+      ],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Markdown",
+        "modulePath": "",
+        "fullName": "Markdown",
+        "signature": "[\n\tHeading({ level : Markdown.Level, content : List(Markdown.Inline) }),\n\tParagraph(List(Markdown.Inline)),\n\tBlockquote(List(Markdown)),\n\tListBlock({ kind : Markdown.ListKind, loose : Bool, items : List({ task : Markdown.TaskState, blocks : List(Markdown) }) }),\n\tCode({ info : Str, pre : Str }),\n\tThematicBreak,\n\tTable({ header : List(List(Markdown.Inline)), align : List(Markdown.Alignment), rows : List(List(List(Markdown.Inline))) }),\n\tHtmlBlock(Str),\n\tFrontmatter(Str),\n]",
+        "docs": "A Markdown document as a tree of blocks with inline content.\n\nThe parser follows [CommonMark 0.31.2](https://spec.commonmark.org/0.31.2/)\nplus these GitHub Flavored Markdown extensions: tables, task list items,\nstrikethrough (`~~text~~`) and extended autolinks (`www.example.com`,\n`https://example.com` and `me@example.com` without angle brackets). It also\naccepts one extension of its own: a frontmatter block between two `---`\nlines at the very start of a document, kept raw as `Frontmatter`.\n\nMarkdown has no syntax errors, so parsing never fails: [Markdown.parse_str]\nreturns `List(Markdown)` directly, and text that looks like broken syntax is\nkept as text. Soft line breaks are kept as `\"\\n\"` inside `Text`. Block\nquotes and lists nest at most 1,000 levels deep, and so do emphasis,\nstrikethrough, links and images; deeper markers, delimiters and brackets\nare read as text.\n\n**Security:** raw HTML passes through unchanged as `HtmlBlock` and\n`HtmlInline`, with no GFM tagfilter, and link destinations are not checked\n(a `javascript:` URL is kept as written). If you render untrusted Markdown\nto HTML, sanitize the HTML or drop those nodes and unsafe URLs yourself.",
+        "line": 28,
+        "decl": ":=",
+        "head": "Markdown"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_inspect",
+        "modulePath": "Markdown",
+        "fullName": "Markdown.to_inspect",
+        "signature": "Markdown -> Str",
+        "docs": "Render a Markdown block in Roc source-like notation for inspection.",
+        "line": 41
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "is_eq",
+        "modulePath": "Markdown",
+        "fullName": "Markdown.is_eq",
+        "signature": "_",
+        "docs": "Compare two Markdown syntax trees structurally.",
+        "line": 47
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Level",
+        "modulePath": "Markdown",
+        "fullName": "Markdown.Level",
+        "signature": "[One, Two, Three, Four, Five, Six]",
+        "docs": "Heading levels from one through six.",
+        "line": 50,
+        "decl": ":=",
+        "head": "Level"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_inspect",
+        "modulePath": "Markdown.Level",
+        "fullName": "Markdown.Level.to_inspect",
+        "signature": "Level -> Str",
+        "docs": "Render a heading level for inspection.",
+        "line": 53
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_str",
+        "modulePath": "Markdown.Level",
+        "fullName": "Markdown.Level.to_str",
+        "signature": "Level -> Str",
+        "docs": "Convert a heading level to its decimal representation.",
+        "line": 59
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "is_eq",
+        "modulePath": "Markdown.Level",
+        "fullName": "Markdown.Level.is_eq",
+        "signature": "_",
+        "docs": "Compare two heading levels.",
+        "line": 65
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_hash",
+        "modulePath": "Markdown.Level",
+        "fullName": "Markdown.Level.to_hash",
+        "signature": "_",
+        "docs": "Hash this value, so that it can be a `Dict` key or `Set` element.",
+        "line": 68
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "ListKind",
+        "modulePath": "Markdown",
+        "fullName": "Markdown.ListKind",
+        "signature": "[\n\t\tUnordered,\n\t\tOrdered({ start : U64 }),\n\t]",
+        "docs": "The marker and starting number of a Markdown list.",
+        "line": 72,
+        "decl": ":=",
+        "head": "ListKind"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_inspect",
+        "modulePath": "Markdown.ListKind",
+        "fullName": "Markdown.ListKind.to_inspect",
+        "signature": "ListKind -> Str",
+        "docs": "Render a list kind for inspection.",
+        "line": 78
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_str",
+        "modulePath": "Markdown.ListKind",
+        "fullName": "Markdown.ListKind.to_str",
+        "signature": "ListKind -> Str",
+        "docs": "Convert a list kind to a compact string.",
+        "line": 84
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "is_eq",
+        "modulePath": "Markdown.ListKind",
+        "fullName": "Markdown.ListKind.is_eq",
+        "signature": "_",
+        "docs": "Compare two list kinds structurally.",
+        "line": 90
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_hash",
+        "modulePath": "Markdown.ListKind",
+        "fullName": "Markdown.ListKind.to_hash",
+        "signature": "_",
+        "docs": "Hash this value, so that it can be a `Dict` key or `Set` element.",
+        "line": 93
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "TaskState",
+        "modulePath": "Markdown",
+        "fullName": "Markdown.TaskState",
+        "signature": "[\n\t\tNoTask,\n\t\tUnchecked,\n\t\tChecked,\n\t]",
+        "docs": "Whether a list item is a task and, if so, whether it is checked.",
+        "line": 97,
+        "decl": ":=",
+        "head": "TaskState"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_inspect",
+        "modulePath": "Markdown.TaskState",
+        "fullName": "Markdown.TaskState.to_inspect",
+        "signature": "TaskState -> Str",
+        "docs": "Render a task state for inspection.",
+        "line": 104
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_str",
+        "modulePath": "Markdown.TaskState",
+        "fullName": "Markdown.TaskState.to_str",
+        "signature": "TaskState -> Str",
+        "docs": "Convert a task state to a compact string.",
+        "line": 110
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "is_eq",
+        "modulePath": "Markdown.TaskState",
+        "fullName": "Markdown.TaskState.is_eq",
+        "signature": "_",
+        "docs": "Compare two task states.",
+        "line": 116
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_hash",
+        "modulePath": "Markdown.TaskState",
+        "fullName": "Markdown.TaskState.to_hash",
+        "signature": "_",
+        "docs": "Hash this value, so that it can be a `Dict` key or `Set` element.",
+        "line": 119
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Alignment",
+        "modulePath": "Markdown",
+        "fullName": "Markdown.Alignment",
+        "signature": "[\n\t\tDefault,\n\t\tLeft,\n\t\tCenter,\n\t\tRight,\n\t]",
+        "docs": "Column alignment declared by a Markdown table delimiter row.",
+        "line": 123,
+        "decl": ":=",
+        "head": "Alignment"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_inspect",
+        "modulePath": "Markdown.Alignment",
+        "fullName": "Markdown.Alignment.to_inspect",
+        "signature": "Alignment -> Str",
+        "docs": "Render a table alignment for inspection.",
+        "line": 131
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_str",
+        "modulePath": "Markdown.Alignment",
+        "fullName": "Markdown.Alignment.to_str",
+        "signature": "Alignment -> Str",
+        "docs": "Convert a table alignment to a compact string.",
+        "line": 137
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "is_eq",
+        "modulePath": "Markdown.Alignment",
+        "fullName": "Markdown.Alignment.is_eq",
+        "signature": "_",
+        "docs": "Compare two table alignments.",
+        "line": 143
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_hash",
+        "modulePath": "Markdown.Alignment",
+        "fullName": "Markdown.Alignment.to_hash",
+        "signature": "_",
+        "docs": "Hash this value, so that it can be a `Dict` key or `Set` element.",
+        "line": 146
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "LinkTarget",
+        "modulePath": "Markdown",
+        "fullName": "Markdown.LinkTarget",
+        "signature": "{\n\t\thref : Str,\n\t\ttitle : Try(Str, [Missing]),\n\t}",
+        "docs": "Destination and optional title of a link or image.",
+        "line": 150,
+        "decl": ":",
+        "head": "LinkTarget"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Inline",
+        "modulePath": "Markdown",
+        "fullName": "Markdown.Inline",
+        "signature": "[\n\t\tText(Str),\n\t\tStrong(List(Inline)),\n\t\tEmphasis(List(Inline)),\n\t\tStrikethrough(List(Inline)),\n\t\tInlineCode(Str),\n\t\tLink({ label : List(Inline), target : LinkTarget }),\n\t\tImage({ alt : List(Inline), target : LinkTarget }),\n\t\tHardBreak,\n\t\tHtmlInline(Str),\n\t]",
+        "docs": "Inline Markdown syntax nodes.",
+        "line": 156,
+        "decl": ":=",
+        "head": "Inline"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_inspect",
+        "modulePath": "Markdown.Inline",
+        "fullName": "Markdown.Inline.to_inspect",
+        "signature": "Inline -> Str",
+        "docs": "Render an inline node in Roc source-like notation for inspection.",
+        "line": 169
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "is_eq",
+        "modulePath": "Markdown.Inline",
+        "fullName": "Markdown.Inline.is_eq",
+        "signature": "_",
+        "docs": "Compare two inline syntax trees structurally.",
+        "line": 175
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_hash",
+        "modulePath": "Markdown.Inline",
+        "fullName": "Markdown.Inline.to_hash",
+        "signature": "_",
+        "docs": "Hash this value, so that it can be a `Dict` key or `Set` element.",
+        "line": 178
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_hash",
+        "modulePath": "Markdown",
+        "fullName": "Markdown.to_hash",
+        "signature": "_",
+        "docs": "Hash a Markdown syntax tree, so that it can be a `Dict` key or `Set` element.",
+        "line": 182
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_str",
+        "modulePath": "Markdown",
+        "fullName": "Markdown.parse_str",
+        "signature": "Str -> List(Markdown)",
+        "docs": "Parse a whole Markdown document into its blocks.\n\nEvery input is a document, so this never fails. A leading frontmatter\nblock becomes the first block, `Frontmatter`.\n\n```roc\nexpect Markdown.parse_str(\"# Hi\\n\\nSome *text*.\") == [\n    Heading({ level: One, content: [Text(\"Hi\")] }),\n    Paragraph([Text(\"Some \"), Emphasis([Text(\"text\")]), Text(\".\")]),\n]\n```",
+        "line": 195
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_inlines",
+        "modulePath": "Markdown",
+        "fullName": "Markdown.parse_inlines",
+        "signature": "Str -> List(Inline)",
+        "docs": "Parse inline content, such as a single line of a table cell or a title,\nwithout any block structure. Reference links cannot resolve here, because\ntheir definitions are blocks: use [Markdown.parse_str] for those.\n\n```roc\nexpect Markdown.parse_inlines(\"**Bold** and `code`\") == [\n    Strong([Text(\"Bold\")]),\n    Text(\" and \"),\n    InlineCode(\"code\"),\n]\n```",
+        "line": 209
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parser",
+        "modulePath": "Markdown",
+        "fullName": "Markdown.parser",
+        "signature": "Parser(Utf8.Bytes, List(Markdown))",
+        "docs": "[Markdown.parse_str] as a [Parser] over bytes, for use with the\ncombinators. It consumes all of its input and never fails.",
+        "line": 214
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "inline_parser",
+        "modulePath": "Markdown",
+        "fullName": "Markdown.inline_parser",
+        "signature": "Parser(Utf8.Bytes, List(Inline))",
+        "docs": "[Markdown.parse_inlines] as a [Parser] over bytes. It consumes all of its\ninput and never fails.",
+        "line": 219
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "frontmatter",
+        "modulePath": "Markdown",
+        "fullName": "Markdown.frontmatter",
+        "signature": "List(Markdown) -> Try(Str, [Missing])",
+        "docs": "The raw text of the document's frontmatter, or `Err(Missing)` when the\ndocument has none.\n\n```roc\nexpect Markdown.frontmatter(Markdown.parse_str(\"---\\ntitle: Hi\\n---\\nBody\")) == Ok(\"title: Hi\\n\")\nexpect Markdown.frontmatter(Markdown.parse_str(\"Body\")) == Err(Missing)\n```",
+        "line": 229
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "ReferenceDefinition",
+        "modulePath": "",
+        "fullName": "ReferenceDefinition",
+        "signature": "{\n\tlabel : Str,\n\ttarget : Markdown.LinkTarget,\n}",
+        "docs": "",
+        "line": 403,
+        "decl": ":",
+        "head": "ReferenceDefinition"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "ListInfo",
+        "modulePath": "",
+        "fullName": "ListInfo",
+        "signature": "{ ordered : Bool, marker : U8, start : U64 }",
+        "docs": "Block structure follows the two-phase strategy of CommonMark 0.31.2\n(appendix \"A parsing strategy\"): lines are consumed one at a time against a\nstack of open blocks, then inline content is parsed once every link\nreference definition is known. GFM tables and task list items are layered\non in the same places cmark-gfm hooks them in.\n\nThe first phase records what happens as a flat list of events (a container\nopens or closes, a leaf block is complete, definitions were found), and the\ntree is built from them afterwards. Only the innermost leaf block collects\nlines while the document is read; they are kept outside the open-block\nstack. That keeps the whole parse linear in the input: a list growing inside\na record that is itself stored elsewhere would be copied on every append.",
+        "line": 420,
+        "decl": ":",
+        "head": "ListInfo"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "OpenKind",
+        "modulePath": "",
+        "fullName": "OpenKind",
+        "signature": "[\n\tDocumentBlock,\n\tQuoteBlock,\n\tListContainer(ListInfo),\n\tItemBlock({ info : ListInfo, marker_offset : U64, padding : U64 }),\n\tParagraphBlock,\n\tFencedBlock({ fence_char : U8, fence_len : U64, fence_offset : U64, info : Str }),\n\tIndentedBlock,\n\tHtmlBlockOpen(U64),\n\tTableBlock({ align : List(Markdown.Alignment), header : List(Utf8.Bytes) }),\n]",
+        "docs": "",
+        "line": 422,
+        "decl": ":",
+        "head": "OpenKind"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Span",
+        "modulePath": "",
+        "fullName": "Span",
+        "signature": "{ start : U64, end : U64 }",
+        "docs": "First and last source line of a closed block, used to decide list looseness:\ntwo siblings are separated by a blank line exactly when their spans leave a\ngap.",
+        "line": 437,
+        "decl": ":",
+        "head": "Span"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Open",
+        "modulePath": "",
+        "fullName": "Open",
+        "signature": "{\n\tkind : OpenKind,\n\tstart : U64,\n\t# The last line that belongs to a leaf block (an indented code block's\n\t# trailing blank lines do not).\n\tlast : U64,\n\thas_children : Bool,\n\t# How many block quotes and lists enclose this block, itself included.\n\tnesting : U64,\n}",
+        "docs": "",
+        "line": 439,
+        "decl": ":",
+        "head": "Open"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Event",
+        "modulePath": "",
+        "fullName": "Event",
+        "signature": "[\n\tOpenContainer(OpenKind, U64),\n\tCloseContainer(U64),\n\tItemTask(Markdown.TaskState),\n\tLeaf(Markdown, Span),\n\tDefinitions(List(ReferenceDefinition)),\n]",
+        "docs": "",
+        "line": 456,
+        "decl": ":",
+        "head": "Event"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "BlockState",
+        "modulePath": "",
+        "fullName": "BlockState",
+        "signature": "{\n\t# The open blocks are the first `depth` entries of `stack`; the entries\n\t# after them are stale. Closing a block only lowers `depth`, because a list\n\t# that has been shortened is copied by the next append.\n\tstack : List(Open),\n\tdepth : U64,\n\tline : Utf8.Bytes,\n\t# For each byte offset of the line: the offset of the next byte that is not\n\t# a space or tab, and the column of each offset (tab stops of 4). Computed\n\t# only for lines that start inside more than `index_depth` open blocks, so\n\t# that finding the next non-space character stays constant time however\n\t# deeply the containers nest. Otherwise both are empty and `find_nonspace`\n\t# scans, which costs at most `index_depth` passes over a run of spaces.\n\tnext_nonspace : List(U64),\n\tcolumns : List(U64),\n\tline_number : U64,\n\toffset : U64,\n\tcolumn : U64,\n\tpartial_tab : Bool,\n\tall_closed : Bool,\n\tlast_matched : U64,\n\t# The innermost leaf block's lines from earlier lines (read only), whether\n\t# that leaf was closed on this line, and the lines added on this line.\n\tleaf_lines : List(Utf8.Bytes),\n\tleaf_reset : Bool,\n\tleaf_added : List(Utf8.Bytes),\n\tevents : List(Event),\n}",
+        "docs": "",
+        "line": 464,
+        "decl": ":",
+        "head": "BlockState"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Nonspace",
+        "modulePath": "",
+        "fullName": "Nonspace",
+        "signature": "{ pos : U64, column : U64, indent : U64, blank : Bool }",
+        "docs": "",
+        "line": 493,
+        "decl": ":",
+        "head": "Nonspace"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Continuation",
+        "modulePath": "",
+        "fullName": "Continuation",
+        "signature": "[Matched(BlockState), NotMatched, Consumed(BlockState)]",
+        "docs": "",
+        "line": 495,
+        "decl": ":",
+        "head": "Continuation"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "StartResult",
+        "modulePath": "",
+        "fullName": "StartResult",
+        "signature": "[NoStart(BlockState), StartedContainer(BlockState), StartedLeaf(BlockState), LineDone(BlockState), StopStarts(BlockState)]",
+        "docs": "",
+        "line": 497,
+        "decl": ":",
+        "head": "StartResult"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Built",
+        "modulePath": "",
+        "fullName": "Built",
+        "signature": "[BuiltBlock(Markdown, Span), BuiltItem({ task : Markdown.TaskState, blocks : List(Markdown), span : Span, inner_gap : Bool })]",
+        "docs": "Rebuild the tree from the events, starting at `start` and stopping at the\nclose of the enclosing container. Looseness comes from the children's spans.",
+        "line": 1151,
+        "decl": ":",
+        "head": "Built"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "ListMarker",
+        "modulePath": "",
+        "fullName": "ListMarker",
+        "signature": "{ info : ListInfo, width : U64 }",
+        "docs": "",
+        "line": 1396,
+        "decl": ":",
+        "head": "ListMarker"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "InlineItem",
+        "modulePath": "",
+        "fullName": "InlineItem",
+        "signature": "[\n\tChars(List(U8)),\n\tNode(Markdown.Inline),\n\t# A resolved link or image and its depth (see `max_inline_nesting`).\n\tNested(Markdown.Inline, U64),\n\tDelim(InlineDelim),\n]",
+        "docs": "---------------------------------------------------------------------------\nInline parsing.\n\nImplements CommonMark 0.31.2 section 6 (backslash escapes, entity and numeric\ncharacter references, code spans, emphasis via the delimiter-run algorithm\nof appendix \"Process emphasis\", links and images including reference links,\nautolinks, raw HTML, hard and soft line breaks) plus the GFM strikethrough\nand extended-autolink extensions as implemented by cmark-gfm.\n\nSoft line breaks are kept as \"\\n\" inside `Text`; adjacent text is merged.\n---------------------------------------------------------------------------\nOne piece of scanned inline content before emphasis is resolved.",
+        "line": 1981,
+        "decl": ":",
+        "head": "InlineItem"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "InlineDelim",
+        "modulePath": "",
+        "fullName": "InlineDelim",
+        "signature": "{ char : U8, length : U64, count : U64, can_open : Bool, can_close : Bool }",
+        "docs": "A run of `*`, `_` or `~` that may open or close emphasis or strikethrough.\n`length` is the original run length (used by the \"multiple of 3\" rule);\n`count` is how many delimiter characters are still unused.",
+        "line": 2000,
+        "decl": ":",
+        "head": "InlineDelim"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "InlineBracket",
+        "modulePath": "",
+        "fullName": "InlineBracket",
+        "signature": "{ item : U64, start : U64, image : Bool, sequence : U64, depth : U64 }",
+        "docs": "An entry of the bracket stack: the `[` or `![` item, the input offset just\nafter the bracket, and its push sequence number (a later bracket was pushed\nwhen the push counter has moved on by more than one), and the greatest\ndepth of the links and images resolved after it.",
+        "line": 2006,
+        "decl": ":",
+        "head": "InlineBracket"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "TickRun",
+        "modulePath": "",
+        "fullName": "TickRun",
+        "signature": "{ start : U64, len : U64 }",
+        "docs": "A maximal run of backticks in the input.",
+        "line": 2009,
+        "decl": ":",
+        "head": "TickRun"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "EmphOpener",
+        "modulePath": "",
+        "fullName": "EmphOpener",
+        "signature": "{ delim : InlineDelim, at : U64 }",
+        "docs": "",
+        "line": 2550,
+        "decl": ":",
+        "head": "EmphOpener"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "HtmlSkip",
+        "modulePath": "",
+        "fullName": "HtmlSkip",
+        "signature": "{ comment : Bool, pi : Bool, cdata : Bool, declaration : Bool }",
+        "docs": "",
+        "line": 3314,
+        "decl": ":",
+        "head": "HtmlSkip"
+       }
+      ]
+     },
+     {
+      "name": "MarkdownEntities",
+      "imports": [],
+      "items": [
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "lookup",
+        "modulePath": "MarkdownEntities",
+        "fullName": "MarkdownEntities.lookup",
+        "signature": "List(U8) -> Try(List(U8), [NotFound])",
+        "docs": "Decode an entity name (without `&` and `;`) to its replacement text.",
+        "line": 6
+       }
+      ]
+     },
+     {
+      "name": "Parser",
+      "imports": [],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Parser",
+        "modulePath": "",
+        "fullName": "Parser",
+        "signature": "{ fun : input -> Step(input, a) }",
+        "docs": "Generic [parser combinators](https://en.wikipedia.org/wiki/Parser_combinator)\nfor transforming input into structured values.\n\nA `Parser(input, a)` is a value that describes how to read an `a` from the\nfront of an `input`. Combine small parsers with `keep`, `skip`, `map`,\n`one_of`, `many` and `sep_by` to build larger ones, then run the result with\n`Utf8.parse_str` (for `Str`) or [Parser.parse] (for any input type).\n\nThis parser turns `\"Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green\"`\ninto `{ id: 1, requirements: [[Blue(3), Red(4)], [Red(1), Green(2), Blue(6)], [Green(2)]] }`\n(the same code is a test in `Utf8.roc`):\n```roc\nRequirement : [Green(U64), Red(U64), Blue(U64)]\nRequirementSet : List(Requirement)\nGame : { id : U64, requirements : List(RequirementSet) }\n\nparse_game : Str -> Try(Game, [ParsingError])\nparse_game = |s| {\n    green = Parser.const(|x| Green(x)).keep(Utf8.digits).skip(Utf8.string(\" green\"))\n    red = Parser.const(|x| Red(x)).keep(Utf8.digits).skip(Utf8.string(\" red\"))\n    blue = Parser.const(|x| Blue(x)).keep(Utf8.digits).skip(Utf8.string(\" blue\"))\n\n    requirement_set : Parser(_, RequirementSet)\n    requirement_set = Parser.one_of([green, red, blue]).sep_by(Utf8.string(\", \"))\n\n    requirements : Parser(_, List(RequirementSet))\n    requirements = requirement_set.sep_by(Utf8.string(\"; \"))\n\n    game : Parser(_, Game)\n    game =\n        Parser.const(|id| |r| { id, requirements: r })\n            .skip(Utf8.string(\"Game \"))\n            .keep(Utf8.digits)\n            .skip(Utf8.string(\": \"))\n            .keep(requirements)\n\n    match Utf8.parse_str(game, s) {\n        Ok(g) => Ok(g)\n        Err(ParseError(_)) => Err(ParsingError)\n    }\n}\n```\n\nAlternatives backtrack: when one alternative of `alt` or `one_of` fails, the\nnext one is tried on the original input, however much the failed one read.\n\nFailures report the furthest position any parser reached. When a\nrepetition such as `many` stops at a bad element, or an alternative fails\nafter reading further than the one that succeeded, that failure is kept\nand reported if the whole parse later fails at or before it.\n\nThe representation is internal and may change to improve efficiency or error messages.",
+        "line": 53,
+        "decl": "::",
+        "head": "Parser(input, a)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "ParseResult",
+        "modulePath": "Parser",
+        "fullName": "Parser.ParseResult",
+        "signature": "Try({ value : a, rest : input }, [ParseError({ message : Str, offset : U64 })])",
+        "docs": "The result of running a parser on part of an input: the parsed `value`\nand the `rest` of the input, or a `ParseError` whose `offset` counts the\ninput elements (bytes, for UTF-8 input) read before the failure.",
+        "line": 58,
+        "decl": ":",
+        "head": "ParseResult(input, a)"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "custom",
+        "modulePath": "Parser",
+        "fullName": "Parser.custom",
+        "signature": "(input -> ParseResult(input, a)) -> Parser(input, a) where [input.len : input -> U64]",
+        "docs": "Write a custom parser without using the provided combinators.\n\nThe function receives the remaining input and returns either the parsed\n`value` with the `rest` it did not consume, or\n`Err(ParseError({ message, offset }))`, where `offset` is how far into\nthe given input the failure is (usually `0`).",
+        "line": 66
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "run",
+        "modulePath": "Parser",
+        "fullName": "Parser.run",
+        "signature": "Parser(input, a), input -> ParseResult(input, a) where [input.len : input -> U64]",
+        "docs": "Run a parser on the start of an input, returning the parsed value and\nthe input it did not consume.\n\nMost parsers consume part of `input` when they succeed. This allows you to string parsers\ntogether that run one after the other. The part of the input that the first\nparser did not consume, is used by the next parser.\n\nOn failure, the error is the furthest failure seen, with its `offset`\ncounted from the start of `input`. This is mostly useful when creating\nyour own parsing building blocks.",
+        "line": 88
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse",
+        "modulePath": "Parser",
+        "fullName": "Parser.parse",
+        "signature": "Parser(input, a), input -> Try(a, [ParseError({ message : Str, offset : U64 })]) where [input.len : input -> U64]",
+        "docs": "Run a parser on the given input, expecting it to consume all of it.\n\nThe input type only needs a `len` method, which is used both to detect\nleftover input and to turn the furthest failure into an `offset` counted\nfrom the start of `input`. Leftover input is a failure too: if some\nparser failed at or beyond the leftover, its message is reported;\notherwise the message is `unexpected input`. For UTF-8 text use\n`Utf8.parse_str` or `Utf8.parse_bytes`.",
+        "line": 104
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "fail",
+        "modulePath": "Parser",
+        "fullName": "Parser.fail",
+        "signature": "Str -> Parser(input, a) where [input.len : input -> U64]",
+        "docs": "Parser that can never succeed, regardless of the given input.\nIt will always fail with the given error message.\n\nThis is mostly useful as a 'base case' if all other parsers\nin a `one_of` or `alt` have failed, to provide some more descriptive error message.",
+        "line": 127
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "const",
+        "modulePath": "Parser",
+        "fullName": "Parser.const",
+        "signature": "a -> Parser(_, a)",
+        "docs": "Parser that will always produce the given `a`, without looking at the actual input.\n\nThis is the usual start of a pipeline: `const` supplies a (curried)\nconstructor function and each `keep` feeds it one parsed value.\n```roc\nparse_u32 : Parser(Utf8.Bytes, U32)\nparse_u32 = Parser.const(U64.to_u32_wrap).keep(Utf8.digits)\n\nexpect Utf8.parse_str(parse_u32, \"123\") == Ok(123.U32)\n```",
+        "line": 142
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "alt",
+        "modulePath": "Parser",
+        "fullName": "Parser.alt",
+        "signature": "Parser(input, a), Parser(input, a) -> Parser(input, a)",
+        "docs": "Try the `first` parser and (only) if it fails, try the `second` parser as fallback.\n\nThe `second` parser starts from the same input as `first` (backtracking).\nIf both fail, the failure that reached further is reported; when both\nstopped at the same place, the `second` one is.",
+        "line": 152
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "one_of",
+        "modulePath": "Parser",
+        "fullName": "Parser.one_of",
+        "signature": "List(Parser(input, a)) -> Parser(input, a) where [input.len : input -> U64]",
+        "docs": "Try a list of parsers in turn, until one of them succeeds.\n\nEach parser starts from the same input. An empty list always fails.\nFor UTF-8 input, [Parser.one_of] behaves the same way.\n```roc\ncolor : Parser(Utf8.Bytes, [Red, Green, Blue])\ncolor =\n    Parser.one_of([\n        Parser.const(Red).skip(Utf8.string(\"red\")),\n        Parser.const(Green).skip(Utf8.string(\"green\")),\n        Parser.const(Blue).skip(Utf8.string(\"blue\")),\n    ])\n\nexpect Utf8.parse_str(color, \"green\") == Ok(Green)\n```",
+        "line": 187
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "map",
+        "modulePath": "Parser",
+        "fullName": "Parser.map",
+        "signature": "Parser(input, a), (a -> b) -> Parser(input, b)",
+        "docs": "Transforms the result of parsing into something else,\nusing the given transformation function.",
+        "line": 197
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "map2",
+        "modulePath": "Parser",
+        "fullName": "Parser.map2",
+        "signature": "Parser(input, a), Parser(input, b), (a, b -> c) -> Parser(input, c)",
+        "docs": "Transforms the result of parsing into something else,\nusing the given two-parameter transformation function.",
+        "line": 211
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "map3",
+        "modulePath": "Parser",
+        "fullName": "Parser.map3",
+        "signature": "Parser(input, a), Parser(input, b), Parser(input, c), (a, b, c -> d) -> Parser(input, d)",
+        "docs": "Transforms the result of parsing into something else,\nusing the given three-parameter transformation function.\n\nIf you need transformations with more inputs,\ntake a look at `keep`.",
+        "line": 223
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "flatten",
+        "modulePath": "Parser",
+        "fullName": "Parser.flatten",
+        "signature": "Parser(input, Try(a, Str)) -> Parser(input, a) where [input.len : input -> U64]",
+        "docs": "Removes a layer of `Try` from running the parser.\n\nUse this to map functions that return a `Try` over the parser:\nan `Err(msg)` value becomes a failure with that message, reported where\nthe inner parser started.\n\n```roc\neven : Parser(Utf8.Bytes, U64)\neven =\n    Utf8.digits\n        .map(|n| if n % 2 == 0 { Ok(n) } else { Err(\"odd number\") })\n        .flatten()\n\nexpect Utf8.parse_str(even, \"42\") == Ok(42)\nexpect Utf8.parse_str(even, \"7\") == Err(ParseError({ message: \"odd number\", offset: 0 }))\n```",
+        "line": 247
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "and_then",
+        "modulePath": "Parser",
+        "fullName": "Parser.and_then",
+        "signature": "Parser(input, a), (a -> Parser(input, b)) -> Parser(input, b)",
+        "docs": "Run `first`, then build the next parser from its value and run that.\n\nUse this when what comes next depends on what was read, such as a\nlength prefix. When the next parser is fixed, prefer `keep`, `skip`\nand `map`, which are simpler and let the parser be built once.\n\n```roc\nsized : Parser(Utf8.Bytes, List(U8))\nsized = Utf8.digit.and_then(|n| Utf8.any_codeunit.many().map(|bytes| bytes.take_first(n)))\n```",
+        "line": 272
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "lazy",
+        "modulePath": "Parser",
+        "fullName": "Parser.lazy",
+        "signature": "({} -> Parser(input, a)) -> Parser(input, a)",
+        "docs": "Runs a parser lazily.\n\nThis is (only) useful when dealing with a recursive structure.\nFor instance, consider a type `Comment : { message : Str, responses : List(Comment) }`.\nWithout `lazy`, you would ask the compiler to build an infinitely deep parser.\n(Resulting in a compiler error.)\n\nMutually recursive top-level parser values currently require a lower-level\nworkaround because of [roc-lang/roc#10098](https://github.com/roc-lang/roc/issues/10098).",
+        "line": 298
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "maybe",
+        "modulePath": "Parser",
+        "fullName": "Parser.maybe",
+        "signature": "Parser(input, a) -> Parser(input, Try(a, [Missing]))",
+        "docs": "Make a parser optional.\n\nReturns `Ok(value)` when the given parser succeeds, and `Err(Missing)`\nwithout consuming input when it fails, so the result never fails.",
+        "line": 307
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "many",
+        "modulePath": "Parser",
+        "fullName": "Parser.many",
+        "signature": "Parser(input, a) -> Parser(input, List(a)) where [input.len : input -> U64]",
+        "docs": "A parser which runs the element parser *zero* or more times on the input,\nreturning a list containing all the parsed elements.\n\nRepetition stops at the first element that fails, or that succeeds\nwithout consuming any input; that element's value is not included.\n(Without this rule, a parser such as `chomp_while` or `maybe(p)` that can\nsucceed on empty input would repeat forever.) The failure of the element\nthat stopped the repetition is kept, so if the parse later fails there,\nthat failure is what gets reported.",
+        "line": 323
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "one_or_more",
+        "modulePath": "Parser",
+        "fullName": "Parser.one_or_more",
+        "signature": "Parser(input, a) -> Parser(input, List(a)) where [input.len : input -> U64]",
+        "docs": "A parser which runs the element parser *one* or more times on the input,\nreturning a list containing all the parsed elements.\n\nFails when the first element fails. Also see [Parser.many].",
+        "line": 332
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "between",
+        "modulePath": "Parser",
+        "fullName": "Parser.between",
+        "signature": "Parser(input, a), Parser(input, open), Parser(input, close) -> Parser(input, a)",
+        "docs": "Runs a parser for an 'opening' delimiter, then your main parser, then the 'closing' delimiter,\nand only returns the result of your main parser.\n\nUseful to recognize structures surrounded by delimiters (like braces, parentheses, quotes, etc.)\n\n```roc\nbetween_brackets = |parser| parser.between(Utf8.codeunit('['), Utf8.codeunit(']'))\n```",
+        "line": 347
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "sep_by_one_or_more",
+        "modulePath": "Parser",
+        "fullName": "Parser.sep_by_one_or_more",
+        "signature": "Parser(input, a), Parser(input, sep) -> Parser(input, List(a)) where [input.len : input -> U64]",
+        "docs": "Parse one or more values separated by `separator`.\nThe separators are consumed and omitted from the result.\n\nA trailing separator that is not followed by a value is left unconsumed.",
+        "line": 359
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "sep_by",
+        "modulePath": "Parser",
+        "fullName": "Parser.sep_by",
+        "signature": "Parser(input, a), Parser(input, sep) -> Parser(input, List(a)) where [input.len : input -> U64]",
+        "docs": "Parse zero or more values separated by `separator`.\nThe separators are consumed and omitted from the result.\n\n```roc\nparse_numbers : Parser(Utf8.Bytes, List(U64))\nparse_numbers = Utf8.digits.sep_by(Utf8.codeunit(','))\n\nexpect Utf8.parse_str(parse_numbers, \"1,2,3\") == Ok([1, 2, 3])\n```",
+        "line": 377
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "ignore",
+        "modulePath": "Parser",
+        "fullName": "Parser.ignore",
+        "signature": "Parser(input, a) -> Parser(input, {})",
+        "docs": "Discard a parser's value while preserving how much input it consumes.\n\nUseful with `many` to skip a repeated token without collecting values.",
+        "line": 387
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "keep",
+        "modulePath": "Parser",
+        "fullName": "Parser.keep",
+        "signature": "Parser(input, (a -> b)), Parser(input, a) -> Parser(input, b)",
+        "docs": "Run a parser producing a function, then a parser producing its argument,\nand return the function result.\n\nStart with `const(|a| |b| ...)` and add one `keep` per argument, as in\nthe module example. The function must be curried (`|a| |b| ...`, not\n`|a, b| ...`), because its arguments are applied one at a time.",
+        "line": 398
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "skip",
+        "modulePath": "Parser",
+        "fullName": "Parser.skip",
+        "signature": "Parser(input, a), Parser(input, _) -> Parser(input, a)",
+        "docs": "Run two parsers in sequence, discarding the second parser's value.\n\nBoth parsers must succeed, and the input read by the second is consumed.\n```roc\nat_sign : Parser(Utf8.Bytes, [AtSign])\nat_sign = Parser.const(AtSign).skip(Utf8.codeunit('@'))\n\nexpect Utf8.parse_str(at_sign, \"@\") == Ok(AtSign)\n```",
+        "line": 424
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "chomp_until",
+        "modulePath": "Parser",
+        "fullName": "Parser.chomp_until",
+        "signature": "a -> Parser(List(a), List(a)) where [a.is_eq : a, a -> Bool]",
+        "docs": "Match zero or more codeunits until it reaches the given codeunit.\nThe given codeunit is not included in the match and is not consumed.\nFails if the codeunit never appears in the remaining input.\n\nThis can be used with [Parser.skip] to ignore text.\n\n```roc\nignore_text : Parser(Utf8.Bytes, U64)\nignore_text =\n    Parser.const(|d| d)\n        .skip(Parser.chomp_until(':'))\n        .skip(Utf8.codeunit(':'))\n        .keep(Utf8.digits)\n\nexpect Utf8.parse_str(ignore_text, \"ignore preceding text:123\") == Ok(123)\n```\n\nThis can be used with [Parser.keep] to capture a list of `U8` codeunits.\n\n```roc\ncapture_text : Parser(Utf8.Bytes, List(U8))\ncapture_text =\n    Parser.const(|codeunits| codeunits)\n        .keep(Parser.chomp_until(':'))\n        .skip(Utf8.codeunit(':'))\n\nexpect Utf8.parse_str(capture_text, \"Roc:\") == Ok(['R', 'o', 'c'])\n```\n\nUse [Str.from_utf8_lossy] to turn the results into a `Str`.\n\nAlso see [Parser.chomp_while].",
+        "line": 473
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "chomp_while",
+        "modulePath": "Parser",
+        "fullName": "Parser.chomp_while",
+        "signature": "(a -> Bool) -> Parser(List(a), List(a))",
+        "docs": "Match zero or more codeunits until the check returns false.\nThe codeunit that returned false is not included in the match.\nNote: a `chomp_while` parser always succeeds, possibly consuming nothing.\n\nThis can be used with [Parser.skip] to ignore text.\nThis is useful for chomping whitespace or variable names.\n\n```roc\nignore_numbers : Parser(Utf8.Bytes, Str)\nignore_numbers =\n    Parser.const(|str| str)\n        .skip(Parser.chomp_while(|b| b >= '0' and b <= '9'))\n        .keep(Utf8.string(\"TEXT\"))\n\nexpect Utf8.parse_str(ignore_numbers, \"0123456789876543210TEXT\") == Ok(\"TEXT\")\n```\n\nThis can be used with [Parser.keep] to capture a list of `U8` codeunits.\n\n```roc\ncapture_numbers : Parser(Utf8.Bytes, List(U8))\ncapture_numbers =\n    Parser.const(|codeunits| codeunits)\n        .keep(Parser.chomp_while(|b| b >= '0' and b <= '9'))\n        .skip(Utf8.string(\"TEXT\"))\n\nexpect Utf8.parse_str(capture_numbers, \"123TEXT\") == Ok(['1', '2', '3'])\n```\n\nUse [Str.from_utf8_lossy] to turn the results into a `Str`.\n\nAlso see [Parser.chomp_until].",
+        "line": 517
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "span",
+        "modulePath": "Parser",
+        "fullName": "Parser.span",
+        "signature": "Parser(List(item), a) -> Parser(List(item), List(item))",
+        "docs": "Run a parser and return the input it consumed, instead of its value.\n\nThe result is a slice of the input, not a copy, so recognising a token\nwith small parsers and keeping its text costs no allocation.\n\n```roc\nidentifier = Parser.span(Utf8.codeunit('$').skip(Parser.chomp_while(|b| b >= 'a' and b <= 'z')))\nexpect Utf8.parse_str(identifier, \"$abc\") == Ok(\"$abc\".to_utf8())\n```",
+        "line": 550
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Failure",
+        "modulePath": "",
+        "fullName": "Failure",
+        "signature": "{ message : Str, remaining : U64 }",
+        "docs": "",
+        "line": 565,
+        "decl": ":",
+        "head": "Failure"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Step",
+        "modulePath": "",
+        "fullName": "Step",
+        "signature": "Try({ value : a, rest : input, furthest : Failure }, Failure)",
+        "docs": "",
+        "line": 571,
+        "decl": ":",
+        "head": "Step(input, a)"
+       }
+      ]
+     },
+     {
+      "name": "Utf8",
+      "imports": [],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Bytes",
+        "modulePath": "Utf8",
+        "fullName": "Utf8.Bytes",
+        "signature": "List(U8)",
+        "docs": "UTF-8 input represented as a list of bytes.",
+        "line": 11,
+        "decl": ":",
+        "head": "Bytes"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_str",
+        "modulePath": "Utf8",
+        "fullName": "Utf8.parse_str",
+        "signature": "Parser(Bytes, a), Str -> Try(a, [ParseError({ message : Str, offset : U64 })])",
+        "docs": "Parse a whole `Str` using a [Parser].\n\nFails with `ParseError({ message, offset })`, where `offset` is the byte\noffset of the furthest failure. Input left over after the parser\nsucceeds is a failure too (see [Parser.parse]).\n\n```roc\ncolor : Parser(Utf8.Bytes, [Red, Green, Blue])\ncolor =\n    Parser.one_of([\n        Parser.const(Red).skip(Utf8.string(\"red\")),\n        Parser.const(Green).skip(Utf8.string(\"green\")),\n        Parser.const(Blue).skip(Utf8.string(\"blue\")),\n    ])\n\nexpect Utf8.parse_str(color, \"green\") == Ok(Green)\n```",
+        "line": 30
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_str_partial",
+        "modulePath": "Utf8",
+        "fullName": "Utf8.parse_str_partial",
+        "signature": "Parser(Bytes, a), Str -> Try({ value : a, rest : Str }, [ParseError({ message : Str, offset : U64 })])",
+        "docs": "Runs a parser against the start of a string, allowing the parser to consume it only partially.\n\n- If the parser succeeds, returns the resulting `value` and the `rest` of the string.\n  A `rest` that starts inside a multi-byte character is rendered with\n  U+FFFD replacement characters rather than crashing.\n- If the parser fails, returns `Err(ParseError({ message, offset }))`.\n\n```roc\nat_sign : Parser(Utf8.Bytes, [AtSign])\nat_sign = Parser.const(AtSign).skip(Utf8.codeunit('@'))\n\nexpect Utf8.parse_str_partial(at_sign, \"@\").map_ok(|r| r.value) == Ok(AtSign)\nexpect Utf8.parse_str_partial(at_sign, \"$\").is_err()\n```",
+        "line": 49
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_bytes",
+        "modulePath": "Utf8",
+        "fullName": "Utf8.parse_bytes",
+        "signature": "Parser(Bytes, a), Bytes -> Try(a, [ParseError({ message : Str, offset : U64 })])",
+        "docs": "Runs a parser against UTF-8 bytes, requiring the parser to consume them fully.\n\nFails with `ParseError({ message, offset })` like [Utf8.parse_str].",
+        "line": 59
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_bytes_partial",
+        "modulePath": "Utf8",
+        "fullName": "Utf8.parse_bytes_partial",
+        "signature": "Parser(Bytes, a), Bytes -> Try({ value : a, rest : Bytes }, [ParseError({ message : Str, offset : U64 })])",
+        "docs": "Runs a parser against the start of UTF-8 bytes, allowing the parser to consume them only partially.\n\nReturns the parsed `value` and the `rest` of the bytes, or\n`Err(ParseError({ message, offset }))`.",
+        "line": 68
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "codeunit_satisfies",
+        "modulePath": "Utf8",
+        "fullName": "Utf8.codeunit_satisfies",
+        "signature": "(U8 -> Bool) -> Parser(Bytes, U8)",
+        "docs": "Match one UTF-8 code unit when it satisfies the given predicate.\n\nFails on empty input or when the predicate returns `False`.\n\n```roc\nis_digit : U8 -> Bool\nis_digit = |b| b >= '0' and b <= '9'\n\nexpect Utf8.parse_str(Utf8.codeunit_satisfies(is_digit), \"0\") == Ok('0')\nexpect Utf8.parse_str(Utf8.codeunit_satisfies(is_digit), \"*\").is_err()\n```",
+        "line": 84
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "codeunit",
+        "modulePath": "Utf8",
+        "fullName": "Utf8.codeunit",
+        "signature": "U8 -> Parser(Bytes, U8)",
+        "docs": "Match one exact UTF-8 code unit.\n\nFor a character outside ASCII, which is several code units, use `string`.\n\n```roc\nat_sign : Parser(Utf8.Bytes, [AtSign])\nat_sign = Parser.const(AtSign).skip(Utf8.codeunit('@'))\n\nexpect Utf8.parse_str(at_sign, \"@\") == Ok(AtSign)\nexpect Utf8.parse_str_partial(at_sign, \"$\").is_err()\n```",
+        "line": 121
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "utf8",
+        "modulePath": "Utf8",
+        "fullName": "Utf8.utf8",
+        "signature": "List(U8) -> Parser(Bytes, List(U8))",
+        "docs": "Match an exact sequence of UTF-8 bytes and return them.",
+        "line": 142
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "string",
+        "modulePath": "Utf8",
+        "fullName": "Utf8.string",
+        "signature": "Str -> Parser(Bytes, Str)",
+        "docs": "Match the given `Str` exactly (case-sensitive) and return it.\n\n```roc\nexpect Utf8.parse_str(Utf8.string(\"Foo\"), \"Foo\") == Ok(\"Foo\")\nexpect Utf8.parse_str(Utf8.string(\"Foo\"), \"Bar\").is_err()\n```",
+        "line": 166
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "any_codeunit",
+        "modulePath": "Utf8",
+        "fullName": "Utf8.any_codeunit",
+        "signature": "Parser(Bytes, U8)",
+        "docs": "Match any single `U8` code unit; fails only on empty input.\n\n```roc\nexpect Utf8.parse_str(Utf8.any_codeunit, \"a\") == Ok('a')\nexpect Utf8.parse_str(Utf8.any_codeunit, \"$\") == Ok('$')\n```",
+        "line": 182
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "rest",
+        "modulePath": "Utf8",
+        "fullName": "Utf8.rest",
+        "signature": "Parser(Bytes, Bytes)",
+        "docs": "Consume the rest of the input and return it as bytes; never fails.\n\n```roc\nexpect {\n    bytes = \"consumes all the input\".to_utf8()\n    Utf8.rest.parse(bytes) == Ok(bytes)\n}\n```",
+        "line": 193
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "rest_str",
+        "modulePath": "Utf8",
+        "fullName": "Utf8.rest_str",
+        "signature": "Parser(Bytes, Str)",
+        "docs": "Consume the rest of the input as a `Str`, failing if the bytes are not valid UTF-8.",
+        "line": 201
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "digit",
+        "modulePath": "Utf8",
+        "fullName": "Utf8.digit",
+        "signature": "Parser(Bytes, U64)",
+        "docs": "Parse one ASCII decimal digit into a `U64` from 0 through 9.\n\n```roc\nexpect Utf8.parse_str(Utf8.digit, \"0\") == Ok(0)\nexpect Utf8.parse_str(Utf8.digit, \"not a digit\").is_err()\n```",
+        "line": 220
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "digits",
+        "modulePath": "Utf8",
+        "fullName": "Utf8.digits",
+        "signature": "Parser(Bytes, U64)",
+        "docs": "Parse one or more ASCII decimal digits into a `U64`, accepting leading zeroes.\n\nFails when the input does not start with a digit or the value does not fit\nin a `U64`. Signs and decimal points are not accepted.\n\n```roc\nexpect Utf8.parse_str(Utf8.digits, \"0123\") == Ok(123)\nexpect Utf8.parse_str(Utf8.digits, \"not a digit\").is_err()\n```",
+        "line": 246
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "ByteClass",
+        "modulePath": "Utf8",
+        "fullName": "Utf8.ByteClass",
+        "signature": "{ lo : U8x16, hi : U8x16, a : U8x16, b : U8x16, c : U8x16, members : List(Bool), kind : [Exact, Nibbles, Bytewise] }",
+        "docs": "A set of byte values, for finding or skipping runs of bytes 16 at a time.\n\nBuild a class once, outside any loop, and reuse it: construction derives\nthe lookup tables the vector scan uses. Any set of bytes works. A set\nwhose high-nibble rows have at most eight distinct shapes (every ASCII\nclass, and most practical ones) is scanned with two table lookups per 16\nbytes; other sets fall back to a byte loop.\n\n```roc\nspaces = Utf8.ByteClass.from_bytes([' ', '\\t'])\nexpect spaces.contains('\\t')\nexpect !spaces.contains('x')\n```",
+        "line": 288,
+        "decl": "::",
+        "head": "ByteClass"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "from_bytes",
+        "modulePath": "Utf8.ByteClass",
+        "fullName": "Utf8.ByteClass.from_bytes",
+        "signature": "List(U8) -> ByteClass",
+        "docs": "The class holding exactly these bytes.",
+        "line": 291
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "from_predicate",
+        "modulePath": "Utf8.ByteClass",
+        "fullName": "Utf8.ByteClass.from_predicate",
+        "signature": "(U8 -> Bool) -> ByteClass",
+        "docs": "The class holding every byte `b` for which `check(b)` is true.",
+        "line": 301
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "complement",
+        "modulePath": "Utf8.ByteClass",
+        "fullName": "Utf8.ByteClass.complement",
+        "signature": "ByteClass -> ByteClass",
+        "docs": "The class holding every byte that is not in this one.",
+        "line": 313
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "contains",
+        "modulePath": "Utf8.ByteClass",
+        "fullName": "Utf8.ByteClass.contains",
+        "signature": "ByteClass, U8 -> Bool",
+        "docs": "Whether the byte is in the class.",
+        "line": 317
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "find_any",
+        "modulePath": "Utf8",
+        "fullName": "Utf8.find_any",
+        "signature": "Bytes, U64, ByteClass -> U64",
+        "docs": "The index of the first byte at or after `pos` that is in `class`, or\nthe length of `bytes` if there is none. Scans 16 bytes at a time.\n\n```roc\nmarkup = Utf8.ByteClass.from_bytes(['<', '&'])\nexpect Utf8.find_any(\"a&b<c\".to_utf8(), 0, markup) == 1\nexpect Utf8.find_any(\"abc\".to_utf8(), 0, markup) == 3\n```",
+        "line": 329
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "skip_class",
+        "modulePath": "Utf8",
+        "fullName": "Utf8.skip_class",
+        "signature": "Bytes, U64, ByteClass -> U64",
+        "docs": "The index of the first byte at or after `pos` that is not in `class`,\nor the length of `bytes` if every remaining byte is. Use it to skip a\nrun of name characters, digits or whitespace.\n\n```roc\ndigits = Utf8.ByteClass.from_predicate(|b| b >= '0' and b <= '9')\nexpect Utf8.skip_class(\"123abc\".to_utf8(), 0, digits) == 3\n```",
+        "line": 340
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "find_line_end",
+        "modulePath": "Utf8",
+        "fullName": "Utf8.find_line_end",
+        "signature": "Bytes, U64 -> U64",
+        "docs": "The index of the next `\\n` or `\\r` at or after `pos`, or the length of\n`bytes` if there is none. Scans 16 bytes at a time.\n\n```roc\nexpect Utf8.find_line_end(\"ab\\r\\ncd\".to_utf8(), 0) == 2\n```",
+        "line": 349
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "span_class",
+        "modulePath": "Utf8",
+        "fullName": "Utf8.span_class",
+        "signature": "ByteClass -> Parser(Bytes, Bytes)",
+        "docs": "Consume the longest run of bytes in `class`, possibly empty, and return\nit as a slice of the input. It scans 16 bytes at a time, so prefer it to\n`Parser.chomp_while` for runs longer than a few bytes.\n\n```roc\nname_char = Utf8.ByteClass.from_predicate(|b| (b >= 'a' and b <= 'z') or b == '-')\nexpect Utf8.parse_str_partial(Utf8.span_class(name_char), \"foo-bar=1\").map_ok(|r| r.rest) == Ok(\"=1\")\n```",
+        "line": 390
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Requirement",
+        "modulePath": "",
+        "fullName": "Requirement",
+        "signature": "[Green(U64), Red(U64), Blue(U64)]",
+        "docs": "",
+        "line": 726,
+        "decl": ":",
+        "head": "Requirement"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "RequirementSet",
+        "modulePath": "",
+        "fullName": "RequirementSet",
+        "signature": "List(Requirement)",
+        "docs": "",
+        "line": 728,
+        "decl": ":",
+        "head": "RequirementSet"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Game",
+        "modulePath": "",
+        "fullName": "Game",
+        "signature": "{ id : U64, requirements : List(RequirementSet) }",
+        "docs": "",
+        "line": 730,
+        "decl": ":",
+        "head": "Game"
+       }
+      ]
+     },
+     {
+      "name": "Xml",
+      "imports": [],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Xml",
+        "modulePath": "",
+        "fullName": "Xml",
+        "signature": "{\n\tdeclaration : Try(Xml.Declaration, [Missing]),\n\troot : Xml.Node,\n}",
+        "docs": "XML document tree and parser based on the XML 1.0 (Fifth Edition)\nspecification.\n\nThe parser checks well-formedness for documents without a document type\ndeclaration. It supports an optional XML declaration, nested elements,\nattributes, character data, CDATA sections, the five predefined entity\nreferences (`&lt;` `&gt;` `&amp;` `&apos;` `&quot;`), and decimal and\nhexadecimal character references. Comments and processing instructions are\nchecked and then dropped from the tree.\n\nThe tree is normalised the way an XML processor reports it: line endings\nbecome `\\n` (XML 1.0 section 2.11), attribute values are normalised as\nCDATA attributes (section 3.3.3), references are replaced by their text,\nand adjacent character data (including CDATA sections and text on both\nsides of a comment) is merged into one `Text` node.\n\nDocument type declarations (`<!DOCTYPE ...>`) are rejected, so entities\nother than the predefined ones are never declared and referring to one is\na well-formedness error. Namespaces are not processed: a name such as\n`svg:path` is kept as written. Input is already decoded text, so a declared\nencoding is reported but not used to decode.\n\nRead a document with [Xml.parse_str], then walk it with pattern matching or\nthe [Xml.Node] helpers `name`, `attribute`, `children_named` and `text`:\n\n```roc\nexpect {\n    xml = Xml.parse_str(\"<feed><title>News</title><link href='/a'/></feed>\")?\n    titles = xml.root.children_named(\"title\").map(|title| title.text())\n    links = xml.root.children_named(\"link\").map(|link| link.attribute(\"href\"))\n    titles == [\"News\"] and links == [Ok(\"/a\")]\n}\n```\n\nOriginally written by [Johannes Maas](https://github.com/j-maas).",
+        "line": 39,
+        "decl": ":=",
+        "head": "Xml"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "is_eq",
+        "modulePath": "Xml",
+        "fullName": "Xml.is_eq",
+        "signature": "_",
+        "docs": "Compare two XML documents structurally (declaration and tree).",
+        "line": 45
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_hash",
+        "modulePath": "Xml",
+        "fullName": "Xml.to_hash",
+        "signature": "_",
+        "docs": "Hash an XML document, so documents can be `Dict` keys and `Set` members.",
+        "line": 48
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Attribute",
+        "modulePath": "Xml",
+        "fullName": "Xml.Attribute",
+        "signature": "{ name : Str, value : Str }",
+        "docs": "An XML attribute name and decoded value.\n\nThe name is kept as written, including any namespace prefix. The value\nhas references replaced and whitespace normalised. Attributes keep their\nsource order; duplicate names are a well-formedness error.",
+        "line": 55,
+        "decl": ":",
+        "head": "Attribute"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "TextEncoding",
+        "modulePath": "Xml",
+        "fullName": "Xml.TextEncoding",
+        "signature": "[\n\t\tUtf8Encoding,\n\t\tOtherEncoding(Str),\n\t]",
+        "docs": "Text encoding declared by an XML declaration.\nEncoding names are compared case-insensitively, so `UTF-8` is `Utf8Encoding`.",
+        "line": 59,
+        "decl": ":",
+        "head": "TextEncoding"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Declaration",
+        "modulePath": "Xml",
+        "fullName": "Xml.Declaration",
+        "signature": "{\n\t\tversion : Version,\n\t\tencoding : Try(TextEncoding, [Missing]),\n\t}",
+        "docs": "Version and optional encoding from an XML declaration. An absent\nencoding is `Err(Missing)`.",
+        "line": 66,
+        "decl": ":",
+        "head": "Declaration"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Version",
+        "modulePath": "Xml",
+        "fullName": "Xml.Version",
+        "signature": "{ major : U64, minor : U64 }",
+        "docs": "An XML version from the declaration, such as `{ major: 1, minor: 0 }`\nfor `version=\"1.0\"`. Only `1.x` versions are accepted, so `major` is\nalways `1`.",
+        "line": 74,
+        "decl": ":",
+        "head": "Version"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Node",
+        "modulePath": "Xml",
+        "fullName": "Xml.Node",
+        "signature": "[\n\t\tElement({ name : Str, attributes : List(Xml.Attribute), children : List(Node) }),\n\t\tText(Str),\n\t]",
+        "docs": "An XML element or text node.\n\nAn `Element` holds its `name` as written, its `attributes` in source\norder, and its `children` in document order. `Text(str)` is decoded\ncharacter data; adjacent text, CDATA and references are merged into one\n`Text`, and whitespace-only text between elements is kept.",
+        "line": 82,
+        "decl": ":=",
+        "head": "Node"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "is_eq",
+        "modulePath": "Xml.Node",
+        "fullName": "Xml.Node.is_eq",
+        "signature": "_",
+        "docs": "Compare two XML nodes structurally.",
+        "line": 88
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_hash",
+        "modulePath": "Xml.Node",
+        "fullName": "Xml.Node.to_hash",
+        "signature": "_",
+        "docs": "Hash an XML node, so nodes can be `Dict` keys and `Set` members.",
+        "line": 91
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "name",
+        "modulePath": "Xml.Node",
+        "fullName": "Xml.Node.name",
+        "signature": "Node -> Try(Str, [NotAnElement])",
+        "docs": "The name of an element, or `Err(NotAnElement)` for a text node.\n\n```roc\nexpect Xml.parse_str(\"<svg:rect/>\").map_ok(|xml| xml.root.name()) == Ok(Ok(\"svg:rect\"))\n```",
+        "line": 98
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "attribute",
+        "modulePath": "Xml.Node",
+        "fullName": "Xml.Node.attribute",
+        "signature": "Node, Str -> Try(Str, [Missing])",
+        "docs": "The value of the element's attribute with this exact name, or\n`Err(Missing)` when there is none or the node is text.\n\n```roc\nexpect {\n    root = Xml.parse_str(\"<a href='/x'/>\")?.root\n    root.attribute(\"href\") == Ok(\"/x\") and root.attribute(\"title\") == Err(Missing)\n}\n```",
+        "line": 115
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "children_named",
+        "modulePath": "Xml.Node",
+        "fullName": "Xml.Node.children_named",
+        "signature": "Node, Str -> List(Node)",
+        "docs": "The element's direct child elements with this exact name, in\ndocument order. Empty for a text node.\n\n```roc\nexpect {\n    root = Xml.parse_str(\"<list><item>1</item><other/><item>2</item></list>\")?.root\n    root.children_named(\"item\").map(|item| item.text()) == [\"1\", \"2\"]\n}\n```",
+        "line": 137
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "text",
+        "modulePath": "Xml.Node",
+        "fullName": "Xml.Node.text",
+        "signature": "Node -> Str",
+        "docs": "All character data in the node and its descendants, concatenated in\ndocument order (like the DOM's `textContent`).\n\n```roc\nexpect Xml.parse_str(\"<p>Hello, <b>world</b>!</p>\").map_ok(|xml| xml.root.text()) == Ok(\"Hello, world!\")\n```",
+        "line": 160
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Error",
+        "modulePath": "Xml",
+        "fullName": "Xml.Error",
+        "signature": "{ line : U64, column : U64, message : Str }",
+        "docs": "Location and explanation of malformed XML. Lines and columns are\none-based; columns count UTF-8 bytes, and `\\r\\n`, `\\r`, and `\\n` each\nend a line.",
+        "line": 199,
+        "decl": ":",
+        "head": "Error"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_str",
+        "modulePath": "Xml",
+        "fullName": "Xml.parse_str",
+        "signature": "Str -> Try(Xml, [InvalidXml(Error)])",
+        "docs": "Parse one complete XML document.\n\nLeading and trailing whitespace, comments and processing instructions\naround the root element are allowed; anything else after it is an error.\nA leading byte order mark is accepted.\n\n```roc\nexpect Xml.parse_str(\"<a>x &amp; y</a>\").map_ok(|xml| xml.root) == Ok(Element({ name: \"a\", attributes: [], children: [Text(\"x & y\")] }))\n\nexpect Xml.parse_str(\"<a>&nbsp;</a>\") == Err(InvalidXml({ line: 1, column: 4, message: \"undeclared entity &nbsp;\" }))\n```",
+        "line": 212
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parser",
+        "modulePath": "Xml",
+        "fullName": "Xml.parser",
+        "signature": "Parser(Utf8.Bytes, Xml)",
+        "docs": "Parse one XML document, including an optional declaration and any\ntrailing comments, processing instructions and whitespace, and leave\nthe input after that for the next parser.\n\nA failure is `ParseError({ message, offset })` with the same message\n[Xml.parse_str] reports and the byte offset of the problem. Use this to\nembed an XML document in a larger parser; otherwise prefer\n[Xml.parse_str], which reports a line and column.\n\n```roc\nexpect Utf8.parse_str(Xml.parser, \"<a></b>\") == Err(ParseError({ message: \"end tag </b> does not match start tag <a>\", offset: 3 }))\n\nexpect Utf8.parse_str(Xml.parser, \"<a/> <b/>\") == Err(ParseError({ message: \"unexpected input\", offset: 5 }))\n```",
+        "line": 241
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Failure",
+        "modulePath": "",
+        "fullName": "Failure",
+        "signature": "{ offset : U64, message : Str }",
+        "docs": "",
+        "line": 255,
+        "decl": ":",
+        "head": "Failure"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Parsed",
+        "modulePath": "",
+        "fullName": "Parsed",
+        "signature": "Try({ val : a, pos : U64 }, [XmlFail(Failure)])",
+        "docs": "",
+        "line": 257,
+        "decl": ":",
+        "head": "Parsed(a)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Open",
+        "modulePath": "",
+        "fullName": "Open",
+        "signature": "{\n\tname : Str,\n\tattributes : List(Xml.Attribute),\n\tfirst_child : U64,\n}",
+        "docs": "An element whose end tag has not been read yet. Its children so far are\nthe entries of the shared node list from `first_child` on.",
+        "line": 261,
+        "decl": ":",
+        "head": "Open"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "StartTag",
+        "modulePath": "",
+        "fullName": "StartTag",
+        "signature": "{\n\tname : Str,\n\tattributes : List(Xml.Attribute),\n\tempty : Bool,\n\tpos : U64,\n}",
+        "docs": "",
+        "line": 267,
+        "decl": ":",
+        "head": "StartTag"
+       }
+      ]
+     },
+     {
+      "name": "Yaml",
+      "imports": [],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Yaml",
+        "modulePath": "",
+        "fullName": "Yaml",
+        "signature": "[\n\tNull,\n\tBool(Bool),\n\tInt(I64),\n\tFloat(F64),\n\tText(Str),\n\tSequence(List(Yaml)),\n\tMapping(List({ key : Str, value : Yaml })),\n]",
+        "docs": "A practical YAML configuration parser.\n\nThis module implements a YAML 1.2 subset aimed at configuration files and\nMarkdown frontmatter. It supports a single document (optionally between\n`---` and `...` markers), block mappings and sequences (including compact and\nindentless sequences), single-line flow collections, comments, literal and\nfolded block scalars, single-line quoted scalars with all YAML escapes, and\nplain scalars resolved with the YAML 1.2 core schema (null, booleans, decimal,\noctal and hexadecimal integers, floats, `.inf` and `.nan`).\n\nMapping keys are their source text, so `1` and `01` are different keys.\nNesting is limited to 100 levels. Anchors, aliases, tags, directives,\ncomplex keys, multi-line flow collections, multi-line quoted or plain\nscalars, and multi-document streams are rejected with a parse error rather\nthan misread.\n\nThere are two ways to read a document:\n\n- [Yaml.decode] reads it straight into your own record, list, dict or tuple\n  type, which the compiler infers from how the result is used;\n- [Yaml.parse_str] returns a [Yaml] tree, which [Yaml.get], [Yaml.at],\n  [Yaml.get_path] and the `as_` helpers make easy to explore.\n\nA [Yaml] tree value is one of:\n\n- `Null` for `null`, `~`, an empty value or an empty document;\n- `Bool`, `Int` (an `I64`; larger integers are an error) and `Float` for\n  plain scalars the core schema resolves;\n- `Text` for quoted scalars, block scalars and any other plain scalar;\n- `Sequence` and `Mapping` for collections. Mapping entries keep their source\n  order, and a duplicate key is an error.",
+        "line": 35,
+        "decl": ":=",
+        "head": "Yaml"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Error",
+        "modulePath": "Yaml",
+        "fullName": "Yaml.Error",
+        "signature": "{ line : U64, column : U64, message : Str }",
+        "docs": "Location and explanation of invalid YAML input. Lines and columns are\none-based; a column counts bytes from the start of its line.",
+        "line": 47,
+        "decl": ":",
+        "head": "Error"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "is_eq",
+        "modulePath": "Yaml",
+        "fullName": "Yaml.is_eq",
+        "signature": "_",
+        "docs": "Compare two parsed YAML values structurally.",
+        "line": 50
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_hash",
+        "modulePath": "Yaml",
+        "fullName": "Yaml.to_hash",
+        "signature": "_",
+        "docs": "Hash a parsed YAML value, so trees can be `Dict` keys or `Set` members.",
+        "line": 53
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_str",
+        "modulePath": "Yaml",
+        "fullName": "Yaml.parse_str",
+        "signature": "Str -> Try(Yaml, [InvalidYaml(Error)])",
+        "docs": "Parse one YAML configuration document from a string.\n\nEmpty input produces `Null`. Invalid input returns `InvalidYaml` with a\none-based line and column. See the module description for the supported subset.\n\n```roc\nexpect Yaml.parse_str(\"draft: false\") == Ok(Mapping([{ key: \"draft\", value: Bool(False) }]))\n```",
+        "line": 63
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parser",
+        "modulePath": "Yaml",
+        "fullName": "Yaml.parser",
+        "signature": "Parser(Utf8.Bytes, Yaml)",
+        "docs": "A [Parser] that reads the rest of its input as one YAML document, for\ncomposing YAML with other parsers.\n\nIt always consumes all of its input. A failure is a `ParseError` whose\n`offset` is the byte offset of the reported line and column.\n\n```roc\nexpect Utf8.parse_str(Yaml.parser, \"a: 1\") == Ok(Mapping([{ key: \"a\", value: Int(1) }]))\n```",
+        "line": 78
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "get",
+        "modulePath": "Yaml",
+        "fullName": "Yaml.get",
+        "signature": "Yaml, Str -> Try(Yaml, [Missing])",
+        "docs": "The value stored under `key` in a mapping. Anything else, or a mapping\nwithout that key, is `Err(Missing)`.\n\n```roc\nexpect Yaml.parse_str(\"title: Post\").map_ok(|doc| doc.get(\"title\")) == Ok(Ok(Text(\"Post\")))\n```",
+        "line": 99
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "at",
+        "modulePath": "Yaml",
+        "fullName": "Yaml.at",
+        "signature": "Yaml, U64 -> Try(Yaml, [Missing])",
+        "docs": "The item at a zero-based `index` of a sequence. Anything else, or an\nindex past the end, is `Err(Missing)`.\n\n```roc\nexpect Yaml.parse_str(\"[a, b]\").map_ok(|doc| doc.at(1)) == Ok(Ok(Text(\"b\")))\n```",
+        "line": 122
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "get_path",
+        "modulePath": "Yaml",
+        "fullName": "Yaml.get_path",
+        "signature": "Yaml, List(Str) -> Try(Yaml, [Missing])",
+        "docs": "Follow a path of mapping keys and sequence indexes. A segment applied\nto a sequence must be a decimal index such as `\"0\"`.\n\n```roc\nexpect {\n    doc = Yaml.parse_str(\"jobs:\\n  build:\\n    steps: [checkout, test]\\n\")?\n    doc.get_path([\"jobs\", \"build\", \"steps\", \"1\"]) == Ok(Text(\"test\"))\n}\n```",
+        "line": 139
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "as_str",
+        "modulePath": "Yaml",
+        "fullName": "Yaml.as_str",
+        "signature": "Yaml -> Try(Str, [WrongType])",
+        "docs": "The text of a `Text` value. Other values, including numbers and\nbooleans, are `Err(WrongType)`; use [Yaml.decode] to read a plain\nscalar such as `1.10` as text.",
+        "line": 161
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "as_i64",
+        "modulePath": "Yaml",
+        "fullName": "Yaml.as_i64",
+        "signature": "Yaml -> Try(I64, [WrongType])",
+        "docs": "The integer of an `Int` value, or `Err(WrongType)`.",
+        "line": 170
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "as_bool",
+        "modulePath": "Yaml",
+        "fullName": "Yaml.as_bool",
+        "signature": "Yaml -> Try(Bool, [WrongType])",
+        "docs": "The boolean of a `Bool` value, or `Err(WrongType)`.",
+        "line": 179
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "as_list",
+        "modulePath": "Yaml",
+        "fullName": "Yaml.as_list",
+        "signature": "Yaml -> Try(List(Yaml), [WrongType])",
+        "docs": "The items of a `Sequence` value, or `Err(WrongType)`.\n\n```roc\nexpect Yaml.parse_str(\"[1, 2]\").map_ok(|doc| doc.as_list()) == Ok(Ok([Int(1), Int(2)]))\n```",
+        "line": 192
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_inspect",
+        "modulePath": "Yaml",
+        "fullName": "Yaml.to_inspect",
+        "signature": "Yaml -> Str",
+        "docs": "Render a parsed YAML value in Roc source-like notation for inspection.\n\nThe output is meant for debugging and test messages, not for writing\nYAML. Control characters in text and keys are escaped, so the output is\nalways printable on one line.\n\n```roc\nexpect Yaml.to_inspect(Sequence([Int(1), Text(\"a\")])) == \"Sequence([Int(1), Text(\\\"a\\\")])\"\n```",
+        "line": 209
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "decode",
+        "modulePath": "Yaml",
+        "fullName": "Yaml.decode",
+        "signature": "Str -> Try(a, [InvalidYaml(Error), ..errs])\n\t\twhere [a.Parseable([InvalidYaml(Error), ..errs])]",
+        "docs": "Decode one YAML document straight into a Roc type, chosen by type\ninference.\n\n- A mapping decodes into a record (by field name), or a `Dict` with\n  `Str` or integer keys. Unknown keys are skipped; use [Yaml.decoder]\n  with `unknown_keys: Reject` to make them an error.\n- A sequence decodes into a `List` or, when it has exactly the right\n  number of items, a tuple.\n- A scalar is resolved for the type that asks for it, using the YAML 1.2\n  core schema: `Str` takes any quoted or block scalar and any plain\n  scalar except a null, so `version: 1.10` stays `\"1.10\"`; `Bool`, the\n  integer types, `F32`, `F64` and `Dec` take the matching core-schema\n  forms; a tag union without payloads takes the tag's name.\n- A null (`null`, `~` or an empty value) decodes as an empty list,\n  dict or record, and fills a `Try(_, [Null])` field with `Err(Null)`.\n- A `Try(_, [Missing])` field is `Err(Missing)` when its key is absent.\n  Any other absent field fails with `MissingRequiredField(name)`, a tag\n  the compiler adds to the error type.\n\nInvalid YAML and values that do not fit the type both fail with\n`InvalidYaml`, at the line and column of the offending value.\n\n```roc\nConfig : { name : Str, version : Str, port : U16, debug : Try(Bool, [Missing]) }\n\nexpect {\n    config : Try(Config, [InvalidYaml(Yaml.Error), MissingRequiredField(Str)])\n    config = Yaml.decode(\"name: app\\nversion: 1.10\\nport: 8080\\n\")\n    config == Ok({ name: \"app\", version: \"1.10\", port: 8080, debug: Err(Missing) })\n}\n```",
+        "line": 243
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "decoder",
+        "modulePath": "Yaml",
+        "fullName": "Yaml.decoder",
+        "signature": "DecodeOptions -> (Str -> Try(a, [InvalidYaml(Error), ..errs]))\n\t\twhere [a.Parseable([InvalidYaml(Error), ..errs])]",
+        "docs": "Build a decoder like [Yaml.decode] with other conventions.\n\n- `keys` says how YAML keys spell Roc's `snake_case` field names:\n  `SnakeCase` as written, `KebabCase` with dashes (`user-id`) or\n  `CamelCase` (`userId`).\n- `unknown_keys` is `Skip` to ignore keys the record does not have, or\n  `Reject` to fail with `InvalidYaml` at the first one.\n\nBuild the decoder once, for example as a top-level constant, and call it\nfor each document.\n\n```roc\ndecode_strict = Yaml.decoder({ keys: KebabCase, unknown_keys: Reject })\n\nexpect {\n    result : Try({ user_id : U64 }, [InvalidYaml(Yaml.Error), MissingRequiredField(Str)])\n    result = decode_strict(\"user-id: 7\\n\")\n    result == Ok({ user_id: 7 })\n}\n```",
+        "line": 271
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "DecodeOptions",
+        "modulePath": "Yaml",
+        "fullName": "Yaml.DecodeOptions",
+        "signature": "{ keys : [SnakeCase, KebabCase, CamelCase], unknown_keys : [Skip, Reject] }",
+        "docs": "Options for [Yaml.decoder].",
+        "line": 280,
+        "decl": ":",
+        "head": "DecodeOptions"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Format",
+        "modulePath": "Yaml",
+        "fullName": "Yaml.Format",
+        "signature": "{ keys : [SnakeCase, KebabCase, CamelCase], unknown_keys : [Skip, Reject] }",
+        "docs": "The decoding format that [Yaml.decode] passes to a type's `parser_for`.\nIt implements the builtin parsing protocol; you do not call its methods\nyourself.",
+        "line": 298,
+        "decl": "::",
+        "head": "Format"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "rename_field",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.rename_field",
+        "signature": "Format, Str -> Str",
+        "docs": "Spell a Roc field name as a YAML key, following the decoder's `keys` option.",
+        "line": 301
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_str",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.parse_str",
+        "signature": "Format, Cursor -> Try({ value : Str, rest : Cursor }, [InvalidYaml(Error)])",
+        "docs": "Read a string: any quoted or block scalar, or a plain scalar other than null.",
+        "line": 311
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_bool",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.parse_bool",
+        "signature": "Format, Cursor -> Try({ value : Bool, rest : Cursor }, [InvalidYaml(Error)])",
+        "docs": "Read a core-schema boolean such as `true` or `FALSE`.",
+        "line": 322
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_u8",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.parse_u8",
+        "signature": "Format, Cursor -> Try({ value : U8, rest : Cursor }, [InvalidYaml(Error)])",
+        "docs": "Read a core-schema integer (decimal, `0o` octal or `0x` hexadecimal) that fits the type.",
+        "line": 339
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_i8",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.parse_i8",
+        "signature": "Format, Cursor -> Try({ value : I8, rest : Cursor }, [InvalidYaml(Error)])",
+        "docs": "Read a core-schema integer (decimal, `0o` octal or `0x` hexadecimal) that fits the type.",
+        "line": 343
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_u16",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.parse_u16",
+        "signature": "Format, Cursor -> Try({ value : U16, rest : Cursor }, [InvalidYaml(Error)])",
+        "docs": "Read a core-schema integer (decimal, `0o` octal or `0x` hexadecimal) that fits the type.",
+        "line": 347
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_i16",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.parse_i16",
+        "signature": "Format, Cursor -> Try({ value : I16, rest : Cursor }, [InvalidYaml(Error)])",
+        "docs": "Read a core-schema integer (decimal, `0o` octal or `0x` hexadecimal) that fits the type.",
+        "line": 351
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_u32",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.parse_u32",
+        "signature": "Format, Cursor -> Try({ value : U32, rest : Cursor }, [InvalidYaml(Error)])",
+        "docs": "Read a core-schema integer (decimal, `0o` octal or `0x` hexadecimal) that fits the type.",
+        "line": 355
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_i32",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.parse_i32",
+        "signature": "Format, Cursor -> Try({ value : I32, rest : Cursor }, [InvalidYaml(Error)])",
+        "docs": "Read a core-schema integer (decimal, `0o` octal or `0x` hexadecimal) that fits the type.",
+        "line": 359
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_u64",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.parse_u64",
+        "signature": "Format, Cursor -> Try({ value : U64, rest : Cursor }, [InvalidYaml(Error)])",
+        "docs": "Read a core-schema integer (decimal, `0o` octal or `0x` hexadecimal) that fits the type.",
+        "line": 363
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_i64",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.parse_i64",
+        "signature": "Format, Cursor -> Try({ value : I64, rest : Cursor }, [InvalidYaml(Error)])",
+        "docs": "Read a core-schema integer (decimal, `0o` octal or `0x` hexadecimal) that fits the type.",
+        "line": 367
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_u128",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.parse_u128",
+        "signature": "Format, Cursor -> Try({ value : U128, rest : Cursor }, [InvalidYaml(Error)])",
+        "docs": "Read a core-schema integer (decimal, `0o` octal or `0x` hexadecimal) that fits the type.",
+        "line": 371
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_i128",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.parse_i128",
+        "signature": "Format, Cursor -> Try({ value : I128, rest : Cursor }, [InvalidYaml(Error)])",
+        "docs": "Read a core-schema integer (decimal, `0o` octal or `0x` hexadecimal) that fits the type.",
+        "line": 375
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_dec",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.parse_dec",
+        "signature": "Format, Cursor -> Try({ value : Dec, rest : Cursor }, [InvalidYaml(Error)])",
+        "docs": "Read a core-schema integer or float; `.inf` and `.nan` only where the type has them.",
+        "line": 379
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_f32",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.parse_f32",
+        "signature": "Format, Cursor -> Try({ value : F32, rest : Cursor }, [InvalidYaml(Error)])",
+        "docs": "Read a core-schema integer or float; `.inf` and `.nan` only where the type has them.",
+        "line": 383
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_f64",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.parse_f64",
+        "signature": "Format, Cursor -> Try({ value : F64, rest : Cursor }, [InvalidYaml(Error)])",
+        "docs": "Read a core-schema integer or float; `.inf` and `.nan` only where the type has them.",
+        "line": 387
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_null",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.parse_null",
+        "signature": "Format, Cursor -> Try(Cursor, [InvalidYaml(Error)])",
+        "docs": "Succeeds only on a null, so a `Try(_, [Null])` field falls back to\nits value parser otherwise.",
+        "line": 392
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_tag_union",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.parse_tag_union",
+        "signature": "Format, Encoding.ParseTagUnionSpec(a), Cursor -> Try({ value : a, rest : Cursor }, [InvalidYaml(Error)])",
+        "docs": "Read a tag without payloads from a scalar holding its name.",
+        "line": 402
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_list_start",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.parse_list_start",
+        "signature": "Format, Cursor -> Try([Counted({ len : U64, rest : Cursor }), Uncounted(Cursor)], [InvalidYaml(Error)])",
+        "docs": "Start a list at a sequence (or a null, as an empty list); sequences are always counted.",
+        "line": 425
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_list_next",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.parse_list_next",
+        "signature": "Format, Cursor -> Try([Item(Cursor), Done(Cursor)], [InvalidYaml(Error)])",
+        "docs": "Sequences are always counted, so the driver never asks for the next item.",
+        "line": 436
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_list_after_item",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.parse_list_after_item",
+        "signature": "Format, Cursor -> Try([Continue(Cursor), Done(Cursor)], [InvalidYaml(Error)])",
+        "docs": "Protocol step that counted YAML collections never need; it does nothing.",
+        "line": 440
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_tuple_start",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.parse_tuple_start",
+        "signature": "Format, Cursor, U64 -> Try(Cursor, [InvalidYaml(Error)])",
+        "docs": "Tuple protocol step; a tuple needs a sequence of exactly its length.",
+        "line": 444
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_tuple_next",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.parse_tuple_next",
+        "signature": "Format, Cursor, U64, U64 -> Try(Cursor, [InvalidYaml(Error)])",
+        "docs": "Tuple protocol step; a tuple needs a sequence of exactly its length.",
+        "line": 455
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_tuple_end",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.parse_tuple_end",
+        "signature": "Format, Cursor, U64 -> Try(Cursor, [InvalidYaml(Error)])",
+        "docs": "Tuple protocol step; a tuple needs a sequence of exactly its length.",
+        "line": 459
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_record_start",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.parse_record_start",
+        "signature": "Format, Cursor -> Try([Counted({ len : U64, rest : Cursor }), Uncounted(Cursor)], [InvalidYaml(Error)])",
+        "docs": "Start a record or dict at a mapping (or a null, as an empty one); mappings are always counted.",
+        "line": 463
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_record_field",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.parse_record_field",
+        "signature": "Format,\n\t\tEncoding.FieldName.FieldNames(_shape),\n\t\tCursor -> Try(\n\t\t\t[\n\t\t\t\tField({ field : Encoding.FieldName(_shape), rest : Cursor }),\n\t\t\t\tTryField({ name : Str, rest : Cursor }),\n\t\t\t\tTryFieldCaseless({ name : Str, rest : Cursor }),\n\t\t\t\tContinue(Cursor),\n\t\t\t\tDone(Cursor),\n\t\t\t],\n\t\t\t[InvalidYaml(Error)],\n\t\t)",
+        "docs": "Read the next mapping key for the generated record parser to match.",
+        "line": 467
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_record_after_field",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.parse_record_after_field",
+        "signature": "Format, Cursor -> Try([Continue(Cursor), Done(Cursor)], [InvalidYaml(Error)])",
+        "docs": "Mappings are always counted, so the driver never asks whether another\nfield follows.",
+        "line": 489
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "skip_record_field",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.skip_record_field",
+        "signature": "Format, Cursor -> Try(Cursor, [InvalidYaml(Error)])",
+        "docs": "Skip the value of a key the record lacks, or reject it when `unknown_keys` is `Reject`.",
+        "line": 493
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_dict_start",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.parse_dict_start",
+        "signature": "Format, Cursor -> Try([Counted({ len : U64, rest : Cursor }), Uncounted(Cursor)], [InvalidYaml(Error)])",
+        "docs": "Start a record or dict at a mapping (or a null, as an empty one); mappings are always counted.",
+        "line": 510
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_dict_next",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.parse_dict_next",
+        "signature": "Format, Cursor -> Try([Entry(Cursor), Done(Cursor)], [InvalidYaml(Error)])",
+        "docs": "Protocol step that counted YAML collections never need; it does nothing.",
+        "line": 514
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_dict_after_key",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.parse_dict_after_key",
+        "signature": "Format, Cursor -> Try(Cursor, [InvalidYaml(Error)])",
+        "docs": "Protocol step that counted YAML collections never need; it does nothing.",
+        "line": 518
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_dict_after_entry",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.parse_dict_after_entry",
+        "signature": "Format, Cursor -> Try([Continue(Cursor), Done(Cursor)], [InvalidYaml(Error)])",
+        "docs": "Protocol step that counted YAML collections never need; it does nothing.",
+        "line": 522
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "invalid_value",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.invalid_value",
+        "signature": "Format, Cursor -> [InvalidYaml(Error)]",
+        "docs": "The error for a value the generated parser cannot use.",
+        "line": 526
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_key_str",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.parse_key_str",
+        "signature": "Format, Cursor -> Try({ value : Str, rest : Cursor }, [InvalidYaml(Error)])",
+        "docs": "Read a mapping key as a `Dict` key.",
+        "line": 533
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_key_u8",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.parse_key_u8",
+        "signature": "Format, Cursor -> Try({ value : U8, rest : Cursor }, [InvalidYaml(Error)])",
+        "docs": "Read a mapping key as a `Dict` key.",
+        "line": 540
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_key_i8",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.parse_key_i8",
+        "signature": "Format, Cursor -> Try({ value : I8, rest : Cursor }, [InvalidYaml(Error)])",
+        "docs": "Read a mapping key as a `Dict` key.",
+        "line": 544
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_key_u16",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.parse_key_u16",
+        "signature": "Format, Cursor -> Try({ value : U16, rest : Cursor }, [InvalidYaml(Error)])",
+        "docs": "Read a mapping key as a `Dict` key.",
+        "line": 548
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_key_i16",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.parse_key_i16",
+        "signature": "Format, Cursor -> Try({ value : I16, rest : Cursor }, [InvalidYaml(Error)])",
+        "docs": "Read a mapping key as a `Dict` key.",
+        "line": 552
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_key_u32",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.parse_key_u32",
+        "signature": "Format, Cursor -> Try({ value : U32, rest : Cursor }, [InvalidYaml(Error)])",
+        "docs": "Read a mapping key as a `Dict` key.",
+        "line": 556
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_key_i32",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.parse_key_i32",
+        "signature": "Format, Cursor -> Try({ value : I32, rest : Cursor }, [InvalidYaml(Error)])",
+        "docs": "Read a mapping key as a `Dict` key.",
+        "line": 560
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_key_u64",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.parse_key_u64",
+        "signature": "Format, Cursor -> Try({ value : U64, rest : Cursor }, [InvalidYaml(Error)])",
+        "docs": "Read a mapping key as a `Dict` key.",
+        "line": 564
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_key_i64",
+        "modulePath": "Yaml.Format",
+        "fullName": "Yaml.Format.parse_key_i64",
+        "signature": "Format, Cursor -> Try({ value : I64, rest : Cursor }, [InvalidYaml(Error)])",
+        "docs": "Read a mapping key as a `Dict` key.",
+        "line": 568
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Cursor",
+        "modulePath": "Yaml",
+        "fullName": "Yaml.Cursor",
+        "signature": "{ events : List(Event), pos : U64 }",
+        "docs": "The read position that [Yaml.decode] threads through a type's parser:\nthe document as a flat list of events and an index into it.",
+        "line": 574,
+        "decl": "::",
+        "head": "Cursor"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Event",
+        "modulePath": "",
+        "fullName": "Event",
+        "signature": "{ line : U64, column : U64, kind : [Plain(Str), Quoted(Str), Key(Str), SeqStart({ len : U64, size : U64 }), MapStart({ len : U64, size : U64 })] }",
+        "docs": "One step of a flattened document. A collection start records its item\ncount and how many events its contents span, so skipping it is O(1).",
+        "line": 579,
+        "decl": ":",
+        "head": "Event"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Node",
+        "modulePath": "",
+        "fullName": "Node",
+        "signature": "{ line : U64, column : U64, kind : [Plain(Str), Quoted(Str), Seq(List(Node)), Map(List(NodeEntry))] }",
+        "docs": "A parsed document before plain scalars are resolved. Keeping them as text\nlets [Yaml.decode] resolve each one for the type that reads it.",
+        "line": 583,
+        "decl": ":=",
+        "head": "Node"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "NodeEntry",
+        "modulePath": "",
+        "fullName": "NodeEntry",
+        "signature": "{ key : Str, line : U64, column : U64, value : Node }",
+        "docs": "",
+        "line": 585,
+        "decl": ":",
+        "head": "NodeEntry"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Scalar",
+        "modulePath": "",
+        "fullName": "Scalar",
+        "signature": "{ text : Str, plain : Bool, line : U64, column : U64 }",
+        "docs": "",
+        "line": 712,
+        "decl": ":",
+        "head": "Scalar"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Line",
+        "modulePath": "",
+        "fullName": "Line",
+        "signature": "{ content : Utf8.Bytes, indent : U64, number : U64, terminated : Bool, tab : Bool }",
+        "docs": "`terminated` is false only for a final line without a line break. `tab`\nmarks a tab right after the indentation, which is an error only where the\nline is block structure rather than block scalar content.",
+        "line": 1038,
+        "decl": ":",
+        "head": "Line"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Input",
+        "modulePath": "",
+        "fullName": "Input",
+        "signature": "{ lines : List(Line), at : U64, head : Try(Line, [NoHead]) }",
+        "docs": "The structural lines still to parse: an index into the prepared lines,\nplus an optional `head` line that stands in front of them. A compact\ncollection after \"- \" becomes such a head, so no list is ever copied or\nrescanned and parsing stays linear in the number of lines.",
+        "line": 1044,
+        "decl": ":",
+        "head": "Input"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "NodeResult",
+        "modulePath": "",
+        "fullName": "NodeResult",
+        "signature": "{ node : Node, input : Input }",
+        "docs": "",
+        "line": 1046,
+        "decl": ":",
+        "head": "NodeResult"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Quote",
+        "modulePath": "",
+        "fullName": "Quote",
+        "signature": "[NoQuote, SingleQuote, DoubleQuote]",
+        "docs": "",
+        "line": 1071,
+        "decl": ":",
+        "head": "Quote"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "BlockStyle",
+        "modulePath": "",
+        "fullName": "BlockStyle",
+        "signature": "[LiteralBlock, FoldedBlock]",
+        "docs": "",
+        "line": 1073,
+        "decl": ":",
+        "head": "BlockStyle"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "BlockChomp",
+        "modulePath": "",
+        "fullName": "BlockChomp",
+        "signature": "[ClipChomp, StripChomp, KeepChomp]",
+        "docs": "",
+        "line": 1075,
+        "decl": ":",
+        "head": "BlockChomp"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "BlockIndent",
+        "modulePath": "",
+        "fullName": "BlockIndent",
+        "signature": "[AutoIndent, ExplicitIndent(U64)]",
+        "docs": "",
+        "line": 1077,
+        "decl": ":",
+        "head": "BlockIndent"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "ContentIndent",
+        "modulePath": "",
+        "fullName": "ContentIndent",
+        "signature": "[PendingIndent, FixedIndent(U64)]",
+        "docs": "",
+        "line": 1079,
+        "decl": ":",
+        "head": "ContentIndent"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "BlockHeader",
+        "modulePath": "",
+        "fullName": "BlockHeader",
+        "signature": "{ style : BlockStyle, chomp : BlockChomp, indent : BlockIndent }",
+        "docs": "",
+        "line": 1081,
+        "decl": ":",
+        "head": "BlockHeader"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "MappingParts",
+        "modulePath": "",
+        "fullName": "MappingParts",
+        "signature": "{ key : Utf8.Bytes, value : Utf8.Bytes, value_column : U64 }",
+        "docs": "",
+        "line": 1187,
+        "decl": ":",
+        "head": "MappingParts"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "DocConfig",
+        "modulePath": "",
+        "fullName": "DocConfig",
+        "signature": "{ name : Str, version : Str, port : U16, debug : Try(Bool, [Missing]) }",
+        "docs": "",
+        "line": 3007,
+        "decl": ":",
+        "head": "DocConfig"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Service",
+        "modulePath": "",
+        "fullName": "Service",
+        "signature": "{\n\timage : Str,\n\tports : List(U16),\n\tenv : Dict(Str, Str),\n\tlimits : { cpu : F64, memory : Str },\n\tpair : (Str, I64),\n\treplicas : Try(U8, [Missing]),\n\tcommand : Try(Str, [Null]),\n}",
+        "docs": "",
+        "line": 3024,
+        "decl": ":",
+        "head": "Service"
+       }
+      ]
+     },
+     {
+      "name": "main",
+      "imports": [],
+      "items": []
+     }
+    ]
+   }
+  }
+ }
+}

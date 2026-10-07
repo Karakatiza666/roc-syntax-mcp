@@ -1,0 +1,107 @@
+# SPDX-FileCopyrightText: 2026 Heorhii Bulakh and subsequent roc-syntax-mcp authors
+# SPDX-License-Identifier: MPL-2.0
+
+# Publishes roc-syntax-mcp to npm. Run by hand from the Actions tab.
+#
+# The workflow publishes the version in package.json, and stops if that version
+# is already on npm. It runs every CI gate first, then installs and starts the
+# packed tarball, so it publishes what it tested. A publish tags its commit
+# v<version>.
+#
+# Authentication: an npm trusted publisher for this file when one is set up,
+# otherwise the NPM_TOKEN secret. npm sets up a trusted publisher only for a
+# package that already exists, so the first publish needs the token.
+
+name: Publish roc-syntax-mcp
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: Pack and check everything, publish nothing
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-roc-syntax-mcp
+  cancel-in-progress: false
+
+jobs:
+  gates:
+    uses: ./.github/workflows/ci.yml
+
+  publish:
+    needs: gates
+    runs-on: ubuntu-26.04-arm
+    permissions:
+      contents: write # the release tag
+      id-token: write # trusted publishing and provenance
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+          registry-url: https://registry.npmjs.org
+          cache: npm
+      # Trusted publishing needs npm 11.5.1 or newer.
+      - run: npm install -g npm@11
+      - run: npm ci
+
+      - name: Only main publishes
+        if: ${{ !inputs.dry-run }}
+        run: test "$GITHUB_REF" = refs/heads/main || { echo "::error::Publish from main, not $GITHUB_REF"; exit 1; }
+      - name: The version is not on npm or tagged yet
+        id: version
+        run: |
+          name="$(node -p 'require("./package.json").name')"
+          version="$(node -p 'require("./package.json").version')"
+          if [ -n "$(npm view "$name@$version" version 2>/dev/null)" ]; then
+            echo "::error::$name@$version is already on npm. Bump package.json."
+            exit 1
+          fi
+          gittag="v$version"
+          if git ls-remote --exit-code --tags origin "refs/tags/$gittag" >/dev/null; then
+            echo "::error::The tag $gittag already exists. Bump package.json."
+            exit 1
+          fi
+          echo "gittag=$gittag" >> "$GITHUB_OUTPUT"
+          # npm refuses a prerelease without a dist-tag.
+          case "$version" in *-*) tag=next ;; *) tag=latest ;; esac
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "$name@$version as $tag"
+
+      - run: npm run build:ts
+      # The tarball ships dist/ and no source. package.json keeps src/ in
+      # `files` for a git install, which has no build.
+      - run: node scripts/registry-files.mjs
+      - name: The packed tarball installs and starts
+        run: |
+          tgz="$(npm pack --silent)"
+          if tar -tzf "$tgz" | grep -q '^package/src/'; then echo "::error::$tgz ships src/"; exit 1; fi
+          prefix="$RUNNER_TEMP/global"
+          npm install -g --prefix "$prefix" "./$tgz"
+          out="$(timeout 30 "$prefix/bin/roc-syntax-mcp" </dev/null 2>&1)" || true
+          echo "$out"
+          grep -qF "roc-syntax-mcp: serving MCP over stdio" <<<"$out"
+          "$prefix/bin/roc-syntax-mcp" plugin inspect "$PWD/corpus/packages/http" | grep -q 'manifest'
+          rm "$tgz"
+
+      - name: Publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          TAG: ${{ steps.version.outputs.tag }}
+          DRY_RUN: ${{ inputs.dry-run }}
+        run: npm publish --provenance --access public --tag "$TAG" $([ "$DRY_RUN" = true ] && echo --dry-run)
+
+      # After the publish, so a failed publish leaves no tag to block a rerun.
+      - name: Tag the published commit
+        if: ${{ !inputs.dry-run }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITTAG: ${{ steps.version.outputs.gittag }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/git/refs" -f ref="refs/tags/$GITTAG" -f sha="$GITHUB_SHA" \
+            || { echo "::error::Published, but the tag failed. Run: git tag $GITTAG $GITHUB_SHA && git push origin $GITTAG"; exit 1; }

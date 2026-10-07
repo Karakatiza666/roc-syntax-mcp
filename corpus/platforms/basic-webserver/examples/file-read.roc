@@ -1,0 +1,27 @@
+## Reads this example's UTF-8 source during initialization and serves it over HTTP.
+app [Context, program] {
+	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+	roc: "nightly-2026-10-06-c34079d",
+}
+
+import pf.Path
+import pf.Server
+import http.Response
+
+Context : Str
+
+program = { init!, respond!, shutdown! }
+
+init! : () => Try({ config : Server.Config, context : Context }, [Exit(I64), FailedToReadSource(_)])
+init! = || {
+	contents = Path.read_utf8!(Path.utf8("examples/file-read.roc")) ? |err| FailedToReadSource(err)
+	Ok({ config: Server.default_config, context: "Source code of current program:\n\n${contents}" })
+}
+
+respond! : Server.Request, Context => Try(Server.Outcome, [ServerErr(Str)])
+respond! = |_request, contents|
+	Ok(Server.respond(Response.from_status(200).with_body(Str.to_utf8(contents))))
+
+shutdown! : Server.ShutdownReason, Context => Try({}, [Exit(I64)])
+shutdown! = |_reason, _context| Ok({})

@@ -1,0 +1,54 @@
+# Provenance of the bundled basic-cli corpus.
+#
+# Update this file each time you refresh this directory, so that the next
+# refresh can diff tag-to-tag and apply the patch series again.
+
+repo     https://github.com/roc-lang/basic-cli
+tag      0.24.0
+commit   1a4e6f4
+tarball  AEjfyaMFFbh8FJrkkHJy68riVNPr3Qp6c6PawWQjBwMH.tar.zst
+
+# This platform re-exports the same roc-lang/http release that basic-webserver
+# pins. Its index is at corpus/packages/http/, with its
+# provenance in corpus/packages/http/UPSTREAM.
+
+# Must match the `compiler` line in corpus/language/UPSTREAM. Every app below
+# pins its platform by tarball URL, so `check:platforms` gives the compiler the
+# released platform. The gate tests this nightly and this tag as a pair, never
+# one alone.
+compiler nightly-2026-10-06-c34079d  (the nightly bundled in this repo)
+
+index.json <- platform/   parsed by `npm run build:index` from the compiler's
+                         package cache. Signatures and docstrings only; no
+                         source is vendored
+examples/  <- examples/*.roc
+
+# These files are ours and come from the files above, so read them again on a
+# refresh. Each one pins the URLs in the block above:
+#   topics/       complete apps served as syntax topics
+#   scaffold.roc  the app roc_check wraps bare code in
+#   verify/       every overview snippet, in one app
+#   overview.md   the scope's roc_overview page
+#
+# The repinning checklist is in
+# .claude/skills/refresh-roc-upstream/reference/basic-cli.md.
+
+# The examples tree is the patched result, not an exact copy of upstream. One
+# patch makes it again from a fresh checkout of the tag:
+#
+#   patch -p1 < patches/0001-repin-examples-*.patch
+#
+# 0001 is necessary, because every example at the tag pins the platform by the
+# relative path `../platform/main.roc`, which resolves only inside a checkout.
+# The patch replaces that one path with the tarball URL above.
+# There is no second patch. Nothing in this corpus depends on a third-party
+# package, so the gregorian failure that basic-webserver patches does not occur
+# here. Every example passes `roc check` with 0001 applied.
+
+# Not bundled, by choice:
+#   README.md              its content is in overview.md
+#   CONTRIBUTING.md        contributor-facing, not app-facing
+#   docs/index.html        a redirect stub, not prose
+#   examples/todos*.db     binary fixtures
+#   examples/.gitignore    build artifacts of a checkout, not content
+#   src/, ci/, Cargo.*     the Rust host

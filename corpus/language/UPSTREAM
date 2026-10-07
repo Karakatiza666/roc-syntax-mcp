@@ -1,0 +1,38 @@
+# Provenance of the bundled language corpus. Paths are relative to this directory.
+#
+# Update this file each time you refresh examples/all_roc_syntax.roc,
+# Builtin.roc or langref/, so that the next refresh can diff against it.
+
+repo     https://github.com/roc-lang/roc
+commit   c34079d4cde82f475df7c1994c714ba25b29b951
+date     2026-10-06
+
+# The nightly that every gate ran under. It must match the `compiler` line in
+# every other corpus/*/*/UPSTREAM file, because the gates check the corpora as a
+# set. If one corpus records an older nightly, its last check used a compiler
+# that nobody has, so the corpus is in effect unchecked.
+compiler nightly-2026-10-06-c34079d
+
+examples/all_roc_syntax.roc  <- test/echo/all_syntax_test.roc
+Builtin.roc                  <- src/build/roc/Builtin.roc
+langref/                     <- docs/langref/
+
+# Parsed counts at this commit, for the next refresh to diff against. See
+# .claude/skills/refresh-roc-upstream/reference/parser-traps.md.
+Builtin.roc  2298 methods, 29 types, 49 modules, 0 duplicates
+
+# These files are ours, not upstream, but they come from the files above. Read
+# them again on a refresh: overview/ (the compact language and builtins
+# overview), topics/, and src/builtin_hints.ts at the repo root.
+
+# langref/local/ is also ours. It holds our text for the sections that upstream
+# ships as a bare TODO, and src/langref.ts splices them in at load. The pages
+# above stay byte-for-byte upstream. On a refresh, delete each overlay section
+# that upstream has written since. `npm test` names each one. langref/local/ is
+# empty at this commit, because upstream wrote every page it shipped as a stub.
+
+# Two platform corpora have their own upstreams and release cadences. Their
+# provenance is in corpus/platforms/<name>/UPSTREAM. Both re-export the
+# roc-lang/http package, which corpus/packages/http/ indexes once. Refresh all of
+# them in lockstep with this file. Their apps pin a platform by tarball URL, so
+# the gate that checks them tests the nightly and the release as a pair.

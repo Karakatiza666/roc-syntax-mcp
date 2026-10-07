@@ -1,0 +1,436 @@
+{
+ "format": 1,
+ "releases": {
+  "2ZXLX8WRqrosGu1V3VL5aXqgtfTRvJmjFPx8a26ecVmc": {
+   "url": "https://github.com/kili-ilo/roc-random/releases/download/0.9.2/2ZXLX8WRqrosGu1V3VL5aXqgtfTRvJmjFPx8a26ecVmc.tar.zst",
+   "snapshot": {
+    "kind": "package",
+    "exposes": [
+     "Random"
+    ],
+    "deps": [],
+    "modules": [
+     {
+      "name": "Random",
+      "imports": [],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Generator",
+        "modulePath": "Random",
+        "fullName": "Random.Generator",
+        "signature": "State -> Generation(value)",
+        "docs": "A generator that produces pseudorandom `value`s using the PCG algorithm.\n\n```\nrgb_generator : Generator({ red: U8, green: U8, blue: U8 })\nrgb_generator =\n    {\n        red: Random.u8,\n        green: Random.u8,\n        blue: Random.u8,\n    }.Random\n```",
+        "line": 32,
+        "decl": ":",
+        "head": "Generator(value)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Generation",
+        "modulePath": "Random",
+        "fullName": "Random.Generation",
+        "signature": "{ value : value, state : State }",
+        "docs": "A pseudorandom value, paired with its `Generator`'s output state.\n\nThis is required to chain multiple calls together passing the updated state.",
+        "line": 37,
+        "decl": ":",
+        "head": "Generation(value)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "State",
+        "modulePath": "Random",
+        "fullName": "Random.State",
+        "signature": "{ s : U32, update_increment : U32 }",
+        "docs": "Internal state for Generators",
+        "line": 40,
+        "decl": "::",
+        "head": "State"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "is_eq",
+        "modulePath": "Random.State",
+        "fullName": "Random.State.is_eq",
+        "signature": "_",
+        "docs": "",
+        "line": 41
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "fast_forward",
+        "modulePath": "Random.State",
+        "fullName": "Random.State.fast_forward",
+        "signature": "State, U32 -> State",
+        "docs": "Manually step the random state forward by n steps. The sequence has a\nperiod of 2 to the 32 steps, and will wrap around to the beginning\nafter that.",
+        "line": 46
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "rewind",
+        "modulePath": "Random.State",
+        "fullName": "Random.State.rewind",
+        "signature": "State, U32 -> State",
+        "docs": "Manually step the random state backward by n steps. Will wrap around to\nthe end of the sequence when stepping backward from the \"0th\" state.",
+        "line": 76
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "seed",
+        "modulePath": "Random",
+        "fullName": "Random.seed",
+        "signature": "U32 -> State",
+        "docs": "Construct an initial \"seed\" `State` for `Generator`s",
+        "line": 81
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "seed_variant",
+        "modulePath": "Random",
+        "fullName": "Random.seed_variant",
+        "signature": "U32, U32 -> State",
+        "docs": "Construct a specific \"variant\" of a \"seed\" `State` for more advanced use.\n\nTakes a starting seed and a sequence ID (which corresponds to its\ninternal `update_increment`). Any `State`s with different sequence ID's will\nshare no consecutive number pairs with each other, even if they are\ninitialized with the same seed.\n\nAny value given for the sequence ID between 0 and 2**31 will be unique.\nAbove that, the sequence ID wraps around to the bottom, so there are about\ntwo billion unique choices for sequence ID",
+        "line": 97
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "step",
+        "modulePath": "Random",
+        "fullName": "Random.step",
+        "signature": "State, Generator(value) -> Generation(value)",
+        "docs": "Generate a `Generation` from a state",
+        "line": 112
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "next",
+        "modulePath": "Random",
+        "fullName": "Random.next",
+        "signature": "Generation(_), Generator(value) -> Generation(value)",
+        "docs": "Generate a new `Generation` from an old `Generation`'s state",
+        "line": 116
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "static",
+        "modulePath": "Random",
+        "fullName": "Random.static",
+        "signature": "value -> Generator(value)",
+        "docs": "Create a `Generator` that always returns the same thing.",
+        "line": 120
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "map",
+        "modulePath": "Random",
+        "fullName": "Random.map",
+        "signature": "Generator(a), (a -> b) -> Generator(b)",
+        "docs": "Map over the value of a `Generator`.",
+        "line": 125
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "map2",
+        "modulePath": "Random",
+        "fullName": "Random.map2",
+        "signature": "Generator(a), Generator(b), (a, b -> c) -> Generator(c)",
+        "docs": "Compose two `Generator`s into a single `Generator`.\n\nThis is the applicative operation used by Roc's record-builder syntax:\n\n```\ndate_generator =\n    {\n        year: Random.bounded_i32(1, 2500),\n        month: Random.bounded_i32(1, 12),\n        day: Random.bounded_i32(1, 31),\n    }.Random\n```",
+        "line": 145
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "chain",
+        "modulePath": "Random",
+        "fullName": "Random.chain",
+        "signature": "Generator(a), (a -> Generator(b)) -> Generator(b)",
+        "docs": "Create a `Generator` by chaining one `Generator` with a function that\nreturns a new `Generator`\n\n```roc\ngenerate_random_amount_of_random_u8s =\n    Random.chain(Random.bounded_U64(1, 10), |count| Random.list(Random.u8, count))\n```",
+        "line": 161
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "list",
+        "modulePath": "Random",
+        "fullName": "Random.list",
+        "signature": "Generator(a), U64 -> Generator(List(a))",
+        "docs": "Generate a list of random values.\n```\ngenerate_10_random_u8s : Generator(List(U8))\ngenerate_10_random_u8s =\n    Random.list(Random.u8, 10)\n```",
+        "line": 175
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "shuffle",
+        "modulePath": "Random",
+        "fullName": "Random.shuffle",
+        "signature": "List(a) -> Generator(List(a))",
+        "docs": "Given a `List` generate a shuffled version of that `List`",
+        "line": 192
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "bool",
+        "modulePath": "Random",
+        "fullName": "Random.bool",
+        "signature": "Generator(Bool)",
+        "docs": "A `Generator` that generates `Bool.True` or `Bool.False` with equal probabilty",
+        "line": 218
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "u8",
+        "modulePath": "Random",
+        "fullName": "Random.u8",
+        "signature": "Generator(U8)",
+        "docs": "A `Generator` for the full range of 8-bit unsigned integers",
+        "line": 222
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "bounded_u8",
+        "modulePath": "Random",
+        "fullName": "Random.bounded_u8",
+        "signature": "U8, U8 -> Generator(U8)",
+        "docs": "Construct a `Generator` for 8-bit unsigned integers between two boundaries (inclusive)",
+        "line": 231
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "i8",
+        "modulePath": "Random",
+        "fullName": "Random.i8",
+        "signature": "Generator(I8)",
+        "docs": "A `Generator` for the full range of 8-bit signed integers",
+        "line": 235
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "bounded_i8",
+        "modulePath": "Random",
+        "fullName": "Random.bounded_i8",
+        "signature": "I8, I8 -> Generator(I8)",
+        "docs": "Construct a `Generator` for 8-bit signed integers between two boundaries (inclusive)",
+        "line": 239
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "u16",
+        "modulePath": "Random",
+        "fullName": "Random.u16",
+        "signature": "Generator(U16)",
+        "docs": "A `Generator` for the full range of 16-bit unsigned integers",
+        "line": 243
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "bounded_u16",
+        "modulePath": "Random",
+        "fullName": "Random.bounded_u16",
+        "signature": "U16, U16 -> Generator(U16)",
+        "docs": "Construct a `Generator` for 16-bit unsigned integers between two boundaries (inclusive)",
+        "line": 247
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "i16",
+        "modulePath": "Random",
+        "fullName": "Random.i16",
+        "signature": "Generator(I16)",
+        "docs": "A `Generator` for the full range of 16-bit signed integers",
+        "line": 251
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "bounded_i16",
+        "modulePath": "Random",
+        "fullName": "Random.bounded_i16",
+        "signature": "I16, I16 -> Generator(I16)",
+        "docs": "Construct a `Generator` for 16-bit signed integers between two boundaries (inclusive)",
+        "line": 255
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "u32",
+        "modulePath": "Random",
+        "fullName": "Random.u32",
+        "signature": "Generator(U32)",
+        "docs": "A `Generator` for the full range of 32-bit unsigned integers",
+        "line": 259
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "bounded_u32",
+        "modulePath": "Random",
+        "fullName": "Random.bounded_u32",
+        "signature": "U32, U32 -> Generator(U32)",
+        "docs": "Construct a `Generator` for 32-bit unsigned integers between two boundaries (inclusive)",
+        "line": 268
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "i32",
+        "modulePath": "Random",
+        "fullName": "Random.i32",
+        "signature": "Generator(I32)",
+        "docs": "A `Generator` for the full range of 32-bit signed integers",
+        "line": 272
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "bounded_i32",
+        "modulePath": "Random",
+        "fullName": "Random.bounded_i32",
+        "signature": "I32, I32 -> Generator(I32)",
+        "docs": "Construct a `Generator` for 32-bit signed integers between two boundaries (inclusive)",
+        "line": 276
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "u64",
+        "modulePath": "Random",
+        "fullName": "Random.u64",
+        "signature": "Generator(U64)",
+        "docs": "A `Generator` for the full range of 64-bit unsigned integers",
+        "line": 280
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "bounded_u64",
+        "modulePath": "Random",
+        "fullName": "Random.bounded_u64",
+        "signature": "U64, U64 -> Generator(U64)",
+        "docs": "Construct a `Generator` for 64-bit unsigned integers between two boundaries (inclusive)",
+        "line": 298
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "i64",
+        "modulePath": "Random",
+        "fullName": "Random.i64",
+        "signature": "Generator(I64)",
+        "docs": "A `Generator` for the full range of 64-bit signed integers",
+        "line": 316
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "bounded_i64",
+        "modulePath": "Random",
+        "fullName": "Random.bounded_i64",
+        "signature": "I64, I64 -> Generator(I64)",
+        "docs": "Construct a `Generator` for 64-bit signed integers between two boundaries (inclusive)",
+        "line": 320
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "f32",
+        "modulePath": "Random",
+        "fullName": "Random.f32",
+        "signature": "F32, F32 -> Generator(F32)",
+        "docs": "`Generator` for an `F32` between two values excluding the high one\nIt is generally recommended NOT to use this when your intention is to convert\nthe floating point number to an integer due to potential rounding errors\netc, prefer the `bounded_*` integer generators for those cases",
+        "line": 346
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "f64",
+        "modulePath": "Random",
+        "fullName": "Random.f64",
+        "signature": "F64, F64 -> Generator(F64)",
+        "docs": "`Generator` for an `F64` between two values excluding the high one\nIt is generally recommended NOT to use this when your intention is to convert\nthe floating point number to an integer due to potential rounding errors\netc, prefer the `bounded_*` integer generators for those cases",
+        "line": 401
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "choice",
+        "modulePath": "Random",
+        "fullName": "Random.choice",
+        "signature": "a, List(a) -> Generator(a)",
+        "docs": "Creates a `Generator` that randomly chooses from a series of items.\nThe first item is given explicitly as the first argument to ensure that\nthere's always at least one item to choose from. See `Random.choice_try`\nfor an alternative that checks for an empty `List`.",
+        "line": 449
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "choice_try",
+        "modulePath": "Random",
+        "fullName": "Random.choice_try",
+        "signature": "List(a) -> Try(Generator(a), [ListWasEmpty])",
+        "docs": "Creates a `Generator` that randomly chooses an item from a `List`.\nReturns `Err(ListWasEmpty)` upon construction if given an empty `List`.\nSee `Random.choice` for a version that cannot return an error.",
+        "line": 477
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "choice_weighted",
+        "modulePath": "Random",
+        "fullName": "Random.choice_weighted",
+        "signature": "(a, F64), List((a, F64)) -> Generator(a)",
+        "docs": "Creates a `Generator` that randomly chooses from a series of items with\nan associated weight. Higher weight indicates a higher probability\nof selection. The weights don't need to add up to any particular value,\nprobability is relative to the total sum of given weights.\nThe first item is given explicitly as the first argument to ensure that\nthere's always at least one item to choose from.\nSee `Random.choice_weighted_try` for an alternative that checks for an\nempty `List`",
+        "line": 493
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "choice_weighted_try",
+        "modulePath": "Random",
+        "fullName": "Random.choice_weighted_try",
+        "signature": "List((a, F64)) -> Try(Generator(a), [ListWasEmpty])",
+        "docs": "Creates a `Generator` that randomly chooses from a series of items with\nan associated weight. Higher weight indicates higher a higher probability\nof selection. The weights don't need to add up to any particular value,\nprobability is relative to the total sum of given weights.\nReturns `Err(ListWasEmpty)` upon construction if given an empty `List`.\nSee `Random.choice_weighted` for a version that cannot return an error.",
+        "line": 530
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "TestRound",
+        "modulePath": "",
+        "fullName": "TestRound",
+        "signature": "{\n\tu32_list : List(U32),\n\tu32_list_again : List(U32),\n\tcoins : List(U32),\n\trolls : List(U32),\n\tcards : List(U32),\n}",
+        "docs": "",
+        "line": 1117,
+        "decl": ":",
+        "head": "TestRound"
+       }
+      ]
+     },
+     {
+      "name": "main",
+      "imports": [],
+      "items": []
+     }
+    ]
+   }
+  }
+ }
+}

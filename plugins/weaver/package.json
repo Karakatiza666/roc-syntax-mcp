@@ -1,0 +1,34 @@
+{
+  "name": "@roc-syntax/weaver",
+  "version": "0.0.1",
+  "description": "The Weaver command-line argument parser, as a roc-syntax-mcp corpus.",
+  "author": "Heorhii Bulakh",
+  "license": "SEE LICENSE IN LICENSE",
+  "files": [
+    "LICENSE",
+    "README.md",
+    "UPSTREAM",
+    "examples",
+    "index.json",
+    "overview.md",
+    "plugin.json",
+    "topics",
+    "verify"
+  ],
+  "keywords": [
+    "roc",
+    "roc-syntax-mcp",
+    "roc-syntax-mcp-plugin",
+    "weaver",
+    "cli",
+    "argument-parser"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Karakatiza666/roc-syntax-mcp.git",
+    "directory": "plugins/weaver"
+  }
+}

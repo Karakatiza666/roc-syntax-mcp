@@ -1,0 +1,17 @@
+Applied by scripts/check-platform-examples.sh to a copy of the 2.0.0 release,
+and only for an app that does not compile against the release as published.
+Nothing served is patched. See scripts/gate-overrides.json.
+
+Nightlies from 2026-10-04 reject `import X exposing [X]` for a type module as
+a redundant expose. Upstream fixed it in 8d20a47 (branch automation/roc-nightly,
+PR #87), after 2.0.0. Paths are relative to the tarball root.
+
+diff --git a/Yaml.roc b/Yaml.roc
+--- a/Yaml.roc
++++ b/Yaml.roc
+@@ -1,4 +1,4 @@
+-import Parser exposing [Parser]
++import Parser
+ import Utf8
+ 
+ ## A practical YAML configuration parser.

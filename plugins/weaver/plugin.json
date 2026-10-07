@@ -1,0 +1,163 @@
+{
+  "schema": 1,
+  "maintainer": "roc-syntax-mcp, from the lukewilliamboswell/weaver releases",
+  "compiler": "nightly-2026-10-06-c34079d",
+  "corpora": [
+    {
+      "release": "https://github.com/lukewilliamboswell/weaver/releases/download/0.9.0/7j6KBFBEZ8pNMLQHkx9xiwyZ2PmwQPgKNDPUih6gKe77.tar.zst",
+      "description": "The Weaver package: a command-line argument parser built as a record of `Opt` and `Param` fields, folded into a typed config.",
+      "purpose": "parsing command-line arguments, on any platform",
+      "overview": "overview.md",
+      "examples": "examples",
+      "checks": [
+        "topics",
+        "verify"
+      ],
+      "topics": [
+        {
+          "name": "weaver_cli",
+          "file": "topics/weaver_cli.roc",
+          "description": "A complete weaver program: the two-line header, `Cli.finish` and `Cli.assert_valid`, matching Help, Version and InvalidUsage, passing `args` whole, and testing the parser with `expect`.",
+          "keywords": [
+            "weaver",
+            "cli",
+            "command line",
+            "argument",
+            "arguments",
+            "argv",
+            "parser",
+            "parse",
+            "parse_or_display_message",
+            "Cli.finish",
+            "assert_valid",
+            "CliParser",
+            "main",
+            "getting started",
+            "start",
+            "new project",
+            "help",
+            "version",
+            "InvalidUsage",
+            "exit code",
+            "drop_first",
+            "executable path",
+            "expect",
+            "test",
+            "testing"
+          ]
+        },
+        {
+          "name": "weaver_builder",
+          "file": "topics/weaver_builder.roc",
+          "description": "The record builder: why field order is type-checked, what the three stage types mean, the two-field minimum and `Cli.map`, and how to annotate a field record with `Builder.CliBuilder`.",
+          "keywords": [
+            "record builder",
+            "builder",
+            "CliBuilder",
+            "order",
+            "ordering",
+            "field order",
+            "GetOptionsAction",
+            "GetParamsAction",
+            "StopCollectingAction",
+            "action",
+            "stage",
+            "phantom",
+            "Cli.map",
+            "map2",
+            "weave",
+            "single field",
+            "one option",
+            "minimum 2 fields",
+            "annotate",
+            "annotation",
+            "type mismatch"
+          ]
+        },
+        {
+          "name": "weaver_options",
+          "file": "topics/weaver_options.roc",
+          "description": "Every field shape once each: flags, counts, required and optional values, repeatable lists, positional parameters, and the rules deciding whether a constructor takes `short`, `long`, `name` or `default`.",
+          "keywords": [
+            "option",
+            "options",
+            "flag",
+            "Opt.flag",
+            "Opt.str",
+            "Opt.u64",
+            "count",
+            "repeatable",
+            "list",
+            "str_list",
+            "maybe",
+            "optional",
+            "required",
+            "default",
+            "NoDefault",
+            "Value",
+            "Generate",
+            "short",
+            "long",
+            "parameter",
+            "positional",
+            "Param.str",
+            "name",
+            "help text",
+            "number",
+            "custom parser"
+          ]
+        },
+        {
+          "name": "weaver_subcommands",
+          "file": "topics/weaver_subcommands.roc",
+          "description": "Subcommands: one tag union per level, `SubCmd.finish` with its mapper, optional against required, nesting, and where they sit in the parent's field order.",
+          "keywords": [
+            "subcommand",
+            "subcommands",
+            "SubCmd",
+            "SubCmd.optional",
+            "SubCmd.required",
+            "SubCmd.finish",
+            "SubCmd.empty",
+            "SubcommandParserConfig",
+            "mapper",
+            "NoSubcommand",
+            "NoSubcommandCalled",
+            "nested",
+            "verb",
+            "command",
+            "git style"
+          ]
+        },
+        {
+          "name": "weaver_raw_args",
+          "file": "topics/weaver_raw_args.roc",
+          "description": "Where the arguments come from: the converter argument, `OsStr.to_raw` against a hand-written `Str` adapter, the `path.Path` values the raw constructors return, and which release of `roc-lang/path` an annotation has to pin.",
+          "keywords": [
+            "raw",
+            "OsStr",
+            "OsStr.to_raw",
+            "converter",
+            "to_raw_arg",
+            "Utf8",
+            "UnixBytes",
+            "WindowsU16s",
+            "Path",
+            "path.Path",
+            "roc-lang/path",
+            "Opt.arg",
+            "Param.arg",
+            "maybe_arg",
+            "arg_list",
+            "ArgValue",
+            "encoding",
+            "utf8",
+            "windows",
+            "unicode",
+            "filename"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,123 @@
+# SPDX-FileCopyrightText: 2026 Heorhii Bulakh and subsequent roc-syntax-mcp authors
+# SPDX-License-Identifier: MPL-2.0
+
+# Publishes one package from plugins/ to npm. Run by hand from the Actions tab.
+#
+# One workflow file serves every plugin, so the npm trusted publisher of each
+# package names this file. To add a plugin, add one line under `options`. A
+# publish tags its commit <plugin>-v<version>, for example roc-ray-v0.0.1.
+#
+# The gate is `plugin validate` under the nightly that the manifest of the
+# plugin names. That nightly can differ from the one in
+# corpus/language/UPSTREAM. For example, roc-ray pins an older one (see
+# plugins/roc-ray/UPSTREAM).
+#
+# Authentication: an npm trusted publisher for this file when one is set up,
+# otherwise the NPM_TOKEN secret. npm sets up a trusted publisher only for a
+# package that already exists, so the first publish needs the token.
+
+name: Publish plugin
+
+on:
+  workflow_dispatch:
+    inputs:
+      plugin:
+        description: The directory under plugins/
+        type: choice
+        options:
+          - roc-ray
+          - weaver
+          - joy
+      dry-run:
+        description: Validate and pack, publish nothing
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-plugin-${{ inputs.plugin }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish ${{ inputs.plugin }}
+    runs-on: ubuntu-26.04-arm
+    permissions:
+      contents: write # the release tag
+      id-token: write # trusted publishing and provenance
+    env:
+      DIR: plugins/${{ inputs.plugin }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+          registry-url: https://registry.npmjs.org
+          cache: npm
+      # Trusted publishing needs npm 11.5.1 or newer.
+      - run: npm install -g npm@11
+      # The server's own dependencies, for `plugin validate`.
+      - run: npm ci
+
+      - name: Only main publishes
+        if: ${{ !inputs.dry-run }}
+        run: test "$GITHUB_REF" = refs/heads/main || { echo "::error::Publish from main, not $GITHUB_REF"; exit 1; }
+      - name: The version is not on npm or tagged yet
+        id: version
+        working-directory: ${{ env.DIR }}
+        run: |
+          name="$(node -p 'require("./package.json").name')"
+          version="$(node -p 'require("./package.json").version')"
+          if [ -n "$(npm view "$name@$version" version 2>/dev/null)" ]; then
+            echo "::error::$name@$version is already on npm. Bump $DIR/package.json."
+            exit 1
+          fi
+          gittag="${{ inputs.plugin }}-v$version"
+          if git ls-remote --exit-code --tags origin "refs/tags/$gittag" >/dev/null; then
+            echo "::error::The tag $gittag already exists. Bump $DIR/package.json."
+            exit 1
+          fi
+          echo "gittag=$gittag" >> "$GITHUB_OUTPUT"
+          # npm refuses a prerelease without a dist-tag.
+          case "$version" in *-*) tag=next ;; *) tag=latest ;; esac
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "$name@$version as $tag"
+
+      - name: Read the plugin's nightly
+        id: nightly
+        run: echo "tag=$(node -p "require('./$DIR/plugin.json').compiler")" >> "$GITHUB_OUTPUT"
+      - uses: ./.github/actions/roc-nightly
+        with:
+          tag: ${{ steps.nightly.outputs.tag }}
+      - name: plugin validate
+        run: node bin/roc-syntax-mcp.js plugin validate "$DIR"
+
+      # The last check, so that a dry run reports the result of every check above.
+      - name: The package states a license
+        working-directory: ${{ env.DIR }}
+        run: |
+          license="$(node -p 'require("./package.json").license')"
+          if [ "$license" = UNLICENSED ]; then
+            echo "::error::$DIR/package.json says UNLICENSED, which grants nobody the right to use it. Name the license, or SEE LICENSE IN <file>. See $DIR/UPSTREAM."
+            exit 1
+          fi
+
+      - name: Publish
+        working-directory: ${{ env.DIR }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          TAG: ${{ steps.version.outputs.tag }}
+          DRY_RUN: ${{ inputs.dry-run }}
+        run: npm publish --provenance --access public --tag "$TAG" $([ "$DRY_RUN" = true ] && echo --dry-run)
+
+      # After the publish, so a failed publish leaves no tag to block a rerun.
+      - name: Tag the published commit
+        if: ${{ !inputs.dry-run }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITTAG: ${{ steps.version.outputs.gittag }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/git/refs" -f ref="refs/tags/$GITTAG" -f sha="$GITHUB_SHA" \
+            || { echo "::error::Published, but the tag failed. Run: git tag $GITTAG $GITHUB_SHA && git push origin $GITTAG"; exit 1; }

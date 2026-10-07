@@ -1,0 +1,78 @@
+{
+ "format": 1,
+ "releases": {
+  "FrozenV1Release000000000": {
+   "url": "https://github.com/example/frozen-v1/releases/download/1.2.3/FrozenV1Release000000000.tar.zst",
+   "snapshot": {
+    "kind": "platform",
+    "exposes": [
+     "Widget"
+    ],
+    "deps": [
+     {
+      "alias": "frozen",
+      "url": "https://github.com/example/frozen-pkg/releases/download/4.5.6/FrozenPackage00000000000.tar.zst"
+     }
+    ],
+    "modules": [
+     {
+      "name": "Widget",
+      "imports": [
+       "frozen"
+      ],
+      "items": [
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "draw!",
+        "modulePath": "Widget",
+        "fullName": "Widget.draw!",
+        "signature": "Str => {}",
+        "docs": "",
+        "line": 5
+       }
+      ]
+     },
+     {
+      "name": "main",
+      "imports": [],
+      "items": []
+     }
+    ]
+   }
+  },
+  "FrozenPackage00000000000": {
+   "url": "https://github.com/example/frozen-pkg/releases/download/4.5.6/FrozenPackage00000000000.tar.zst",
+   "snapshot": {
+    "kind": "package",
+    "exposes": [
+     "Gadget"
+    ],
+    "deps": [],
+    "modules": [
+     {
+      "name": "Gadget",
+      "imports": [],
+      "items": [
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "spin",
+        "modulePath": "Gadget",
+        "fullName": "Gadget.spin",
+        "signature": "U8 -> U8",
+        "docs": "",
+        "line": 2
+       }
+      ]
+     },
+     {
+      "name": "main",
+      "imports": [],
+      "items": []
+     }
+    ]
+   }
+  }
+ }
+}

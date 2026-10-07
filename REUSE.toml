@@ -1,0 +1,205 @@
+version = 1
+SPDX-PackageName = "roc-syntax-mcp"
+SPDX-PackageDownloadLocation = "https://github.com/Karakatiza666/roc-syntax-mcp"
+
+# This file uses path annotations, not file headers, because most of the
+# licensed files must stay byte-identical to an upstream release.
+# corpus/language/UPSTREAM calls examples/all_roc_syntax.roc a verbatim mirror,
+# and each refresh applies corpus/platforms/*/patches/ again from tag to tag. A
+# header in any of those files would break the next diff and every patch after
+# it. REUSE.toml exists to annotate files from outside.
+#
+# LICENSE has the same table in prose, for a human reader and not a scanner.
+
+# ---------------------------------------------------------------- the server
+
+[[annotations]]
+path = [
+  "src/**",
+  "bin/**",
+  "scripts/**",
+  "eval/**",
+  "docs/design/**",
+  "docs/plans/**",
+  "docs/evals/**",
+  "CONTRIBUTING.md",
+  ".claude/**",
+  ".github/**",
+  ".gitignore",
+  "tsconfig.json",
+  "package.json",
+  "package-lock.json",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Heorhii Bulakh and subsequent roc-syntax-mcp authors"
+SPDX-License-Identifier = "MPL-2.0"
+
+# ------------------------------------------------------- the corpus, ours
+
+[[annotations]]
+path = [
+  "README.md",
+  "CLA.md",
+  "LICENSE",
+  "REUSE.toml",
+  "THIRD-PARTY-NOTICES.md",
+  "bugs/**",
+  "corpus/language/UPSTREAM",
+  "corpus/language/plugin.json",
+  "corpus/language/langref/local/**",
+  "corpus/language/overview/**",
+  "corpus/language/topics/**",
+  "corpus/*/*/UPSTREAM",
+  "corpus/*/*/plugin.json",
+  "corpus/platforms/*/overview.md",
+  "corpus/platforms/*/scaffold.roc",
+  "corpus/platforms/*/sample.roc",
+  "corpus/platforms/*/topics/**",
+  "corpus/platforms/*/verify/**",
+  "corpus/platforms/*/patches/**",
+  "corpus/packages/*/verify/**",
+  "corpus/packages/*/patches/**",
+  "corpus/packages/*/overview.md",
+  "corpus/packages/*/topics/**",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Heorhii Bulakh and subsequent roc-syntax-mcp authors"
+SPDX-License-Identifier = "UPL-1.0"
+
+# -------------------------------------------- the corpus, vendored upstream
+#
+# Releases and provenance are in THIRD-PARTY-NOTICES.md and the UPSTREAM files.
+# scripts/build-index.ts generates each index.json from the source of a release,
+# and the file contains the docstrings of that release. So the file has the
+# copyright of that release. The parser fixtures under src/testdata/upstream/
+# are byte-identical files of the same releases.
+
+[[annotations]]
+path = [
+  "corpus/language/Builtin.roc",
+  "corpus/language/langref/*.md",
+  "corpus/language/examples/all_roc_syntax.roc",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2019 Richard Feldman and subsequent Roc authors <roc-lang.org/authors>"
+SPDX-License-Identifier = "UPL-1.0"
+
+[[annotations]]
+path = [
+  "corpus/platforms/basic-cli/index.json",
+  "corpus/platforms/basic-cli/examples/**",
+  "src/testdata/upstream/basic-cli-*/**",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2022 Richard Feldman and subsequent basic-cli authors <github.com/roc-lang/basic-cli/graphs/contributors>"
+SPDX-License-Identifier = "UPL-1.0"
+
+[[annotations]]
+path = [
+  "corpus/platforms/basic-webserver/index.json",
+  "corpus/platforms/basic-webserver/examples/**",
+  "corpus/platforms/basic-webserver/docs/**",
+  "src/testdata/upstream/basic-webserver-*/**",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2023 Richard Feldman and subsequent Roc authors <roc-lang.org/authors>"
+SPDX-License-Identifier = "UPL-1.0"
+
+[[annotations]]
+path = "corpus/packages/http/index.json"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2025 Richard Feldman and subsequent Roc authors <roc-lang.org/authors>"
+SPDX-License-Identifier = "UPL-1.0"
+
+[[annotations]]
+path = "corpus/packages/roc-random/index.json"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2022 Jan Van Bruggen and subsequent roc-random authors <github.com/JanCVanB/roc-random/graphs/contributors>"
+SPDX-License-Identifier = "UPL-1.0"
+
+[[annotations]]
+path = [
+  "corpus/packages/roc-parser/index.json",
+  "corpus/packages/roc-parser/examples/**",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2023 Luke Boswell and subsequent authors <github.com/lukewilliamboswell/roc-parser/graphs/contributors>"
+SPDX-License-Identifier = "UPL-1.0"
+
+# ---------------------------------------------------------------- plugins/
+#
+# plugins/ is not part of this package. The `files` list in package.json does
+# not name plugins/, and each directory is a separate npm package. This file
+# annotates plugins/ too, because a repository is licensed as a whole.
+
+[[annotations]]
+path = [
+  "plugins/README.md",
+  "plugins/*/README.md",
+  "plugins/*/package.json",
+  "plugins/*/plugin.json",
+  "plugins/*/UPSTREAM",
+  "plugins/*/overview.md",
+  "plugins/*/scaffold.roc",
+  "plugins/*/sample.roc",
+  "plugins/*/topics/**",
+  "plugins/*/verify/**",
+  "plugins/*/patches/**",
+  "plugins/weaver/LICENSE",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Heorhii Bulakh and subsequent roc-syntax-mcp authors"
+SPDX-License-Identifier = "UPL-1.0"
+
+[[annotations]]
+path = [
+  "plugins/roc-ray/LICENSE",
+  "plugins/roc-ray/index.json",
+  "plugins/roc-ray/examples/**",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2024 Luke Boswell and subsequent authors"
+SPDX-License-Identifier = "UPL-1.0"
+
+# Weaver ships no LICENSE at tag 0.9.0, and neither does the repository that it
+# forks (smores56/weaver). No license means no grant, so this entry marks these
+# files as having no license and does not guess one. This repo publishes
+# plugins/weaver in the expectation that upstream adopts UPL-1.0.
+# plugins/weaver/LICENSE says which files belong to which author.
+[[annotations]]
+path = ["plugins/weaver/index.json", "plugins/weaver/examples/**"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Luke Boswell, Sam Mohr and subsequent weaver authors"
+SPDX-License-Identifier = "LicenseRef-weaver-no-license"
+
+# Joy and joy-html are Apache-2.0, so the files of this repo in plugins/joy are
+# Apache-2.0 too, and the package has one license. `precedence = "override"`
+# stops the UPL-1.0 entry for plugins/*/ above from also applying.
+[[annotations]]
+path = [
+  "plugins/joy/README.md",
+  "plugins/joy/package.json",
+  "plugins/joy/plugin.json",
+  "plugins/joy/UPSTREAM",
+  "plugins/joy/joy-overview.md",
+  "plugins/joy/html-overview.md",
+  "plugins/joy/scaffold.roc",
+  "plugins/joy/sample.roc",
+  "plugins/joy/topics/**",
+]
+precedence = "override"
+SPDX-FileCopyrightText = "2026 Heorhii Bulakh and subsequent roc-syntax-mcp authors"
+SPDX-License-Identifier = "Apache-2.0"
+
+# index.json contains the docstrings of both releases. The files in examples/
+# are joy's, and each one differs from upstream only in its platform pin (see
+# plugins/joy/UPSTREAM).
+[[annotations]]
+path = [
+  "plugins/joy/LICENSE",
+  "plugins/joy/index.json",
+  "plugins/joy/examples/**",
+]
+precedence = "override"
+SPDX-FileCopyrightText = "2024 Niclas Åhdén"
+SPDX-License-Identifier = "Apache-2.0"
