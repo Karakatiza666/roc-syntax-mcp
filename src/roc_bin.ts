@@ -30,7 +30,7 @@ export function bundledNightly(): string {
 
 /** The folder `roc install` unpacks into, and the record of the chosen binary. */
 export const rocHome = (env: Record<string, string | undefined>) => path.join(pluginHome(env), "roc");
-const recordOf = (env: Record<string, string | undefined>) => path.join(rocHome(env), "use");
+export const recordOf = (env: Record<string, string | undefined>) => path.join(rocHome(env), "use");
 
 export interface RocChoice {
   /** What to spawn: a path, or `roc` for a PATH lookup. */

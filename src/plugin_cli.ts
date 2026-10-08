@@ -11,19 +11,21 @@
 // - The user commands `add`, `update`, `remove` and `list` manage the plugin
 //   folder of this server. They change it through npm, or through Bun when the
 //   CLI runs under Bun. `upgrade` updates the server, then runs `update` in the
-//   new server.
+//   new server. `uninstall` deletes the plugins and the compiler, then removes
+//   the server.
 //
 // See "Authoring a plugin" in `docs/design/plugins.md`.
 
 import * as fs from "node:fs";
 import * as path from "node:path";
+import * as readline from "node:readline/promises";
 import { spawn, spawnSync } from "node:child_process";
 import { LATEST_PROTOCOL_VERSION } from "@modelcontextprotocol/server";
-import { INSTALLED, installDir, unresolvedFix, workspaceRoot } from "./plugins.ts";
+import { INSTALLED, installDir, installedPlugins, pluginHome, unresolvedFix, workspaceRoot } from "./plugins.ts";
 import * as S from "./scopes.ts";
 import type { LoadedPlugin, PackageProvider, PluginManifest } from "./scopes.ts";
 import * as R from "./release.ts";
-import { findRoc } from "./roc_bin.ts";
+import { findRoc, recordOf, rocHome } from "./roc_bin.ts";
 
 const ROOT = path.join(import.meta.dirname, "..");
 /**
@@ -1012,16 +1014,19 @@ export function doctor(
   }
   if (rows.length === 0) {
     out.push(ok("resolution", "no platform in this configuration pins a package"));
-    return out;
+  } else {
+    const table = `${"space".padEnd(18)} ${"namespace".padEnd(22)} ${"required".padEnd(10)} served by\n${rows.join("\n")}`;
+    // A namespace with no provider is the conflict that an operator runs `doctor`
+    // to find. Every lookup into that namespace returns no items, only a note.
+    out.push(
+      empty > 0
+        ? bad("resolution", `${table}\n\n${empty} namespace(s) with no compatible provider`)
+        : ok("resolution", table)
+    );
   }
-  const table = `${"space".padEnd(18)} ${"namespace".padEnd(22)} ${"required".padEnd(10)} served by\n${rows.join("\n")}`;
-  // A namespace with no provider is the conflict that an operator runs `doctor`
-  // to find. Every lookup into that namespace returns no items, only a note.
-  out.push(
-    empty > 0
-      ? bad("resolution", `${table}\n\n${empty} namespace(s) with no compatible provider`)
-      : ok("resolution", table)
-  );
+  // A package manager that removes the server leaves this folder. Thus doctor
+  // names the command that also deletes what the folder holds.
+  out.push(ok("data folder", `${pluginHome(env)}\n\`roc-syntax-mcp uninstall\` deletes the plugins and the compiler in it, and removes the server`));
   return out;
 }
 
@@ -1278,6 +1283,10 @@ export interface Install {
   spec?: string;
   /** What to do instead, when there is no `update`. */
   fix?: string;
+  /** The command that removes it. Absent when no package manager holds this copy. */
+  uninstall?: string[];
+  /** What to do instead, when there is no `uninstall`. */
+  removeFix?: string;
 }
 
 /** A package manager's global folder, and the command that installs into it. */
@@ -1290,6 +1299,7 @@ export interface GlobalRoot {
   /** The folder that holds global packages, or null when that manager is not here. */
   root: () => string | null;
   install: (spec: string) => string[];
+  uninstall: (name: string) => string[];
 }
 
 /**
@@ -1317,8 +1327,15 @@ export function globalRoots(env: NodeJS.ProcessEnv): GlobalRoot[] {
       root: () => path.join(env.BUN_INSTALL ?? path.join(home, ".bun"), "install", "global", "node_modules"),
       // Without --no-cache, Bun keeps the version list that it read at install, and finds no newer release.
       install: (s) => ["bun", "add", "-g", "--no-cache", s],
+      uninstall: (n) => ["bun", "remove", "-g", n],
     },
-    { by: "pnpm", hint: /pnpm/i, root: () => output(["pnpm", "root", "-g"], env), install: (s) => ["pnpm", "add", "-g", s] },
+    {
+      by: "pnpm",
+      hint: /pnpm/i,
+      root: () => output(["pnpm", "root", "-g"], env),
+      install: (s) => ["pnpm", "add", "-g", s],
+      uninstall: (n) => ["pnpm", "remove", "-g", n],
+    },
     {
       by: "Yarn 1",
       hint: /yarn/i,
@@ -1328,8 +1345,15 @@ export function globalRoots(env: NodeJS.ProcessEnv): GlobalRoot[] {
         return dir ? path.join(dir, "node_modules") : null;
       },
       install: (s) => ["yarn", "global", "add", s],
+      uninstall: (n) => ["yarn", "global", "remove", n],
     },
-    { by: "npm", hint: /$^/, root: () => output(["npm", "root", "-g"], env), install: (s) => ["npm", "install", "-g", s] },
+    {
+      by: "npm",
+      hint: /$^/,
+      root: () => output(["npm", "root", "-g"], env),
+      install: (s) => ["npm", "install", "-g", s],
+      uninstall: (n) => ["npm", "uninstall", "-g", n],
+    },
   ];
 }
 
@@ -1379,8 +1403,17 @@ export function upgradeSpec(root: string): string {
  */
 export function detectInstall(root: string, roots: readonly GlobalRoot[]): Install {
   const after = "then run `roc-syntax-mcp plugin update`";
+  const unknown = (where: string): Install => ({
+    by: "an unknown installer",
+    fix: `Update it the way you installed it, ${after}`,
+    removeFix: `Remove ${where} the way you installed it`,
+  });
   if (fs.existsSync(path.join(root, ".git"))) {
-    return { by: "a git checkout", fix: `Run \`git pull\` in ${root}, ${after}` };
+    return {
+      by: "a git checkout",
+      fix: `Run \`git pull\` in ${root}, ${after}`,
+      removeFix: `Delete the checkout ${root}. If you ran \`npm link\` in it, run \`npm rm -g roc-syntax-mcp\` too`,
+    };
   }
   const runner = [
     { by: "npx", seen: /[\\/]_npx[\\/]/ },
@@ -1395,18 +1428,20 @@ export function detectInstall(root: string, roots: readonly GlobalRoot[]): Insta
         `${runner.by} keeps its own copy, and decides which release your client starts. ` +
         `\`${runner.by} roc-syntax-mcp@latest plugin update\` updates the plugins with the newest server. ` +
         `To start the newest server every time, give your client \`roc-syntax-mcp@latest\``,
+      removeFix: `${runner.by} keeps its copy in its own cache, and no package manager installed it globally`,
     };
   }
   const here = real(root);
-  if (!here) return { by: "an unknown installer", fix: `Update it the way you installed it, ${after}` };
+  if (!here) return unknown(root);
   const hinted = roots.filter((g) => g.hint.test(here));
   for (const g of [...hinted, ...roots.filter((g) => !g.onlyHinted && !hinted.includes(g))]) {
     const dir = g.root();
     if (!dir || !serversIn(dir).some((p) => real(p) === here)) continue;
     const spec = upgradeSpec(root);
-    return { by: g.by, update: g.install(spec), spec, locate: () => newest(serversIn(dir)) };
+    const name = packageName(root) ?? "roc-syntax-mcp";
+    return { by: g.by, update: g.install(spec), spec, locate: () => newest(serversIn(dir)), uninstall: g.uninstall(name) };
   }
-  return { by: "an unknown installer", fix: `Update it the way you installed it, ${after}` };
+  return unknown(here);
 }
 
 const packageOf = (dir: string): { version?: string; bin?: string | Record<string, string> } => {
@@ -1460,6 +1495,137 @@ export function upgrade(env: NodeJS.ProcessEnv, install: Install = detectInstall
   // Bun runs the `node` entry of a package itself, so the current runtime can start the new server.
   const r = spawnSync(process.execPath, [entryOf(dir), "plugin", "update"], { stdio: "inherit", env });
   return r.status ?? 1;
+}
+
+// -----------------------------------------------------------------------------
+// Uninstalling
+// -----------------------------------------------------------------------------
+
+/** A folder that `uninstall` deletes, and a line that describes each item in it. */
+export interface Removal {
+  dir: string;
+  holds: string[];
+}
+
+/** The size in bytes of a file, or of every file under a folder. */
+function sizeOf(p: string): number {
+  const st = fs.lstatSync(p);
+  if (!st.isDirectory()) return st.size;
+  return fs.readdirSync(p).reduce((n, e) => n + sizeOf(path.join(p, e)), 0);
+}
+
+const isInside = (p: string, dir: string): boolean => {
+  const rel = path.relative(dir, p);
+  return rel !== "" && !rel.startsWith("..") && !path.isAbsolute(rel);
+};
+
+/**
+ * The two folders that this server writes in its data folder: `plugins/` from
+ * `plugin add`, and `roc/` from `roc install` and `roc use`. The function
+ * returns only these two, because a data folder that ROC_MCP_HOME names can
+ * also hold files of the user.
+ */
+export function dataRemovals(env: NodeJS.ProcessEnv): Removal[] {
+  const out: Removal[] = [];
+  const plugins = installDir(env);
+  if (fs.existsSync(plugins)) {
+    const names = installedPlugins(env);
+    out.push({ dir: plugins, holds: names.length > 0 ? names.map((n) => `plugin ${n}`) : ["no plugins"] });
+  }
+  const roc = rocHome(env);
+  if (fs.existsSync(roc)) {
+    const holds: string[] = [];
+    for (const e of fs.readdirSync(roc, { withFileTypes: true })) {
+      if (!e.isDirectory() || e.name.startsWith(".")) continue;
+      holds.push(`compiler ${e.name}, ${Math.round(sizeOf(path.join(roc, e.name)) / 1e6)} MB`);
+    }
+    let recorded = "";
+    try {
+      recorded = fs.readFileSync(recordOf(env), "utf-8").trim();
+    } catch {}
+    if (recorded) {
+      // A compiler outside `roc/` came from `roc use`. `uninstall` deletes only its record.
+      holds.push(isInside(recorded, roc) ? "the record of the compiler the server runs" : `the record of the compiler the server runs. ${recorded} stays`);
+    }
+    out.push({ dir: roc, holds: holds.length > 0 ? holds : ["no compiler"] });
+  }
+  return out;
+}
+
+/** Asks a question in the terminal. True only for "y" or "yes". */
+async function confirm(question: string): Promise<boolean> {
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  try {
+    return /^y(es)?$/i.test((await rl.question(question)).trim());
+  } finally {
+    rl.close();
+  }
+}
+
+const UNINSTALL_LEFTOVERS =
+  "Your AI harness keeps its entry for the server. " +
+  "In Claude Code, run `claude mcp remove roc-syntax`, with the name of your entry if it differs.";
+
+/**
+ * Deletes the plugins and the compiler in the data folder, then removes the
+ * server with the package manager that installed it. The deletes come first,
+ * because no command can delete the data after the server is removed. Node has
+ * loaded this code already, so the command can remove its own package.
+ *
+ * `ask` is null when no terminal can answer. Then only `--yes` confirms.
+ */
+export async function uninstall(
+  argv: readonly string[],
+  env: NodeJS.ProcessEnv,
+  install: Install = detectInstall(ROOT, globalRoots(env)),
+  ask: ((question: string) => Promise<boolean>) | null = process.stdin.isTTY ? confirm : null
+): Promise<number> {
+  const removals = dataRemovals(env);
+  const plan = removals.map((r) => `  ${r.dir}\n${r.holds.map((h) => `    ${h}`).join("\n")}`);
+  plan.push(
+    install.uninstall
+      ? `  the server, with ${install.by}: ${install.uninstall.join(" ")}`
+      : `  not the server: ${install.removeFix ?? "no package manager installed it"}`
+  );
+  console.log(`roc-syntax-mcp uninstall removes:\n${plan.join("\n")}`);
+
+  if (!argv.includes("--yes")) {
+    if (!ask) {
+      console.error("No terminal can answer the question. To confirm, run `roc-syntax-mcp uninstall --yes`");
+      return 2;
+    }
+    if (!(await ask("Continue? [y/N] "))) {
+      console.log("Removed nothing");
+      return 1;
+    }
+  }
+
+  const checks: Check[] = [];
+  for (const r of removals) {
+    try {
+      fs.rmSync(r.dir, { recursive: true, force: true });
+      checks.push(ok(r.dir, "deleted"));
+    } catch (err) {
+      checks.push(bad(r.dir, reason(err)));
+    }
+  }
+  try {
+    // rmdir fails on a folder that is not empty, so the files of the user stay.
+    fs.rmdirSync(pluginHome(env));
+  } catch {}
+  if (install.uninstall) {
+    const failure = run(install.uninstall, env);
+    checks.push(
+      failure
+        ? bad("roc-syntax-mcp", `${failure}\nRun it yourself: ${install.uninstall.join(" ")}`)
+        : ok("roc-syntax-mcp", `removed by ${install.by}`)
+    );
+  } else {
+    checks.push(skip("roc-syntax-mcp", install.removeFix ?? "no package manager installed it"));
+  }
+  console.log(render(checks));
+  console.log(`\n${UNINSTALL_LEFTOVERS}`);
+  return failed(checks) ? 1 : 0;
 }
 
 // -----------------------------------------------------------------------------

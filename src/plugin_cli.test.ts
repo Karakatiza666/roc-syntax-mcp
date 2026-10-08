@@ -31,6 +31,7 @@ import {
   remove,
   snippets,
   staticChecks,
+  uninstall,
   update,
   upgrade,
   upgradeServer,
@@ -902,12 +903,12 @@ function fakeServer(name: string, built: boolean, version = "1.0.0"): string {
 function globalRoot(by: string, pkg: string | null, over: Partial<GlobalRoot> = {}): GlobalRoot {
   const root = fs.mkdtempSync(path.join(tmp, "global-"));
   if (pkg) fs.symlinkSync(pkg, path.join(root, "roc-syntax-mcp"));
-  return { by, hint: /$^/, root: () => root, install: (s) => [by, "install", s], ...over };
+  return { by, hint: /$^/, root: () => root, install: (s) => [by, "install", s], uninstall: (n) => [by, "uninstall", n], ...over };
 }
 
 test("upgrade finds the installer that holds this server, and what it fetches", () => {
   const released = fakeServer("srv-released", true);
-  const none: GlobalRoot = { by: "npm", hint: /$^/, root: () => null, install: () => [] };
+  const none: GlobalRoot = { by: "npm", hint: /$^/, root: () => null, install: () => [], uninstall: () => [] };
   const found = detectInstall(released, [none, globalRoot("bun", null), globalRoot("pnpm", released)]);
   assert.equal(found.by, "pnpm");
   assert.deepEqual(found.update, ["pnpm", "install", "roc-syntax-mcp@latest"]);
@@ -927,7 +928,7 @@ test("upgrade finds the installer that holds this server, and what it fetches", 
 // Yarn under Corepack can download Yarn just to say where its global folder is.
 test("upgrade asks a manager that needs a hint only when the path gives one", () => {
   const released = fakeServer("srv-plain", true);
-  const yarn: GlobalRoot = { by: "Yarn 1", hint: /yarn/i, onlyHinted: true, root: () => assert.fail("yarn was asked"), install: () => [] };
+  const yarn: GlobalRoot = { by: "Yarn 1", hint: /yarn/i, onlyHinted: true, root: () => assert.fail("yarn was asked"), install: () => [], uninstall: () => [] };
   assert.equal(detectInstall(released, [yarn, globalRoot("npm", released)]).by, "npm");
   const inYarn = fakeServer(path.join("yarn", "global", "node_modules", "roc-syntax-mcp"), true);
   assert.equal(detectInstall(inYarn, [globalRoot("npm", null), globalRoot("Yarn 1", inYarn, { hint: /yarn/i, onlyHinted: true })]).by, "Yarn 1");
@@ -983,12 +984,100 @@ test("upgrade finds the new server where pnpm 11 moved it", () => {
   fs.symlinkSync(old, path.join(root, "aaa", "node_modules", "roc-syntax-mcp"));
   const fresh = recordingServer("srv-pnpm-new", calls, "1.1.0");
   const move = `const fs = require("fs"); fs.rmSync(${JSON.stringify(path.join(root, "aaa"))}, { recursive: true, force: true }); fs.mkdirSync(${JSON.stringify(path.join(root, "bbb", "node_modules"))}, { recursive: true }); fs.rmSync(${JSON.stringify(path.join(root, "bbb", "node_modules", "roc-syntax-mcp"))}, { force: true }); fs.symlinkSync(${JSON.stringify(fresh)}, ${JSON.stringify(path.join(root, "bbb", "node_modules", "roc-syntax-mcp"))})`;
-  const pnpm: GlobalRoot = { by: "pnpm", hint: /pnpm/, root: () => root, install: () => [process.execPath, "-e", move] };
+  const pnpm: GlobalRoot = { by: "pnpm", hint: /pnpm/, root: () => root, install: () => [process.execPath, "-e", move], uninstall: () => [] };
   const install = detectInstall(old, [pnpm]);
   assert.equal(install.by, "pnpm");
   assert.equal(quietly(() => upgrade(process.env, install)), 0);
   assert.equal(fs.readFileSync(calls, "utf-8"), "plugin update\n");
   assert.equal(upgradeServer(install, process.env).checks[0].name, "roc-syntax-mcp 1.1.0");
+});
+
+// -----------------------------------------------------------------------------
+// uninstall
+// -----------------------------------------------------------------------------
+
+test("uninstall removes the server with the manager that holds it, and says what to do for any other install", () => {
+  const released = fakeServer("srv-uninstall", true);
+  assert.deepEqual(detectInstall(released, [globalRoot("pnpm", released)]).uninstall, ["pnpm", "uninstall", "roc-syntax-mcp"]);
+  assert.equal(detectInstall(released, [globalRoot("npm", null)]).uninstall, undefined);
+  assert.match(detectInstall(released, [globalRoot("npm", null)]).removeFix!, /the way you installed it/);
+  const npx = fakeServer(path.join("_npx", "def", "node_modules", "roc-syntax-mcp"), true);
+  assert.match(detectInstall(npx, []).removeFix!, /npx keeps its copy in its own cache/);
+  const checkout = fakeServer("srv-uninstall-checkout", false);
+  fs.mkdirSync(path.join(checkout, ".git"));
+  assert.match(detectInstall(checkout, [globalRoot("npm", checkout)]).removeFix!, /Delete the checkout/);
+});
+
+/** A data folder with one plugin, one downloaded nightly, and the record of the compiler. */
+function dataFolder(name: string, recorded?: string): { env: NodeJS.ProcessEnv; home: string } {
+  const home = path.join(tmp, name);
+  fs.mkdirSync(path.join(home, "plugins"), { recursive: true });
+  fs.writeFileSync(path.join(home, "plugins", "package.json"), JSON.stringify({ dependencies: { "@roc-syntax/joy": "^0.34.0" } }));
+  const nightly = path.join(home, "roc", "nightly-2026-10-06-c34079d");
+  fs.mkdirSync(nightly, { recursive: true });
+  fs.writeFileSync(path.join(nightly, "roc"), "");
+  fs.writeFileSync(path.join(home, "roc", "use"), recorded ?? path.join(nightly, "roc"));
+  return { env: { ...BARE_ENV, ROC_MCP_HOME: home }, home };
+}
+
+/** Runs `fn` with console output silenced, and returns its result and what it printed. */
+async function captured<T>(fn: () => Promise<T>): Promise<{ result: T; out: string }> {
+  const log = console.log;
+  const error = console.error;
+  let out = "";
+  console.log = console.error = (...a: unknown[]) => void (out += `${a.join(" ")}\n`);
+  try {
+    return { result: await fn(), out };
+  } finally {
+    console.log = log;
+    console.error = error;
+  }
+}
+
+test("uninstall deletes the plugins and the compiler, then removes the server", async () => {
+  const { env, home } = dataFolder("home-uninstall");
+  fs.writeFileSync(path.join(home, "notes.txt"), "the user's");
+  const calls = path.join(tmp, "uninstall-calls");
+  const record = `require("fs").writeFileSync(${JSON.stringify(calls)}, "removed")`;
+  const install: Install = { by: "npm", uninstall: [process.execPath, "-e", record] };
+  const { result, out } = await captured(() => uninstall(["--yes"], env, install, null));
+  assert.equal(result, 0, out);
+  assert.match(out, /plugin @roc-syntax\/joy/);
+  assert.match(out, /compiler nightly-2026-10-06-c34079d, 0 MB/);
+  assert.match(out, /roc-syntax-mcp\n\s+removed by npm/);
+  assert.equal(fs.readFileSync(calls, "utf-8"), "removed");
+  assert.deepEqual(fs.readdirSync(home), ["notes.txt"]);
+});
+
+test("uninstall keeps a compiler that roc use recorded, and deletes an empty data folder", async () => {
+  const own = path.join(tmp, "own-roc");
+  fs.writeFileSync(own, "");
+  const { env, home } = dataFolder("home-uninstall-own", own);
+  const { result, out } = await captured(() => uninstall(["--yes"], env, { by: "npx", removeFix: "npx keeps its copy" }, null));
+  assert.equal(result, 0, out);
+  assert.match(out, new RegExp(`${own.replace(/[\\^$.*+?()[\]{}|]/g, "\\$&")} stays`));
+  assert.match(out, /skip {2}roc-syntax-mcp\n\s+npx keeps its copy/);
+  assert.equal(fs.existsSync(own), true);
+  assert.equal(fs.existsSync(home), false);
+});
+
+test("uninstall removes nothing until someone confirms", async () => {
+  const { env, home } = dataFolder("home-uninstall-ask");
+  const install: Install = { by: "npm", uninstall: [process.execPath, "-e", "process.exit(9)"] };
+  assert.equal((await captured(() => uninstall([], env, install, null))).result, 2);
+  assert.equal((await captured(() => uninstall([], env, install, async () => false))).result, 1);
+  assert.deepEqual(fs.readdirSync(home).sort(), ["plugins", "roc"]);
+
+  const { result, out } = await captured(() => uninstall([], env, install, async () => true));
+  assert.equal(result, 1);
+  assert.match(out, /FAIL {2}roc-syntax-mcp[\s\S]*Run it yourself/);
+  assert.equal(fs.existsSync(home), false);
+});
+
+test("doctor names the data folder and the command that removes it", () => {
+  const home = path.join(tmp, "home-doctor-data");
+  const row = doctor([], { ROC_MCP_HOME: home }, tmp).find((c) => c.name === "data folder");
+  assert.match(row!.detail!, new RegExp(`^${home.replace(/[\\^$.*+?()[\]{}|]/g, "\\$&")}\n.*roc-syntax-mcp uninstall`));
 });
 
 // npm reads `weaver` as a package name even when a folder of that name is here.

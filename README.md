@@ -22,6 +22,7 @@ restart your AI harness. For pnpm, Yarn, Bun, or the latest unreleased commit,
 see [Running with other package managers](#running-with-other-package-managers).
 To run it with no install, see [Running without installing](#running-without-installing).
 For plugins, see [Registering third party plugins](#registering-third-party-plugins).
+To remove the server, see [Uninstalling](#uninstalling).
 
 ### Connect to your AI harness
 
@@ -146,6 +147,35 @@ claude mcp add --scope user roc-syntax -- npx -y roc-syntax-mcp@latest
 `upgrade` command, but the server starts more slowly and needs the network. Run
 the other commands in this README the same way, for example
 `npx -y roc-syntax-mcp@latest plugin add @roc-syntax/roc-ray`.
+
+### Uninstalling
+
+```bash
+roc-syntax-mcp uninstall
+```
+
+The command lists what it removes, and asks you to confirm. `--yes` skips the
+question. Then the command does these steps:
+
+1. It deletes the plugins that `plugin add` installed.
+2. It deletes the nightlies that `roc install` downloaded, and the record of the
+   compiler that the server runs. A compiler that you chose with `roc use`
+   stays.
+3. It removes the server with the package manager that installed it.
+
+A package manager cannot do steps 1 and 2, because npm, pnpm, Yarn and Bun run
+no script when they remove a package. Thus `npm uninstall -g roc-syntax-mcp`
+alone leaves the plugins and the compiler in the server's data folder.
+`plugin doctor` shows the path of that folder.
+
+| Install | Step 3 |
+|---|---|
+| A global install by npm, pnpm, Yarn 1 or Bun | Removes the server |
+| `npx`, `bunx`, `pnpm dlx` or `yarn dlx` | Removes nothing, because the runner keeps its copy in its own cache. Run the command as `npx -y roc-syntax-mcp@latest uninstall` |
+| A git checkout | Removes nothing. Delete the folder of the checkout |
+
+Your AI harness keeps its entry for the server. In Claude Code, run
+`claude mcp remove roc-syntax`.
 
 ## Features
 
@@ -319,7 +349,7 @@ roc-syntax-mcp plugin add @roc-syntax/roc-ray
 | `plugin update [name...]` | Installs the newest release of every plugin that `add` installed, or of the named ones. Each plugin updates separately, so a refused release does not stop the update of other plugins. A plugin linked to a folder always serves the contents of the folder |
 | `plugin remove <name>...` | Uninstalls a plugin that `add` installed. Takes the package name, or the path you added it from |
 | `plugin list` | Shows what `add` installed, its version, the release each corpus documents, and the folder it is in. Fails when an installed package is missing, for example a path plugin whose folder you deleted |
-| `plugin doctor` | Shows the set a server started here would load, and why it skipped anything |
+| `plugin doctor` | Shows the set a server started here would load, and why it skipped anything. It also shows the data folder that holds the plugins and the compiler |
 
 A plugin is an npm package that holds only text: Roc source, docs and JSON.
 No code in a plugin runs, and `add` runs no install scripts. `add` installs the
