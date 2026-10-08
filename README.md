@@ -56,37 +56,6 @@ team.
 To check the connection, ask the agent to call `roc_overview`. The reply
 should contain the language and builtin pages, not an error.
 
-### How the server finds your project
-
-The server reads the `app [...]` header in your project to know the platform.
-It finds the project in this order:
-
-| Order | Source | Set by |
-|---|---|---|
-| 1 | `--workspace=<dir>` | You, in the client config. Cursor and VS Code replace `${workspaceFolder}` with the open folder |
-| 2 | The MCP roots the client sends | Clients that support roots, such as Cursor |
-| 3 | The `CLAUDE_PROJECT_DIR` environment variable | Claude Code |
-| 4 | The directory the client starts the server in | Clients that start it in the folder you started them in |
-
-If `list_roc_index` with `kind: "scopes"` says "No platform detected" in a
-project that has an app header, the client started the server somewhere else.
-Add `--workspace=` with your project's path, or with `${workspaceFolder}` where
-the client supports it:
-
-```json
-{
-  "mcpServers": {
-    "roc-syntax": {
-      "command": "roc-syntax-mcp",
-      "args": ["--workspace=${workspaceFolder}"]
-    }
-  }
-}
-```
-
-If the `--workspace=` value is not a folder, the server ignores it and writes
-a line to the client's MCP log.
-
 ### Running with other package managers
 
 | Package manager | Minimum version | Command |
@@ -459,10 +428,46 @@ takes from the corpus carry no obligations into your codebase.
 | `env: 'node': No such file or directory` | The machine has Bun and no Node. Start it as `bunx roc-syntax-mcp` |
 | `roc_check` reports the compiler is missing | The server found no compiler. Run `roc-syntax-mcp roc install`, or `roc-syntax-mcp roc use <path>`. No restart is needed. Every other tool still works |
 | Answers name a platform you are not using | The server found no app header, or the wrong one. Set `scope` explicitly, see [Choosing the platform](#choosing-the-platform) |
-| "No platform detected" in a project with an app header | The client started the server outside the project. Add `--workspace=`, see [How the server finds your project](#how-the-server-finds-your-project) |
+| "No platform detected" in a project with an app header | The client sends no project folder, and the server started outside the project. Add `--workspace=`, see [How the server finds your project](#how-the-server-finds-your-project) |
 | A plugin you installed is not served | Your package manager installed it and no flag names it, it is a pnpm 11 global install, or the server started before the change. Use `roc-syntax-mcp plugin add`, or run `roc-syntax-mcp plugin doctor` |
 | A warning that your platform version differs from the bundled one | Expected when the server cannot read the release. After `roc` fetches the release that your header pins, the signatures come from that release. The overview and topics stay those of the bundled release. The note appears once per session |
 | The first answer in a new workspace takes up to a minute | Your app header pins a release this server does not bundle, and `roc deps` is downloading it. Later answers read it from the compiler's cache |
+
+### How the server finds your project
+
+The server reads the `app [...]` header in your project to know the platform.
+To find the app header, the server needs the project folder. Usually the client
+sends it. The server uses the first source in this table that gives a folder:
+
+| Order | Source | Set by |
+|---|---|---|
+| 1 | `--workspace=<dir>` | You, in the client config. It overrides the folder that the client sends. Cursor and VS Code replace `${workspaceFolder}` with the open folder |
+| 2 | The MCP roots that the client sends | Clients that support roots, such as Cursor |
+| 3 | The `CLAUDE_PROJECT_DIR` environment variable | Claude Code |
+| 4 | The working directory of the server process | The client, when it starts the server. This is a fallback, used only when no source above gives a folder |
+
+Source 4 is correct only when the client starts the server in the project
+folder. Many clients start the server in their own working directory. That
+directory is often the project folder, but not always.
+
+If `list_roc_index` with `kind: "scopes"` says "No platform detected" in a
+project that has an app header, the client sends no project folder, and the
+server started outside the project. Set the folder with `--workspace=`. Give
+your project's path, or `${workspaceFolder}` if the client supports it:
+
+```json
+{
+  "mcpServers": {
+    "roc-syntax": {
+      "command": "roc-syntax-mcp",
+      "args": ["--workspace=${workspaceFolder}"]
+    }
+  }
+}
+```
+
+If the `--workspace=` value is not a folder, the server ignores it and writes
+a line to the client's MCP log.
 
 ## Contributing
 
