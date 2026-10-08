@@ -59,7 +59,17 @@ overview.md <- this package's own. Its setup, permission and shipping advice
 # multi-line alike. The entry names the same nightly as the manifest, so it is
 # redundant here, and under any other nightly it would add a second mismatch
 # warning per file. The release zip already pins the 0.10.0 bundle URL, so
-# nothing else in any example changes.
+# the pin needs no other change.
+#
+# After the repin, apply the patch series to examples/:
+#   patch -p1 < patches/0001-load-assets-beside-the-executable.patch
+# Upstream's sprite_and_sound and post_process open their assets at a path
+# relative to the working directory. Models copy that path, and a built game
+# then fails with NotFound when it starts from another directory. The patch
+# makes both examples read `assets/` beside the executable, and the source tree
+# only with `--dev`, as topics/ray_project.roc does. Regenerate the patch
+# against each new tag. Delete it when upstream's examples read their assets
+# beside the executable.
 
 # Parsed counts at this pin, for the next repin to diff against. These are what
 # `plugin validate` reports on its `corpus` line:

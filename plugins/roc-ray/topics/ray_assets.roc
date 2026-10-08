@@ -12,6 +12,7 @@ import rr.Assets
 import rr.Audio
 import rr.Color
 import rr.Draw
+import rr.Files
 import rr.Math
 import rr.Sprite
 
@@ -31,20 +32,44 @@ Msg : []
 
 program = { init!, update!, render! }
 
+dev_flag = "--dev"
+
+## Assets ship with the game, so a built game reads them beside the
+## executable, which needs no declaration and works from any directory.
+## `roc main.roc` builds its executable in a cache folder that has no assets, so
+## `--dev` reads the source tree, and that read needs the declaration. Save
+## files go in `io.files().app_data!()`, as `ray_project` shows.
+config : List(Str) -> App.Config
+config = |args| {
+	base = App.default.with_title("Topic: assets")
+	if List.contains(args, dev_flag) {
+		base.with_permission(Directory("assets", ReadOnly))
+	} else {
+		base
+	}
+}
+
+open_assets! : App.Io => Try(Files.ReadDir, _)
+open_assets! = |io|
+	if List.contains(io.args!(), dev_flag) {
+		io.files().open_dir_read!("assets")
+	} else {
+		exe_dir = io.files().beside_executable!()?
+		exe_dir.subdir("assets")
+	}
+
 ## The error set is `_`. It is a type argument, so a written-out list is
 ## closed and has to name every tag each `?` can raise: opening a store, loading
 ## a texture and a sound, and generating one, is a set 23 tags wide.
 ## Upstream's examples spell it out. Inference writes the same set.
 init! : App.Init(Model, _)
-init! = App.init(
-	## Reading from the source tree is declared. A packaged game reads from
-	## `io.files().beside_executable!()` instead, which needs no declaration.
-	App.default.with_title("Topic: assets").with_permission(Directory("assets", ReadOnly)),
+init! = App.init_for_args(
+	config,
 	|io| {
 		# The store is opened on a directory handle, and anchors every relative
 		# path that follows. A path that would escape it is refused rather than
 		# rewritten, so "../secrets" is `PathInvalid` and not a read.
-		store = Assets.open!(io.files().open_dir_read!("assets")?, IgnoreManifest)?
+		store = Assets.open!(open_assets!(io)?, IgnoreManifest)?
 
 		# Opening and `load_texture!` wait: legal in `init!`, where they block
 		# startup, and in tasks, where they park the task. Both are refused in

@@ -9,6 +9,7 @@ import rr.App
 import rr.Assets
 import rr.Color
 import rr.Draw
+import rr.Files
 import rr.Math
 import rr.Text
 
@@ -31,19 +32,39 @@ Model : {
 
 program = { init!, update!, render! }
 
-## The directory the shader is loaded from, relative to the directory you run
-## the example from. The config declares it and `init!` opens it, so both read
-## this one constant.
+dev_flag = "--dev"
+
+## The directory that `--dev` loads the shader from, relative to the directory
+## you run the example from. The config declares it and `open_assets!` opens
+## it, so both read this one constant.
 assets_dir = "examples/post_process/assets"
 
+config : List(Str) -> App.Config
+config = |args| {
+	base = App.default.with_title("RocRay Post Process").with_size({ width: 800, height: 600 })
+	if List.contains(args, dev_flag) {
+		base.with_permission(Directory(assets_dir, ReadOnly))
+	} else {
+		base
+	}
+}
+
+## The source tree with `--dev`, else `assets/` beside the executable, which
+## needs no declaration and works from any directory.
+open_assets! : App.Io => Try(Files.ReadDir, _)
+open_assets! = |io|
+	if List.contains(io.args!(), dev_flag) {
+		io.files().open_dir_read!(assets_dir)
+	} else {
+		exe_dir = io.files().beside_executable!()?
+		exe_dir.subdir("assets")
+	}
+
 init! : App.Init(Model, _)
-init! = App.init(
-	App.default.with_title("RocRay Post Process").with_size({ width: 800, height: 600 }).with_permission(Directory(assets_dir, ReadOnly)),
+init! = App.init_for_args(
+	config,
 	|io| {
-		# This source-tree example opens the asset directory it declared. A
-		# packaged app opens `io.files().beside_executable!()`, which needs no
-		# declaration.
-		assets = Assets.open!(io.files().open_dir_read!(assets_dir)?, IgnoreManifest)?
+		assets = Assets.open!(open_assets!(io)?, IgnoreManifest)?
 		font = Draw.default_font!()
 		target = Draw.RenderTexture.load!({ width: 800, height: 600 })?
 		shader = Draw.Shader.from_store!(assets, { vertex_path: "", fragment_path: "post_process.fs" })?

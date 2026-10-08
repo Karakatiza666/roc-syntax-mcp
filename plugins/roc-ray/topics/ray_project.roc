@@ -10,8 +10,9 @@
 ##
 ## `roc main.roc` builds and runs. Use it while you write code.
 ## `roc build main.roc --output=dist/game` leaves an executable behind, which is
-## what a finished game ships. Arguments after `--` go to the app:
-## `roc main.roc -- --dev`.
+## what a finished game ships. The build fails if `dist/` does not exist, and
+## the game reads `dist/assets/`, so copy `assets/` there. Arguments after `--`
+## go to the app: `roc main.roc -- --dev`.
 ##
 ## Nothing reads the disk by ambient path. A file is read through a directory
 ## handle from `io.files()`, and every directory beyond the app's own is

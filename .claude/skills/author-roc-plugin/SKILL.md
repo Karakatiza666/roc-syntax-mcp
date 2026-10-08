@@ -167,6 +167,11 @@ you lose the record of what upstream wrote. Change only the pin, and record the
 change in `UPSTREAM`. The platform that an upstream example selected is
 upstream's choice, not yours.
 
+Patch more than the pin only where a model would copy a pattern that fails
+outside upstream's checkout. Put each such change in its own patch, and give
+the reason in `UPSTREAM`. `plugins/roc-ray/patches/0001-*.patch` is the worked
+example: it makes two examples read their assets beside the executable.
+
 `validate` compiles `<examples>/*.roc`, one file per app, so `examples/` must
 have that shape. If a release puts each example in `examples/<name>/main.roc`,
 flatten it to `examples/<name>.roc`. An example that imports a sibling module,

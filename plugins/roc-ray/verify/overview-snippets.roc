@@ -19,7 +19,7 @@ Model : {
 	font : Text.Font,
 	pointer : Math.Vec2,
 	camera : Camera.Camera2D,
-	levels : Files.ReadDir,
+	notes_dir : Files.ReadDir,
 	notes : Str,
 }
 
@@ -32,7 +32,7 @@ config = App.default
 	.with_size({ width: 1280, height: 720 })
 	.with_resizable(Bool.True)
 	.with_frame_pacing(Capped(120))
-	.with_permission(Directory("levels", ReadOnly))
+	.with_permission(WorkingDirectory(ReadOnly))
 
 init! : App.Init(Model, _)
 init! = App.init(
@@ -42,7 +42,7 @@ init! = App.init(
 		Ok({
 			font,
 			label: Text.from("Score 0", font).size(24).prepare!()?,
-			levels: io.files().open_dir_read!("levels")?,
+			notes_dir: io.files().working_directory_read!()?,
 			pointer: { x: 0, y: 0 },
 			camera: Camera.centered(Math.vec2(0, 0), Math.vec2(800, 600)),
 			notes: "",
@@ -53,8 +53,8 @@ init! = App.init(
 update! : Model, App.Input(Msg), App.Io => Try(Model, [Exit(I64)])
 update! = |model, input, _io| {
 	if input.devices.key_pressed(KeyR) {
-		levels = model.levels
-		Task.spawn!(input, || Read(levels.read_text!("one.txt")))
+		notes_dir = model.notes_dir
+		Task.spawn!(input, || Read(notes_dir.read_text!("notes.txt")))
 	}
 	notes = List.fold(input.messages, model.notes, |_, Read(r)| r ?? "unreadable")
 	if input.devices.key_pressed(KeyQ) {

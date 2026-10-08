@@ -86,3 +86,34 @@ test("two servers in one process each serve their own plugins", async () => {
     await plain.close();
   }
 });
+
+// `F32.floor_to_i64` names no builtin. The substring search must drop the
+// module from the query, because it compares the query with bare names.
+test("a missed qualified name lists close names in that module", async () => {
+  const s = await inProcess([]);
+  try {
+    const text = await s.call("lookup_builtin", { name: "F32.floor_to_i64" });
+    assert.match(text, /^Nothing is named `F32.floor_to_i64`. These names contain `floor_to_i64`:/);
+    assert.match(text, /Num\.F32\.floor_to_i64_try/);
+    assert.doesNotMatch(text, /Num\.F64\./);
+  } finally {
+    await s.close();
+  }
+});
+
+// `Text.Builder.size` has the module path `Text.Builder`. A page with only
+// the items of `Text` shows the `Builder` type and none of its methods.
+test("a module page lists the methods of its nested types, up to a cap", async () => {
+  const ray = await inProcess([`--plugin=${RAY}`]);
+  const plain = await inProcess([]);
+  try {
+    const text = await ray.call("get_builtin_module", { module: "Text", scope: "roc-ray" });
+    assert.match(text, /^## Text\.Builder\n\n5 methods\.\n\n```roc\n[^`]*prepare! : Builder => /m);
+    const num = await plain.call("get_builtin_module", { module: "Num" });
+    assert.match(num, /Nested modules, with the item count of each: [^\n]*`Num\.U64` \(\d+\)/);
+    assert.doesNotMatch(num, /^## Num\./m);
+  } finally {
+    await ray.close();
+    await plain.close();
+  }
+});

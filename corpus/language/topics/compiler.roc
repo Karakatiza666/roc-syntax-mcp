@@ -15,6 +15,9 @@
 #   roc build app.roc         write an optimized binary, `app`, to the current
 #                             directory. `--output=<path>` puts it elsewhere
 #
+# The folder of `--output` must exist. `--output=dist/app` without `dist/`
+# fails in the linker: "cannot open output file dist/app".
+#
 # A bare `roc app.roc` runs the app, the same as `roc run`. It does more than
 # compile. Use `roc check` when you only want the errors.
 #

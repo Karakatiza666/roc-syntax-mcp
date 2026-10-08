@@ -19,6 +19,7 @@ That warning is not in your code.
 
 ```bash
 roc main.roc -- --dev                 # build and run; args after -- go to the app
+mkdir -p dist && cp -r assets dist/   # the folder must exist, and assets go beside the game
 roc build main.roc --output=dist/game # the executable a finished game ships
 ```
 
@@ -31,7 +32,7 @@ config = App.default
 	.with_size({ width: 1280, height: 720 })
 	.with_resizable(Bool.True)
 	.with_frame_pacing(Capped(120))
-	.with_permission(Directory("levels", ReadOnly))
+	.with_permission(WorkingDirectory(ReadOnly))
 ```
 
 Defaults: 800x600, `Capped(240)`, and `ExitKey(KeyEscape)`, so every app quits
@@ -45,8 +46,10 @@ from `io.files()`, and anything beyond the app's own resources is declared
 with `with_permission`: `Directory(path, ReadOnly)`, `WorkingDirectory(..)`,
 `HttpOrigin(url)`, `EnvVar`, `ClipboardRead`, `UdpBind`, `Command`. Each
 declaration grants that access. A target outside every declaration answers
-`PermissionDenied`. A facility that is never declared stops the app. A packaged
-game reads assets from `io.files().beside_executable!()`, which needs none.
+`PermissionDenied`. A facility that is never declared stops the app. A built
+game reads its assets beside the executable, which needs no declaration.
+`ray_assets` shows the pattern: the source tree with `--dev`, else beside the
+executable. Save files go in `io.files().app_data!()`.
 `App.init_for_args` takes `List(Str) -> App.Config`, so `--dev` can add the
 source-tree declaration and a recording mode can ask for a hidden window.
 
@@ -149,7 +152,7 @@ literal is a `Math.Vec2` wherever one is expected.
 		Ok({
 			font,
 			label: Text.from("Score 0", font).size(24).prepare!()?,
-			levels: io.files().open_dir_read!("levels")?,
+			notes_dir: io.files().working_directory_read!()?,
 ```
 
 `Text.from` takes the font. `prepare!` is refused in `render!`. The
@@ -169,8 +172,8 @@ are relative, may not contain `..`, and a bad one answers `PathInvalid`.
 
 ```roc
 	if input.devices.key_pressed(KeyR) {
-		levels = model.levels
-		Task.spawn!(input, || Read(levels.read_text!("one.txt")))
+		notes_dir = model.notes_dir
+		Task.spawn!(input, || Read(notes_dir.read_text!("notes.txt")))
 	}
 ```
 

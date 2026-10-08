@@ -21,6 +21,10 @@ const BUILTIN_FILE = path.join(ROOT, "corpus", "language", "Builtin.roc");
 const LANGREF_DIR = path.join(ROOT, "corpus", "language", "langref");
 // The version comes from package.json only, so a release changes one file.
 const VERSION: string = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf-8")).version;
+// The largest number of nested-module items that `get_builtin_module` prints
+// in full. The largest roc-ray module, `App`, has 67. `Encoding` has 213 and
+// `Num` 1754, and at about 15 tokens a signature, those pages cost thousands.
+const NESTED_CAP = 100;
 
 function loadFullSyntax(): string {
   try {
@@ -1367,15 +1371,24 @@ export function createServer(config: ServerConfig): McpServer {
         if (bucket) matches.push(...bucket);
       }
 
+      let close = false;
       if (matches.length === 0) {
-        // Fall back to substring search across names.
-        const lower = query.toLowerCase();
+        // Fall back to substring search across names. A query such as
+        // `F32.floor_to_i64` searches for `floor_to_i64` in the modules that
+        // `F32` names, and finds `Num.F32.floor_to_i64_try`.
+        const dot = query.lastIndexOf(".");
+        const mod = dot > 0 ? query.slice(0, dot) : "";
+        const lower = query.slice(dot + 1).toLowerCase();
+        const inModule = mod
+          ? (item: ScopedItem) => item.modulePath === mod || item.modulePath.endsWith("." + mod)
+          : () => true;
         for (const item of idx.items) {
-          if (item.name.toLowerCase().includes(lower)) {
+          if (lower && inModule(item) && item.name.toLowerCase().includes(lower)) {
             matches.push(item);
             if (matches.length >= 25) break;
           }
         }
+        close = matches.length > 0;
       }
 
       if (matches.length === 0) {
@@ -1413,7 +1426,10 @@ export function createServer(config: ServerConfig): McpServer {
             `\`${n}\` is declared by ${new Set(matches.filter((m) => m.fullName === n).map((m) => m.ns)).size} modules, one per origin below. An app imports each through its own header alias.\n\n`
         )
         .join("");
-      const text = sharedNote + matches.map(formatScopedItem).join("\n\n") + hostNote + alsoModule;
+      const closeNote = close
+        ? `Nothing is named \`${query}\`. These names contain \`${query.slice(query.lastIndexOf(".") + 1)}\`:\n\n`
+        : "";
+      const text = closeNote + sharedNote + matches.map(formatScopedItem).join("\n\n") + hostNote + alsoModule;
       return {
         content: [{ type: "text", text }],
       };
@@ -1464,6 +1480,9 @@ export function createServer(config: ServerConfig): McpServer {
             }
           }
         }
+        // `modulePaths` holds only paths that declare a value, so it lacks `Num`.
+        // `Num.U64` and 22 other modules sit under it.
+        if (!resolved && [...idx.modulePaths].some((p) => p.startsWith(`${requested}.`))) resolved = requested;
       }
 
       if (!resolved) {
@@ -1505,7 +1524,7 @@ export function createServer(config: ServerConfig): McpServer {
       const all = idx.items.filter((it) => it.modulePath === resolved);
       // Exclude the host ABI boundary, unless the module is host-only. For a
       // host-only module, that would answer a direct question with an empty page.
-      const moduleIsHost = all.every((it) => it.tier === "host");
+      const moduleIsHost = all.length > 0 && all.every((it) => it.tier === "host");
       const own = moduleIsHost ? all : all.filter((it) => it.tier === "public");
       // Counted across the subtree. `Server.Config.to_host` is not a direct child
       // of `Server`, but a question about `Server` includes it.
@@ -1524,7 +1543,8 @@ export function createServer(config: ServerConfig): McpServer {
       const tallyOf = (items: ScopedItem[]) => {
         const types = items.filter((it) => it.kind === "type").length;
         const values = items.length - types;
-        return types > 0 ? `${values} methods, ${types} types.` : `${values} methods.`;
+        const methods = values === 1 ? "1 method" : `${values} methods`;
+        return types > 0 ? `${methods}, ${types === 1 ? "1 type" : `${types} types`}.` : `${methods}.`;
       };
       const signatures = (items: ScopedItem[]) => [
         "```roc",
@@ -1565,11 +1585,45 @@ export function createServer(config: ServerConfig): McpServer {
             "",
           ])
         : [...section(own), ""];
+      // The methods of a type declared in this module, such as `Text.Builder.size`,
+      // have their own module path. Static dispatch calls them on a value of that
+      // type, so a page that omits them hides the type's API. Above NESTED_CAP,
+      // the page names each nested module and its item count.
+      const nestedGroups = new Map<string, ScopedItem[]>();
+      if (!moduleIsHost) {
+        for (const it of idx.items) {
+          if (it.tier === "public" && it.modulePath.startsWith(`${resolved}.`)) {
+            nestedGroups.set(it.modulePath, [...(nestedGroups.get(it.modulePath) ?? []), it]);
+          }
+        }
+      }
+      const nestedCount = [...nestedGroups.values()].reduce((n, items) => n + items.length, 0);
+      const nested =
+        nestedCount === 0
+          ? []
+          : nestedCount <= NESTED_CAP
+            ? [...nestedGroups.entries()]
+                .sort(([a], [b]) => a.localeCompare(b))
+                .flatMap(([p, items]) => [`## ${p}`, "", ...(full ? [] : [tallyOf(items), ""]), ...section(items), ""])
+            : [
+                "Nested modules, with the item count of each: " +
+                  [
+                    ...[...nestedGroups.entries()].reduce((children, [p, items]) => {
+                      const child = `${resolved}.${p.slice(resolved.length + 1).split(".")[0]}`;
+                      return children.set(child, (children.get(child) ?? 0) + items.length);
+                    }, new Map<string, number>()),
+                  ]
+                    .sort(([a], [b]) => a.localeCompare(b))
+                    .map(([p, n]) => `\`${p}\` (${n})`)
+                    .join(", ") +
+                  ". Call `get_builtin_module` on one.",
+                "",
+              ];
       const body = [
         `# ${resolved}`,
         "",
-        ...(full && !split ? [] : [tally, ""]),
-        ...sections,
+        ...(own.length === 0 ? [] : [...(full && !split ? [] : [tally, ""]), ...sections]),
+        ...nested,
         ...(full ? [] : ["Use `lookup_builtin` for a docstring and examples, or call this again with `detail: \"full\"`."]),
       ]
         .join("\n")

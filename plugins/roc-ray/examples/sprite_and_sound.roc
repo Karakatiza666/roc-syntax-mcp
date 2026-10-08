@@ -4,15 +4,18 @@
 ## This example introduces three ideas, in the order `init!` uses them:
 ##
 ## 1. A permission. An app may only read the directories it declares in its
-##    startup config. This one declares `examples/sprite_and_sound/assets`,
-##    read-only, and nothing else.
+##    startup config. With `--dev`, this one declares
+##    `examples/sprite_and_sound/assets`, read-only, and nothing else.
 ## 2. An asset store. `Assets.open!` turns that directory into a store that
 ##    textures and sounds are loaded from by name.
 ## 3. Loaded resources. `Assets.load_texture!` reads `blob.png` into a texture
 ##    for drawing and `Audio.load_sound!` reads `boing.wav` into a sound.
 ##
-## The paths are relative to the directory you run from, so run it from the
-## directory that contains `examples/`. Both files were made by
+## With `--dev`, the app reads the files from the source tree. That path is
+## relative to the directory you run from, so run it from the directory that
+## contains `examples/`. Without `--dev`, the app reads `assets/` beside its
+## executable, which needs no declaration and works from any directory. Copy
+## `assets/` next to a built executable. Both files were made by
 ## `assets/make_assets.py` and are original to this repository.
 app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.10.0/5xecDmRJroKT9fnSiYsGdCKEzNWLnRKGtHJ5CxuCnpb9.tar.zst" }
 
@@ -21,6 +24,7 @@ import rr.Assets
 import rr.Audio
 import rr.Color
 import rr.Draw
+import rr.Files
 import rr.Math
 
 ## The loaded picture and sound, plus how far through its hop the blob is.
@@ -31,8 +35,10 @@ Model : {
 	hop : F32,
 }
 
-## The one directory this app reads. The config declares it and `init!` opens
-## it, so both use this constant and cannot drift apart.
+dev_flag = "--dev"
+
+## The one directory this app reads with `--dev`. The config declares it and
+## `open_assets!` opens it, so both use this constant and cannot drift apart.
 assets_dir = "examples/sprite_and_sound/assets"
 
 ## The picture is 16 x 16 pixels; drawing each one 8 x 8 makes it 128 wide.
@@ -46,14 +52,33 @@ program = { init!, update!, render! }
 ## The `_` in `App.Init(Model, _)` lets Roc work out every error that loading
 ## can report, such as a missing file, instead of listing them by hand. Any of
 ## them stops the app with a message that names it.
-init! : App.Init(Model, _)
-init! = App.init(
-	App.default
+config : List(Str) -> App.Config
+config = |args| {
+	base = App.default
 		.with_title("RocRay Sprite and Sound")
 		.with_size({ width: 800, height: 600 })
-		.with_permission(Directory(assets_dir, ReadOnly)),
+	if List.contains(args, dev_flag) {
+		base.with_permission(Directory(assets_dir, ReadOnly))
+	} else {
+		base
+	}
+}
+
+## The source tree with `--dev`, else `assets/` beside the executable.
+open_assets! : App.Io => Try(Files.ReadDir, _)
+open_assets! = |io|
+	if List.contains(io.args!(), dev_flag) {
+		io.files().open_dir_read!(assets_dir)
+	} else {
+		exe_dir = io.files().beside_executable!()?
+		exe_dir.subdir("assets")
+	}
+
+init! : App.Init(Model, _)
+init! = App.init_for_args(
+	config,
 	|io| {
-		store = Assets.open!(io.files().open_dir_read!(assets_dir)?, IgnoreManifest)?
+		store = Assets.open!(open_assets!(io)?, IgnoreManifest)?
 		blob = Assets.load_texture!(store, "blob.png")?
 		# Pixel art stays crisp when scaled up if each pixel is drawn as a
 		# solid square instead of being blended with its neighbours.
