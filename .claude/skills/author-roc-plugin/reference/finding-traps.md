@@ -211,7 +211,7 @@ them.
 | Defect | Found by |
 |---|---|
 | `get_roc_syntax` declared no arguments, and an argument that a tool does not declare is dropped before the handler sees it. Thus a caller that asked for `ray_project` got the full syntax file, twice, with no error | Reading what an agent called, not whether the call succeeded |
-| `search_builtin_signatures` matched a query variable only against another variable. Thus `F32 -> Try(U64, err)` found none of the four `F32 -> Try(U64, [OutOfRange, ..])` conversions, and the caller had to read a module of 111 methods | A query whose answer was known to exist |
+| A type query of `search_symbols` matched a query variable only against another variable. Thus `F32 -> Try(U64, err)` found none of the four `F32 -> Try(U64, [OutOfRange, ..])` conversions, and the caller had to read a module of 111 methods | A query whose answer was known to exist |
 | `roc_fmt` took a `code` string, where the related tool `roc_check` took `code` or `path` | One failed call in the same transcript |
 
 All three apply generally:

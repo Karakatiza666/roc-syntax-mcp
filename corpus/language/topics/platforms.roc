@@ -358,7 +358,7 @@
 #
 #   roc_overview(scope: "basic-webserver")     the app-facing API in one page
 #   get_builtin_module("Server")               one module's methods and types
-#   lookup_builtin("Server.Config.to_host")    one glue method, by name
+#   search_symbols("Server.Config.to_host")    one glue method, by name
 #   list_roc_index(kind: "examples")           27 programs that all pass roc check
 #
 # Read it for four things that this topic covers only abstractly:

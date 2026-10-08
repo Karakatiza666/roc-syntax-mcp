@@ -2,9 +2,9 @@
 
 Every builtin module is in scope with no import, and all of them come from one
 `Builtin.roc`. That file is hundreds of thousands of tokens, so never ask for
-it whole. Use `get_builtin_module Str` (signatures only), `lookup_builtin
-Str.concat` (one method with its docs), `lookup_builtin Try` (a type with its
-variants), or `search_builtin_signatures` (search by type).
+it whole. Use `get_builtin_module Str` (signatures only), or `search_symbols`
+with a name, a type, or both: `Str.concat` (one method with its docs), `Try` (a
+type with its variants), `-> Bool` (by type), `ceil : -> Dec` (by both).
 
 ## Suffix conventions
 

@@ -324,7 +324,7 @@ any growth in that breakdown against the numbers recorded above.
 After that, do spot checks by hand, through the running server and not the
 source:
 
-- `lookup_builtin` on a few names that the diff changed.
+- `search_symbols` on a few names that the diff changed.
 - `list_roc_index` for the full topic count.
 - `search` for a term that should match all three kinds.
 

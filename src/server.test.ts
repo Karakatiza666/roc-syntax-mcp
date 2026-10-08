@@ -92,8 +92,8 @@ test("two servers in one process each serve their own plugins", async () => {
 test("a missed qualified name lists close names in that module", async () => {
   const s = await inProcess([]);
   try {
-    const text = await s.call("lookup_builtin", { name: "F32.floor_to_i64" });
-    assert.match(text, /^Nothing is named `F32.floor_to_i64`. These names contain `floor_to_i64`:/);
+    const text = await s.call("search_symbols", { query: "F32.floor_to_i64" });
+    assert.match(text, /^Nothing is named `F32.floor_to_i64`. 1 name contains `floor_to_i64`:/);
     assert.match(text, /Num\.F32\.floor_to_i64_try/);
     assert.doesNotMatch(text, /Num\.F64\./);
   } finally {
@@ -115,5 +115,56 @@ test("a module page lists the methods of its nested types, up to a cap", async (
   } finally {
     await ray.close();
     await plain.close();
+  }
+});
+
+// A name and a type: the name filters, and the type ranks. `-> F32` matches
+// `ceiling_to_i32_try : F32 -> Try(I32, ..)` as a substring only, and that
+// match must not read as an answer.
+test("a name and a type search the names, ranked by type", async () => {
+  const s = await inProcess([]);
+  try {
+    const dec = await s.call("search_symbols", { query: "ceil : -> Dec" });
+    assert.match(dec, /^\*\*Num\.Dec\.ceiling\*\* \(return_type, score 90\)/);
+    assert.doesNotMatch(dec, /Num\.Dec\.round/);
+    // Both score 90. The whole name `floor` breaks the tie, before the order by name.
+    const floor = await s.call("search_symbols", { query: "floor : -> Dec" });
+    assert.ok(floor.indexOf("**Num.Dec.floor**") < floor.indexOf("**Num.Dec.div_floor_by**"), floor);
+    const f32 = await s.call("search_symbols", { query: "ceil : -> F32" });
+    assert.match(f32, /^No symbol similar to `ceil` matches `-> F32`\. \d+ symbols have a different type\. Closest matches:/);
+    assert.doesNotMatch(f32, /substring/);
+    // A type that names `F32` is closer than `Num.Dec.ceiling : Dec -> Dec`.
+    assert.match(f32, /Closest matches:\n\n\*\*Num\.F32\.ceiling_/);
+  } finally {
+    await s.close();
+  }
+});
+
+// A list of partial names shows a prefix match before a match inside the name,
+// and one line of docs for each, not the whole docstring.
+test("a partial name lists compact entries, prefixes first", async () => {
+  const s = await inProcess([]);
+  try {
+    const text = await s.call("search_symbols", { query: "ceil", limit: 100 });
+    assert.ok(text.indexOf("**Num.Dec.ceiling**") >= 0, text);
+    assert.ok(text.indexOf("**Num.Dec.ceiling**") < text.indexOf("div_ceil_by**"), "a prefix ranks first");
+    // The default order puts the shallower `Num.F32.infinity` first.
+    const fini = await s.call("search_symbols", { query: "fini" });
+    assert.ok(fini.indexOf(".finish**") >= 0 && fini.indexOf(".finish**") < fini.indexOf(".infinity**"), fini);
+    assert.doesNotMatch(text, /expect /);
+    assert.match(await s.call("search_symbols", { query: "ceil", limit: 3 }), /Showing 3 of \d+\./);
+  } finally {
+    await s.close();
+  }
+});
+
+// One word is a name, and `Try` is a type with its docs. `: Str` is a type query.
+test("a one-word query is a name, and a colon makes it a type", async () => {
+  const s = await inProcess([]);
+  try {
+    assert.match(await s.call("search_symbols", { query: "Try" }), /`Try` is also a module/);
+    assert.match(await s.call("search_symbols", { query: ": Str" }), /\(return_type, score 80\)/);
+  } finally {
+    await s.close();
   }
 });

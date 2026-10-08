@@ -174,7 +174,7 @@ an app uses.
 
 | What | Where |
 |---|---|
-| A package the app pins beyond the platform | Searched with the builtins: every unscoped search, `scope: "builtin"`, `lookup_builtin` and `get_builtin_module`. Each item names its origin |
+| A package the app pins beyond the platform | Searched with the builtins: every unscoped search, `scope: "builtin"`, `search_symbols` and `get_builtin_module`. Each item names its origin |
 | A documented package nobody pins | In no space. A lookup that misses names the package, shows up to three matching signatures, and gives the header line that pins it |
 | Its page | `search_roc_syntax("<name>")`, which also takes the repository path, and the resource `roc-syntax://package/<name>` |
 | Its topics and examples | Filed under `language`, so a question finds the package before any app pins it. Each example is read by the package name and the file name, as `search_roc_syntax("roc-parser/csv-movies")`, or as the resource `roc-syntax://package/roc-parser/example/csv-movies` |
@@ -339,7 +339,7 @@ Install a package plugin at 0.8.0, or run this server with
 The obvious alternative is to serve the incompatible copy with a warning. Two
 problems prevent this:
 
-1. `roc_check` would contradict `lookup_builtin`. `roc_check` compiles the app
+1. `roc_check` would contradict `search_symbols`. `roc_check` compiles the app
    against the 0.8.0 that its header pins, but the lookup prints 0.9.0
    signatures. A server whose own tools disagree about one name is worse than a
    server that declines to answer.

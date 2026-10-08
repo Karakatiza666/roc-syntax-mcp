@@ -1,7 +1,7 @@
 # basic-cli in one page
 
 The platform, with the HTTP types from the `roc-lang/http` package.
-`get_builtin_module Path` for the full API, `lookup_builtin Cmd.exec_output!`
+`get_builtin_module Path` for the full API, `search_symbols Cmd.exec_output!`
 for one method, `search scope="basic-cli"` when you do not know the name,
 `list_roc_index kind="examples"` for complete programs that all compile.
 

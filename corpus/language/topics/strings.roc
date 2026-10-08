@@ -28,7 +28,7 @@ nbsp = "Unicode escape sequence: \u(00A0)"
 # useful when a parser works with UTF-8 `U8` bytes.
 code_point = 'A' # the number 65
 
-# Common methods (use `lookup_builtin` for details):
+# Common methods (use `search_symbols` for details):
 #   "ab".concat("cd"), "foo".contains("oo"), "  x  ".trim(),
 #   "abc".starts_with("a"), "z".repeat(3), "Hello".count_utf8_bytes()
 #

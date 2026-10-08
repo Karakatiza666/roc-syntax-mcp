@@ -161,6 +161,6 @@ expect shout_all(["a", "b"]) == "A, B"
 #
 # The suffix conventions predict most builtin names (`_try` returns a `Try`,
 # `!` is effectful, `_rev` walks backwards), but a prediction can be wrong.
-# `search_builtin_signatures` finds a builtin by the shape of its type, and
+# `search_symbols` finds a builtin by the shape of its type, and
 # `roc_check` tells whether the code compiles. Both cost less than a guess
 # that fails at build time.

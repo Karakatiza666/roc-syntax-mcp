@@ -122,7 +122,7 @@ runs directly under `roc file.roc`, where `echo!` is available without import.
 
 - `Try`/`Ok`/`Err`, never `Result`. `True`/`False` (or `Bool.True`), never lowercase `true`.
 - `List.fold` (not `walk` or `reduce`), `keep_if` (not `filter`), `keep_oks`,
-  `join_map` (not `concat_map`). Check with `search_builtin_signatures`.
+  `join_map` (not `concat_map`). Check with `search_symbols`.
 - There is no `continue` yet, only `break`.
 - A `var` is reassignable only inside the function that declared it, so a lambda
   cannot mutate it. Use a `for` loop.

@@ -16,7 +16,7 @@ roc-syntax-mcp plugin add @roc-syntax/weaver
 ```
 
 Then `search_roc_syntax weaver` for the page, `search_roc_syntax weaver_cli`
-for a complete program, `lookup_builtin Opt.flag` for one signature.
+for a complete program, `search_symbols Opt.flag` for one signature.
 
 | Path | Is |
 |---|---|

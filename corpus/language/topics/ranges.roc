@@ -77,5 +77,5 @@ PageNum := { num : U32 }.{
 # can omit them. `range_len_if_known` supplies an exact `U64` count when the
 # type can represent one.
 
-# `Range` is in scope unqualified, but `lookup_builtin` lists these methods
+# `Range` is in scope unqualified, but `search_symbols` lists these methods
 # under their full path `Num.Range.*`.

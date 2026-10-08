@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { parseBuiltin } from "./builtin_parser.ts";
-import { searchBySig } from "./sig_search.ts";
+import { type SigMatch, searchBySig } from "./sig_search.ts";
 
 const ROOT = path.join(import.meta.dirname, "..");
 const items = parseBuiltin(fs.readFileSync(path.join(ROOT, "corpus", "language", "Builtin.roc"), "utf-8")).items;
@@ -14,7 +14,7 @@ const items = parseBuiltin(fs.readFileSync(path.join(ROOT, "corpus", "language",
 // Assert on the scoring rule, not on where an item lands in a truncated top-N.
 const ALL = Number.MAX_SAFE_INTEGER;
 
-function find(results: ReturnType<typeof searchBySig>, fullName: string) {
+function find<T extends SigMatch["item"]>(results: SigMatch<T>[], fullName: string) {
   return results.find((r) => r.item.fullName === fullName);
 }
 

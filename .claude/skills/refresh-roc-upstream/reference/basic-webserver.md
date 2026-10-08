@@ -137,11 +137,11 @@ release.
   approximately half of them. `Cmd.exec!` here reports a timeout, and the
   basic-cli version cannot. `Env.dict!` returns records here and tuples in
   basic-cli. A refresh that changes a shared signature changes what
-  `lookup_builtin` prints under two headings. Thus, before you assume that a
+  `search_symbols` prints under two headings. Thus, before you assume that a
   rename is local, check whether basic-cli also has the name.
 - Nothing type-checks the `index.json` files. Every gate here compiles apps,
   and every app resolves its platform from the tarball URL. Thus a hand edit in
-  an index shows only as a wrong answer from `lookup_builtin`. Regenerate the
+  an index shows only as a wrong answer from `search_symbols`. Regenerate the
   files with `npm run build:index`. `check:index` fails on any other edit.
 - A broken third-party package hides the real error. If you add `gregorian` to
   an app with one error, the compiler reports 15 errors, 14 of them in

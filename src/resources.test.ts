@@ -170,7 +170,7 @@ test("hints appear only in the signature list, never with the real docs", async 
     INITIALIZED,
     { jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "get_builtin_module", arguments: { module: "List" } } },
     { jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "get_builtin_module", arguments: { module: "List", detail: "full" } } },
-    { jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: "lookup_builtin", arguments: { name: "List.drop_swap" } } },
+    { jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: "search_symbols", arguments: { query: "List.drop_swap" } } },
   ]);
 
   const brief = replies.get(1).result;
@@ -180,7 +180,7 @@ test("hints appear only in the signature list, never with the real docs", async 
   assert.ok(!full.content[0].text.includes(HINT), "hint leaked into detail=full");
 
   const single = replies.get(3).result;
-  assert.ok(!single.content[0].text.includes(HINT), "hint leaked into lookup_builtin");
+  assert.ok(!single.content[0].text.includes(HINT), "hint leaked into search_symbols");
   // Upstream's own prose stays in the reply.
   assert.match(single.content[0].text, /order of the remaining items is not preserved/);
 });
@@ -294,7 +294,7 @@ test("the server serves the latest protocol revision, not just the legacy era", 
   ]);
 
   assert.strictEqual(replies.get(0).result.protocolVersion, LATEST_PROTOCOL_VERSION);
-  assert.strictEqual((replies.get(1).result.tools as unknown[]).length, 12);
+  assert.strictEqual((replies.get(1).result.tools as unknown[]).length, 11);
   assert.match(replies.get(2).result.content[0].text, /Roc/);
   assert.ok(!replies.get(2).result.isError);
   assert.match(replies.get(3).result.contents[0].text, /Roc/);
@@ -400,7 +400,7 @@ test("a declared platform's topics are enumerated without being configured", asy
 test("every tool taking a scope says when to name a platform in it", async () => {
   const replies = await rpc([INIT, INITIALIZED, { jsonrpc: "2.0", id: 1, method: "tools/list", params: {} }]);
   const tools = replies.get(1).result.tools as { name: string; inputSchema: any }[];
-  for (const name of ["search", "search_roc_syntax", "search_builtin_signatures"]) {
+  for (const name of ["search", "search_roc_syntax", "search_symbols"]) {
     const scope = tools.find((t) => t.name === name)!.inputSchema.properties.scope.description as string;
     assert.match(scope, /Name a platform \(basic-webserver, basic-cli\)/, name);
     assert.match(scope, /rather than the language or the builtins/, name);
@@ -450,8 +450,8 @@ test("no tool declares an output schema or returns structured content", async ()
     ["roc_overview", {}],
     ["list_roc_index", { kind: "scopes" }],
     ["search", { query: "sqlite", scope: "builtin" }],
-    ["lookup_builtin", { name: "Str.concat" }],
-    ["search_builtin_signatures", { query: "-> Bool" }],
+    ["search_symbols", { query: "Str.concat" }],
+    ["search_symbols", { query: "-> Bool" }],
   ];
   const replies = await rpc([
     INIT,

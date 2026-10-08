@@ -71,7 +71,8 @@ import {
 import { type LangrefPage, loadLangref, renderLangref } from "./langref.ts";
 import { elsewhere as elsewhereIn, type Candidate, type Reach } from "./elsewhere.ts";
 import { loadOverview } from "./overview.ts";
-import { searchBySig } from "./sig_search.ts";
+import { compareItems, searchBySig, SUBSTRING_SCORE } from "./sig_search.ts";
+import { type NamePattern, nameQuality, parseSymbolQuery } from "./symbol_query.ts";
 import { type ProjectSignature, ProjectIndex, parserSource } from "./project_index.ts";
 
 /** What one server serves, read from its arguments and environment once. */
@@ -650,8 +651,8 @@ export function createServer(config: ServerConfig): McpServer {
   }
 
   /**
-   * How many items in one scope a `lookup_builtin` query names. The rules are
-   * the same as in that tool, without the substring fallback. A hint must count
+   * How many items in one scope match a `search_symbols` name query exactly. The
+   * rules are the same as in that tool, without the list of partial names. A hint must count
    * the names that the caller asked for, not the names that they possibly meant.
    */
   function nameMatchCount(idx: ScopeIndex, query: string): number {
@@ -737,7 +738,7 @@ export function createServer(config: ServerConfig): McpServer {
     return lines.length > 0 ? `\n\n${lines.join("\n\n")}` : "";
   }
 
-  /** The items a `lookup_builtin` query names, by the rules `nameMatchCount` counts. */
+  /** The items that match a `search_symbols` name query exactly, by the rules that `nameMatchCount` counts. */
   function nameMatches(idx: ScopeIndex, query: string): ScopedItem[] {
     if (!query.includes(".")) return idx.byName.get(query) ?? [];
     const exact = idx.byFullName.get(query);
@@ -778,7 +779,7 @@ export function createServer(config: ServerConfig): McpServer {
     if (hidden === 0) return "";
     return (
       `\n\n${hidden} host-boundary items hidden. Address them directly, for example ` +
-      `get_builtin_module("Host") or lookup_builtin("Server.Config.to_host").`
+      `get_builtin_module("Host") or search_symbols("Server.Config.to_host").`
     );
   }
 
@@ -937,7 +938,7 @@ export function createServer(config: ServerConfig): McpServer {
         "recalled Roc is unreliable (`Try` replaced `Result`, `value.method()` static dispatch is " +
         "the normal style, and every builtin lives in one `Builtin.roc`). " +
         "For details, use `get_roc_langref` for upstream's own prose, `get_builtin_module` / " +
-        "`lookup_builtin` / `search_builtin_signatures` for builtin APIs, `search_roc_syntax` for a " +
+        "`search_symbols` for builtin APIs by name or type, `search_roc_syntax` for a " +
         "worked example of one construct, and `roc_check` / `roc_fmt` to verify what you wrote. " +
         "Name the platform in `scope` when the workspace has no app header yet: a project you are " +
         "starting has no app header yet, so nothing but you knows which platform its code is for. " +
@@ -1046,7 +1047,7 @@ export function createServer(config: ServerConfig): McpServer {
     const wanted = resolveScopes(scope, SYNTAX_SCOPES);
     // A topic name is an address, and a caller who writes one has already chosen.
     // The name resolves outside the working set for the same reason as in
-    // `lookup_builtin`. `tools/list` names the topics of an installed platform,
+    // `search_symbols`. `tools/list` names the topics of an installed platform,
     // so a refusal here would advertise a call and then answer "no topic matched".
     const addressed = scope ? null : (TOPICS[query.trim().toLowerCase()] ? query.trim().toLowerCase() : null);
     const matched = matchTopic(query, wanted, TOPICS) ?? addressed;
@@ -1321,98 +1322,79 @@ export function createServer(config: ServerConfig): McpServer {
     async ({ query, scope }) => syntaxTopic(query, scope as ScopeName | undefined)
   );
 
-  server.registerTool(
-    "lookup_builtin",
-    {
-      annotations: READ_ONLY_FETCHES,
-      title: "Look up a Roc Builtin",
-      description: "Look up a builtin by name (`concat`, `Str.concat`, `List.map`, `Num.U64.from_str`). Returns signature and docstring.",
-      inputSchema: z.object({
-        name: z
-          .string()
-          .describe("Method, type, or fully-qualified name, e.g. 'Str.concat', 'Try', or 'map'."),
-        scope: scopeArg(PLATFORM_SCOPES, "Read a platform other than the one this app's header imports. Rarely needed."),
-      }),
-    },
-    async ({ name, scope }) => {
-      // Resolve across the whole address space, not one corpus. A filter here
-      // could only change a name that the caller already has into "not found".
-      // The address space holds one platform at most, so platform names do not
-      // collide in it. A name outside it gets an "out of scope" report, not
-      // "unknown".
-      await ensureDetection();
-      const active = activePlatform(scope as ScopeName | undefined);
-      const idx = getMergedIndex(scope as ScopeName | undefined);
-      const query = name.trim();
-      const matches: ScopedItem[] = [];
+  // -----------------------------------------------------------------------------
+  // Symbol search: by name, by type, or both. See docs/design/symbol-search.md.
+  // -----------------------------------------------------------------------------
 
-      if (query.includes(".")) {
-        // Try an exact fully qualified match first. If two namespaces claim a name,
-        // the answer shows both, each with the label of its package. The app
-        // reaches them as `http.Request` and `pf.Request`, and both compile. A
-        // choice of one could hide the one that the caller meant.
-        const claimed = idx.collisions.get(query);
-        const exact = idx.byFullName.get(query);
-        if (claimed) {
-          matches.push(...claimed);
-        } else if (exact) {
-          matches.push(exact);
-        } else {
-          // Maybe the user wrote `U64.from_str` and the actual path is `Num.U64.from_str`.
-          const suffix = query;
-          for (const item of idx.items) {
-            if (item.fullName === suffix || item.fullName.endsWith("." + suffix)) {
-              matches.push(item);
-            }
-          }
-        }
+  /** One entry of a list. The signature is complete, because a `where` clause on a later line changes what the item accepts. */
+  function compactItem(item: ScopedItem, label = ""): string {
+    const decl = declLine(item, item.signature.replace(/\t/g, "  "));
+    return (
+      `**${item.fullName}**${originSuffix(item)}${label ? ` (${label})` : ""}\n\`\`\`roc\n${decl}\n\`\`\`` +
+      (item.docs ? "\n" + item.docs.split("\n")[0] : "")
+    );
+  }
+
+  /** Items in order of how well their names match `pattern`, best first. */
+  function byNameQuality(items: ScopedItem[], pattern: NamePattern): ScopedItem[] {
+    return items
+      .map((item) => ({ item, q: nameQuality(item, pattern) }))
+      .filter(({ q }) => q >= 0)
+      .sort((a, b) => b.q - a.q || compareItems(a.item, b.item))
+      .map(({ item }) => item);
+  }
+
+  /** The line under a list that shows only `max` of `total` entries. */
+  function moreLine(total: number, max: number, hint: string): string {
+    return total > max ? `\n\nShowing ${max} of ${total}. Raise \`limit\`, or ${hint}.` : "";
+  }
+
+  /**
+   * A name. An exact hit resolves across the whole address space, so a caller
+   * who has a name never gets "not found" because of a wrong corpus guess.
+   * Without an exact hit, the answer is a list of the names that contain the
+   * query, from the `scope` corpus when the call names one.
+   */
+  function searchByName(query: string, scope: ScopeName | undefined, max: number): string {
+    // The address space holds one platform at most, so platform names do not
+    // collide in it. A name outside it gets an "out of scope" report, not
+    // "unknown".
+    const active = activePlatform(scope);
+    const idx = getMergedIndex(scope);
+    const matches: ScopedItem[] = [];
+
+    if (query.includes(".")) {
+      // Try an exact fully qualified match first. If two namespaces claim a name,
+      // the answer shows both, each with the label of its package. The app
+      // reaches them as `http.Request` and `pf.Request`, and both compile. A
+      // choice of one could hide the one that the caller meant.
+      const claimed = idx.collisions.get(query);
+      const exact = idx.byFullName.get(query);
+      if (claimed) {
+        matches.push(...claimed);
+      } else if (exact) {
+        matches.push(exact);
       } else {
-        const bucket = idx.byName.get(query);
-        if (bucket) matches.push(...bucket);
-      }
-
-      let close = false;
-      if (matches.length === 0) {
-        // Fall back to substring search across names. A query such as
-        // `F32.floor_to_i64` searches for `floor_to_i64` in the modules that
-        // `F32` names, and finds `Num.F32.floor_to_i64_try`.
-        const dot = query.lastIndexOf(".");
-        const mod = dot > 0 ? query.slice(0, dot) : "";
-        const lower = query.slice(dot + 1).toLowerCase();
-        const inModule = mod
-          ? (item: ScopedItem) => item.modulePath === mod || item.modulePath.endsWith("." + mod)
-          : () => true;
+        // Maybe the user wrote `U64.from_str` and the actual path is `Num.U64.from_str`.
         for (const item of idx.items) {
-          if (lower && inModule(item) && item.name.toLowerCase().includes(lower)) {
-            matches.push(item);
-            if (matches.length >= 25) break;
-          }
+          if (item.fullName.endsWith("." + query)) matches.push(item);
         }
-        close = matches.length > 0;
       }
+    } else {
+      matches.push(...(idx.byName.get(query) ?? []));
+    }
 
-      if (matches.length === 0) {
-        const found = elsewhere(PLATFORM_SCOPES, active ? [active] : [], "anywhere", (sc) =>
-          nameMatchCount(registry.index(sc), query)
-        );
-        const text =
-          (outOfScopeNote(`\`${query}\``, found, active) ??
-            `No builtin matched "${name}". Call \`list_roc_index\` with kind='builtin_modules', or \`get_builtin_module\` with a name like Str, List, Num, U64, Dec.`) +
-          unpinnedPackageNote(`\`${query}\``, (idx) => nameMatches(idx, query)) +
-          trailingNotes({ read: active ? [active] : [], empty: true });
-        return {
-          content: [{ type: "text", text }],
-        };
-      }
+    const hostNote = (items: ScopedItem[]) =>
+      items.some((m) => m.tier === "host")
+        ? "\n\nThis is the host ABI boundary. An application must not call it. A platform author writing glue does."
+        : "";
 
+    if (matches.length > 0) {
       // `Try`, `Bool`, `Dict` and similar names are both a type and a module. The
       // type body is the internal representation, not the API. Without this line,
       // the caller reads `Dict :: [HashMap({ ... })]` and tries to construct it.
       const alsoModule = idx.modulePaths.has(query)
         ? `\n\n\`${query}\` is also a module. Call \`get_builtin_module("${query}")\` for its methods.`
-        : "";
-      const hostNote = matches.some((m) => m.tier === "host")
-        ? "\n\nThis is the host ABI boundary. An application must not call it. A platform author writing glue does."
         : "";
       // A name that two namespaces declare is two items, which an app reaches
       // through two aliases. The origin on each heading identifies the item. This
@@ -1426,13 +1408,163 @@ export function createServer(config: ServerConfig): McpServer {
             `\`${n}\` is declared by ${new Set(matches.filter((m) => m.fullName === n).map((m) => m.ns)).size} modules, one per origin below. An app imports each through its own header alias.\n\n`
         )
         .join("");
-      const closeNote = close
-        ? `Nothing is named \`${query}\`. These names contain \`${query.slice(query.lastIndexOf(".") + 1)}\`:\n\n`
-        : "";
-      const text = closeNote + sharedNote + matches.map(formatScopedItem).join("\n\n") + hostNote + alsoModule;
-      return {
-        content: [{ type: "text", text }],
-      };
+      return sharedNote + matches.map(formatScopedItem).join("\n\n") + hostNote(matches) + alsoModule;
+    }
+
+    // `F32.floor_to_i64` searches for `floor_to_i64` in the modules that `F32`
+    // names, and finds `Num.F32.floor_to_i64_try`.
+    const dot = query.lastIndexOf(".");
+    const pattern: NamePattern = { raw: query, module: dot > 0 ? query.slice(0, dot) : "", part: query.slice(dot + 1) };
+    const close = byNameQuality(scope ? scopeIndex(scope, scope).items : idx.items, pattern);
+    if (close.length > 0) {
+      const shown = close.slice(0, max);
+      const head = pattern.part
+        ? `Nothing is named \`${query}\`. ${close.length} ${close.length === 1 ? "name contains" : "names contain"} \`${pattern.part}\`:`
+        : `Nothing is named \`${query}\`. ${close.length} ${close.length === 1 ? "symbol is" : "symbols are"} in \`${pattern.module}\`:`;
+      return (
+        `${head}\n\n${shown.map((it) => compactItem(it)).join("\n\n")}` +
+        moreLine(close.length, max, `add a type to rank them, as in \`${query} : -> Bool\``) +
+        hostNote(shown)
+      );
+    }
+
+    const found = elsewhere(PLATFORM_SCOPES, active ? [active] : [], "anywhere", (sc) =>
+      nameMatchCount(registry.index(sc), query)
+    );
+    return (
+      (outOfScopeNote(`\`${query}\``, found, active) ??
+        `Nothing matched "${query}". Call \`list_roc_index\` with kind='builtin_modules', or \`get_builtin_module\` with a name like Str, List, Num, U64, Dec.`) +
+      unpinnedPackageNote(`\`${query}\``, (idx) => nameMatches(idx, query)) +
+      trailingNotes({ read: active ? [active] : [], empty: true })
+    );
+  }
+
+  /**
+   * The values that a type search reads in one scope: only annotated values. A
+   * type body is not a function signature, and neither is the lambda head of a
+   * value that upstream did not annotate.
+   */
+  function typedValuesIn(s: ScopeName, scope: ScopeName | undefined): ScopedItem[] {
+    return appFacing(s, scope).filter((it) => it.kind === "value" && !it.unannotated);
+  }
+
+  /** A Hoogle-style structural search, over the working set or the one corpus that `scope` names. */
+  function searchByType(type: string, scope: ScopeName | undefined, max: number): string {
+    const wanted = resolveScopes(scope, SIGNATURE_SCOPES);
+    const top = searchBySig(wanted.flatMap((s) => typedValuesIn(s, scope)), type, max);
+
+    // Count the matches in every scope, so the footer can point to a corpus with
+    // matches. The result count has a cap, so a narrower search saves no tokens.
+    // It changes only which ten results the search returns.
+    const others = elsewhere(
+      SCOPES.filter((s) => s !== "language"),
+      wanted,
+      "pinned",
+      (s) => searchBySig(typedValuesIn(s, scope), type, 1000).length
+    );
+
+    if (top.length === 0) {
+      return (
+        `No matches for \`${type}\` in scope=${wanted.join("+")}.\n\n` +
+        `Tip: type variable names don't matter (structural match), but argument order does.` +
+        trailingNotes({ read: wanted, found: { shown: 0, others } })
+      );
+    }
+    return (
+      top.map(({ item, score, matchKind }) => compactItem(item, `${matchKind}, score ${score}`)).join("\n\n") +
+      trailingNotes({ read: wanted, found: { shown: top.length, others }, detection: true })
+    );
+  }
+
+  /**
+   * A name and a type. The name filters, and the type ranks. The name decides
+   * only the order of matches with equal type scores, so the answer uses one
+   * ranking. A `substring` match only contains the type as text, so it does not
+   * count as an answer here. Without a name filter, stronger matches hide such
+   * a match. When nothing matches, the substring matches come first in the list
+   * of closest symbols.
+   */
+  function searchByNameAndType(pattern: NamePattern, type: string, scope: ScopeName | undefined, max: number): string {
+    const wanted = resolveScopes(scope, SIGNATURE_SCOPES);
+    const namedIn = (s: ScopeName) => typedValuesIn(s, scope).filter((it) => nameQuality(it, pattern) >= 0);
+    const typed = (items: ScopedItem[]) =>
+      searchBySig(items, type, Number.MAX_SAFE_INTEGER, (it) => nameQuality(it, pattern)).filter(
+        (m) => m.score > SUBSTRING_SCORE
+      );
+    const named = wanted.flatMap(namedIn);
+
+    if (named.length === 0) {
+      const others = elsewhere(SCOPES.filter((s) => s !== "language"), wanted, "anywhere", (s) => namedIn(s).length);
+      return (
+        `No annotated symbol in scope=${wanted.join("+")} has a name that matches \`${pattern.raw}\`.` +
+        unpinnedPackageNote(`\`${pattern.raw}\``, (idx) => idx.items.filter((it) => nameQuality(it, pattern) >= 0)) +
+        trailingNotes({ read: wanted, found: { shown: 0, others } })
+      );
+    }
+
+    const hits = typed(named);
+    const others = elsewhere(SCOPES.filter((s) => s !== "language"), wanted, "pinned", (s) => typed(namedIn(s)).length);
+    if (hits.length === 0) {
+      // A type that contains the query type as text is closer than one that does
+      // not. So `ceiling_to_i32_try : F32 -> ..` comes before
+      // `Dec.ceiling : Dec -> Dec`.
+      const near = searchBySig(named, type, Number.MAX_SAFE_INTEGER, (it) => nameQuality(it, pattern)).map((m) => m.item);
+      const closest = [...new Set([...near, ...byNameQuality(named, pattern)])];
+      const shown = closest.slice(0, max);
+      return (
+        `No symbol similar to \`${pattern.raw}\` matches \`${type}\`. ` +
+        `${named.length} ${named.length === 1 ? "symbol has" : "symbols have"} a different type. ` +
+        `Closest ${shown.length === 1 ? "match" : "matches"}:\n\n` +
+        shown.map((it) => compactItem(it)).join("\n\n") +
+        moreLine(closest.length, max, "change the type") +
+        trailingNotes({ read: wanted, found: { shown: 0, others } })
+      );
+    }
+    const shown = hits.slice(0, max);
+    return (
+      shown.map(({ item, score, matchKind }) => compactItem(item, `${matchKind}, score ${score}`)).join("\n\n") +
+      moreLine(hits.length, max, "narrow the name") +
+      trailingNotes({ read: wanted, found: { shown: shown.length, others }, detection: true })
+    );
+  }
+
+  server.registerTool(
+    "search_symbols",
+    {
+      annotations: READ_ONLY_FETCHES,
+      title: "Search Roc Symbols by Name or Type",
+      description:
+        "Find builtins and platform APIs by name, by type, or both, written as a Roc annotation `name : Type`. " +
+        "A name (`concat`, `Str.concat`) returns each exact match with its docs, else the names that contain it. " +
+        "A type (`: Str`, or anything with `->`) is a structural search: a type variable matches any type, " +
+        "`-> T` matches the return type, `T ->` the arguments, and argument order matters. " +
+        "Both, as in `ceil : -> Dec`, lists the names that contain `ceil`, ranked by type.",
+      inputSchema: z.object({
+        query: z
+          .string()
+          .describe("A name, a type, or both: 'Str.concat', 'map', '-> Bool', 'List(a), (a -> b) -> List(b)', 'F32.floor : F32 ->'."),
+        scope: scopeArg(
+          SIGNATURE_SCOPES,
+          "A platform to read in place of the one this app's header imports, or one corpus to limit a list to.",
+          { hint: true }
+        ),
+        limit: z.number().int().positive().optional().describe("Max list entries (default 10)."),
+      }),
+    },
+    async ({ query, scope, limit }) => {
+      await ensureDetection();
+      const q = parseSymbolQuery(query);
+      const sc = scope as ScopeName | undefined;
+      const max = limit ?? 10;
+      const text =
+        q.kind === "error"
+          ? q.message
+          : q.kind === "name"
+            ? searchByName(q.name, sc, max)
+            : q.kind === "type"
+              ? searchByType(q.type, sc, max)
+              : searchByNameAndType(q.name, q.type, sc, max);
+      return { content: [{ type: "text", text }] };
     }
   );
 
@@ -1442,7 +1574,7 @@ export function createServer(config: ServerConfig): McpServer {
       annotations: READ_ONLY_FETCHES,
       title: "Get a Roc Builtin Module",
       description:
-        "Every method in a builtin module (`Str`, `List`, `U64`, `Num.Dec`, …) as a signature list. Bare `U64` resolves to `Num.U64`. detail='full' adds docstrings and examples. For one method use `lookup_builtin`.",
+        "Every method in a builtin module (`Str`, `List`, `U64`, `Num.Dec`, …) as a signature list. Bare `U64` resolves to `Num.U64`. detail='full' adds docstrings and examples. For one method use `search_symbols`.",
       inputSchema: z.object({
         module: z.string().describe("Module name, e.g. 'Str', 'List', 'U64', 'Num.Dec'."),
         detail: z
@@ -1573,7 +1705,7 @@ export function createServer(config: ServerConfig): McpServer {
 
       // Docstrings and their `expect` blocks are about 6x the size of the
       // signatures. Thus the default answers "what methods exist", and
-      // lookup_builtin answers "how does this one work".
+      // search_symbols answers "how does this one work".
       const section = (items: ScopedItem[]): string[] =>
         full ? [ordered(items).map((m) => formatScopedItem(m)).join("\n\n")] : signatures(items);
       const sections = split
@@ -1624,7 +1756,7 @@ export function createServer(config: ServerConfig): McpServer {
         "",
         ...(own.length === 0 ? [] : [...(full && !split ? [] : [tally, ""]), ...sections]),
         ...nested,
-        ...(full ? [] : ["Use `lookup_builtin` for a docstring and examples, or call this again with `detail: \"full\"`."]),
+        ...(full ? [] : ["Use `search_symbols` for a docstring and examples, or call this again with `detail: \"full\"`."]),
       ]
         .join("\n")
         .trimEnd();
@@ -2223,87 +2355,6 @@ export function createServer(config: ServerConfig): McpServer {
   );
 
   // -----------------------------------------------------------------------------
-  // Signature search (Hoogle-style)
-  // -----------------------------------------------------------------------------
-
-  server.registerTool(
-    "search_builtin_signatures",
-    {
-      annotations: READ_ONLY_FETCHES,
-      title: "Search Roc Builtins by Type Signature",
-      description:
-        "Hoogle-style structural type signature search. " +
-        "A type variable matches anything, so `F32 -> Try(U64, err)` finds `F32 -> Try(U64, [OutOfRange])`. " +
-        "`->` / `=>` prefix searches by return type. `->` / `=>` suffix searches by incomplete argument list. " +
-        "Argument order matters.",
-      inputSchema: z.object({
-        query: z
-          .string()
-          .describe(
-            "Type expression, e.g. `List a, (a -> b) -> List b` or `-> Bool` or `Str, U64 -> Str`."
-          ),
-        scope: scopeArg(SIGNATURE_SCOPES, "Search one corpus only. Omit for the working set.", { hint: true }),
-        limit: z.number().int().positive().optional().describe("Max results (default 10)."),
-      }),
-    },
-    async ({ query, scope, limit }) => {
-      const raw = query.trim();
-      if (!raw) {
-        return {
-          content: [{ type: "text", text: "Empty query." }],
-        };
-      }
-
-      await ensureDetection();
-      const wanted = resolveScopes(scope as ScopeName | undefined, SIGNATURE_SCOPES);
-      // Only annotated values. A type body is not a function signature, and
-      // neither is the lambda head of a value that upstream did not annotate.
-      const valuesIn = (s: ScopeName) =>
-        appFacing(s, scope as ScopeName | undefined).filter((it) => it.kind === "value" && !it.unannotated);
-      const searchable = wanted.flatMap(valuesIn);
-      const top = searchBySig(searchable, raw, limit ?? 10);
-
-      // Count the matches in every scope, so the footer can point to a corpus with
-      // matches. The result count has a cap, so a narrower search saves no tokens.
-      // It changes only which ten results the search returns.
-      const others = elsewhere(
-        SCOPES.filter((s) => s !== "language"),
-        wanted,
-        "pinned",
-        (s) => searchBySig(valuesIn(s), raw, 1000).length
-      );
-
-      if (top.length === 0) {
-        return {
-          content: [
-            {
-              type: "text",
-              text:
-                `No matches for \`${raw}\` in scope=${wanted.join("+")}.\n\n` +
-                `Tip: type variable names don't matter (structural match), but argument order does.` +
-                trailingNotes({ read: wanted, found: { shown: 0, others } }),
-            },
-          ],
-        };
-      }
-
-      const text = top
-        .map(
-          ({ item, score, matchKind }) =>
-            // The full signature, because a `where` clause on a later line is the
-            // difference between "works on anything" and "needs this method".
-            `**${item.fullName}**${originSuffix(item as ScopedItem)} (${matchKind}, score ${score})\n\`\`\`roc\n${item.fullName.split(".").pop()} : ${item.signature.replace(/\t/g, "  ")}\n\`\`\`${item.docs ? "\n" + item.docs.split("\n")[0] : ""}`
-        )
-        .join("\n\n") +
-        trailingNotes({ read: wanted, found: { shown: top.length, others }, detection: true });
-
-      return {
-        content: [{ type: "text", text }],
-      };
-    }
-  );
-
-  // -----------------------------------------------------------------------------
   // Project signature search
   // -----------------------------------------------------------------------------
 
@@ -2316,7 +2367,7 @@ export function createServer(config: ServerConfig): McpServer {
       annotations: READ_ONLY_FETCHES,
       title: "Search Project Roc Files by Type Signature",
       description:
-        "Like `search_builtin_signatures` but across user project files.",
+        "Like a type query of `search_symbols`, but across user project files.",
       inputSchema: z.object({
         query: z
           .string()
@@ -2461,8 +2512,7 @@ export function createServer(config: ServerConfig): McpServer {
       "The file itself is too large to serve in full. Use these tools:",
       "",
       "- `get_builtin_module`: every method in one module, with signatures and docs.",
-      "- `lookup_builtin`: one method by name (`concat`) or qualified name (`Str.concat`).",
-      "- `search_builtin_signatures`: Hoogle-style search by type.",
+      "- `search_symbols`: one method by name (`concat`, `Str.concat`), a Hoogle-style search by type (`-> Bool`), or both (`ceil : -> Dec`).",
       "- `search`: free-text across builtins, topics, and the langref.",
       "",
       "| Module | Methods |",
@@ -2477,7 +2527,7 @@ export function createServer(config: ServerConfig): McpServer {
     {
       title: "Roc Builtin Index",
       description:
-        "Index of every builtin module and its method count. Builtin.roc itself is hundreds of thousands of tokens, so use get_builtin_module, lookup_builtin, or search_builtin_signatures, and do not read it whole.",
+        "Index of every builtin module and its method count. Builtin.roc itself is hundreds of thousands of tokens, so use get_builtin_module or search_symbols, and do not read it whole.",
       mimeType: "text/markdown",
     },
     async (uri) => ({

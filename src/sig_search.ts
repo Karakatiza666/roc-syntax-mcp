@@ -1,7 +1,8 @@
 // SPDX-FileCopyrightText: 2026 Heorhii Bulakh and subsequent roc-syntax-mcp authors
 // SPDX-License-Identifier: MPL-2.0
 
-// Hoogle-style structural type-signature search for Roc builtins.
+// Hoogle-style structural type-signature search for Roc builtins. The scores
+// and the tie-breaks are listed in `docs/design/symbol-search.md`.
 
 export interface SigSearchItem {
   fullName: string;
@@ -9,8 +10,8 @@ export interface SigSearchItem {
   docs: string;
 }
 
-export interface SigMatch {
-  item: SigSearchItem;
+export interface SigMatch<T extends SigSearchItem = SigSearchItem> {
+  item: T;
   score: number;
   matchKind: string;
 }
@@ -148,18 +149,26 @@ function relate(normQuery: string, norm: string): "" | "_unified" | null {
  * slots. So documented items and items in shallower modules rank first, and
  * then the name keeps the order stable.
  */
-function compareMatches(a: SigMatch, b: SigMatch): number {
+function compareMatches(a: SigMatch, b: SigMatch, rank?: (item: SigSearchItem) => number): number {
   if (a.score !== b.score) return b.score - a.score;
+  if (rank) {
+    const diff = rank(b.item) - rank(a.item);
+    if (diff !== 0) return diff;
+  }
+  return compareItems(a.item, b.item);
+}
 
-  const aDoc = a.item.docs.trim() !== "" ? 1 : 0;
-  const bDoc = b.item.docs.trim() !== "" ? 1 : 0;
+/** The order of items that rank the same: documented first, then shallower modules, then by name. */
+export function compareItems(a: SigSearchItem, b: SigSearchItem): number {
+  const aDoc = a.docs.trim() !== "" ? 1 : 0;
+  const bDoc = b.docs.trim() !== "" ? 1 : 0;
   if (aDoc !== bDoc) return bDoc - aDoc;
 
-  const aDepth = a.item.fullName.split(".").length;
-  const bDepth = b.item.fullName.split(".").length;
+  const aDepth = a.fullName.split(".").length;
+  const bDepth = b.fullName.split(".").length;
   if (aDepth !== bDepth) return aDepth - bDepth;
 
-  return a.item.fullName < b.item.fullName ? -1 : a.item.fullName > b.item.fullName ? 1 : 0;
+  return a.fullName < b.fullName ? -1 : a.fullName > b.fullName ? 1 : 0;
 }
 
 /** Index of the last top-level `->` or `=>` (not nested inside parens/brackets/braces). */
@@ -174,6 +183,13 @@ function lastTopLevelArrow(sig: string): number {
   }
   return idx;
 }
+
+/**
+ * The highest score of a `substring` match. Such a match only contains the
+ * query as text. For example, `-> F32` matches `F32 -> Try(I32, [OutOfRange])`
+ * at 10.
+ */
+export const SUBSTRING_SCORE = 20;
 
 /**
  * Score a single item against the normalized query.
@@ -236,9 +252,15 @@ function scoreItem(
  * Search `items` for builtins whose signature structurally matches `query`.
  *
  * Prefix `query` with `->` to restrict to return-type matching only.
- * Returns results sorted descending by score, capped at `max`.
+ * Returns results sorted descending by score, capped at `max`. `rank` orders
+ * matches of equal score, higher first, before the default order applies.
  */
-export function searchBySig(items: SigSearchItem[], query: string, max = 10): SigMatch[] {
+export function searchBySig<T extends SigSearchItem>(
+  items: T[],
+  query: string,
+  max = 10,
+  rank?: (item: T) => number
+): SigMatch<T>[] {
   const raw = query.trim();
   if (!raw) return [];
 
@@ -249,12 +271,12 @@ export function searchBySig(items: SigSearchItem[], query: string, max = 10): Si
     : raw;
   const normQuery = normalizeTypeSig(queryExpr);
 
-  const hits: SigMatch[] = [];
+  const hits: SigMatch<T>[] = [];
   for (const item of items) {
     const normSig = normalizeTypeSig(item.signature);
     const { score, matchKind } = scoreItem(normQuery, normSig, returnOnly, trailingArrow);
     if (score > 0) hits.push({ item, score, matchKind });
   }
 
-  return hits.sort(compareMatches).slice(0, max);
+  return hits.sort((a, b) => compareMatches(a, b, rank as ((item: SigSearchItem) => number) | undefined)).slice(0, max);
 }

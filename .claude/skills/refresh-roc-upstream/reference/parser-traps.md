@@ -8,7 +8,7 @@ list of method declarations.
 
 The damage gives no error. A phantom method is a body field that the parser
 read as a method. It goes into `byFullName` and `byName`, and hides a real
-method with the same name. `lookup_builtin` then returns a record field where a
+method with the same name. `search_symbols` then returns a record field where a
 function belongs.
 
 ## Detection recipe
@@ -106,7 +106,7 @@ declaration in a platform module file has an empty stack, so there the rule is
 
 `Str :: [ProvidedByCompiler]`, `Num :: {}` and `Num.U8 :: [].{` declare
 modules, not data. If the parser indexes them, `byFullName` gets an empty body
-under a name that is also a module path. Then `lookup_builtin("Str")` answers
+under a name that is also a module path. Then `search_symbols("Str")` answers
 `Str :: [ProvidedByCompiler]` and does not fall through to the module.
 
 Guard: skip a body of `[]`, `{}` or `[ProvidedByCompiler]`. Also remove a
@@ -149,7 +149,7 @@ That flag has two effects:
 
 - `declLine` prints `name = |a, b|` and not `name : |a, b|`, which would look
   like a type.
-- `search_builtin_signatures` skips these items, because it cannot match a
+- A type query of `search_symbols` skips these items, because it cannot match a
   lambda head by structure.
 
 Guards, in order of what they protect against:

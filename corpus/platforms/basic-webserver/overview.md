@@ -1,7 +1,7 @@
 # basic-webserver in one page
 
 The platform, with the HTTP types from the `roc-lang/http` package.
-`get_builtin_module Server` for the full API, `lookup_builtin Server.Outcome`
+`get_builtin_module Server` for the full API, `search_symbols Server.Outcome`
 for one type, `search scope="basic-webserver"` when you do not know the name,
 `list_roc_index kind="examples"` for complete programs that all compile.
 

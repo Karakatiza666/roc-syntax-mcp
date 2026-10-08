@@ -602,8 +602,8 @@ test("a namespace nothing serves is reported by every tool that comes up empty",
   const { texts } = await session({
     argv: [`--plugin=${dir}`, "--platform=ray-unserved"],
     calls: [
-      { name: "lookup_builtin", args: { name: "Request.from_method" } },
-      { name: "search_builtin_signatures", args: { query: "Zzz -> Qqq" } },
+      { name: "search_symbols", args: { query: "Request.from_method" } },
+      { name: "search_symbols", args: { query: "Zzz -> Qqq" } },
       { name: "search", args: { query: "qqqzzzxyw" } },
       { name: "get_builtin_module", args: { module: "Zzz" } },
     ],
@@ -623,7 +623,7 @@ test("a forced namespace is served, and every item says what it was forced over"
   const { texts } = await session({
     argv: [`--plugin=${dir}`, "--platform=ray-unserved", "--force=roc-lang/http"],
     calls: [
-      { name: "lookup_builtin", args: { name: "Request.with_body" } },
+      { name: "search_symbols", args: { query: "Request.with_body" } },
       { name: "search", args: { query: "with_body" } },
     ],
   });
@@ -682,7 +682,7 @@ import pf.Server
     cwd: workspace,
     calls: [
       { name: "list_roc_index", args: { kind: "scopes" } },
-      { name: "lookup_builtin", args: { name: "Json.decode!" } },
+      { name: "search_symbols", args: { query: "Json.decode!" } },
     ],
   });
   assert.match(stderr, /Also pinned: example\/json 2\.1\.0 \(served by json\)/);
@@ -698,7 +698,7 @@ test("an answer that found something does not carry the unserved note", async ()
   const { texts } = await session({
     argv: [`--plugin=${dir}`, "--platform=ray-unserved"],
     calls: [
-      { name: "lookup_builtin", args: { name: "Str.trim" } },
+      { name: "search_symbols", args: { query: "Str.trim" } },
       { name: "search", args: { query: "trim" } },
     ],
   });
@@ -720,7 +720,7 @@ test("a documented package answers a pinned lookup once", async () => {
   const { texts, stderr } = await session({
     argv: [`--plugin=${dir}`],
     cwd: root,
-    calls: [{ name: "lookup_builtin", args: { name: "Opt.flag" } }],
+    calls: [{ name: "search_symbols", args: { query: "Opt.flag" } }],
   });
   assert.equal(texts[0].match(/^## Opt\.flag/gm)?.length, 1, texts[0]);
   assert.match(stderr, /someone\/weave 0\.8\.0 \(served by weave\)/);
@@ -740,7 +740,7 @@ test("a pinned package is read with the builtins, an unpinned one is named on a 
   const calls = [
     { name: "list_roc_index", args: { kind: "scopes" } },
     { name: "search_roc_syntax", args: { query: "how do I read command line arguments" } },
-    { name: "lookup_builtin", args: { name: "Opt.flag" } },
+    { name: "search_symbols", args: { query: "Opt.flag" } },
     { name: "get_builtin_module", args: { module: "Hidden" } },
   ];
   const on = await session({ argv: [`--plugin=${dir}`], cwd: pinned, calls });
@@ -784,9 +784,9 @@ test("a name two namespaces declare is answered with both, and says so", async (
     argv: [`--plugin=${dir}`],
     cwd: root,
     calls: [
-      { name: "lookup_builtin", args: { name: "Random.seed_u64!" } },
-      { name: "lookup_builtin", args: { name: "seed_u64!" } },
-      { name: "lookup_builtin", args: { name: "Random.only_here" } },
+      { name: "search_symbols", args: { query: "Random.seed_u64!" } },
+      { name: "search_symbols", args: { query: "seed_u64!" } },
+      { name: "search_symbols", args: { query: "Random.only_here" } },
     ],
   });
   for (const text of texts.slice(0, 2)) {
@@ -846,7 +846,7 @@ test("a self-hosted platform is detected by its URL, and another bundle is named
       cwd,
       calls: [
         { name: "roc_overview" },
-        { name: "lookup_builtin", args: { name: "Brush.dab!" } },
+        { name: "search_symbols", args: { query: "Brush.dab!" } },
         { name: "search", args: { query: "dab", scope: "paint" } },
       ],
     });

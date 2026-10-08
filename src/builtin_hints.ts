@@ -5,7 +5,7 @@
  * One-line hints for builtins whose name and signature alone mislead.
  *
  * This server writes these hints, not upstream. They appear only in the
- * signature list from `get_builtin_module`. `lookup_builtin` and
+ * signature list from `get_builtin_module`. `search_symbols` and
  * `detail: "full"` return upstream's docstrings unchanged, so a hint never
  * competes with the real docs.
  *

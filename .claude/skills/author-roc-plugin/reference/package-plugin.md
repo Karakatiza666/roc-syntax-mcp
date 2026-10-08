@@ -57,7 +57,7 @@ The other shape omits `description` and every field that depends on it:
 ```
 
 That shape gives signatures only, with no page and no topics. A caller reaches
-the items only by address. When an app pins the package, `lookup_builtin` and
+the items only by address. When an app pins the package, `search_symbols` and
 `get_builtin_module` find its names, each with its origin. The loader refuses
 `overview`, `topics`, `examples` and `checks` without a `description`, because
 nothing could read them.
@@ -66,7 +66,7 @@ nothing could read them.
 
 | What | Where a caller finds it |
 |---|---|
-| Its items, after the app header pins it | With the builtins: every unscoped search, `scope: "builtin"`, and `lookup_builtin` |
+| Its items, after the app header pins it | With the builtins: every unscoped search, `scope: "builtin"`, and `search_symbols` |
 | Its items, before an app pins it | Only on a miss. The answer names the package, shows up to three matching signatures, and gives the header line that pins it |
 | Its page | `search_roc_syntax("<name>")`, or the repo path. The page lists the topics and examples, and says whether this app pins the package |
 | Its topics | Filed under `language`, so they answer an unscoped question before an app pins the package. An answer from a package that is not pinned ends with the header line |
@@ -177,7 +177,7 @@ The note names the flag, so nobody has to search for it: `run this server with
 The obvious alternative is to serve the incompatible copy with a warning, with
 no request from the user. Two reasons rule it out:
 
-1. `roc_check` would contradict `lookup_builtin`. `roc_check` compiles the app
+1. `roc_check` would contradict `search_symbols`. `roc_check` compiles the app
    against the 0.8.0 that its header pins, while the lookup prints 0.9.0
    signatures. A server whose tools disagree about one name is worse than a
    server that declines.
