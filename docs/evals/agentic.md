@@ -17,6 +17,7 @@ miss. The host-tier footer appears on `search` and `get_builtin_module`.
 | search-symbols | 4 | 2683 tok | 4/4 | 35% (9/26) | 4/4 | 0% (0/3) | none shown | 23.4k ch | 1.9k | $0.29 |
 | search-project-symbols | 6 | 2665 tok | 6/6 | 0% (0/13) | 6/6 | none shown | none shown | 12.1k ch | 2.3k | $0.28 |
 | query-lists | 6 | 2697 tok | 6/6 | 23% (7/31) | 6/6 | none shown | none shown | 21.8k ch | 2.8k | $0.34 |
+| query-shapes | 3 | 2723 tok | 3/3 | 13% (2/15) | 3/3 | none shown | none shown | 20.3k ch | 3.5k | $0.40 |
 
 ## Per run
 
@@ -46,6 +47,9 @@ miss. The host-tier footer appears on `search` and `get_builtin_module`.
 | query-lists | roc-ray-local | project | none | roc_overview | 3 | pass | 16.1k ch | $0.33 |
 | query-lists | form-post | basic-webserver | basic-webserver | roc_overview | 8 | pass | 25.1k ch | $0.33 |
 | query-lists | roc-ray-local | project | none | roc_overview | 4 | pass | 16.9k ch | $0.37 |
+| query-shapes | roc-ray-local | project | builtin | roc_overview | 5 | pass | 23.5k ch | $0.49 |
+| query-shapes | roc-ray-local | project | none | roc_overview | 4 | pass | 17.1k ch | $0.33 |
+| query-shapes | roc-ray-local | project | builtin | roc_overview | 6 | pass | 20.4k ch | $0.38 |
 
 ## Tool call order
 
@@ -73,3 +77,6 @@ miss. The host-tier footer appears on `search` and `get_builtin_module`.
 - `query-lists/roc-ray-local`: roc_overview -> search_project_symbols -> roc_check
 - `query-lists/form-post`: roc_overview -> search_symbols(basic-webserver) -> search_symbols(basic-webserver) -> roc_overview(basic-webserver) -> search_symbols(basic-webserver) -> roc_check -> search_symbols(basic-webserver) -> roc_check
 - `query-lists/roc-ray-local`: roc_overview -> search_project_symbols -> search_symbols -> roc_check
+- `query-shapes/roc-ray-local`: roc_overview -> search_project_symbols -> search_symbols(builtin) -> roc_check -> roc_check
+- `query-shapes/roc-ray-local`: roc_overview -> search_project_symbols -> search_symbols -> roc_check
+- `query-shapes/roc-ray-local`: roc_overview -> search_project_symbols -> search_project_symbols -> search_project_symbols -> search_symbols(builtin) -> roc_check

@@ -249,14 +249,14 @@ test("a project search marks an inferred type", async () => {
 test("a list of queries answers each one under its own heading", async () => {
   const s = await inProcess([]);
   try {
-    const text = await s.call("search_symbols", { query: ["Str.concat", "-> Bool", "foo bar : Str"] });
+    const text = await s.call("search_symbols", { query: ["Str.concat", "-> Bool", "foo-bar : Str"] });
     const heads = [...text.matchAll(/^# `([^`]+)`$/gm)].map((m) => m[1]);
-    assert.deepEqual(heads, ["Str.concat", "-> Bool", "foo bar : Str"]);
-    const bools = text.slice(text.indexOf("# `-> Bool`"), text.indexOf("# `foo bar : Str`"));
+    assert.deepEqual(heads, ["Str.concat", "-> Bool", "foo-bar : Str"]);
+    const bools = text.slice(text.indexOf("# `-> Bool`"), text.indexOf("# `foo-bar : Str`"));
     assert.equal(bools.match(/\(return_type, score 90\)/g)?.length, 5);
     // An invalid query gets its own error, and the others still answer.
     assert.match(text, /^## Str\.concat$/m);
-    assert.match(text, /`foo bar` is not a name\./);
+    assert.match(text, /`foo-bar` is not a name\./);
     const wide = await s.call("search_symbols", { query: ["-> Bool", "-> Str"], limit: 7 });
     assert.equal(wide.match(/\(return_type, score 90\)/g)?.length, 14);
     // One query keeps the reply without a heading.
@@ -283,3 +283,64 @@ test("a project batch prints the index notes once", async () => {
   }
 });
 
+// Each word must occur in the name, and a module joins the first word with a dot.
+test("words find names that contain all of them", async () => {
+  const s = await inProcess([]);
+  try {
+    const text = await s.call("search_symbols", { query: ["F32.ceiling try"], limit: 50 });
+    assert.match(text, /^\d+ names contain `ceiling` and `try` in `F32`:/);
+    const names = [...text.matchAll(/^\*\*([^*]+)\*\*/gm)].map((m) => m[1]);
+    assert.ok(names.length > 0 && names.every((n) => n.startsWith("Num.F32.") && n.includes("ceiling") && n.includes("try")), names.join(" "));
+    assert.match(await s.call("search_symbols", { query: ["zzz qqq"] }), /^No name contains `zzz` and `qqq`\./);
+  } finally {
+    await s.close();
+  }
+});
+
+// A type's name has a type reading too. A count of it says if that search is worth a call.
+test("an exact type counts the functions that take it and return it", async () => {
+  const s = await inProcess([]);
+  try {
+    assert.match(
+      await s.call("search_symbols", { query: ["Dict"] }),
+      /\n\n\d+ functions take a `Dict` \(`Dict\(k, v\) ->`\)\. \d+ return one \(`-> Dict\(k, v\)`\)\./
+    );
+    assert.doesNotMatch(await s.call("search_symbols", { query: ["Str.concat"] }), /functions? take/);
+  } finally {
+    await s.close();
+  }
+});
+
+// The queries an agent wrote on roc-ray, and the shape each reply teaches.
+test("a miss names the query shape that answers it", async () => {
+  const s = await inProcess([`--plugin=${RAY}`]);
+  try {
+    const call = (q: string) => s.call("search_symbols", { query: [q], scope: "roc-ray" });
+    assert.equal(await call("Keys"), '`Keys` is a module. Call `get_builtin_module("Keys")` for its page.');
+    assert.match(await call("Frame.text!"), /^`Frame` is a type in `Draw`\. Its functions are in their module, so search `text!`, or `Frame ->`/);
+    const tags = await call("Space");
+    assert.match(tags, /^No symbol is named `Space`\. Tags that contain it: .*`KeySpace` in `Keys\.Key`/);
+    assert.doesNotMatch(tags, /Host\./, "a host tag is not one an app writes");
+    assert.match(await call("Frame"), /\n\n\d+ functions take a `Frame` \(`Frame ->`\)\./);
+  } finally {
+    await s.close();
+  }
+});
+
+test("a project search reads words, modules and the shape of a miss", async () => {
+  const root = geoProject();
+  const s = await inProcess([]);
+  try {
+    const call = (q: string) => s.call("search_project_symbols", { query: [q], root });
+    assert.match(await call("Geo.sc ale"), /^1 name contains `sc` and `ale` in `Geo`:\n\n\*\*Geo\.scale\*\* at/);
+    assert.match(await call("Geo.zz qq"), /^No name in .* contains `zz` and `qq`\./);
+    assert.match(await call("Geo.norm"), /^## Geo\.norm at/);
+    assert.equal(await call("Geo"), "`Geo` is a module. `Geo.` lists its 3 symbols.");
+    // A query that ends in `.` asks for the contents of the module, so it is not a miss.
+    assert.match(await call("Geo."), /^3 symbols are in `Geo`:\n\n/);
+    assert.match(await call("Point"), /\n\n1 function takes a `Point` \(`Point ->`\)\.$/);
+    assert.match(await call("Point.length"), /^`Point` is a type in `Geo`\. Its functions are in their module, so search `length`, or `Point ->`/);
+  } finally {
+    await s.close();
+  }
+});

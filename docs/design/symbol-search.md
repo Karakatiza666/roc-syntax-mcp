@@ -9,14 +9,15 @@ it. This page collects all the rules in one place.
 
 | Step | Code |
 |---|---|
-| Parse the query | `parseSymbolQuery`, `namePattern` in `src/symbol_query.ts:43,68` |
-| Match a name | `nameQuality` in `src/symbol_query.ts:87` |
+| Parse the query | `readName`, `typeError`, `parseSymbolQuery`, `namePattern` in `src/symbol_query.ts:55,74,89,123` |
+| Match a name | `nameQuality`, `nameRank` in `src/symbol_query.ts:152,172` |
 | Match and score a type | `normalizeTypeSig`, `scoreItem`, `searchBySig` in `src/sig_search.ts:34,211,258` |
 | Break ties | `compareMatches`, `compareItems` in `src/sig_search.ts:152,162` |
-| Answer a list of queries | `QUERY_LIST`, `joinReplies` in `src/server.ts:1599,1605` |
-| Build the reply, for both tools | `closeNames`, `nameAndType` in `src/server.ts:1377,1414` |
-| Build the reply, bundled indexes | `searchByName`, `searchByType`, `searchByNameAndType` in `src/server.ts:1454,1534,1561` |
-| Build the reply, project files | `exactIn`, `searchProject` in `src/server.ts:2457,2479` |
+| Answer a list of queries | `QUERY_LIST`, `joinReplies` in `src/server.ts:1722,1728` |
+| Build a list, for both tools | `nameList`, `nameAndType` in `src/server.ts:1382,1501` |
+| Count line, miss replies | `countLine`, `shapeHint` in `src/server.ts:1426,1456` |
+| Build the reply, bundled indexes | `searchByName`, `searchWords`, `searchByType`, `searchByNameAndType` in `src/server.ts:1548,1643,1657,1684` |
+| Build the reply, project files | `exactIn`, `searchProject` in `src/server.ts:2583,2600` |
 
 ## Terms
 
@@ -24,8 +25,10 @@ it. This page collects all the rules in one place.
 |---|---|
 | Symbol | A type or a value in an index, such as `Str.concat` or `Try`. The code calls it an item |
 | Name part, type part | The text before and after the first top-level `:` of a query |
+| Word | One of the space-separated pieces of a name part, as `try` and `ceil` in `F32.try ceil`. Each word must occur in the symbol's name |
+| Module filter | A module that the name part names, as `F32` in `F32.try ceil`. Section 3 |
 | Name mode, Type mode, Both mode | The three ways to read a query. Section 1 gives the rule that selects one |
-| Name level | How well a symbol's name matches the name part, from 3 to -1. Section 3 |
+| Name level | How well a symbol's name matches the words of the name part, from 3 to -1. Section 3 |
 | Type score | How well a symbol's signature matches the type part, from 100 to 0. Section 4 |
 | Exact match | In Name mode, a symbol that the query names in full. Section 6 lists the forms |
 | Miss | A reply with no match |
@@ -37,19 +40,22 @@ it. This page collects all the rules in one place.
 ```mermaid
 flowchart TD
   Q[query] --> P{first ':' outside brackets?}
-  P -- no --> V{valid name?}
+  P -- no --> K{brackets, comma or arrow?}
+  K -- yes --> T[Type mode]
+  K -- no --> V{valid name part?}
   V -- yes --> N[Name mode]
-  V -- no --> T[Type mode]
+  V -- "words in a wrong shape" --> E[Error with the right shape]
+  V -- "other, as *" --> T
   P -- yes --> S{name part, type part}
   S -- "name, empty type" --> N
   S -- "empty name, type" --> T
   S -- "name, type" --> B[Both mode]
-  S -- "invalid name" --> E[Error]
+  S -- "invalid name or type part" --> E
   N --> NX{exact match in the address space?}
-  NX -- yes --> NF[Full docs]
-  NX -- no --> NL{names that contain the part?}
+  NX -- yes --> NF[Full docs, and for a type the count line]
+  NX -- "no, or several words" --> NL{names that contain every word?}
   NL -- yes --> NC[List, by name level]
-  NL -- no --> NM[Miss: where the name is, if anywhere]
+  NL -- no --> NM[Miss: the right query shape, else where the name is]
   T --> TL{type score > 0?}
   TL -- yes --> TC[List, by type score]
   TL -- no --> TM[Miss, with a tip]
@@ -66,36 +72,83 @@ The parser splits the query at its first `:` at bracket depth 0. The `:` of a
 record field (`{ x : F32 }`) or of a `where` clause (`where [a.f : ..]`) is
 inside brackets, so it never splits a query.
 
-A name is an identifier or a dotted path. It can contain `!`, and it can end
-in `.`. The grammar is `^[A-Za-z_][\w!]*(\.[A-Za-z_][\w!]*)*\.?$`.
+### The name part
 
-| Query | Colon | Name part | Type part | Mode |
-|---|---|---|---|---|
-| `Str.concat`, `Try`, `read_utf8!` | no | the query | | Name |
-| `-> F32`, `List(a), (a -> b) -> List(b)`, `{ x : F32 } -> Str` | no | | the query | Type, because the query is not a valid name |
-| `: Str` | yes | empty | `Str` | Type |
-| `ceil :` | yes | `ceil` | empty | Name |
-| `ceil : -> F32`, `F32.ceil : F32 ->`, `Path. : => Bool` | yes | a valid name | not empty | Both |
-| `foo bar : Str` | yes | not a valid name | | Error. The reply gives the grammar |
-| Empty, or `:` alone | | | | Error: "Empty query." |
+A name part is a first token, then zero or more words, separated by spaces:
 
-One word is always a name. To search by a type of one word, write `: Str`. A
-single lowercase word is a type variable, and a type query of one variable
-matches nothing. So the rule loses no useful type query.
+| Piece | Grammar | Examples |
+|---|---|---|
+| First token | An identifier or a dotted path. It can contain `!`, and it can end in `.`. `^[A-Za-z_][\w!]*(\.[A-Za-z_][\w!]*)*\.?$` | `ceil`, `Str.concat`, `F32.try`, `Path.`, `Try` |
+| Each later word | Starts with a lowercase letter or `_`, has no `.`, and has `!` only at its end. `_` alone is not a word | `ceil`, `utf8!`, `i64` |
 
-In Both mode, `namePattern` splits the name part into a module filter and a
-part:
+A space after a first token that ends in `.` joins the two tokens. So
+`F32. try ceil` is `F32.try ceil`.
 
-| Name part | Module filter | Part |
+### No colon
+
+Without a `:`, these rules apply in order. The first rule that matches sets the
+mode:
+
+| # | Query | Mode |
+|---|---|---|
+| 1 | Has `(`, `)`, `[`, `]`, `{`, `}`, `,`, `->`, `=>` or `..` | Type |
+| 2 | A valid name part: `Str.concat`, `Try`, `size window`, `F32.try ceil` | Name |
+| 3 | Words in a wrong shape: `F32 try ceil`, `List a`, `ceil F32` | Error (table below) |
+| 4 | Anything else, such as `*` | Type |
+
+### With a colon
+
+| Query | Name part | Type part | Mode |
+|---|---|---|---|
+| `: Str` | empty | `Str` | Type |
+| `ceil :`, `F32.try ceil :` | valid | empty | Name |
+| `ceil : -> F32`, `F32.ceil : F32 ->`, `Path. : => Bool`, `size window : -> F32` | valid | valid | Both |
+| `ceil F32 : Str` | not valid | | Error (table below) |
+| Empty, or `:` alone | | | Error: "Empty query." |
+
+### Why words never collide with a type
+
+In this Roc, two identifiers that only a space separates are never a valid
+type. Type arguments are in parentheses: `List(a)`, never `List a`. The one
+exception is the keyword `where`. A scan of all 4627 value signatures in the
+bundled indexes and the plugins found no such pair outside a `where` clause.
+So a sequence of words is always a name.
+
+The same fact makes a space between two identifiers in a type part an error.
+Such a type is usually old Roc syntax that a caller recalls, and as a type it
+matches nothing.
+
+### Errors
+
+| Query | Problem | Reply |
+|---|---|---|
+| `F32 try ceil`, `Str concat`, `List a` | A capitalized first token without a `.`, then words. It could be a module filter or an old-style type | "Join a module to the name with a dot, as in `F32.try ceil`. Write type arguments in parentheses, as in `: List(a)`." |
+| `ceil F32`, `try Ceil` | A capitalized word after the first token. Only the first token can name a module | The same reply |
+| `: size window` | A type part of lowercase words only. As a type, it has only type variables, which match nearly anything | "`size window` is not a type. To search names, put the words before the colon: `size window :`." |
+| `: List a`, `List a -> a` | A type part with a space between two identifiers, outside a `where` clause | "Write type arguments in parentheses: `List(a)`." |
+
+One capitalized name has a name reading and a type reading. `Str` is a type
+and a module, and `: Str` lists the functions that return it. The name reading
+wins, and the reply adds a count of the type reading (section 6). As a type,
+one lowercase word is a type variable, and a type query of one variable matches
+nothing. So the name reading loses no useful type query.
+
+### The module filter and the words
+
+`namePattern` splits a name part into a module filter and words:
+
+| Name part | Module filter | Words |
 |---|---|---|
 | `ceil` | none | `ceil` |
 | `F32.ceil` | `F32` | `ceil` |
+| `F32.try ceil` | `F32` | `try`, `ceil` |
+| `size window` | none | `size`, `window` |
 | `F32`, `Num.F32` | the whole name part, because the last segment starts with an uppercase letter | none |
 | `Path.` | `Path`, because the name part ends in `.` | none |
 
-In Name mode, the list of partial names splits the query at its last `.`, and
-an uppercase last segment does not make a module filter. So `Foo` is a part
-there, not a module.
+In Name mode with one name, the list of partial names splits the query at its
+last `.`, and an uppercase last segment does not make a module filter. So
+`Foo` is a word there, not a module.
 
 ## 2. Corpora and `scope`
 
@@ -116,21 +169,29 @@ among the 193 builtins that return `Bool`.
 
 ## 3. Name matching
 
-`nameQuality(item, pattern)` gives each symbol a name level. The match ignores
-case. If the pattern has a module filter, the symbol's module path must equal
-the filter or end in `.` and the filter. So `F32` matches `Num.F32`, and does
-not match `Num.F32X`.
+`nameQuality(item, pattern)` gives each symbol a name level. The match uses
+case, because in Roc case separates a type from a value. So `snapshot` does not
+match the type `Snapshot`, and `Snap` does. If the pattern has a module filter,
+the symbol's module path must equal the filter or end in `.` and the filter. So
+`F32` matches `Num.F32`, and does not match `Num.F32X`.
 
-| Name level | Rule | `ceil` matches |
+Each word gets a level from the table below. The symbol's name level is the
+lowest level of its words, so every word must match. For example,
+`size window` on `window_size_try` gives `window` level 2 and `size` level 1, so
+the name level is 1.
+
+| Level of a word | Rule | `ceil` matches |
 |---|---|---|
-| 3 | the whole name | `ceil` |
+| 3 | the whole name. Only one word can reach this level | `ceil` |
 | 2 | the start of the name | `ceiling` |
 | 1 | the start of a word after `_` | `div_ceil_by` |
 | 0 | any other position, or any name when the pattern has no part | `preceil` |
 | -1 | no match. The search drops the symbol | `floor` |
 
 In every mode, a symbol must have a name level of 0 or more. In a list of
-partial names, the name level also sets the order.
+partial names, the name level also sets the order. Two words can match the
+same letters, as `ceil ceiling` on `ceiling`. The match accepts this, because
+it does no harm.
 
 ## 4. Type matching and scores
 
@@ -166,6 +227,12 @@ row that matches sets the type score.
 
 `=>` has the same effect as `->`. A type score of 0 is no match.
 
+A signature names a type as its own module writes it: `Frame` inside the `Draw`
+module, and `Draw.Frame` in other modules. The match compares the text of the
+names. So on roc-ray, `Frame ->` matches 23 signatures, and `Draw.Frame ->`
+matches 1. Until the match reads `Draw.Frame` as `Frame` in the `Draw` module,
+replies that suggest a type query use the bare name.
+
 `SUBSTRING_SCORE` (20) is the highest score of a `substring` match. Such a
 match only contains the type part as text. For example, `-> F32` matches
 `ceiling_to_i32_try : F32 -> Try(I32, [OutOfRange])` at 10, but that function
@@ -173,11 +240,15 @@ does not return `F32`.
 
 ## 5. Order
 
-| List | Key 1 | Key 2 | Key 3 | Key 4 | Key 5 |
-|---|---|---|---|---|---|
-| Partial names, Name mode | name level | documented first | fewer `.` in the full name | full name, A to Z | |
-| Type mode | type score | documented first | fewer `.` in the full name | full name, A to Z | |
-| Both mode | type score | name level | documented first | fewer `.` in the full name | full name, A to Z |
+| List | Key 1 | Key 2 | Key 3 | Key 4 | Key 5 | Key 6 |
+|---|---|---|---|---|---|---|
+| Partial names, Name mode | name level | words in query order | documented first | fewer `.` in the full name | full name, A to Z | |
+| Type mode | type score | documented first | fewer `.` in the full name | full name, A to Z | | |
+| Both mode | type score | name level | words in query order | documented first | fewer `.` in the full name | full name, A to Z |
+
+"Words in query order" puts a name whose words appear in the order of the
+query first. So `ceil try` puts `ceil_try` before `try_ceil`. With one word,
+this key is always equal.
 
 The search compares two symbols by key 1. Only if they are equal does it
 compare them by key 2, and so on. The search never adds two scores together.
@@ -208,10 +279,12 @@ next step.
 
 | Mode | Result | Reply |
 |---|---|---|
-| Name | Exact match: the full name, the two symbols of a name that two namespaces declare, a suffix (`U64.from_str` finds `Num.U64.from_str`), or all symbols with the bare name | Each symbol with its full docs. A note when two namespaces declare the name, when the symbol is the host ABI boundary, or when the name is also a module |
-| Name | No exact match. Some names contain the part | "Nothing is named `X`. N names contain `x`:" and a list. The next step is to add a type |
-| Name | No exact match. The query ends in `.` | "Nothing is named `X`. N symbols are in `M`:" and a list |
-| Name | No match | The out-of-scope note, else "Nothing matched". Then the unpinned-package note |
+| Name | One name with an exact match: the full name, the two symbols of a name that two namespaces declare, a suffix (`U64.from_str` finds `Num.U64.from_str`), or all symbols with the bare name | Each symbol with its full docs. A note when two namespaces declare the name, when the symbol is the host ABI boundary, or when the name is also a module. For a type, the count line below |
+| Name | One name, no exact match. Some names contain the word | "Nothing is named `X`. N names contain `x`:" and a list. The next step is to add a type |
+| Name | Several words. Some names contain all of them | "N names contain `try` and `ceil` in `F32`:" and a list. Several words have no exact match |
+| Name | Several words, no match | "No name contains `try` and `ceil` in `F32`." Then the unpinned-package note |
+| Name | The query ends in `.` | "N symbols are in `M`:" and a list. The caller asked for the contents of the module, so the reply does not call it a miss |
+| Name | No match | A miss reply below that names the right query shape, if one applies. Else the out-of-scope note, else "Nothing matched". Then the unpinned-package note |
 | Type | Matches | A list. Each entry shows its match kind and type score |
 | Type | No match | "No matches for `T` in scope=…", and a tip: the names of type variables have no effect, and the order of arguments does |
 | Both | No annotated symbol has a matching name | "No annotated symbol in scope=… has a name that matches `X`." Then the unpinned-package note |
@@ -221,6 +294,30 @@ next step.
 An entry shows the full name, the origin, the complete signature, and the
 first line of the docs. The entry shows the complete signature because a
 `where` clause on a later line changes what the symbol accepts.
+
+### The count line
+
+An exact match on a type ends with the count of its type reading:
+
+```
+23 functions take a `Frame` (`Frame ->`). 2 return one (`-> Frame`).
+```
+
+Each half shows only when its count is not zero, and the line shows only when
+one half does. The count tells the caller if the call is worth making, which a
+fixed hint cannot do. It also shows the query that finds the functions of a
+type, which are its methods. The two type searches cost about 10 ms.
+
+### Miss replies that teach the query shape
+
+A miss usually means that the caller shaped the query wrongly. The reply names
+the right shape, at the moment that the caller needs it:
+
+| Query | Cause | Reply |
+|---|---|---|
+| `Frame.text!`, when `Frame` is a type and no name matches | A method is declared in its module, not on the type of its receiver | "`Frame` is a type in `Draw`. Its functions are in their module, so search `text!`, or `Frame ->` for the functions that take a `Frame`." |
+| `Keys`, when `Keys` is a module and not a symbol | A module is not a symbol | "`Keys` is a module. `Keys.` lists its N symbols." For a bundled module, the reply names `get_builtin_module("Keys")`, which gives the module page. This reply comes before the list of names that contain the word |
+| `Space`, a capitalized name with no match | A tag is part of a union type, and the index has no tags | "No symbol is named `Space`. `KeySpace` is a tag in `Keys.Key`." With several tags: "Tags that contain it:" and up to 3. The search reads the bodies of public types only, and only after such a miss |
 
 ### The failed search in Both mode
 
@@ -279,7 +376,7 @@ scores and the order are the same as in sections 1 to 5. These rules differ:
 | Symbols | Types and values, by tier | Types and annotated values (`parseRocFile`, `src/roc_parser.ts:47`). A Type or Both search reads the values only |
 | Exact match | The full name, a collision, a suffix, or the bare name | The full name, else a suffix. A bare name matches the last segment |
 | Entry | The origin and the match kind | `file:line`, and `inferred` when a compiler gave the type and the author did not |
-| Miss | The footers of section 7 | "Nothing in N .roc files under `root` is named `X`.", and a note when `search_symbols` has matches for the query |
+| Miss | The footers of section 7 | The miss replies of section 6, then "Nothing in N .roc files under `root` is named `X`.", and a note when `search_symbols` has matches for the query. A module has no page, so the module reply names `Keys.` |
 | Footer | Section 7 | None, because the project is one corpus. "Not indexed:" names each source that could not run |
 
 The tool exists apart from `search_symbols` because it reads the disk at each
