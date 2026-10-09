@@ -26,7 +26,8 @@ const VERSION: string = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json
 const NESTED_CAP = 100;
 
 import { type BuiltinItem } from "./builtin_parser.ts";
-import { loadTopic, matchTopic, topicsFor, type TopicMeta } from "./topics.ts";
+import { loadTopic, matchTopic, topicsFor, type TopicMatch, type TopicMeta, type TopicRank } from "./topics.ts";
+import { nameCoverage, question, type Question, symbolScore } from "./words.ts";
 import { hintFor } from "./builtin_hints.ts";
 import {
   DEFAULT_SCOPES,
@@ -994,7 +995,107 @@ export function createServer(config: ServerConfig): McpServer {
     return { content: [{ type: "text", text: overview }] };
   }
 
-  /** What `get_roc_syntax(topic:)` returns: a topic, a package page or an example. */
+  /** The call that reads a topic. A topic name resolves in any scope, so the call needs no `scope`. */
+  const topicCall = (name: string) => `get_roc_syntax(topic: "${name}")`;
+
+  /**
+   * Names up to 3 other candidates after a topic that the words of a question
+   * found. A sure match can be the wrong topic, and this line costs fewer
+   * tokens than a second call.
+   */
+  function alsoLine(match: TopicMatch): string {
+    if (match.by !== "words" || match.ranked.length === 0) return "";
+    return `\n\nAlso: ${match.ranked.slice(0, 3).map((r) => topicCall(r.name)).join(", ")}.`;
+  }
+
+  /**
+   * Builds the reply when no topic is a sure match. The reply lists the closest
+   * topics, worked programs and symbols, each as the call that reads it. A list
+   * costs a few lines, and a wrong topic costs a whole program.
+   */
+  function pointerReply(query: string, scope: ScopeName | undefined, wanted: ScopeName[], ranked: TopicRank[]): string {
+    const q = question(query);
+    // The three kinds share one scale. A word in a topic name or keyword counts
+    // 2, the same as a word in a symbol name. So for "sort list", `List.sort`
+    // scores 4, and the topics that cover only "list" score 2 and are removed.
+    const topics = best(ranked.map((r) => ({ r, score: r.covered * 2 })), 4);
+    const programs = best(
+      wanted.flatMap((s) => filedExamples(s)).map(({ id, ex }) => ({ id, ex, score: symbolScore(q, { name: ex.name, modulePath: "", docs: ex.title }) })),
+      3
+    );
+    // Here a symbol needs a content word in its name or module path. One word of
+    // a long question that only the docs contain is noise.
+    const symbols = mentioned(q, scope, 4).filter((m) => nameCoverage(q, m.item) > 0);
+    const sections = best([
+      { score: topics[0]?.score ?? 0, text: `Topics:\n${topics.map(({ r }) => `- ${topicCall(r.name)}: ${TOPICS[r.name].description}`).join("\n")}` },
+      { score: programs[0]?.score ?? 0, text: `Worked programs:\n${programs.map(({ id, ex }) => `- ${topicCall(id)}: ${ex.title}`).join("\n")}` },
+      {
+        score: symbols[0]?.score ?? 0,
+        text:
+          "Symbols (`search_symbols` gives the docs):\n" +
+          symbols.map(({ item }) => `- \`${item.fullName}\`${originSuffix(item)}: \`${declLine(item, item.signature.split("\n")[0])}\``).join("\n"),
+      },
+    ], 3).map((sec) => sec.text);
+    const others = elsewhere(SYNTAX_SCOPES, wanted, "pinned", (s) => {
+      const m = matchTopic(query, [s], TOPICS);
+      return (m.topic ? 1 : 0) + m.ranked.length;
+    });
+    const head = sections.length
+      ? `No topic is a sure match for "${query}" in scope=${wanted.join("+")}. The closest, best first:`
+      : `Nothing matched "${query}" in scope=${wanted.join("+")}. ` +
+        (Object.values(TOPICS).some((m) => wanted.includes(m.scope ?? "language"))
+          ? "list_roc_index(kind='topics') describes each topic."
+          : "This corpus has no topics.");
+    return [head, ...sections].join("\n\n") + trailingNotes({ read: wanted, found: { shown: topics.length, others } });
+  }
+
+  /**
+   * Drops the topic that the words of a question found when the name or module
+   * path of a symbol covers more of the question. Such a question asks for a
+   * function. For "sort list", `List.sort` covers 2 words and `list_patterns` 1.
+   */
+  function askedForSymbol(match: TopicMatch, query: string, scope: ScopeName | undefined): TopicMatch {
+    if (match.by !== "words" || !match.topic) return match;
+    const q = question(query);
+    const symbols = resolveScopes(scope, SIGNATURE_SCOPES).flatMap((s) => appFacing(s, scope));
+    if (!symbols.some((item) => nameCoverage(q, item) > match.covered!)) return match;
+    return { topic: null, ranked: [{ name: match.topic, covered: match.covered! }, ...match.ranked] };
+  }
+
+  /** The app-facing symbols of `scope`, else of the working set, that best answer a question in words. */
+  function mentioned(q: Question, scope: ScopeName | undefined, max: number): { item: ScopedItem; score: number }[] {
+    return best(
+      resolveScopes(scope, SIGNATURE_SCOPES).flatMap((s) => appFacing(s, scope)).map((item) => ({ item, score: symbolScore(q, item) })),
+      max
+    );
+  }
+
+  /**
+   * Lists the symbols whose module or docs contain the words of a query that no
+   * name matched. "urlencoded" is in no name, and the docs of
+   * `parse_form_url_encoded` contain "application/x-www-form-urlencoded".
+   */
+  function mentionList(query: string, scope: ScopeName | undefined, max: number): string {
+    const hits = mentioned(question(query), scope, max);
+    if (hits.length === 0) return "";
+    const n = hits.length;
+    return `\n\n${n} ${n === 1 ? "symbol has" : "symbols have"} these words in the module or the docs:\n\n` + hits.map(({ item }) => compactItem(item)).join("\n\n");
+  }
+
+  /**
+   * The entries with the top scores above 0, at most `max`. An entry more than
+   * 1 below the top score is removed, because one-word matches under a match of
+   * the whole question are noise.
+   */
+  function best<T extends { score: number }>(entries: T[], max: number): T[] {
+    const top = Math.max(0, ...entries.map((e) => e.score));
+    return entries
+      .filter((e) => e.score > 0 && e.score >= top - 1)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, max);
+  }
+
+  /** Answers `get_roc_syntax(topic:)` with a topic, a package page, an example or pointers. docs/design/syntax-lookup.md has every rule. */
   async function syntaxTopic(
     query: string,
     scope?: ScopeName
@@ -1014,37 +1115,15 @@ export function createServer(config: ServerConfig): McpServer {
     // The name resolves outside the working set for the same reason as in
     // `search_symbols`. `tools/list` names the topics of an installed platform,
     // so a refusal here would advertise a call and then answer "no topic matched".
+    // The address comes before the words of the query, because the words of a
+    // topic name can match another topic in the working set. "cli" in
+    // `cli_files` is a word of `weaver_cli`.
     const addressed = scope ? null : (TOPICS[query.trim().toLowerCase()] ? query.trim().toLowerCase() : null);
-    const matched = matchTopic(query, wanted, TOPICS) ?? addressed;
-    if (!matched) {
-      // Names only. With a description each, a miss costs more than most topics,
-      // and list_roc_index(kind='topics') gives the descriptions.
-      const list = Object.entries(TOPICS)
-        .filter(([, m]) => wanted.includes(m.scope ?? "language"))
-        .map(([n]) => n)
-        .join(", ");
-      const others = elsewhere(
-        SYNTAX_SCOPES,
-        wanted,
-        "pinned",
-        (s) =>
-          Object.values(TOPICS).filter((m) => (m.scope ?? "language") === s && matchTopic(query, [s], TOPICS))
-            .length
-      );
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text:
-              `No topic matched "${query}" in scope=${wanted.join("+")}. ` +
-              (list
-                ? `Topics: ${list}. list_roc_index(kind='topics') describes each one.`
-                : "This corpus has no topics.") +
-              trailingNotes({ read: wanted, found: { shown: 0, others } }),
-          },
-        ],
-      };
-    }
+    const match: TopicMatch = addressed
+      ? { topic: addressed, by: "name", ranked: [] }
+      : askedForSymbol(matchTopic(query, wanted, TOPICS), query, scope);
+    const matched = match.topic;
+    if (!matched) return { content: [{ type: "text" as const, text: pointerReply(query, scope, wanted, match.ranked) }] };
 
     const meta = TOPICS[matched];
     const from = meta.scope ?? "language";
@@ -1066,7 +1145,7 @@ export function createServer(config: ServerConfig): McpServer {
         {
           type: "text" as const,
           text:
-            `## ${matched}\n\n${meta.description}\n\n\`\`\`roc\n${examples}\n\`\`\`${aside}` +
+            `## ${matched}\n\n${meta.description}\n\n\`\`\`roc\n${examples}\n\`\`\`${aside}${alsoLine(match)}` +
             trailingNotes({ read: wanted.includes(from) ? wanted : [from], detection: true }),
         },
       ],
@@ -1099,7 +1178,7 @@ export function createServer(config: ServerConfig): McpServer {
         topic: z
           .string()
           .optional()
-          .describe("Omit for the overview. A topic name (e.g. 'pattern_matching'), a keyword, a package name for its page (e.g. 'roc-parser'), or an example (e.g. 'basic-cli/hello')."),
+          .describe("Omit for the overview. A topic name (e.g. 'pattern_matching'), a package name for its page (e.g. 'roc-parser'), an example (e.g. 'basic-cli/hello'), or a question, which gets pointers when no topic is a sure match."),
         scope: scopeArg(
           SCOPES,
           "One corpus only. Without `topic`, returns the page of that corpus. Omit for the language and builtins, or name a platform for its API. With `topic`, searches only the topics of that corpus.",
@@ -1574,9 +1653,14 @@ export function createServer(config: ServerConfig): McpServer {
     const found = elsewhere(PLATFORM_SCOPES, active ? [active] : [], "anywhere", (sc) =>
       nameMatchCount(registry.index(sc), query)
     );
+    const away = outOfScopeNote(`\`${query}\``, found, active);
+    // The docs fallback cannot filter by module, so a qualified name gets no fallback.
+    const mentions = away || query.includes(".") ? "" : mentionList(query, scope, max);
     return (
-      (outOfScopeNote(`\`${query}\``, found, active) ??
-        `Nothing matched "${query}". Call \`list_roc_index\` with kind='modules', or \`get_roc_module\` with a name like Str, List, Num, U64, Dec.`) +
+      (away ??
+        (mentions
+          ? `Nothing is named \`${query}\`.${mentions}`
+          : `Nothing matched "${query}". Call \`list_roc_index\` with kind='modules', or \`get_roc_module\` with a name like Str, List, Num, U64, Dec.`)) +
       projectMatches(probe, lastSegment(query)) +
       unpinnedPackageNote(`\`${query}\``, (idx) => nameMatches(idx, query)) +
       trailingNotes({ read: active ? [active] : [], empty: true, sessionNotes: notes })
@@ -1612,6 +1696,8 @@ export function createServer(config: ServerConfig): McpServer {
     const where = pattern.module ? ` in \`${pattern.module}\`` : "";
     return (
       `No name contains ${andList(pattern.parts)}${where}.` +
+      // The docs fallback cannot filter by module, so `F32.try ceil` gets no fallback.
+      (pattern.module ? "" : mentionList(pattern.raw, scope, max)) +
       projectMatches(probe, pattern) +
       unpinnedPackageNote(`\`${pattern.raw}\``, (idx) => idx.items.filter((it) => nameQuality(it, pattern) >= 0)) +
       trailingNotes({ read: active ? [active] : [], empty: true, sessionNotes: notes })
@@ -2229,7 +2315,7 @@ export function createServer(config: ServerConfig): McpServer {
   );
 
   // -----------------------------------------------------------------------------
-  // Unified search
+  // Worked programs
   // -----------------------------------------------------------------------------
 
   /**
@@ -2272,160 +2358,6 @@ export function createServer(config: ServerConfig): McpServer {
     }
     return `## ${corpus}/${ex.name}\n\n${ex.title}\n\n\`\`\`roc\n${fs.readFileSync(ex.path, "utf-8").trimEnd()}\n\`\`\``;
   }
-
-  /** Everything one scope can answer with. */
-  function collectHits(q: string, scope: ScopeName, explicit?: ScopeName): SearchHit[] {
-    const hits: SearchHit[] = [];
-
-    for (const [name, meta] of Object.entries(TOPICS)) {
-      if ((meta.scope ?? "language") !== scope) continue;
-      const score = scoreTopic(q, name, meta);
-      if (score > 0) {
-        hits.push({ kind: "topic", scope, id: name, title: name, snippet: meta.description, score });
-      }
-    }
-
-    for (const item of appFacing(scope, explicit)) {
-      const score = scoreBuiltin(q, item);
-      if (score > 0) {
-        const firstDocLine = item.docs.split("\n").find((l) => l.trim() !== "") ?? "";
-        hits.push({
-          kind: "api",
-          scope,
-          id: item.fullName,
-          title: `${item.fullName}${originSuffix(item)}`,
-          snippet: `${declLine(item, item.signature.split("\n")[0])}${firstDocLine ? " - " + firstDocLine : ""}`,
-          score,
-        });
-      }
-    }
-
-    // Whole programs. The hit names the file and does not quote it. The largest
-    // bundled example is about 3.7k tokens, so only a deliberate read returns it.
-    for (const { id, ex } of filedExamples(scope)) {
-      const score = scoreExample(q, ex);
-      if (score > 0) {
-        hits.push({ kind: "example", scope, id, title: ex.name, snippet: `${ex.title}\n   Read with get_roc_syntax(topic: "${id}")`, score });
-      }
-    }
-
-    return hits;
-  }
-
-  interface SearchHit {
-    kind: "topic" | "api" | "example";
-    scope: ScopeName;
-    id: string;            // topic name, item fullName or example address
-    title: string;
-    snippet: string;
-    score: number;
-    [key: string]: unknown;
-  }
-
-  function scoreTopic(query: string, name: string, meta: TopicMeta): number {
-    const q = query.toLowerCase();
-    let s = 0;
-    if (name === q) s += 100;
-    else if (name.includes(q)) s += 40;
-    else if (q.includes(name)) s += 25;
-    for (const k of meta.keywords) {
-      const kl = k.toLowerCase();
-      if (kl === q) s += 30;
-      else if (kl.includes(q) || q.includes(kl)) s += 8;
-    }
-    if (meta.description.toLowerCase().includes(q)) s += 5;
-    return s;
-  }
-
-  /**
-   * Scored below a topic on the same words. A topic answers a question. An
-   * example is a whole program that contains the answer incidentally.
-   */
-  function scoreExample(query: string, ex: ExampleFile): number {
-    const q = query.toLowerCase();
-    if (!q) return 0;
-    const name = ex.name.toLowerCase();
-    let s = 0;
-    if (name === q) s += 90;
-    else if (name.replace(/-/g, " ").includes(q) || name.includes(q.replace(/\s+/g, "-"))) s += 30;
-    const words = q.split(/\s+/).filter((w) => w.length > 3);
-    const title = ex.title.toLowerCase();
-    for (const w of words) if (title.includes(w)) s += 6;
-    return s;
-  }
-
-  function scoreBuiltin(query: string, item: BuiltinItem): number {
-    const q = query.toLowerCase();
-    let s = 0;
-    if (item.fullName.toLowerCase() === q) s += 100;
-    if (item.name.toLowerCase() === q) s += 80;
-    if (item.fullName.toLowerCase().endsWith("." + q)) s += 50;
-    if (item.name.toLowerCase().includes(q)) s += 20;
-    if (item.modulePath.toLowerCase() === q) s += 30;
-    if (item.modulePath.toLowerCase().includes(q)) s += 5;
-    if (item.docs.toLowerCase().includes(q)) s += 2;
-    return s;
-  }
-
-  server.registerTool(
-    "search",
-    {
-      annotations: READ_ONLY_FETCHES,
-      title: "Search Roc syntax topics and builtins",
-      description:
-        "Ranked free-text search across syntax topics, builtins, platform APIs, and worked programs. Use when unsure where the answer lives.",
-      inputSchema: z.object({
-        query: z.string().describe("Free-text query, e.g. 'parse integer', 'while loop', 'concat'."),
-        scope: scopeArg(SCOPES, "Search one corpus only. Omit for the working set.", { hint: true }),
-        limit: z.number().int().positive().optional().describe("Max number of hits (default 10)."),
-      }),
-    },
-    async ({ query, scope, limit }) => {
-      const q = query.trim();
-      const max = limit ?? 10;
-      if (!q) {
-        return {
-          content: [{ type: "text", text: "Empty query." }],
-        };
-      }
-
-      await ensureDetection();
-      const wanted = resolveScopes(scope as ScopeName | undefined, SCOPES);
-      // Score every scope, not only the active ones. The footer needs the counts
-      // in the other scopes. The corpora are small, so to score all of them costs
-      // less than a wrong retry hint.
-      const perScope = new Map(SCOPES.map((s) => [s, collectHits(q, s, scope as ScopeName | undefined)]));
-      const hits = wanted.flatMap((s) => perScope.get(s)!);
-
-      hits.sort((a, b) => b.score - a.score);
-      const top = hits.slice(0, max);
-
-      const body =
-        top.length === 0
-          ? `No hits for "${q}".`
-          : top
-              .map(
-                (h, i) =>
-                  `${i + 1}. **[${h.kind}] ${h.title}** (score ${h.score})\n   ${h.snippet}`
-              )
-              .join("\n");
-
-      const others = elsewhere(SCOPES, wanted, "pinned", (s) => perScope.get(s)!.length);
-      const hiddenHost = wanted
-        .flatMap((s) => scopeIndex(s, scope as ScopeName | undefined).items)
-        .filter((i) => i.tier === "host" && scoreBuiltin(q, i) > 0).length;
-      const text =
-        body +
-        trailingNotes({
-          read: wanted,
-          found: { shown: top.length, others },
-          hostTier: hiddenHost,
-          detection: true,
-        });
-
-      return { content: [{ type: "text", text }] };
-    }
-  );
 
   // -----------------------------------------------------------------------------
   // Project signature search
@@ -2620,7 +2552,6 @@ export function createServer(config: ServerConfig): McpServer {
       "",
       "- `get_roc_module`: every method in one module, with signatures and docs.",
       "- `search_symbols`: one method by name (`concat`, `Str.concat`), a Hoogle-style search by type (`-> Bool`), or both (`ceil : -> Dec`).",
-      "- `search`: free-text across builtins, topics, and worked programs.",
       "",
       "| Module | Methods |",
       "| --- | --- |",

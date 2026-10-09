@@ -7,9 +7,10 @@ beside it. It depends on `roc-lang/path` and `lukewilliamboswell/roc-ansi`,
 neither of which an app needs to pin unless it names their types.
 
 `get_roc_module Opt` for every field constructor, `search_symbols
-Cli.parse_or_display_message` for one signature, `search` when you do not
-know the name, `get_roc_syntax(topic: "weaver_cli")` for a complete program,
-`list_roc_index kind="examples"` for five more that all compile.
+Cli.parse_or_display_message` for one signature, `search_symbols` with words
+when you do not know the name, `get_roc_syntax(topic: "weaver_cli")` for a
+complete program, `list_roc_index kind="examples"` for five more that all
+compile.
 
 ## The contract
 

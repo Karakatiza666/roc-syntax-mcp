@@ -14,12 +14,13 @@ it. This page collects all the rules in one place.
 | Qualify the type names of a signature | `qualifyTypeNames`, `qualifySignatures` in `src/sig_search.ts:87,101` |
 | Match and score a type | `normalizeTypeSig`, `sameToken`, `scoreItem`, `searchBySig` in `src/sig_search.ts:36,122,278,325` |
 | Break ties | `compareMatches`, `compareItems` in `src/sig_search.ts:219,229` |
-| Answer a list of queries | `QUERY_LIST`, `joinReplies` in `src/server.ts:1748,1754` |
-| Build a list, for both tools | `nameList`, `nameAndType` in `src/server.ts:1344,1463` |
-| Count line, miss replies | `countLine`, `shapeHint` in `src/server.ts:1388,1418` |
-| Build the reply, bundled indexes | `searchByName`, `searchWords`, `searchByType`, `searchByNameAndType` in `src/server.ts:1558,1662,1683,1710` |
-| Build the reply, project files | `exactIn`, `searchProject` in `src/server.ts:2620,2637` |
-| Send a bundled miss to the project | `projectModuleNote`, `ProjectProbe` in `src/server.ts:1511,1527` |
+| Answer a list of queries | `QUERY_LIST`, `joinReplies` in `src/server.ts:1773,1779` |
+| Build a list, for both tools | `nameList`, `nameAndType` in `src/server.ts:1362,1481` |
+| Count line, miss replies | `countLine`, `shapeHint` in `src/server.ts:1406,1436` |
+| Build the reply, bundled indexes | `searchByName`, `searchWords`, `searchByType`, `searchByNameAndType` in `src/server.ts:1576,1685,1708,1735` |
+| Build the reply, project files | `exactIn`, `searchProject` in `src/server.ts:2375,2392` |
+| Send a bundled miss to the project | `projectModuleNote`, `ProjectProbe` in `src/server.ts:1529,1545` |
+| Find symbols by the words of their docs | `mentioned`, `mentionList` in `src/server.ts:1066,1078`, `question`, `symbolScore` in `src/words.ts:49,76` |
 
 ## Terms
 
@@ -67,6 +68,124 @@ flowchart TD
   BT -- yes --> BC[List, by type score, then name level]
   BT -- no --> BF[Closest symbols]
 ```
+
+## Algorithm
+
+The input is the `query` argument `Q`, the `scope` argument `S` and the
+`limit` argument `L`. `S` and `L` can be absent. Steps 1 to 5 answer the call.
+Steps 6 to 26 answer one query `q`, and the first of these steps that returns
+a reply ends the answer to `q`.
+
+### The call
+
+1. Read the app header of the workspace, once per session. It sets the active
+   platform and the pinned packages.
+2. If `Q` is a string, make it a list of one query. Let `max` be `L`, else 10
+   for one query and 5 for several (section 6).
+3. Answer each query of `Q` with steps 6 to 26.
+4. If an answer recorded a project miss (steps 14 and 17), read the
+   declarations of the project and answer each query again. The second pass
+   adds the project notes (section 8).
+5. Return the answer of one query alone, or each answer under a heading with
+   its query. Then add the notes about the session once (section 6).
+
+### Parse (section 1)
+
+6. Trim `q`. If `q` is empty or `:` alone, return "Empty query."
+7. Find the first `:` of `q` at bracket depth 0. If there is one, go to
+   step 10.
+8. If `q` has a bracket, a comma, `->`, `=>` or `..`, go to step 9. Else read
+   `q` as a name part. One name goes to step 11, and several words go to
+   step 16. Words in a wrong shape return the shape error. A text that is not
+   a name part goes to step 9.
+9. If `q` has two identifiers that only a space separates, outside a `where`
+   clause, return the type error. Else go to step 19 with `q` as the type.
+10. Split `q` at the `:` into a name part `N` and a type part `P`:
+    1. If `N` is not empty and is not a name part, return "`N` is not a name."
+    2. If `N` has words in a wrong shape, return the shape error.
+    3. If `P` is empty, go to step 11 for one name or step 16 for words.
+    4. If `P` has two identifiers that only a space separates, return the type
+       error.
+    5. If `N` is empty, go to step 19 with `P` as the type. Else go to step 22.
+
+### Name mode, one name `n` (sections 3 and 6)
+
+11. Look for an exact match in the address space (section 2):
+    - If `n` has a `.`, the match is the symbols of two namespaces that both
+      declare the full name `n`, else the symbol with the full name `n`, else
+      each symbol whose full name ends in `.n`.
+    - Else the match is each symbol with the name `n`.
+
+    If there is a match, return each symbol with its full docs, then the count
+    line for a type, the host ABI note and the module note.
+12. If a module path of the address space is `n` or ends in `.n`, return
+    "`n` is a module."
+13. Split `n` at its last `.` into a module filter and one word. List the
+    symbols with a name level of 0 or more (section 3) from the corpus `S`,
+    else from the address space, in the order of section 5. If the list has
+    entries, return it.
+14. If the part of `n` before its last `.` is a type, or a capitalized `n` is
+    part of a tag, return the shape reply (section 6). If the second pass
+    found `n` as a project module, return the project module reply
+    (section 8). Else record a project miss.
+15. Return the first of these that applies, then the project note and the
+    unpinned-package note:
+    1. The out-of-scope note, if a platform outside the address space has the
+       name `n` (section 7).
+    2. "Nothing is named `n`." and the docs fallback of step 26, if `n` has no
+       `.` and the fallback finds symbols.
+    3. "Nothing matched".
+
+### Name mode, several words (sections 3 and 6)
+
+16. List the symbols whose names contain every word, in the module filter if
+    there is one, from the corpus `S`, else from the address space. Sort them
+    in the order of section 5. If the list has entries, return it.
+17. Record a project miss. Return "No name contains the words.", then the docs
+    fallback of step 26 if there is no module filter, the project note and the
+    unpinned-package note.
+
+### Type mode (section 4)
+
+18. Let `wanted` be `[S]` when `S` is set, else the working set (section 2).
+19. Give each annotated public value of `wanted` a type score for the type.
+    Keep the scores above 0, sort in the order of section 5 and keep `max`.
+20. Count the matches in each other scope for the footer, with the `pinned`
+    reach (section 7).
+21. If there is no match, return "No matches for" the type, the tip and the
+    footer. Else return the list and the footer.
+
+### Both mode (sections 3, 4 and 6)
+
+22. Let `wanted` be as in step 18. Let `named` be the annotated public values
+    of `wanted` with a name level of 0 or more.
+23. If `named` is empty, return "No annotated symbol in scope=… has a name
+    that matches", the unpinned-package note and a footer with the `anywhere`
+    reach.
+24. Give each symbol of `named` a type score. If some scores are above 20,
+    return those symbols, sorted by type score, then by name level, and the
+    footer with the `pinned` reach.
+25. Else return the failed search (section 6) and the footer.
+
+### The docs fallback
+
+26. Split the words into singular content words (`docs/design/syntax-lookup.md`
+    section 3). Give each app-facing symbol of the corpus `S`, else of the
+    working set, 2 points for each content word in its name or module path,
+    and 1 point for each other content word in the first paragraph of its
+    docs. Keep the scores above 0 and within 1 of the top score, up to `max`.
+
+Seven traces, with no plugins and no app header:
+
+| `query` | Step that answers | Reply |
+|---|---|---|
+| `Str.concat` | 11 | `Str.concat` with its full docs |
+| `Str` | 12 | "`Str` is a module. Call `get_roc_module("Str")` for its page." |
+| `List a` | 8 | the shape error: "Join a module to the name with a dot ..." |
+| `F32.try ceil` | 16 | "10 names contain `try` and `ceil` in `F32`:" |
+| `sort list` | 17 | "No name contains `sort` and `list`.", then `List.sort`, `List.sort_by`, `List.sort_with` and 3 more from the docs fallback |
+| `-> Bool` | 21 | `Bool.is_eq`, `Bool.not`, `Dict.contains` and more, each at `return_type`, score 90 |
+| `ceil : -> F32` | 25 | "No symbol similar to `ceil` matches `-> F32`. 52 symbols have a different type." and the `ceiling_to_*_try` functions of `F32` |
 
 ## 1. Parse
 
@@ -156,8 +275,9 @@ last `.`, and an uppercase last segment does not make a module filter. So
 
 | Search | Without `scope` | With `scope` |
 |---|---|---|
-| Exact match | The address space: the language, the builtins with the packages that the app pins, and the active platform (`getMergedIndex`, `src/scopes.ts:1700`) | The same. If `scope` names a platform, that platform is the active platform |
-| A list: partial names, a type, or both | The working set: every corpus that is not a platform, and the active platform (`resolveScopes`) | Only the corpus that `scope` names |
+| Exact match | The address space: the language, the builtins with the packages that the app pins, and the active platform (`addressSpace`, `src/scopes.ts:1703`) | The same. If `scope` names a platform, that platform is the active platform |
+| A list of names | The address space | Only the corpus that `scope` names |
+| A list by type, or by name and type | The working set: every corpus that is not a platform, and the active platform (`resolveScopes`, `src/server.ts:641`) | Only the corpus that `scope` names |
 
 An exact match uses the whole address space, so a caller who has a name never
 gets a miss because of a wrong corpus guess. A list uses only the `scope`
@@ -301,9 +421,9 @@ next step.
 | Name | One name with an exact match: the full name, the two symbols of a name that two namespaces declare, a suffix (`U64.from_str` finds `Num.U64.from_str`), or all symbols with the bare name | Each symbol with its full docs. A note when two namespaces declare the name, when the symbol is the host ABI boundary, or when the name is also a module. For a type, the count line below |
 | Name | One name, no exact match. Some names contain the word | "Nothing is named `X`. N names contain `x`:" and a list. The next step is to add a type |
 | Name | Several words. Some names contain all of them | "N names contain `try` and `ceil` in `F32`:" and a list. Several words have no exact match |
-| Name | Several words, no match | "No name contains `try` and `ceil` in `F32`." Then the unpinned-package note |
+| Name | Several words, no match | "No name contains `try` and `ceil` in `F32`." Without a module, the symbols whose module or docs contain the words follow, as in the next row. Then the unpinned-package note |
 | Name | The query ends in `.` | "N symbols are in `M`:" and a list. The caller asked for the contents of the module, so the reply does not call it a miss |
-| Name | No match | A miss reply below that names the right query shape, if one applies. Else the out-of-scope note, else "Nothing matched". Then the unpinned-package note |
+| Name | No match | A miss reply below that names the right query shape, if one applies. Else the out-of-scope note. Else, for a name with no module, "Nothing is named `x`." and the symbols whose module or docs contain its words: 2 points for each word in the name or the module path, 1 for each other word in the first paragraph of the docs, and only the entries within 1 point of the best. Else "Nothing matched". Then the unpinned-package note |
 | Type | Matches | A list. Each entry shows its match kind and type score |
 | Type | No match | "No matches for `T` in scope=…", and a tip: the names of type variables have no effect, and the order of arguments does |
 | Both | No annotated symbol has a matching name | "No annotated symbol in scope=… has a name that matches `X`." Then the unpinned-package note |
@@ -409,7 +529,7 @@ A name that the caller asks for can be a name from the project. So
 | `search_symbols("helper")`, a name or words miss | N names that match | The miss, then "`search_project_symbols` has N matches for `helper` in this project." |
 
 `search_symbols` reads the workspace index only after a miss, because each read
-walks the workspace (`ProjectProbe`, `src/server.ts:1527`). `get_roc_module`
+walks the workspace (`ProjectProbe`, `src/server.ts:1545`). `get_roc_module`
 reads it on every call.
 
 `search_project_symbols` exists apart from `search_symbols` because it reads

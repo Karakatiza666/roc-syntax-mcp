@@ -152,10 +152,9 @@ Your AI harness keeps its entry for the server. In Claude Code, run
 
 | Tool | What it does |
 |------|--------------|
-| `get_roc_syntax` | Call this tool first, with no arguments. It returns the whole language and its builtins as two compact pages, which answer most questions with no second call. The server also points to this tool in the MCP `instructions` that it sends when the client connects. With `topic`, it returns a topic example by name or keyword, a package page by the package name, or a worked program by its corpus and file name, such as `basic-cli/hello`. With `scope` and no `topic`, it returns the page of that corpus |
+| `get_roc_syntax` | Call this tool first, with no arguments. It returns the whole language and its builtins as two compact pages, which answer most questions with no second call. The server also points to this tool in the MCP `instructions` that it sends when the client connects. With `topic`, it returns a topic example by name or keyword, a package page by the package name, or a worked program by its corpus and file name, such as `basic-cli/hello`. A question in words returns the one topic that covers clearly more of its words than any other. Without such a topic, it returns the closest topics, worked programs and symbols, each as the call that reads it. With `scope` and no `topic`, it returns the page of that corpus |
 | `list_roc_index` | Every index, selected by `kind`: `scopes`, `topics`, `modules`, `examples` |
-| `search` | Ranked free-text search across topics, signatures and worked programs. Use it when you do not know which of them has the answer |
-| `search_symbols` | Builtins and platform APIs by name, by type, or both, written as a Roc annotation. A name (`concat`, `Str.concat`) returns the signature and docstring, else the names that contain it. A type is a Hoogle-style structural search: `List(x), (x -> y) -> List(y)` finds `List.map`, and `-> Bool` searches by return type. `ceil : -> Dec` lists the names that contain `ceil`, ranked by type. One call takes up to 8 queries |
+| `search_symbols` | Builtins and platform APIs by name, by type, or both, written as a Roc annotation. A name (`concat`, `Str.concat`) returns the signature and docstring, else the names that contain it, else the symbols whose module or docs contain the words. A type is a Hoogle-style structural search: `List(x), (x -> y) -> List(y)` finds `List.map`, and `-> Bool` searches by return type. `ceil : -> Dec` lists the names that contain `ceil`, ranked by type. One call takes up to 8 queries |
 | `search_project_symbols` | The search of `search_symbols`, by name, type, or both, over the `.roc` files in your own project. Each entry gives its `file:line`. With this tool, an agent can find the API of a platform that this server does not bundle |
 | `get_roc_module` | Every function and type of one module as a signature list: a builtin (`Str`, `U64`, ...), a module of the app's platform or a documented package. `detail: "full"` includes the original docstrings. For a module of your project, it names the file to read |
 | `roc_check` | Runs `roc check` over a code string or a path. It wraps code that has no header in a verified app for the platform in scope, and it reports line numbers in your own source |
@@ -195,7 +194,7 @@ Topics are worked examples. Each topic shows one construct or one task, not a
 whole program. The language topics also carry every rule of upstream's language
 reference, as comments, `expect`s and `# @rejects` / `# @warns` blocks that
 `check:roc` compiles. `list_roc_index(kind: "topics")` prints them with
-descriptions. The agent gets a topic through `get_roc_syntax(topic:)` or `search`.
+descriptions. The agent gets a topic through `get_roc_syntax(topic:)`, by its name or by a question.
 
 | Group | Topics |
 |---|---|

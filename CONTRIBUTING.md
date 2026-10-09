@@ -28,7 +28,7 @@ to each commit on your branch that does not have it.
 | `corpus/packages/` | One directory per bundled package: `plugin.json`, `UPSTREAM`, `index.json`, and for roc-parser and roc-random an `overview.md`, `topics/` and `verify/`. roc-parser also has the release's `examples/` and the `patches/` that repin them |
 | `index.json` | The parsed signatures of the release a manifest names, written by `npm run build:index`. No release is vendored as source |
 | `plugins/` | Child packages: corpora published separately, each with its own version. They are not in the server's published tarball. An install of the root package does not build them, and the server loads one only when it is declared. [`plugins/README.md`](plugins/README.md) |
-| `docs/design/` | The design of the server. [`packaging.md`](docs/design/packaging.md), [`plugins.md`](docs/design/plugins.md), [`symbol-search.md`](docs/design/symbol-search.md) |
+| `docs/design/` | The design of the server. [`packaging.md`](docs/design/packaging.md), [`plugins.md`](docs/design/plugins.md), [`symbol-search.md`](docs/design/symbol-search.md), [`syntax-lookup.md`](docs/design/syntax-lookup.md) |
 
 ## From a clone
 

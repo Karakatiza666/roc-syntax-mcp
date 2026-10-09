@@ -338,7 +338,8 @@ source:
 
 - `search_symbols` on a few names that the diff changed.
 - `list_roc_index` for the full topic count.
-- `search` for a term that should match all three kinds.
+- `get_roc_syntax` with a question in words, such as "sort list", that should
+  point to topics, worked programs and symbols.
 
 ## Step 8: commit
 

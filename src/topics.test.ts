@@ -60,61 +60,94 @@ test("an absolute topic directory is read where it is", () => {
   );
 });
 
+const topicFor = (q: string, scopes: string[] | undefined, table = TOPICS) => matchTopic(q, scopes, table).topic;
+
 // `_` is a keyword of `derived_methods`, and every snake_case query contains
 // `_`. A substring match sends all of these queries to `derived_methods`.
 test("a keyword under three characters is exact-match only", () => {
-  assert.equal(matchTopic("_", undefined, TOPICS), "derived_methods");
-  assert.notEqual(matchTopic("key_pressed", undefined, TOPICS), "derived_methods");
-  assert.notEqual(matchTopic("with_camera", ["language"], TOPICS), "derived_methods");
+  assert.equal(topicFor("_", undefined), "derived_methods");
+  assert.notEqual(topicFor("key_pressed", undefined), "derived_methods");
+  assert.notEqual(topicFor("with_camera", ["language"]), "derived_methods");
 });
 
 // `str` is a keyword of `strings`, so a raw substring match sends "how do I
 // structure a game" to string literals. The roc-ray architecture topic exists
 // for that question.
 test("a keyword matches a whole word, not a word that contains it", () => {
-  assert.equal(matchTopic("how do I structure a game", ["language"], TOPICS), null);
-  assert.equal(matchTopic("string interpolation", ["language"], TOPICS), "strings");
+  assert.equal(topicFor("how do I structure a game", ["language"]), null);
+  assert.equal(topicFor("string interpolation", ["language"]), "strings");
   // `_` and `.` are separators, so "pattern matching" finds `pattern_matching`.
-  assert.equal(matchTopic("how do I use pattern matching", ["language"], TOPICS), "pattern_matching");
+  assert.equal(topicFor("how do I use pattern matching", ["language"]), "pattern_matching");
 });
 
 // A topic name wins over every keyword of every other topic.
 test("an exact topic name is matched before anything else", () => {
   for (const name of Object.keys(TOPICS)) {
-    assert.equal(matchTopic(name, [TOPICS[name].scope ?? "language"], TOPICS), name);
+    assert.equal(topicFor(name, [TOPICS[name].scope ?? "language"]), name);
   }
 });
 
 // `json` has the keyword "parse" and comes before every plugin topic. If
 // declaration order decides, `json` gets every question with "parse" in it,
 // including questions about parsing arguments.
+const parsers = mergeTopics(
+  { json: { file: "json.roc", description: "d", keywords: ["parse", "encode"] } },
+  ["roc-ray"] as ScopeName[],
+  defs([
+    {
+      name: "weave_cli",
+      file: "/opt/weave/topics/weave_cli.roc",
+      description: "d",
+      keywords: ["parse", "command line", "arguments"],
+    },
+  ]),
+  []
+);
+
 test("the topic accounting for more of the question wins, not the first declared", () => {
-  const first: Record<string, TopicMeta> = {
-    json: { file: "json.roc", description: "d", keywords: ["parse", "encode"] },
+  assert.equal(topicFor("how do I parse command line arguments", undefined, parsers), "weave_cli");
+  // When each topic covers the same words, neither is sure, and both are pointers.
+  const tie = matchTopic("how do I parse this", undefined, parsers);
+  assert.equal(tie.topic, null);
+  assert.deepEqual(tie.ranked.map((r) => r.name), ["json", "weave_cli"]);
+});
+
+// A keyword names one topic only when no other topic has it. "parse" is a
+// keyword of `json`, `parser_combinators` and `weaver_cli`.
+test("a keyword that several topics share is not an address", () => {
+  assert.equal(topicFor("parse", undefined, parsers), null);
+  assert.equal(topicFor("encode", undefined, parsers), "json");
+});
+
+// A wrong topic costs a whole program of tokens, so the top topic must cover
+// clearly more of the question than the next one. The margin is 1 word for a
+// question of up to 4 content words, and 2 words for a longer one.
+test("a question gets a topic only when it leads the next one by the margin", () => {
+  const table: Record<string, TopicMeta> = {
+    wide: { file: "w.roc", description: "d", keywords: ["alpha", "beta", "gamma"] },
+    narrow: { file: "n.roc", description: "d", keywords: ["alpha"] },
   };
-  const merged = mergeTopics(
-    first,
-    ["roc-ray"] as ScopeName[],
-    defs([
-      {
-        name: "weave_cli",
-        file: "/opt/weave/topics/weave_cli.roc",
-        description: "d",
-        keywords: ["parse", "command line", "arguments"],
-      },
-    ]),
-    []
-  );
-  assert.equal(matchTopic("how do I parse command line arguments", undefined, merged), "weave_cli");
-  // When each topic covers one word, declaration order decides.
-  assert.equal(matchTopic("how do I parse this", undefined, merged), "json");
+  assert.equal(topicFor("alpha beta", undefined, table), "wide");
+  assert.equal(topicFor("alpha", undefined, table), null);
+  assert.equal(topicFor("alpha beta delta epsilon zeta", undefined, table), null);
+  assert.equal(topicFor("alpha beta gamma epsilon zeta", undefined, table), "wide");
+  // Stop words are not content words, so this question has 2 and not 5.
+  assert.equal(topicFor("how do I use alpha with beta", undefined, table), "wide");
+});
+
+// "pattern" must match the `patterns` of `list_patterns`. Each word of a name
+// counts alone, because the question rarely holds the name as a phrase.
+test("a plural and a name word out of order still match", () => {
+  const m = matchTopic("pattern match on a list", ["language"], TOPICS);
+  assert.equal(m.topic, null);
+  assert.deepEqual(m.ranked.slice(0, 2).map((r) => r.name), ["pattern_matching", "list_patterns"]);
 });
 
 // "program" is a webserver_handler keyword (its `program` export), and that
 // topic comes first. A one-word tie sends CLI questions to the webserver topic.
 test("a cli program question goes to basic-cli, not the webserver", () => {
-  assert.equal(matchTopic("write a cli program", undefined, TOPICS), "cli_app");
-  assert.equal(matchTopic("how do I write a cli tool", undefined, TOPICS), "cli_app");
+  assert.equal(topicFor("write a cli program", undefined), "cli_app");
+  assert.equal(topicFor("how do I write a cli tool", undefined), "cli_app");
 });
 
 // scripts/check-topics.roc checks the `@rejects` and `@warns` claims of the

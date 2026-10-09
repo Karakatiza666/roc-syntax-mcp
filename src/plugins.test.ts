@@ -499,7 +499,7 @@ test("an installed platform is not read until it is chosen", async () => {
     ],
   });
   assert.match(texts[0], /Omitting `scope` reads language \+ builtin\./);
-  assert.match(texts[1], /No topic matched/);
+  assert.match(texts[1], /^Nothing matched "how do I structure a game"/);
   assert.match(texts[2], /^## ray_game/m);
 });
 
@@ -518,7 +518,7 @@ test("a topic answers to its own name from any corpus", async () => {
   assert.match(texts[0], /^## ray_project/m);
   assert.match(texts[0], /A roc-ray topic, which this workspace has not chosen\./);
   // If the caller sets a scope, the search stays in that scope.
-  assert.match(texts[1], /No topic matched "ray_project" in scope=language/);
+  assert.match(texts[1], /^Nothing matched "ray_project" in scope=language\./);
 });
 
 // The app header decides the working set. An installed plugin does not change it.
@@ -594,9 +594,9 @@ function unservedPlugin(): string {
   return root;
 }
 
-// Each tool that adds trailing notes to its answer shows the note. A lookup
-// miss and an empty search are different tools and different code paths, and
-// both must show it.
+// Each tool that adds trailing notes to its answer shows the note. A name
+// miss, a words miss and a type miss are different code paths, and each must
+// show it.
 test("a namespace nothing serves is reported by every tool that comes up empty", async () => {
   const dir = unservedPlugin();
   const { texts } = await session({
@@ -604,7 +604,7 @@ test("a namespace nothing serves is reported by every tool that comes up empty",
     calls: [
       { name: "search_symbols", args: { query: ["Request.from_method"] } },
       { name: "search_symbols", args: { query: ["Zzz -> Qqq"] } },
-      { name: "search", args: { query: "qqqzzzxyw" } },
+      { name: "search_symbols", args: { query: ["qqq zzz"] } },
       { name: "get_roc_module", args: { module: "Zzz" } },
     ],
   });
@@ -624,7 +624,7 @@ test("a forced namespace is served, and every item says what it was forced over"
     argv: [`--plugin=${dir}`, "--platform=ray-unserved", "--force=roc-lang/http"],
     calls: [
       { name: "search_symbols", args: { query: ["Request.with_body"] } },
-      { name: "search", args: { query: "with_body" } },
+      { name: "search_symbols", args: { query: ["with body"] } },
     ],
   });
   for (const text of texts) {
@@ -699,7 +699,7 @@ test("an answer that found something does not carry the unserved note", async ()
     argv: [`--plugin=${dir}`, "--platform=ray-unserved"],
     calls: [
       { name: "search_symbols", args: { query: ["Str.trim"] } },
-      { name: "search", args: { query: "trim" } },
+      { name: "search_symbols", args: { query: ["trim"] } },
     ],
   });
   for (const text of texts) assert.doesNotMatch(text, /No provider serves/);
@@ -739,7 +739,8 @@ test("a pinned package is read with the builtins, an unpinned one is named on a 
   });
   const calls = [
     { name: "list_roc_index", args: { kind: "scopes" } },
-    { name: "get_roc_syntax", args: { topic: "how do I read command line arguments" } },
+    // `cli_app` also covers "command line arguments", so the package name decides.
+    { name: "get_roc_syntax", args: { topic: "weave command line arguments" } },
     { name: "search_symbols", args: { query: ["Opt.flag"] } },
     { name: "get_roc_module", args: { module: "Hidden" } },
   ];
@@ -847,7 +848,7 @@ test("a self-hosted platform is detected by its URL, and another bundle is named
       calls: [
         { name: "get_roc_syntax" },
         { name: "search_symbols", args: { query: ["Brush.dab!"] } },
-        { name: "search", args: { query: "dab", scope: "paint" } },
+        { name: "get_roc_syntax", args: { scope: "paint" } },
       ],
     });
   const same = await call(write(path.join(tmp, "paint-same"), { "main.roc": `app [main!] { pf: platform "${PAINT}" }\n` }));

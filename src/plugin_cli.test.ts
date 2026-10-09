@@ -1109,7 +1109,7 @@ test("budget passes a plugin that fits every tool, and fails one that alone does
   const small = ray({ name: "ray-small", checks: ["topics"], topics: [topic("small_drawing")] }, { "topics/t.roc": "x\n" });
   const fits = await budgetCheck(small);
   assert.equal(fits.status, "ok", fits.detail);
-  assert.match(fits.detail!, /^search\s+\+\d+$/m);
+  assert.match(fits.detail!, /^search_symbols\s+\+\d+$/m);
 
   const many = Array.from({ length: 30 }, (_, i) => topic(`a_rather_long_topic_name_number_${i}`));
   const big = ray({ name: "ray-big", checks: ["topics"], topics: many }, { "topics/t.roc": "x\n" });

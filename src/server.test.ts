@@ -12,6 +12,7 @@ import { spawnSync } from "node:child_process";
 import { InMemoryTransport, LATEST_PROTOCOL_VERSION } from "@modelcontextprotocol/server";
 import { createServer, type ServerConfig, serverConfig } from "./server.ts";
 import { parserSource, type SignatureSource } from "./project_index.ts";
+import { topicsFor } from "./topics.ts";
 
 const ROOT = path.join(import.meta.dirname, "..");
 const TSX_LOADER = import.meta.resolve("tsx/esm");
@@ -399,6 +400,118 @@ test("a project search reads words, modules and the shape of a miss", async () =
     assert.match(await call("Geo."), /^3 symbols are in `Geo`:\n\n/);
     assert.match(await call("Point"), /\n\n1 function takes a `Point` \(`Point ->`\)\.$/);
     assert.match(await call("Point.length"), /^`Point` is a type in `Geo`\. Its functions are in their module, so search `length`, or `Point ->`/);
+  } finally {
+    await s.close();
+  }
+});
+
+// Questions in the words agents use, each with the answer that a reader of the
+// corpus gives. A string is the topic that the reply must be. A list holds what
+// the pointers must name, and an empty list means any reply but a whole topic.
+// A wrong topic costs a whole program of tokens, so a question with no sure
+// match must get pointers.
+const QUESTIONS: [string, string | undefined, string | string[]][] = [
+  ["while loop", undefined, "loops"],
+  ["string interpolation", undefined, "strings"],
+  ["dictionary", undefined, "dict_set"],
+  ["early return on error", undefined, "try_operator"],
+  ["custom type with methods", undefined, "nominal"],
+  ["unit test", undefined, "testing"],
+  ["shadowing", undefined, "naming"],
+  ["debug print", undefined, "dbg_crash"],
+  ["parse csv", undefined, "parser_csv"],
+  ["string length", undefined, "strings"],
+  ["if then else expression syntax", undefined, "conditionals"],
+  ["numeric literal type suffix F32 annotation", undefined, "numbers"],
+  ["float fractional literal Dec F64 number suffix examples", undefined, "numbers"],
+  ["where clause method constraints static dispatch", undefined, "static_dispatch"],
+  ["read file", "basic-cli", "cli_files"],
+  ["environment variable", "basic-cli", "cli_terminal"],
+  ["run a shell command", "basic-cli", "cli_command"],
+  ["command line arguments", "basic-cli", "cli_app"],
+  ["current time", "basic-cli", "cli_terminal"],
+  ["sleep", "basic-cli", "cli_terminal"],
+  ["random number", "basic-cli", "cli_terminal"],
+  ["server-sent events", "basic-webserver", "webserver_sse"],
+  ["sqlite", "basic-webserver", "webserver_sqlite"],
+  ["sqlite insert", "basic-webserver", "webserver_sqlite"],
+  ["pattern match on a list", undefined, ["pattern_matching", "list_patterns"]],
+  ["mutable variable", undefined, ["loops"]],
+  ["import a module", undefined, ["imports", "modules"]],
+  ["hash map", undefined, ["hashing"]],
+  ["parse integer", undefined, ["numbers"]],
+  ["sort list", undefined, ["List.sort"]],
+  ["concat", undefined, ["Str.concat", "List.concat"]],
+  ["split string", undefined, ["Str.split_on"]],
+  ["max of a list", undefined, ["List.max"]],
+  ["trim whitespace", undefined, ["Str.trim"]],
+  ["generate html", undefined, []],
+  ["pong", undefined, []],
+];
+
+test("a question gets its topic on a sure match, and pointers otherwise", async () => {
+  const s = await inProcess([]);
+  try {
+    for (const [q, scope, want] of QUESTIONS) {
+      const text = await s.call("get_roc_syntax", { topic: q, ...(scope ? { scope } : {}) });
+      const topic = /^## (\S+)/.exec(text)?.[1] ?? null;
+      if (typeof want === "string") {
+        assert.equal(topic, want, `"${q}" answered with ${topic ?? text.slice(0, 300)}`);
+        continue;
+      }
+      assert.equal(topic, null, `"${q}" answered with the whole topic ${topic}`);
+      for (const name of want) {
+        assert.ok(text.includes(`topic: "${name}")`) || text.includes(`\`${name}\``), `"${q}" does not point to ${name}:\n${text}`);
+      }
+    }
+  } finally {
+    await s.close();
+  }
+});
+
+// A sure match can be wrong, so the reply names the next topics as calls.
+test("a topic found by the words of a question names the next ranked topics", async () => {
+  const s = await inProcess([]);
+  try {
+    const text = await s.call("get_roc_syntax", { topic: "custom type with methods" });
+    assert.match(text, /^## nominal/);
+    assert.match(text, /^Also: get_roc_syntax\(topic: "iterators"\), /m);
+    // A name is an address, so its reply names nothing else.
+    assert.doesNotMatch(await s.call("get_roc_syntax", { topic: "nominal" }), /^Also:/m);
+  } finally {
+    await s.close();
+  }
+});
+
+// "urlencoded" is in no name, and agents ask for it. The docs of
+// `parse_form_url_encoded` contain it.
+test("a word in no name finds the symbols whose docs contain it", async () => {
+  const s = await inProcess([]);
+  try {
+    for (const q of ["urlencoded", "form urlencoded"]) {
+      const text = await s.call("search_symbols", { query: [q], scope: "basic-webserver" });
+      assert.match(text, /symbols? ha(s|ve) these words in the module or the docs:/, text);
+      assert.match(text, /MultipartFormData\.parse_form_url_encoded/, text);
+    }
+  } finally {
+    await s.close();
+  }
+});
+
+// A topic name is an address in any corpus. Each word of a name also counts as
+// a word of a question, so without the address step "cli" in `cli_files` finds
+// `weaver_cli` in the language scope.
+test("every topic answers to its own name, with no scope and no app header", async () => {
+  const s = await inProcess([`--plugin=${RAY}`]);
+  try {
+    const names = Object.keys(topicsFor(s.config.catalog).topics);
+    const wrong: string[] = [];
+    for (const name of names) {
+      const text = await s.call("get_roc_syntax", { topic: name });
+      const got = /^## (\S+)/.exec(text)?.[1] ?? null;
+      if (got !== name) wrong.push(`${name} -> ${got}`);
+    }
+    assert.deepEqual(wrong, []);
   } finally {
     await s.close();
   }

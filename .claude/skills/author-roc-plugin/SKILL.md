@@ -354,7 +354,7 @@ that a real user would have. Then ask the questions that a user would ask.
 |---|---|
 | `list_roc_index(kind: "scopes")` | A platform appears as a scope, with the item count that `inspect` reported. A package appears under "Documented packages", and the entry says whether this app pins it |
 | A topic, by its own name | The name is an address, and it must resolve |
-| A topic, as the question that its description states, with no `scope` | This is the query that fails. Retrieval takes the first match across all installed corpora, and your corpus is the newest |
+| A topic, as the question that its description states, with no `scope` | This is the query that fails. A question gets a topic only when that topic covers clearly more of its words than any other topic in all installed corpora. Otherwise the reply lists the closest topics as calls. A keyword that another topic also has does not count as an address |
 | One name, with `search_symbols` and no `scope` | Ask once. If the name gets two answers, the server indexes one tree twice. For a package, ask from a workspace that pins it and from one that does not. In the second workspace, the answer is a miss that names your package |
 | `get_roc_syntax(scope: "<name>")` for a platform, `get_roc_syntax(topic: "<name>")` for a package | The server returns the full page, and it is the page that you wrote |
 

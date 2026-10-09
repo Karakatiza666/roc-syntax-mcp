@@ -225,7 +225,7 @@ test("the overview names only tools the server actually registers", async () => 
 test("every tool advertises itself as read-only, and as open-world when it can download", async () => {
   const replies = await rpc([INIT, INITIALIZED, { jsonrpc: "2.0", id: 1, method: "tools/list", params: {} }]);
   const tools = replies.get(1).result.tools as { name: string; annotations?: Record<string, unknown> }[];
-  assert.ok(tools.length >= 8, `only ${tools.length} tools listed`);
+  assert.ok(tools.length >= 7, `only ${tools.length} tools listed`);
 
   for (const t of tools) {
     assert.deepEqual(
@@ -271,7 +271,7 @@ test("the server serves the latest protocol revision, not just the legacy era", 
   ]);
 
   assert.strictEqual(replies.get(0).result.protocolVersion, LATEST_PROTOCOL_VERSION);
-  assert.strictEqual((replies.get(1).result.tools as unknown[]).length, 8);
+  assert.strictEqual((replies.get(1).result.tools as unknown[]).length, 7);
   assert.match(replies.get(2).result.content[0].text, /Roc/);
   assert.ok(!replies.get(2).result.isError);
   assert.match(replies.get(3).result.contents[0].text, /Roc/);
@@ -377,7 +377,7 @@ test("a declared platform's topics are enumerated without being configured", asy
 test("every tool taking a scope says when to name a platform in it", async () => {
   const replies = await rpc([INIT, INITIALIZED, { jsonrpc: "2.0", id: 1, method: "tools/list", params: {} }]);
   const tools = replies.get(1).result.tools as { name: string; inputSchema: any }[];
-  for (const name of ["search", "get_roc_syntax", "search_symbols"]) {
+  for (const name of ["get_roc_syntax", "search_symbols"]) {
     const scope = tools.find((t) => t.name === name)!.inputSchema.properties.scope.description as string;
     assert.match(scope, /Name a platform \(basic-webserver, basic-cli\)/, name);
     assert.match(scope, /rather than the language or the builtins/, name);
@@ -426,7 +426,7 @@ test("no tool declares an output schema or returns structured content", async ()
   const calls: [string, Record<string, unknown>][] = [
     ["get_roc_syntax", {}],
     ["list_roc_index", { kind: "scopes" }],
-    ["search", { query: "sqlite", scope: "builtin" }],
+    ["get_roc_syntax", { topic: "sort list" }],
     ["search_symbols", { query: ["Str.concat"] }],
     ["search_symbols", { query: ["-> Bool"] }],
   ];
@@ -541,7 +541,7 @@ test("get_roc_syntax answers the overview without a topic, and one topic with on
   assert.match(text(3), /^## pattern_matching/);
   assert.ok(text(3).length < 6000, `a topic answered with ${text(3).length} chars`);
 
-  assert.match(text(4), /No topic matched "no_such_topic_here"/);
+  assert.match(text(4), /^Nothing matched "no_such_topic_here"/);
   assert.ok(text(4).length < 6000, `a miss answered with ${text(4).length} chars`);
 
   // `scope` takes every corpus, because without a topic it selects a page. Some corpora have no topics.

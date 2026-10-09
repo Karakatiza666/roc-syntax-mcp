@@ -234,7 +234,7 @@ test("get_roc_syntax points at the platform page without folding it in", async (
 // cost to each call on the corpus that the workspace uses.
 test("the mismatch note fires on the first scoped response and not the second", async () => {
   const root = workspace("warn-once", { "main.roc": appFile("0.15.0") });
-  const call = { name: "search", args: { query: "respond", scope: "basic-webserver" } };
+  const call = { name: "get_roc_syntax", args: { topic: "webserver_handler", scope: "basic-webserver" } };
   const [first, second] = await session({ cwd: root }, [call, call]);
   assert.match(first, /pins basic-webserver 0\.15\.0, this server bundles 0\.17\.0/);
   assert.ok(!/this server bundles/.test(second), "the note repeated");
@@ -244,7 +244,7 @@ test("the mismatch note fires on the first scoped response and not the second", 
 test("a builtin-only call carries no platform mismatch note", async () => {
   const root = workspace("builtin-only", { "main.roc": appFile("0.15.0") });
   const [text] = await session({ cwd: root }, [
-    { name: "search", args: { query: "concat", scope: "builtin" } },
+    { name: "search_symbols", args: { query: ["concat"], scope: "builtin" } },
   ]);
   assert.ok(!/this server bundles/.test(text), "the note fired on a builtin-only call");
 });
@@ -397,13 +397,13 @@ test("with nothing pinned, no platform answers and the note says where to look",
 test("a footer never offers the platform the workspace does not pin", async () => {
   const pinned = workspace("cli-pinned-4", { "main.roc": cliAppFile("0.24.0") });
   const [scoped] = await session({ cwd: pinned }, [
-    { name: "search", args: { query: "sqlite", scope: "builtin" } },
+    { name: "get_roc_syntax", args: { topic: "sqlite", scope: "language" } },
   ]);
   assert.ok(!scoped.includes("basic-webserver:"), "the unpinned platform was offered");
 
   const unpinned = workspace("unpinned-2", { "lib.roc": "module [x]\n\nx = 1\n" });
   const [open] = await session({ cwd: unpinned }, [
-    { name: "search", args: { query: "sqlite", scope: "builtin" } },
+    { name: "get_roc_syntax", args: { topic: "sqlite", scope: "language" } },
   ]);
   assert.match(open, /basic-webserver: \d+/);
 });
@@ -423,7 +423,7 @@ test("a package the app pins that no platform declares is named and its miss exp
   });
   const [listed, missed] = await session({ cwd: root }, [
     scopes,
-    { name: "search", args: { query: "qqqzzzxyw" } },
+    { name: "search_symbols", args: { query: ["qqqzzzxyw"] } },
   ]);
   assert.match(listed, /Also pinned: example\/json 2\.1\.0 \(no provider\)\./);
   assert.match(missed, /No provider serves example\/json\.\nYour app header pins 2\.1\.0\./);
@@ -438,7 +438,7 @@ test("an app pinning a release the platform's API refuses is told before the com
     ),
   });
   const [text] = await session({ cwd: root }, [
-    { name: "search", args: { query: "respond", scope: "basic-webserver" } },
+    { name: "get_roc_syntax", args: { topic: "webserver_handler", scope: "basic-webserver" } },
   ]);
   assert.match(text, /Your app pins roc-lang\/http 9\.9\.9, and this server serves 1\.0\.0\./);
   assert.match(text, /this app will not compile\. Move the app's pin to 1\.0\.0/);
@@ -454,29 +454,25 @@ test("an app pinning what its platform requires is told nothing new", async () =
   });
   const [listed, text] = await session({ cwd: root }, [
     scopes,
-    { name: "search", args: { query: "respond", scope: "basic-webserver" } },
+    { name: "get_roc_syntax", args: { topic: "webserver_handler", scope: "basic-webserver" } },
   ]);
   assert.ok(!listed.includes("Also pinned:"), "a pin the platform declares was reported as extra");
   assert.ok(!text.includes("Your app pins"), "an agreeing pin was reported as a conflict");
 });
 
-test("an example is listed, searchable, and read through a tool", async () => {
-  const [listed, searched] = await session({ cwd: ROOT }, [
+test("an example is listed, found from a question, and read through a tool", async () => {
+  const [listed, pointed] = await session({ cwd: ROOT }, [
     { name: "list_roc_index", args: { kind: "examples", scope: "basic-webserver" } },
-    { name: "search", args: { query: "sse", scope: "basic-webserver" } },
+    { name: "get_roc_syntax", args: { topic: "sleep", scope: "basic-webserver" } },
   ]);
   // A client without resources cannot follow a pointer to a URI.
-  for (const text of [listed, searched]) assert.ok(!text.includes("roc-syntax://"), text);
+  for (const text of [listed, pointed]) assert.ok(!text.includes("roc-syntax://"), text);
   assert.match(listed, /^- basic-webserver\/sse$/m);
   // A real address, not a template, so the format needs no explanation.
   assert.match(listed, /^Read one with get_roc_syntax\(topic: "basic-webserver\/[a-z.-]+"\)\.$/m);
-  assert.match(searched, /\[example\] sse/);
-  assert.match(searched, /Read with get_roc_syntax\(topic: "basic-webserver\/sse"\)/);
-  // The topic is the better answer for a question, so it must outrank the file.
-  assert.ok(
-    searched.indexOf("[topic] webserver_sse") < searched.indexOf("[example] sse"),
-    "the example outranked the topic"
-  );
+  // No topic covers "sleep", so the reply points to the program by its address.
+  assert.match(pointed, /^No topic is a sure match for "sleep"/);
+  assert.match(pointed, /^- get_roc_syntax\(topic: "basic-webserver\/sleep"\): /m);
 });
 
 test("get_roc_syntax reads an example by its address or its URI", async () => {
@@ -587,7 +583,7 @@ test("a release that cannot be fetched falls back to the bundled one", async () 
   const root = workspace("fetch-fail-app", { "main.roc": cliPinning(`rand: "${randUrl("9.9.9")}",`) });
   const [found, searched] = await session({ cwd: root, env: roc.env }, [
     { name: "search_symbols", args: { query: ["Random.bounded_u8"] } },
-    { name: "search", args: { query: "bounded_u8" } },
+    { name: "search_symbols", args: { query: ["bounded_u8 : U8"] } },
   ]);
   assert.match(found, /\(roc-random 0\.9\.2\)/);
   assert.match(searched, /Your app pins kili-ilo\/roc-random 9\.9\.9, and this server serves 0\.9\.2\./);
@@ -642,7 +638,7 @@ test("a platform pinned at another release is read from that release", async () 
     { name: "search_symbols", args: { query: ["Stdout.line_new!"] } },
     { name: "search_symbols", args: { query: ["Stdout.line!"] } },
     scopes,
-    { name: "search", args: { query: "line_new" } },
+    { name: "search_symbols", args: { query: ["-> Str"] } },
     { name: "get_roc_syntax", args: { scope: "basic-cli" } },
   ]);
   assert.match(overview, /basic-cli/);

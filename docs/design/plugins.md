@@ -541,6 +541,15 @@ caller read there, the description would advertise a call that then answers
 "no topic matched". The reply names the corpus of the topic. A search by
 keyword or by question stays inside the scopes that the caller selected.
 
+A keyword is an address only when one topic has it. A question gets a topic
+only when that topic covers clearly more words of the question than the next
+topic. Stop words such as "how" and "the" do not count. The margin is 1 word
+for up to 4 words, and 2 words for 5 or more. Otherwise the reply lists the
+closest topics, worked programs and symbols, each as the call that reads it.
+So a plugin topic gets a question only when its name and keywords cover more
+words of that question than any other topic. `docs/design/syntax-lookup.md`
+gives every rule.
+
 The server binary also has the authoring tools, under a `plugin` argument. In
 this mode, the binary does not speak JSON-RPC, so it does not import the
 server:

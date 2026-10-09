@@ -5,6 +5,7 @@ import * as fs from "fs";
 import * as path from "path";
 
 import { type Catalog, ROOT, type ScopeName, type ScopeTopic } from "./scopes.ts";
+import { question, type Question, singular, words } from "./words.ts";
 
 const TOPICS_DIR = path.join(ROOT, "corpus", "language", "topics");
 
@@ -166,7 +167,8 @@ const BUILTIN_TOPICS: Record<string, TopicMeta> = {
   numbers: {
     file: "numbers.roc",
     description: "Numeric types and literals (`5.U64`, `0x5`, `1.5e-2`, underscores), `Dec` versus floats, literal defaulting, and custom number types through `from_numeral` and `Numeral`.",
-    keywords: ["number", "int", "float", "decimal", "u8", "i64", "f64", "hex", "binary", "octal", "Dec"],
+    keywords: ["number", "numeric", "literal", "suffix", "integer", "int", "float", "decimal", "u8", "i64",
+      "f32", "f64", "hex", "binary", "octal", "Dec"],
   },
   opaque: {
     file: "opaque.roc",
@@ -535,76 +537,94 @@ export function loadTopic(topic: string, topics: Record<string, TopicMeta>): str
   }
 }
 
-/**
- * Splits a name or a question into lowercase words.
- *
- * Each character that is not a letter or a digit is a separator, so
- * `key_pressed` and "key pressed" give the same words.
- */
-function words(text: string): string[] {
-  return text.toLowerCase().match(/[a-z0-9]+/g) ?? [];
-}
-
-/** Whether `needle`'s words appear in `hay` in order and next to each other. */
-function hasPhrase(hay: readonly string[], needle: readonly string[]): boolean {
-  return phraseAt(hay, needle) !== -1;
-}
-
 /** Where `needle` starts inside `hay` as a run of whole words, or -1. */
 function phraseAt(hay: readonly string[], needle: readonly string[]): number {
   if (needle.length === 0 || needle.length > hay.length) return -1;
   return hay.findIndex((_, i) => needle.every((w, j) => hay[i + j] === w));
 }
 
+/** One topic that covers some content words of a question. */
+export interface TopicRank {
+  name: string;
+  /** How many content words of the question the topic's name words and keywords cover. */
+  covered: number;
+}
+
+/**
+ * The answer to `get_roc_syntax(topic:)`. `topic` is null when no topic is a
+ * sure match, and the caller then shows `ranked` as pointers. When `topic` is
+ * set, `ranked` holds the other candidates.
+ */
+export interface TopicMatch {
+  topic: string | null;
+  /** The step that found `topic`. `keyword` means a keyword that no other topic has, and `words` the words of a question. */
+  by?: "name" | "keyword" | "words";
+  /** The content words of the question that `topic` covers, when the words found it. */
+  covered?: number;
+  ranked: TopicRank[];
+}
+
+/**
+ * Finds the topic for a name, a keyword or a question. The steps go from strict
+ * to loose:
+ *   1. A topic name.
+ *   2. A keyword that only one topic has. A keyword such as "parse" that three
+ *      topics share goes to step 3.
+ *   3. The topic that covers clearly more content words of the question than
+ *      any other. "Clearly more" is 1 word for a question with fewer than 5
+ *      content words, and 2 words for a longer one.
+ * Any other query gets no topic, because a wrong topic costs a whole program of
+ * tokens and a list of pointers costs a few lines.
+ */
 export function matchTopic(
   query: string,
   scopes: readonly string[] | undefined,
   /** The table to search: `topicsFor(catalog).topics` for a server's own. */
   table: Record<string, TopicMeta>
-): string | null {
+): TopicMatch {
   const q = query.toLowerCase().trim();
   const entries = Object.entries(table).filter(
     ([, meta]) => !scopes || scopes.includes(meta.scope ?? "language")
   );
-  if (entries.some(([n]) => n === q)) return q;
-  // exact keyword match
+  const asked = question(q);
+  const ranked = rankTopics(asked, entries);
+  const others = (name: string) => ranked.filter((r) => r.name !== name);
+  if (entries.some(([n]) => n === q)) return { topic: q, by: "name", ranked: others(q) };
+  const owners = entries.filter(([, meta]) => meta.keywords.some((k) => k.toLowerCase() === q));
+  if (owners.length === 1) return { topic: owners[0][0], by: "keyword", ranked: others(owners[0][0]) };
+
+  const [top, next] = ranked;
+  const margin = asked.content.size >= 5 ? 2 : 1;
+  if (top && top.covered - (next?.covered ?? 0) >= margin) return { topic: top.name, by: "words", covered: top.covered, ranked: others(top.name) };
+  return { topic: null, ranked };
+}
+
+/**
+ * The topics that cover content words of the question, most first. Ties keep
+ * declaration order.
+ *
+ * Every word of a topic name counts alone, so "pattern match on a list" reaches
+ * `list_patterns`. A keyword counts as a phrase of whole words. A raw substring
+ * match is wrong because `str`, a keyword of `strings`, is inside "how do I
+ * structure a game". A keyword under three characters counts only in step 2 of
+ * `matchTopic`, because `_` is a keyword of `derived_methods` and every
+ * snake_case query contains `_`.
+ */
+function rankTopics({ asked, content }: Question, entries: [string, TopicMeta][]): TopicRank[] {
+  const ranked: TopicRank[] = [];
   for (const [name, meta] of entries) {
-    if (meta.keywords.some((k) => k.toLowerCase() === q)) return name;
-  }
-  // Find a name or a keyword in the question by whole words. A raw substring
-  // match is wrong because `str`, a keyword of `strings`, is inside "how do I
-  // structure a game". A keyword under three characters must match exactly,
-  // because `_` is a keyword of `derived_methods` and every snake_case query
-  // contains `_`.
-  //
-  // The topic that covers the most words of the question wins. For example,
-  // "how do I parse command line arguments" must not go to `json` on the one
-  // word "parse" when another topic covers "command line" too. Ties go to the
-  // longest single phrase, then to declaration order.
-  const asked = words(q);
-  let best: { name: string; covered: number; span: number } | null = null;
-  for (const [name, meta] of entries) {
-    if (name.includes(q)) return name;
     const hit = new Set<number>();
-    let span = 0;
     const cover = (phrase: readonly string[]) => {
       const at = phraseAt(asked, phrase);
       if (at === -1) return;
-      for (let i = 0; i < phrase.length; i++) hit.add(at + i);
-      span = Math.max(span, phrase.length);
+      for (let i = 0; i < phrase.length; i++) if (content.has(at + i)) hit.add(at + i);
     };
-    cover(words(name));
+    for (const w of words(name)) cover([singular(w)]);
     for (const raw of meta.keywords) {
-      const k = raw.toLowerCase();
-      if (k.length < 3) continue;
-      if (k.includes(q)) return name;
-      cover(words(k));
+      if (raw.length >= 3) cover(words(raw).map(singular));
     }
-    if (hit.size === 0) continue;
-    if (!best || hit.size > best.covered || (hit.size === best.covered && span > best.span)) {
-      best = { name, covered: hit.size, span };
-    }
+    if (hit.size > 0) ranked.push({ name, covered: hit.size });
   }
-  return best ? (best as { name: string; covered: number; span: number }).name : null;
+  return ranked.sort((a, b) => b.covered - a.covered);
 }
 
