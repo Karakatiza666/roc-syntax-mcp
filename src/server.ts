@@ -21,7 +21,7 @@ const BUILTIN_FILE = path.join(ROOT, "corpus", "language", "Builtin.roc");
 const LANGREF_DIR = path.join(ROOT, "corpus", "language", "langref");
 // The version comes from package.json only, so a release changes one file.
 const VERSION: string = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf-8")).version;
-// The largest number of nested-module items that `get_builtin_module` prints
+// The largest number of nested-module items that `get_roc_module` prints
 // in full. The largest roc-ray module, `App`, has 67. `Encoding` has 213 and
 // `Num` 1754, and at about 15 tokens a signature, those pages cost thousands.
 const NESTED_CAP = 100;
@@ -776,7 +776,7 @@ export function createServer(config: ServerConfig): McpServer {
     if (hidden === 0) return "";
     return (
       `\n\n${hidden} host-boundary items hidden. Address them directly, for example ` +
-      `get_builtin_module("Host") or search_symbols("Server.Config.to_host").`
+      `get_roc_module("Host") or search_symbols("Server.Config.to_host").`
     );
   }
 
@@ -940,7 +940,7 @@ export function createServer(config: ServerConfig): McpServer {
         "Do this even when you believe you know Roc: the syntax changed with this compiler, so " +
         "recalled Roc is unreliable (`Try` replaced `Result`, `value.method()` static dispatch is " +
         "the normal style, and every builtin lives in one `Builtin.roc`). " +
-        "For details, use `get_roc_langref` for upstream's own prose, `get_builtin_module` for one " +
+        "For details, use `get_roc_langref` for upstream's own prose, `get_roc_module` for one " +
         "module, `get_roc_syntax(topic:)` for a worked example of one construct, and `roc_check` / " +
         "`roc_fmt` to verify what you wrote. " +
         // Measured in docs/evals/agentic.md: on a local platform, agents searched the
@@ -1138,14 +1138,14 @@ export function createServer(config: ServerConfig): McpServer {
       annotations: READ_ONLY_FETCHES,
       title: "List What the Other Roc Tools Accept",
       description:
-        "What the other tools accept. `scopes`: the corpora `scope` takes, and documented packages. `topics`: the topics `get_roc_syntax` takes. `builtin_modules`: the module paths `get_builtin_module` takes. `examples`: worked programs. `langref`: the upstream reference pages and their sections.",
+        "What the other tools accept. `scopes`: the corpora `scope` takes, and documented packages. `topics`: the topics `get_roc_syntax` takes. `modules`: the module paths `get_roc_module` takes. `examples`: worked programs. `langref`: the upstream reference pages and their sections.",
       inputSchema: z.object({
         kind: z
-          .enum(["scopes", "topics", "builtin_modules", "examples", "langref"])
+          .enum(["scopes", "topics", "modules", "examples", "langref"])
           .describe("Which index to list."),
         scope: scopeArg(
             SCOPES,
-            "For kind='topics', 'builtin_modules', 'examples': one corpus only. Omit for the working set."
+            "For kind='topics', 'modules', 'examples': one corpus only. Omit for the working set."
           ),
         page: z
           .string()
@@ -1227,7 +1227,7 @@ export function createServer(config: ServerConfig): McpServer {
         };
       }
 
-      if (kind === "builtin_modules") {
+      if (kind === "modules") {
         // A module is a path that has methods. The list holds a module only if
         // some of its methods are app-facing. A host-tier name here would look like
         // an invitation to call the ABI, and an app author must never call it.
@@ -1494,6 +1494,54 @@ export function createServer(config: ServerConfig): McpServer {
 
   const TYPE_TIP = "Tip: type variable names don't matter (structural match), but argument order does.";
 
+  // The parser is the only source. See the TODO in project_index.ts.
+  const projectIndex = new ProjectIndex(config.projectSources ?? [parserSource]);
+
+  /** The declarations in the workspace, or none when it cannot be walked. */
+  async function workspaceItems(): Promise<ProjectSignature[]> {
+    const root = await detectionRoot().catch(() => process.cwd());
+    return projectIndex.get(root).then((snap) => snap.items, () => []);
+  }
+
+  /**
+   * The reply for `name` when it is a module of the project, else null. The
+   * reply names the source file, because the file is the whole module and the
+   * index has only what the parser read.
+   */
+  function projectModuleNote(name: string, items: ProjectSignature[]): string | null {
+    // `Geo.` is the query shape that lists a module.
+    const module = moduleNamed(new Set(items.map((it) => it.modulePath).filter(Boolean)), name.replace(/\.$/, ""));
+    if (!module) return null;
+    const files = [...new Set(items.filter((it) => it.modulePath === module).map((it) => `\`${it.file}\``))];
+    return (
+      `\`${module}\` is a module of this project, in ${files.join(", ")}. ` +
+      `Read ${files.length === 1 ? "that file" : "those files"}, or call \`search_project_symbols\` with \`${module}.\` for its signatures.`
+    );
+  }
+
+  /**
+   * The project declarations that a bundled miss reads. `items` is null on the
+   * first pass, which only records the miss. The project index costs a walk of
+   * the workspace, so only a miss reads it.
+   */
+  type ProjectProbe = { items: ProjectSignature[] | null; missed: boolean };
+
+  /** The reply in place of a bundled miss when `name` is a project module, else null. Records the miss in `probe`. */
+  function projectModule(probe: ProjectProbe | undefined, name: string): string | null {
+    if (!probe) return null;
+    probe.missed = true;
+    return probe.items ? projectModuleNote(name, probe.items) : null;
+  }
+
+  /** A note that counts the project symbols that match `pattern`. Records the miss in `probe`. */
+  function projectMatches(probe: ProjectProbe | undefined, pattern: NamePattern): string {
+    if (!probe) return "";
+    probe.missed = true;
+    const n = probe.items?.filter((it) => nameQuality(it, pattern) >= 0).length ?? 0;
+    if (n === 0) return "";
+    return `\n\n\`search_project_symbols\` has ${n} ${n === 1 ? "match" : "matches"} for \`${pattern.raw.trim()}\` in this project.`;
+  }
+
   /** The note on a reply that shows a symbol of the host ABI boundary. */
   function hostNote(items: ScopedItem[]): string {
     return items.some((m) => m.tier === "host")
@@ -1507,7 +1555,13 @@ export function createServer(config: ServerConfig): McpServer {
    * Without an exact hit, the answer is a list of the names that contain the
    * query, from the `scope` corpus when the call names one.
    */
-  function searchByName(query: string, scope: ScopeName | undefined, max: number, notes: Set<string>): string {
+  function searchByName(
+    query: string,
+    scope: ScopeName | undefined,
+    max: number,
+    notes: Set<string>,
+    probe?: ProjectProbe
+  ): string {
     // The address space holds one platform at most, so platform names do not
     // collide in it. A name outside it gets an "out of scope" report, not
     // "unknown".
@@ -1541,7 +1595,7 @@ export function createServer(config: ServerConfig): McpServer {
       // type body is the internal representation, not the API. Without this line,
       // the caller reads `Dict :: [HashMap({ ... })]` and tries to construct it.
       const alsoModule = idx.modulePaths.has(query)
-        ? `\n\n\`${query}\` is also a module. Call \`get_builtin_module("${query}")\` for its methods.`
+        ? `\n\n\`${query}\` is also a module. Call \`get_roc_module("${query}")\` for its methods.`
         : "";
       // A name that two namespaces declare is two items, which an app reaches
       // through two aliases. The origin on each heading identifies the item. This
@@ -1566,7 +1620,7 @@ export function createServer(config: ServerConfig): McpServer {
 
     // A module is not a symbol. Its page lists what it holds.
     const module = moduleNamed(idx.modulePaths, query);
-    if (module) return `\`${query}\` is a module. Call \`get_builtin_module("${module}")\` for its page.`;
+    if (module) return `\`${query}\` is a module. Call \`get_roc_module("${module}")\` for its page.`;
 
     const close = nameList(query, lastSegment(query), scope ? scopeIndex(scope, scope).items : idx.items, max, (it) =>
       compactItem(it)
@@ -1576,12 +1630,15 @@ export function createServer(config: ServerConfig): McpServer {
     // A tag of the host ABI is not one that an app writes.
     const hint = shapeHint(query, idx.items.filter((it) => it.tier === "public"));
     if (hint) return hint;
+    const local = projectModule(probe, query);
+    if (local) return local;
     const found = elsewhere(PLATFORM_SCOPES, active ? [active] : [], "anywhere", (sc) =>
       nameMatchCount(registry.index(sc), query)
     );
     return (
       (outOfScopeNote(`\`${query}\``, found, active) ??
-        `Nothing matched "${query}". Call \`list_roc_index\` with kind='builtin_modules', or \`get_builtin_module\` with a name like Str, List, Num, U64, Dec.`) +
+        `Nothing matched "${query}". Call \`list_roc_index\` with kind='modules', or \`get_roc_module\` with a name like Str, List, Num, U64, Dec.`) +
+      projectMatches(probe, lastSegment(query)) +
       unpinnedPackageNote(`\`${query}\``, (idx) => nameMatches(idx, query)) +
       trailingNotes({ read: active ? [active] : [], empty: true, sessionNotes: notes })
     );
@@ -1602,7 +1659,13 @@ export function createServer(config: ServerConfig): McpServer {
   }
 
   /** Several words. No name is several words, so the answer is a list, from the corpus of a list (section 2 of the design doc). */
-  function searchWords(pattern: NamePattern, scope: ScopeName | undefined, max: number, notes: Set<string>): string {
+  function searchWords(
+    pattern: NamePattern,
+    scope: ScopeName | undefined,
+    max: number,
+    notes: Set<string>,
+    probe?: ProjectProbe
+  ): string {
     const active = activePlatform(scope);
     const items = scope ? scopeIndex(scope, scope).items : getMergedIndex(scope).items;
     const list = nameList(pattern.raw, pattern, items, max, (it) => compactItem(it));
@@ -1610,6 +1673,7 @@ export function createServer(config: ServerConfig): McpServer {
     const where = pattern.module ? ` in \`${pattern.module}\`` : "";
     return (
       `No name contains ${andList(pattern.parts)}${where}.` +
+      projectMatches(probe, pattern) +
       unpinnedPackageNote(`\`${pattern.raw}\``, (idx) => idx.items.filter((it) => nameQuality(it, pattern) >= 0)) +
       trailingNotes({ read: active ? [active] : [], empty: true, sessionNotes: notes })
     );
@@ -1724,31 +1788,38 @@ export function createServer(config: ServerConfig): McpServer {
       const sc = scope as ScopeName | undefined;
       const max = listMax(query, limit);
       const notes = new Set<string>();
+      const probe: ProjectProbe = { items: null, missed: false };
       const answer = (one: string) => {
         const q = parseSymbolQuery(one);
         return q.kind === "error"
           ? q.message
           : q.kind === "name"
-            ? searchByName(q.name, sc, max, notes)
+            ? searchByName(q.name, sc, max, notes, probe)
             : q.kind === "words"
-              ? searchWords(q.name, sc, max, notes)
+              ? searchWords(q.name, sc, max, notes, probe)
               : q.kind === "type"
               ? searchByType(q.type, sc, max, notes)
               : searchByNameAndType(q.name, q.type, sc, max, notes);
       };
-      return { content: [{ type: "text", text: joinReplies(query, answer, notes) }] };
+      let text = joinReplies(query, answer, notes);
+      // A name that the bundled indexes lack may be the caller's own.
+      if (probe.missed) {
+        probe.items = await workspaceItems();
+        text = joinReplies(query, answer, notes);
+      }
+      return { content: [{ type: "text", text }] };
     }
   );
 
   server.registerTool(
-    "get_builtin_module",
+    "get_roc_module",
     {
       annotations: READ_ONLY_FETCHES,
-      title: "Get a Roc Builtin Module",
+      title: "Get a Roc Module",
       description:
-        "Every method in a builtin module (`Str`, `List`, `U64`, `Num.Dec`, …) as a signature list. Bare `U64` resolves to `Num.U64`. detail='full' adds docstrings and examples. For one method use `search_symbols`.",
+        "Every function and type in one module as a signature list: a builtin (`Str`, `U64`), a module of the app's platform (`Path`), or a module of a documented package (`Html`). Bare `U64` resolves to `Num.U64`. detail='full' adds docstrings and examples. For one function use `search_symbols`. For a module of your project, read its file.",
       inputSchema: z.object({
-        module: z.string().describe("Module name, e.g. 'Str', 'List', 'U64', 'Num.Dec'."),
+        module: z.string().describe("Module name, e.g. 'Str', 'U64', 'Num.Dec', 'Path'."),
         detail: z
           .enum(["signatures", "full"])
           .optional()
@@ -1790,6 +1861,9 @@ export function createServer(config: ServerConfig): McpServer {
       }
 
       if (!resolved) {
+        // A name that no bundled module has may be a module of the project.
+        const local = projectModuleNote(requested, await workspaceItems());
+        if (local) return { content: [{ type: "text", text: local }] };
         // A module outside the address space is out of scope. An out-of-scope
         // module calls for a different next step than an unknown module.
         // The count is what the caller would see in that scope, so the rule of the
@@ -1920,7 +1994,7 @@ export function createServer(config: ServerConfig): McpServer {
                     .sort(([a], [b]) => a.localeCompare(b))
                     .map(([p, n]) => `\`${p}\` (${n})`)
                     .join(", ") +
-                  ". Call `get_builtin_module` on one.",
+                  ". Call `get_roc_module` on one.",
                 "",
               ];
       const body = [
@@ -1933,7 +2007,11 @@ export function createServer(config: ServerConfig): McpServer {
         .join("\n")
         .trimEnd();
 
-      const text = body + trailingNotes({ read: active ? [active] : [], hostTier: hiddenHost });
+      // A project module with the same name is a different module. The caller may
+      // have meant it.
+      const local = projectModuleNote(requested, await workspaceItems());
+      const shadow = local ? `\n\nThe page above is the bundled \`${resolved}\`. ${local}` : "";
+      const text = body + shadow + trailingNotes({ read: active ? [active] : [], hostTier: hiddenHost });
 
       return {
         content: [{ type: "text", text }],
@@ -2530,9 +2608,6 @@ export function createServer(config: ServerConfig): McpServer {
   // Project signature search
   // -----------------------------------------------------------------------------
 
-  // The parser is the only source. See the TODO in project_index.ts.
-  const projectIndex = new ProjectIndex(config.projectSources ?? [parserSource]);
-
   /** An entry from a project file. It marks a type that a compiler inferred, because the author did not write that type. */
   function projectEntry(item: ProjectSignature, match?: SigMatch): string {
     const label = [match?.matchKind, item.origin === "inferred" ? "inferred" : "", match ? `score ${match.score}` : ""]
@@ -2562,8 +2637,9 @@ export function createServer(config: ServerConfig): McpServer {
   function searchProject(query: string, items: ProjectSignature[], where: string, max: number): string {
     const q = parseSymbolQuery(query);
     if (q.kind === "error") return `${q.message} Indexed ${items.length} declarations in ${where}.`;
-    // A type body is not a function signature, so a type query reads values only.
-    const values = items.filter((it) => it.kind === "value");
+    // A type query reads only the values that have a type. A type body is not a
+    // function signature, and an unannotated value has only its lambda head.
+    const values = items.filter((it) => it.kind === "value" && !it.unannotated);
     if (q.kind === "name") {
       const exact = exactIn(items, q.name);
       if (exact.length > 0) {
@@ -2719,7 +2795,7 @@ export function createServer(config: ServerConfig): McpServer {
       "",
       "The file itself is too large to serve in full. Use these tools:",
       "",
-      "- `get_builtin_module`: every method in one module, with signatures and docs.",
+      "- `get_roc_module`: every method in one module, with signatures and docs.",
       "- `search_symbols`: one method by name (`concat`, `Str.concat`), a Hoogle-style search by type (`-> Bool`), or both (`ceil : -> Dec`).",
       "- `search`: free-text across builtins, topics, and the langref.",
       "",
@@ -2735,7 +2811,7 @@ export function createServer(config: ServerConfig): McpServer {
     {
       title: "Roc Builtin Index",
       description:
-        "Index of every builtin module and its method count. Builtin.roc itself is hundreds of thousands of tokens, so use get_builtin_module or search_symbols, and do not read it whole.",
+        "Index of every builtin module and its method count. Builtin.roc itself is hundreds of thousands of tokens, so use get_roc_module or search_symbols, and do not read it whole.",
       mimeType: "text/markdown",
     },
     async (uri) => ({

@@ -128,7 +128,7 @@ function cachedRelease(hash) {
 }
 
 const MCP_TOOLS = [
-  "get_roc_syntax", "list_roc_index", "search_symbols", "get_builtin_module", "roc_check", "roc_fmt",
+  "get_roc_syntax", "list_roc_index", "search_symbols", "get_roc_module", "roc_check", "roc_fmt",
   "get_roc_langref", "search", "search_project_symbols",
 ];
 const PREFIX = "mcp__roc-syntax__";
@@ -205,7 +205,7 @@ function analyze(lines) {
     }
     if (f.hostTier) {
       hostFootersSeen++;
-      const addressed = next && ["get_builtin_module", "search_symbols"].includes(next.name.slice(PREFIX.length));
+      const addressed = next && ["get_roc_module", "search_symbols"].includes(next.name.slice(PREFIX.length));
       if (addressed) hostFollowUps++;
     }
   }
@@ -392,7 +392,7 @@ function report(runs) {
   out.push("A footer column reading `none shown` means the model never called a tool that");
   out.push("emits one, not that it ignored one. Scope footers appear on `search`,");
   out.push("`search_symbols` type queries, the `list_roc_index` kinds, and a `get_roc_syntax` topic");
-  out.push("miss. The host-tier footer appears on `search` and `get_builtin_module`.");
+  out.push("miss. The host-tier footer appears on `search` and `get_roc_module`.");
   out.push("");
   out.push("| Arm | Runs | `tools/list` | Compiles | Set `scope` | Called `roc_check` | Footer retries | Host footers | Tool output | Output tokens | Cost |");
   out.push("|---|---|---|---|---|---|---|---|---|---|---|");

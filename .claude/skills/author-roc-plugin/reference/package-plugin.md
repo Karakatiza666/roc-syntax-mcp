@@ -58,7 +58,7 @@ The other shape omits `description` and every field that depends on it:
 
 That shape gives signatures only, with no page and no topics. A caller reaches
 the items only by address. When an app pins the package, `search_symbols` and
-`get_builtin_module` find its names, each with its origin. The loader refuses
+`get_roc_module` find its names, each with its origin. The loader refuses
 `overview`, `topics`, `examples` and `checks` without a `description`, because
 nothing could read them.
 

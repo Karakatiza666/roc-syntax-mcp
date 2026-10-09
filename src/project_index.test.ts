@@ -56,6 +56,8 @@ test("an annotation wins over an inferred type, which fills in the rest", async 
   // The order the sources are listed in does not change who wins.
   const reversed = await new ProjectIndex([inferred({ n: 0 }), parserSource]).get(project());
   assert.equal(byName(reversed.items)["Geo.scale"], "annotated: (F64, F64), F64 -> (F64, F64)");
+  // The parser lists `pair_up` with only its lambda head, and the inferred type wins over it.
+  assert.equal(byName(reversed.items)["Geo.pair_up"], "inferred: a, b -> (a, b)");
 });
 
 // A compiler-backed source costs seconds per project.
@@ -91,6 +93,9 @@ test("a source that fails becomes a note, and the others still answer", async ()
   const broken: SignatureSource = { name: "lsp", index: async () => { throw new Error("no roc on PATH"); } };
   const absent: SignatureSource = { name: "absent", index: async () => null };
   const snap = await new ProjectIndex([parserSource, broken, absent]).get(project());
-  assert.deepEqual(Object.keys(byName(snap.items)), ["Geo.scale"]);
+  assert.deepEqual(byName(snap.items), {
+    "Geo.scale": "annotated: (F64, F64), F64 -> (F64, F64)",
+    "Geo.pair_up": "annotated: |a, b|",
+  });
   assert.deepEqual(snap.notes, ["lsp: no roc on PATH"]);
 });

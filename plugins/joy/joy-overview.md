@@ -15,7 +15,7 @@ basic-webserver and joy-html.
 | To find | Ask |
 |---|---|
 | The view API, joy-html | `get_roc_syntax(topic: "joy-html")` |
-| One module, whole | `get_builtin_module Http` |
+| One module, whole | `get_roc_module Http` |
 | One signature | `search_symbols Time.debounce` |
 | A name you do not know | `search scope="joy"` |
 | Complete programs that compile | `list_roc_index kind="examples"` |

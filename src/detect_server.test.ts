@@ -293,7 +293,7 @@ test("a pinned workspace answers from its own platform and not the other", async
   const [scoped, shared, module] = await session({ cwd: root }, [
     scopes,
     { name: "search_symbols", args: { query: ["Cmd.exec!"] } },
-    { name: "get_builtin_module", args: { module: "Path" } },
+    { name: "get_roc_module", args: { module: "Path" } },
   ]);
   assert.match(scoped, /Detected basic-cli 0\.24\.0 from main\.roc, bundled 0\.24\.0\./);
 
@@ -318,8 +318,8 @@ test("a module name two namespaces share is listed per origin", async () => {
     "main.roc": `app [main!] {\n\tpf: platform "${cliUrl("0.24.0")}",\n\trand: "${rand}",\n}\n\nmain! = |_args| Ok({})\n`,
   });
   const [shared, alone] = await session({ cwd: root }, [
-    { name: "get_builtin_module", args: { module: "Random" } },
-    { name: "get_builtin_module", args: { module: "Stdout" } },
+    { name: "get_roc_module", args: { module: "Random" } },
+    { name: "get_roc_module", args: { module: "Stdout" } },
   ]);
   assert.match(shared, /2 modules share this name/);
   const cli = shared.indexOf("## basic-cli 0.24.0");
@@ -340,7 +340,7 @@ test("a name from the platform not pinned is reported as out of scope", async ()
   const root = workspace("cli-pinned-2", { "main.roc": cliAppFile("0.24.0") });
   const [name, module] = await session({ cwd: root }, [
     { name: "search_symbols", args: { query: ["Server.Outcome"] } },
-    { name: "get_builtin_module", args: { module: "Sse" } },
+    { name: "get_roc_module", args: { module: "Sse" } },
   ]);
   for (const text of [name, module]) {
     assert.match(
@@ -362,7 +362,7 @@ test("scope reaches the platform the workspace does not pin", async () => {
   const root = workspace("cli-pinned-3", { "main.roc": cliAppFile("0.24.0") });
   const [name, module] = await session({ cwd: root }, [
     { name: "search_symbols", args: { query: ["Server.Outcome"], scope: "basic-webserver" } },
-    { name: "get_builtin_module", args: { module: "Path", scope: "basic-webserver" } },
+    { name: "get_roc_module", args: { module: "Path", scope: "basic-webserver" } },
   ]);
   assert.match(name, /basic-webserver 0\.17\.0/);
   assert.match(module, /parser_for/);
@@ -376,7 +376,7 @@ test("with nothing pinned, no platform answers and the note says where to look",
   const root = workspace("unpinned", { "lib.roc": "module [x]\n\nx = 1\n" });
   const [shared, module] = await session({ cwd: root }, [
     { name: "search_symbols", args: { query: ["Cmd.exec!"] } },
-    { name: "get_builtin_module", args: { module: "Path" } },
+    { name: "get_roc_module", args: { module: "Path" } },
   ]);
   for (const text of [shared, module]) {
     assert.match(text, /is not in the builtins, and no platform is in scope\./);
@@ -665,7 +665,7 @@ test("a platform pinned at another release is read from that release", async () 
 test("a bundled package is in the space only when the app pins it", async () => {
   const bare = workspace("cli-no-rand", { "main.roc": cliAppFile("0.24.0") });
   const [module, missed] = await session({ cwd: bare }, [
-    { name: "get_builtin_module", args: { module: "Random" } },
+    { name: "get_roc_module", args: { module: "Random" } },
     { name: "search_symbols", args: { query: ["Random.bounded_u8"] } },
   ]);
   assert.match(module, /From basic-cli 0\.24\.0\./);

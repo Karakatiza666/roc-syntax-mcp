@@ -132,7 +132,7 @@ upstream rename fails the suite, and no hint disappears without a failure.
 | `corpus/language/langref/local/` | Text for the sections that upstream ships as a bare `TODO`, under upstream's own headings. `src/langref.ts` inserts it into the page text at load. Empty when upstream ships no stub | `npm test` names each section that upstream has since written. Delete the local text for that section. The mirror stays byte-for-byte upstream, so the next refresh can diff it |
 | `src/builtin_hints.ts` | One-line hints for builtins whose name and signature mislead. Each hint comes from the docstring of that builtin or from `corpus/language/langref/` | `npm test` asserts that every key names a real builtin |
 
-The hints appear only in the `get_builtin_module` signature list, so upstream's
+The hints appear only in the `get_roc_module` signature list, so upstream's
 docstrings stay unchanged in `search_symbols` and `detail: "full"`.
 
 Read the prose in `corpus/language/overview/` again on every refresh. The

@@ -65,7 +65,7 @@ test("roc-syntax://builtin serves an index, not the whole file", async () => {
     `builtin resource is ${text.length} chars; it must not serve Builtin.roc in full`
   );
   assert.match(text, /\| Module \| Methods \|/);
-  assert.match(text, /get_builtin_module/);
+  assert.match(text, /get_roc_module/);
   // A module table, not source: no method implementations.
   assert.ok(!text.includes("|_, state, count,"), "resource contains Builtin.roc source");
 });
@@ -134,12 +134,12 @@ test("a langref page with uppercase in its name is reachable", async () => {
 // `List` has 94 methods whose docstrings and `expect` blocks are about 6x the
 // size of the signatures. Thus "what methods exist" must not cost a full read of
 // all of them.
-test("get_builtin_module lists signatures by default and docs on request", async () => {
+test("get_roc_module lists signatures by default and docs on request", async () => {
   const replies = await rpc([
     INIT,
     INITIALIZED,
-    { jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "get_builtin_module", arguments: { module: "List" } } },
-    { jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "get_builtin_module", arguments: { module: "List", detail: "full" } } },
+    { jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "get_roc_module", arguments: { module: "List" } } },
+    { jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "get_roc_module", arguments: { module: "List", detail: "full" } } },
   ]);
 
   const brief = replies.get(1).result;
@@ -168,8 +168,8 @@ test("hints appear only in the signature list, never with the real docs", async 
   const replies = await rpc([
     INIT,
     INITIALIZED,
-    { jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "get_builtin_module", arguments: { module: "List" } } },
-    { jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "get_builtin_module", arguments: { module: "List", detail: "full" } } },
+    { jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "get_roc_module", arguments: { module: "List" } } },
+    { jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "get_roc_module", arguments: { module: "List", detail: "full" } } },
     { jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: "search_symbols", arguments: { query: ["List.drop_swap"] } } },
   ]);
 
@@ -500,7 +500,7 @@ test("list_roc_index serves all three indexes and rejects an unknown page", asyn
     INIT, INITIALIZED,
     { jsonrpc: "2.0", id: 1, method: "tools/list", params: {} },
     call({ kind: "topics" }, 2),
-    call({ kind: "builtin_modules" }, 3),
+    call({ kind: "modules" }, 3),
     call({ kind: "langref" }, 4),
     call({ kind: "langref", page: "numbers" }, 5),
     call({ kind: "langref", page: "no-such-page" }, 6),

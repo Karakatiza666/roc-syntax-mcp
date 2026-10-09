@@ -6,7 +6,7 @@ package, not a platform, so an app pins a platform for its I/O and pins weaver
 beside it. It depends on `roc-lang/path` and `lukewilliamboswell/roc-ansi`,
 neither of which an app needs to pin unless it names their types.
 
-`get_builtin_module Opt` for every field constructor, `search_symbols
+`get_roc_module Opt` for every field constructor, `search_symbols
 Cli.parse_or_display_message` for one signature, `search` when you do not
 know the name, `get_roc_syntax(topic: "weaver_cli")` for a complete program,
 `list_roc_index kind="examples"` for five more that all compile.

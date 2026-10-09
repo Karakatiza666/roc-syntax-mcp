@@ -87,7 +87,7 @@ test("the builtins page quotes no method counts", () => {
 // list.
 test("the language page points at the server's own verification tools", () => {
   assert.match(language, /roc_check/);
-  assert.match(builtins, /get_builtin_module/);
+  assert.match(builtins, /get_roc_module/);
   assert.match(builtins, /search_symbols/);
 });
 

@@ -8,7 +8,7 @@ transcript or from `roc check`, never from the model's prose.
 A footer column reading `none shown` means the model never called a tool that
 emits one, not that it ignored one. Scope footers appear on `search`,
 `search_symbols` type queries, the `list_roc_index` kinds, and a `get_roc_syntax` topic
-miss. The host-tier footer appears on `search` and `get_builtin_module`.
+miss. The host-tier footer appears on `search` and `get_roc_module`.
 
 | Arm | Runs | `tools/list` | Compiles | Set `scope` | Called `roc_check` | Footer retries | Host footers | Tool output | Output tokens | Cost |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -20,6 +20,7 @@ miss. The host-tier footer appears on `search` and `get_builtin_module`.
 | query-shapes | 3 | 2723 tok | 3/3 | 13% (2/15) | 3/3 | none shown | none shown | 20.3k ch | 3.5k | $0.40 |
 | pre-merge | 6 | 2723 tok | 6/6 | 15% (4/26) | 6/6 | none shown | none shown | 20.7k ch | 1.8k | $0.27 |
 | merged-syntax | 12 | 2481 tok | 12/12 | 28% (15/54) | 12/12 | none shown | none shown | 20.3k ch | 2.1k | $0.27 |
+| roc-module | 12 | 2515 tok | 12/12 | 19% (10/52) | 12/12 | none shown | 0/1 followed | 22.5k ch | 2.0k | $0.28 |
 
 ## Per run
 
@@ -70,6 +71,18 @@ miss. The host-tier footer appears on `search` and `get_builtin_module`.
 | merged-syntax | builtin-only | builtin | none | get_roc_syntax | 3 | pass | 13.8k ch | $0.22 |
 | merged-syntax | local-platform | project | none | get_roc_syntax | 3 | pass | 12.7k ch | $0.21 |
 | merged-syntax | roc-ray-local | project | none | get_roc_syntax | 5 | pass | 22.5k ch | $0.39 |
+| roc-module | todos-sqlite | basic-webserver | basic-webserver | get_roc_syntax | 7 | pass | 41.3k ch | $0.36 |
+| roc-module | sse-stream | basic-webserver | basic-webserver | get_roc_syntax | 4 | pass | 22.6k ch | $0.25 |
+| roc-module | form-post | basic-webserver | basic-webserver | get_roc_syntax | 6 | pass | 23.1k ch | $0.27 |
+| roc-module | builtin-only | builtin | none | get_roc_syntax | 4 | pass | 13.4k ch | $0.22 |
+| roc-module | local-platform | project | none | get_roc_syntax | 2 | pass | 11.7k ch | $0.20 |
+| roc-module | roc-ray-local | project | none | get_roc_syntax | 3 | pass | 14.4k ch | $0.30 |
+| roc-module | todos-sqlite | basic-webserver | basic-webserver | get_roc_syntax | 6 | pass | 34.7k ch | $0.33 |
+| roc-module | sse-stream | basic-webserver | basic-webserver | get_roc_syntax | 5 | pass | 32.5k ch | $0.29 |
+| roc-module | form-post | basic-webserver | basic-webserver | get_roc_syntax | 7 | pass | 25.8k ch | $0.29 |
+| roc-module | builtin-only | builtin | none | get_roc_syntax | 3 | pass | 15.7k ch | $0.21 |
+| roc-module | local-platform | project | none | get_roc_syntax | 2 | pass | 11.7k ch | $0.19 |
+| roc-module | roc-ray-local | project | none | get_roc_syntax | 3 | pass | 22.4k ch | $0.40 |
 
 ## Tool call order
 
@@ -118,3 +131,15 @@ miss. The host-tier footer appears on `search` and `get_builtin_module`.
 - `merged-syntax/builtin-only`: get_roc_syntax -> search_symbols -> roc_check
 - `merged-syntax/local-platform`: get_roc_syntax -> roc_check -> roc_check
 - `merged-syntax/roc-ray-local`: get_roc_syntax -> search_project_symbols -> search_project_symbols -> roc_check -> roc_check
+- `roc-module/todos-sqlite`: get_roc_syntax -> get_roc_syntax(basic-webserver) -> get_roc_module -> get_roc_syntax -> search_symbols(basic-webserver) -> get_roc_syntax(basic-webserver) -> roc_check
+- `roc-module/sse-stream`: get_roc_syntax -> get_roc_syntax(basic-webserver) -> search_symbols -> roc_check
+- `roc-module/form-post`: get_roc_syntax -> get_roc_syntax(basic-webserver) -> search_symbols -> search_symbols -> search_symbols -> roc_check
+- `roc-module/builtin-only`: get_roc_syntax -> search_symbols -> roc_check -> roc_check
+- `roc-module/local-platform`: get_roc_syntax -> roc_check
+- `roc-module/roc-ray-local`: get_roc_syntax -> search_project_symbols -> roc_check
+- `roc-module/todos-sqlite`: get_roc_syntax -> get_roc_syntax(basic-webserver) -> search_symbols(basic-webserver) -> get_roc_syntax(basic-webserver) -> get_roc_syntax -> roc_check
+- `roc-module/sse-stream`: get_roc_syntax -> get_roc_syntax(basic-webserver) -> search_symbols -> get_roc_module -> roc_check
+- `roc-module/form-post`: get_roc_syntax -> search_symbols -> get_roc_syntax(basic-webserver) -> search_symbols -> search_symbols -> search_symbols -> roc_check
+- `roc-module/builtin-only`: get_roc_syntax -> search_symbols -> roc_check
+- `roc-module/local-platform`: get_roc_syntax -> roc_check
+- `roc-module/roc-ray-local`: get_roc_syntax -> search_project_symbols -> roc_check

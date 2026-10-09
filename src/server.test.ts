@@ -108,9 +108,9 @@ test("a module page lists the methods of its nested types, up to a cap", async (
   const ray = await inProcess([`--plugin=${RAY}`]);
   const plain = await inProcess([]);
   try {
-    const text = await ray.call("get_builtin_module", { module: "Text", scope: "roc-ray" });
+    const text = await ray.call("get_roc_module", { module: "Text", scope: "roc-ray" });
     assert.match(text, /^## Text\.Builder\n\n5 methods\.\n\n```roc\n[^`]*prepare! : Builder => /m);
-    const num = await plain.call("get_builtin_module", { module: "Num" });
+    const num = await plain.call("get_roc_module", { module: "Num" });
     assert.match(num, /Nested modules, with the item count of each: [^\n]*`Num\.U64` \(\d+\)/);
     assert.doesNotMatch(num, /^## Num\./m);
   } finally {
@@ -228,6 +228,50 @@ test("a project search reads the workspace, and only it does", async () => {
   }
 });
 
+// A module of the project is answered with its file, because the file is the
+// whole module. The page of a bundled module with the same name says that the
+// project also declares one.
+test("get_roc_module and search_symbols send a project module to its file", async () => {
+  const dir = path.join(tmp, "own");
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, "Shape.roc"), "Shape := [].{\n\tarea : F64 -> F64\n\tarea = |r| r * r\n}\n");
+  fs.writeFileSync(path.join(dir, "Str.roc"), "Str := [].{\n\tshout = |s| s\n}\n");
+  const s = await inProcess([]);
+  try {
+    const pointer =
+      "`Shape` is a module of this project, in `own/Shape.roc`. Read that file, or call `search_project_symbols` with `Shape.` for its signatures.";
+    assert.equal(await s.call("get_roc_module", { module: "Shape" }), pointer);
+    assert.equal(await s.call("search_symbols", { query: ["Shape"] }), pointer);
+    assert.equal(await s.call("search_symbols", { query: ["Shape."] }), pointer);
+    assert.match(
+      await s.call("search_symbols", { query: ["Shape.area"] }),
+      /^Nothing matched "Shape\.area"\..*\n\n`search_project_symbols` has 1 match for `Shape\.area` in this project\./
+    );
+    assert.doesNotMatch(await s.call("search_symbols", { query: ["zzqq"] }), /search_project_symbols/);
+    const str = await s.call("get_roc_module", { module: "Str" });
+    assert.match(str, /^# Str\n/);
+    assert.match(str, /The page above is the bundled `Str`\. `Str` is a module of this project, in `own\/Str\.roc`\./);
+  } finally {
+    await s.close();
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// A name search finds a function with no annotation, and a type search skips
+// it, because its lambda head is not a type. Without the skip, `: a` matches
+// the text of `|a|`.
+test("a project search finds an unannotated value by name only", async () => {
+  const root = fs.mkdtempSync(path.join(tmp, "plain-"));
+  fs.writeFileSync(path.join(root, "Geo.roc"), "Geo := [].{\n\thelper = |a| a\n}\n");
+  const s = await inProcess([]);
+  try {
+    assert.equal(await s.call("search_project_symbols", { query: ["helper"], root }), "## Geo.helper at `Geo.roc:2`\n```roc\nhelper = |a|\n```");
+    assert.match(await s.call("search_project_symbols", { query: [": a"], root }), /^No matches for `a`/);
+  } finally {
+    await s.close();
+  }
+});
+
 // The reply marks a type that a compiler inferred, because the author did not write that type.
 test("a project search marks an inferred type", async () => {
   const root = geoProject();
@@ -331,7 +375,7 @@ test("a miss names the query shape that answers it", async () => {
   const s = await inProcess([`--plugin=${RAY}`]);
   try {
     const call = (q: string) => s.call("search_symbols", { query: [q], scope: "roc-ray" });
-    assert.equal(await call("Keys"), '`Keys` is a module. Call `get_builtin_module("Keys")` for its page.');
+    assert.equal(await call("Keys"), '`Keys` is a module. Call `get_roc_module("Keys")` for its page.');
     assert.match(await call("Frame.text!"), /^`Frame` is a type in `Draw`\. Its functions are in their module, so search `text!`, or `Frame ->`/);
     const tags = await call("Space");
     assert.match(tags, /^No symbol is named `Space`\. Tags that contain it: .*`KeySpace` in `Keys\.Key`/);

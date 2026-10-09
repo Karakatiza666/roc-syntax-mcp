@@ -1683,7 +1683,7 @@ export class ScopeRegistry {
   /**
    * The index that a lookup by name resolves against: the language, the
    * builtins with the packages that the app pins, and one platform.
-   * `search_symbols` and `get_builtin_module` read this index, not a single
+   * `search_symbols` and `get_roc_module` read this index, not a single
    * scope, so a caller who has a name never gets "not found" because of a wrong
    * corpus guess.
    *

@@ -174,7 +174,7 @@ an app uses.
 
 | What | Where |
 |---|---|
-| A package the app pins beyond the platform | Searched with the builtins: every unscoped search, `scope: "builtin"`, `search_symbols` and `get_builtin_module`. Each item names its origin |
+| A package the app pins beyond the platform | Searched with the builtins: every unscoped search, `scope: "builtin"`, `search_symbols` and `get_roc_module`. Each item names its origin |
 | A documented package nobody pins | In no space. A lookup that misses names the package, shows up to three matching signatures, and gives the header line that pins it |
 | Its page | `get_roc_syntax(topic: "<name>")`, which also takes the repository path, and the resource `roc-syntax://package/<name>` |
 | Its topics and examples | Filed under `language`, so a question finds the package before any app pins it. Each example is read by the package name and the file name, as `get_roc_syntax(topic: "roc-parser/csv-movies")`, or as the resource `roc-syntax://package/roc-parser/example/csv-movies` |

@@ -605,7 +605,7 @@ test("a namespace nothing serves is reported by every tool that comes up empty",
       { name: "search_symbols", args: { query: ["Request.from_method"] } },
       { name: "search_symbols", args: { query: ["Zzz -> Qqq"] } },
       { name: "search", args: { query: "qqqzzzxyw" } },
-      { name: "get_builtin_module", args: { module: "Zzz" } },
+      { name: "get_roc_module", args: { module: "Zzz" } },
     ],
   });
   for (const text of texts) {
@@ -741,7 +741,7 @@ test("a pinned package is read with the builtins, an unpinned one is named on a 
     { name: "list_roc_index", args: { kind: "scopes" } },
     { name: "get_roc_syntax", args: { topic: "how do I read command line arguments" } },
     { name: "search_symbols", args: { query: ["Opt.flag"] } },
-    { name: "get_builtin_module", args: { module: "Hidden" } },
+    { name: "get_roc_module", args: { module: "Hidden" } },
   ];
   const on = await session({ argv: [`--plugin=${dir}`], cwd: pinned, calls });
   assert.match(on.texts[0], /Omitting `scope` reads language \+ builtin \+ basic-cli\./);

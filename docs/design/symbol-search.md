@@ -14,11 +14,12 @@ it. This page collects all the rules in one place.
 | Qualify the type names of a signature | `qualifyTypeNames`, `qualifySignatures` in `src/sig_search.ts:87,101` |
 | Match and score a type | `normalizeTypeSig`, `sameToken`, `scoreItem`, `searchBySig` in `src/sig_search.ts:36,122,278,325` |
 | Break ties | `compareMatches`, `compareItems` in `src/sig_search.ts:219,229` |
-| Answer a list of queries | `QUERY_LIST`, `joinReplies` in `src/server.ts:1722,1728` |
-| Build a list, for both tools | `nameList`, `nameAndType` in `src/server.ts:1382,1501` |
-| Count line, miss replies | `countLine`, `shapeHint` in `src/server.ts:1426,1456` |
-| Build the reply, bundled indexes | `searchByName`, `searchWords`, `searchByType`, `searchByNameAndType` in `src/server.ts:1548,1643,1657,1684` |
-| Build the reply, project files | `exactIn`, `searchProject` in `src/server.ts:2583,2600` |
+| Answer a list of queries | `QUERY_LIST`, `joinReplies` in `src/server.ts:1748,1754` |
+| Build a list, for both tools | `nameList`, `nameAndType` in `src/server.ts:1344,1463` |
+| Count line, miss replies | `countLine`, `shapeHint` in `src/server.ts:1388,1418` |
+| Build the reply, bundled indexes | `searchByName`, `searchWords`, `searchByType`, `searchByNameAndType` in `src/server.ts:1558,1662,1683,1710` |
+| Build the reply, project files | `exactIn`, `searchProject` in `src/server.ts:2620,2637` |
+| Send a bundled miss to the project | `projectModuleNote`, `ProjectProbe` in `src/server.ts:1511,1527` |
 
 ## Terms
 
@@ -334,7 +335,7 @@ the right shape, at the moment that the caller needs it:
 | Query | Cause | Reply |
 |---|---|---|
 | `Frame.text!`, when `Frame` is a type and no name matches | A method is declared in its module, not on the type of its receiver | "`Frame` is a type in `Draw`. Its functions are in their module, so search `text!`, or `Frame ->` for the functions that take a `Frame`." |
-| `Keys`, when `Keys` is a module and not a symbol | A module is not a symbol | "`Keys` is a module. `Keys.` lists its N symbols." For a bundled module, the reply names `get_builtin_module("Keys")`, which gives the module page. This reply comes before the list of names that contain the word |
+| `Keys`, when `Keys` is a module and not a symbol | A module is not a symbol | "`Keys` is a module. `Keys.` lists its N symbols." For a bundled module, the reply names `get_roc_module("Keys")`, which gives the module page. For a project module, the reply names its file (section 8). This reply comes before the list of names that contain the word |
 | `Space`, a capitalized name with no match | A tag is part of a union type, and the index has no tags | "No symbol is named `Space`. `KeySpace` is a tag in `Keys.Key`." With several tags: "Tags that contain it:" and up to 3. The search reads the bodies of public types only, and only after such a miss |
 
 ### The failed search in Both mode
@@ -390,14 +391,28 @@ scores and the order are the same as in sections 1 to 5. These rules differ:
 
 | Rule | Bundled indexes | Project |
 |---|---|---|
-| Corpus | The address space or the working set (section 2) | All declarations in the project files. A search never mixes the two, and `search_symbols` never reads project files |
-| Symbols | Types and values, by tier | Types and annotated values (`parseRocFile`, `src/roc_parser.ts:47`). A Type or Both search reads the values only |
+| Corpus | The address space or the working set (section 2) | All declarations in the project files. A search never mixes the two. `search_symbols` reads the project only for the notes below |
+| Symbols | Types and values, by tier | Types and values (`parseRocFile`, `src/roc_parser.ts:48`). An unannotated value has its lambda head as its signature. A Type or Both search reads only the annotated values |
 | Exact match | The full name, a collision, a suffix, or the bare name | The full name, else a suffix. A bare name matches the last segment |
 | Entry | The origin and the match kind | `file:line`, and `inferred` when a compiler gave the type and the author did not |
 | Miss | The footers of section 7 | The miss replies of section 6, then "Nothing in N .roc files under `root` is named `X`.", and a note when `search_symbols` has matches for the query. A module has no page, so the module reply names `Keys.` |
 | Footer | Section 7 | None, because the project is one corpus. "Not indexed:" names each source that could not run |
 
-The tool exists apart from `search_symbols` because it reads the disk at each
-call. Its own name also gives the note on an unknown platform a direct call
-to name.
+A name that the caller asks for can be a name from the project. So
+`get_roc_module` and `search_symbols` also read the workspace index:
+
+| Call | The project has | Reply |
+|---|---|---|
+| `get_roc_module("Geo")`, no bundled module | A module `Geo` | "`Geo` is a module of this project, in `src/Geo.roc`. Read that file, or call `search_project_symbols` with `Geo.` for its signatures." The file is the whole module, and the index has only what the parser read |
+| `get_roc_module("Str")`, a bundled module | A module `Str` | The bundled page, then "The page above is the bundled `Str`." and the reply of the first row |
+| `search_symbols("Geo")` or `("Geo.")`, no bundled match | A module `Geo` | The reply of the first row, in place of the miss |
+| `search_symbols("helper")`, a name or words miss | N names that match | The miss, then "`search_project_symbols` has N matches for `helper` in this project." |
+
+`search_symbols` reads the workspace index only after a miss, because each read
+walks the workspace (`ProjectProbe`, `src/server.ts:1527`). `get_roc_module`
+reads it on every call.
+
+`search_project_symbols` exists apart from `search_symbols` because it reads
+the disk at each call. Its own name also gives the note on an unknown platform
+a direct call to name.
 

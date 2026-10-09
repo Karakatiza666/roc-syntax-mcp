@@ -39,7 +39,8 @@ test("top-level annotations are still indexed", () => {
 });
 
 // A local annotation in a body and a record field in a header are not
-// declarations of the module.
+// declarations of the module. `main!` and `local` are declarations, with no
+// annotation.
 test("annotations nested in a body or a header are left out", () => {
   const src = [
     "app [main!] {",
@@ -58,5 +59,14 @@ test("annotations nested in a body or a header are left out", () => {
     "\t}",
     "}",
   ].join("\n");
-  assert.deepEqual(names(src), []);
+  assert.deepEqual(names(src), ["main!", "Geo.local"]);
+});
+
+// A search by name must find a function that the author did not annotate.
+test("an unannotated value is indexed with its lambda head", () => {
+  const items = parseRocFile("Geo := [].{\n\thelper = |a| a\n\tport = 8080\n}\n", "/p/Geo.roc", "/p");
+  assert.deepEqual(
+    items.map((it) => [it.fullName, it.signature, it.unannotated, it.line]),
+    [["Geo.helper", "|a|", true, 2], ["Geo.port", "(no type annotation)", true, 3]]
+  );
 });

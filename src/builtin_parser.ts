@@ -293,7 +293,7 @@ export function parseBuiltin(
           // and the fallback text invents no shape.
           signature: /^\|/.test(defMatch[2])
             ? defMatch[2].match(/^\|[^|]*\|/)?.[0] ?? defMatch[2]
-            : "(no type annotation upstream)",
+            : "(no type annotation)",
           docs: pendingDocs.join("\n").trim(),
           line: i + 1,
           unannotated: true,

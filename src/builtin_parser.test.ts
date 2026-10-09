@@ -346,6 +346,6 @@ test("an unannotated constant says it has no type rather than inventing one", ()
   const item = parsed.byFullName.get("Demo.port");
   assert.ok(item, "Demo.port was not indexed");
   assert.equal(item!.unannotated, true);
-  assert.equal(item!.signature, "(no type annotation upstream)");
+  assert.equal(item!.signature, "(no type annotation)");
   assert.equal(item!.docs, "The default port.");
 });

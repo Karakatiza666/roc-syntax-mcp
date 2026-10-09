@@ -14,7 +14,7 @@ ships. Read it beside this page.
 token. The pages that this server ships are well under it.
 
 A page near the ceiling usually has a problem. A long page usually started to
-list the API. The API is already in the index, where `get_builtin_module` and
+list the API. The API is already in the index, where `get_roc_module` and
 `search_symbols` return it at no cost until a caller asks for it.
 
 To decide whether a paragraph belongs, ask this question: would a model that
@@ -42,7 +42,7 @@ information, not what the platform is for. For example:
 
 ```
 The platform, with the HTTP types from the `roc-lang/http` package.
-`get_builtin_module Path` for the full API, `search_symbols Cmd.exec_output!`
+`get_roc_module Path` for the full API, `search_symbols Cmd.exec_output!`
 for one method, `search scope="basic-cli"` when you do not know the name,
 `list_roc_index kind="examples"` for complete programs that all compile.
 ```
@@ -121,7 +121,7 @@ it seems to.
 
 | Leave out | Reason |
 |---|---|
-| Full module listings | `get_builtin_module` returns them, and only when a caller asks |
+| Full module listings | `get_roc_module` returns them, and only when a caller asks |
 | Signature dumps | `search_symbols` returns one signature, and only that one |
 | Anything about the platform's Rust or Zig host | An app author cannot call it and must not try |
 | How to install Roc, editor setup, formatting, CI | They are the same for every Roc project. The Project part above holds only what this platform changes |

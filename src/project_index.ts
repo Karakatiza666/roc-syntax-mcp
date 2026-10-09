@@ -76,16 +76,18 @@ export const parserSource: SignatureSource = {
 /**
  * One entry per declaration. An annotation wins over an inferred type for the
  * same name, because it is the author's own wording and the compiler checks the
- * definition against it. Sources are merged in order, so the first one wins a
- * tie.
+ * definition against it. An inferred type wins over a definition with no
+ * annotation, which has only its lambda head. Sources are merged in order, so
+ * the first one wins a tie.
  */
 export function mergeSignatures(lists: readonly ProjectSignature[][]): ProjectSignature[] {
+  const rank = (it: ProjectSignature) => (it.unannotated ? 0 : it.origin === "inferred" ? 1 : 2);
   const byKey = new Map<string, ProjectSignature>();
   for (const list of lists) {
     for (const it of list) {
       const key = `${it.file}\0${it.fullName}`;
       const had = byKey.get(key);
-      if (!had || (had.origin === "inferred" && it.origin === "annotated")) byKey.set(key, it);
+      if (!had || rank(it) > rank(had)) byKey.set(key, it);
     }
   }
   return [...byKey.values()];
