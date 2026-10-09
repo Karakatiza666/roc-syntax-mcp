@@ -325,7 +325,7 @@ test("a release that parsed to nothing is a failure, not an empty scope", () => 
   assert.equal(check(dir, "corpus").status, "fail");
 });
 
-// `roc_overview` returns the page whole. Each caller pays its size on each
+// `get_roc_syntax(scope:)` returns the page whole. Each caller pays its size on each
 // call, and the author does not see that cost.
 test("an overview page over the ceiling is refused with what it costs", () => {
   const dir = ray({ overview: "overview.md" }, { "overview.md": "# big\n\n" + "word ".repeat(5000) });
@@ -1115,5 +1115,5 @@ test("budget passes a plugin that fits every tool, and fails one that alone does
   const big = ray({ name: "ray-big", checks: ["topics"], topics: many }, { "topics/t.roc": "x\n" });
   const over = await budgetCheck(big);
   assert.equal(over.status, "fail", over.detail);
-  assert.match(over.detail!, /search_roc_syntax\s+\+\d+, over the ceiling/);
+  assert.match(over.detail!, /get_roc_syntax\s+\+\d+, over the ceiling/);
 });

@@ -34,7 +34,7 @@ In this skill, a gate is one of the repo's named check scripts: `bun run check`
 | `src/builtin_parser.ts` | A heuristic line parser, and the most fragile code here. See `reference/parser-traps.md` |
 | `src/builtin_hints.ts` | Ours, not upstream's. One-line hints for builtins whose names mislead |
 | `src/langref.ts` | Splits upstream `.md` pages into addressable sections |
-| `src/overview.ts` | The two-page overview that `roc_overview` serves, under a strict token budget |
+| `src/overview.ts` | The two-page overview that `get_roc_syntax()` serves, under a strict token budget |
 | `corpus/language/topics/*.roc` | Hand-written fragments. This is the derived content with the highest risk |
 | `scripts/check-roc.sh` | Type-checks every bundled `.roc` against a real compiler |
 | `corpus/platforms/<name>/UPSTREAM` | One file per platform corpus. Each platform is a separate upstream with its own release schedule, and all of them are refreshed under the same nightly. See `reference/basic-webserver.md` and `reference/basic-cli.md` |
@@ -303,7 +303,7 @@ npm run check:detection    # detection against the claude CLI
 
 `npm run eval:agentic -- --arm=<label>` is not a gate. It uses real model tokens
 and takes minutes. It answers questions that the gates cannot answer: whether
-the model still calls `roc_overview` first, whether it narrows its queries, and
+the model still calls `get_roc_syntax()` first, whether it narrows its queries, and
 whether the Roc that it writes compiles. Run it when a refresh changes a tool
 description, a footer, or the shape of a tool's output. Add the arm to
 `docs/evals/agentic.md`.

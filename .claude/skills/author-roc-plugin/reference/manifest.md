@@ -80,7 +80,7 @@ nothing reads those fields. `reference/package-plugin.md` covers packages.
 | `name` | `^[a-z][a-z0-9-]*$` | Optional | Optional | Defaults to the repo name. A platform's scope name, or the name that a package's page answers to. Must not be `language`, `builtin`, a name that this server ships, or the name of another corpus |
 | `description` | string | Required | For a page | One line, shown by `list_roc_index(kind: "scopes")` |
 | `purpose` | string, at most 60 chars | By `validate` | Optional | A few words for the list that a caller selects from. If absent, the list uses `description` |
-| `overview` | path | Optional | Optional | The page that `roc_overview` returns for a platform, or that `search_roc_syntax("<name>")` returns for a package |
+| `overview` | path | Optional | Optional | The page that `get_roc_syntax(scope: "<name>")` returns for a platform, or that `get_roc_syntax(topic: "<name>")` returns for a package |
 | `examples` | path | Optional | Optional | Worked programs, listed by `list_roc_index(kind: "examples")` |
 | `topics` | array | Optional | Optional | Programs served by name. Each one must also be under a `checks` directory |
 | `checks` | array of paths | By the `roc check` check | By the `roc check` check | Directories of complete programs that `validate` compiles, in addition to `examples`. Two corpora can share one directory |

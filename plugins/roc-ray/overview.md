@@ -5,7 +5,7 @@ There is no separate `roc-ray-types` package. Every type is `rr.*`.
 `get_builtin_module Draw` for the full API, `search_symbols Task.spawn!` for one
 signature, `search scope="roc-ray"` when you do not know the name,
 `list_roc_index kind="examples"` for complete programs that all compile, and
-`search_roc_syntax query="ray_game"` for a worked program on one subject:
+`get_roc_syntax(topic: "ray_game")` for a worked program on one subject:
 `ray_project`, `ray_game`, `ray_app`, `ray_draw`, `ray_input`, `ray_tasks`,
 `ray_text`, `ray_assets`.
 

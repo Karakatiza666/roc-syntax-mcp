@@ -352,7 +352,7 @@ test("however many plugins load, no tool grows past its ceiling, and every scope
     .filter((t) => t.growth > PLUGIN_TOOL_GROWTH + 15);
   assert.deepEqual(over, []);
 
-  const syntax = loaded.find((t) => t.name === "search_roc_syntax")!;
+  const syntax = loaded.find((t) => t.name === "get_roc_syntax")!;
   assert.match(syntax.description, /many0_drawing_basics/, "the first plugin's topics are not named");
   assert.match(syntax.description, /\d+ more topics: list_roc_index\(kind='topics'\)/);
   assert.equal(syntax.inputSchema.properties.scope.enum, undefined, "ten plugins still fit an enum");
@@ -361,8 +361,8 @@ test("however many plugins load, no tool grows past its ceiling, and every scope
   const { texts } = await session({
     argv,
     calls: [
-      { name: "search_roc_syntax", args: { query: "many9_audio_basics", scope: "ray-many-9" } },
-      { name: "search_roc_syntax", args: { query: "many9_audio_basics", scope: "no-such-scope" } },
+      { name: "get_roc_syntax", args: { topic: "many9_audio_basics", scope: "ray-many-9" } },
+      { name: "get_roc_syntax", args: { topic: "many9_audio_basics", scope: "no-such-scope" } },
     ],
   });
   assert.match(texts[0], /app \[main!\]/, texts[0]);
@@ -377,14 +377,14 @@ test("a declared plugin becomes a scope the server serves", async () => {
 });
 
 // Every path in a manifest is absolute. If a reader joins one to the host
-// root, the result points to a file that does not exist. `roc_overview` must
+// root, the result points to a file that does not exist. `get_roc_syntax(scope:)` must
 // return the page, not "Overview unavailable".
 test("a declared plugin's overview page is read from the plugin", async () => {
   const dir = plugin("ray-overview", ray({ name: "ray-overview", overview: "overview.md" }));
   write(dir, { "overview.md": "# roc-ray\n\nDraw a circle and nothing else.\n" });
   const { text } = await session({
     argv: [`--plugin=${dir}`],
-    calls: [{ name: "roc_overview", args: { scope: "ray-overview" } }],
+    calls: [{ name: "get_roc_syntax", args: { scope: "ray-overview" } }],
   });
   assert.match(text, /Draw a circle and nothing else\./);
 });
@@ -477,7 +477,7 @@ test("the overview lists every platform to choose from where none is chosen", as
   const { text } = await session({
     argv: [`--plugin=${RAY_DIR}`],
     cwd: root,
-    calls: [{ name: "roc_overview" }],
+    calls: [{ name: "get_roc_syntax" }],
   });
   assert.match(text, /No Roc code here imports a platform, so none is chosen yet\./);
   assert.match(text, /- roc-ray: games, graphics and sound/);
@@ -494,8 +494,8 @@ test("an installed platform is not read until it is chosen", async () => {
     cwd: root,
     calls: [
       { name: "list_roc_index", args: { kind: "scopes" } },
-      { name: "search_roc_syntax", args: { query: "how do I structure a game" } },
-      { name: "search_roc_syntax", args: { query: "how do I structure a game", scope: "roc-ray" } },
+      { name: "get_roc_syntax", args: { topic: "how do I structure a game" } },
+      { name: "get_roc_syntax", args: { topic: "how do I structure a game", scope: "roc-ray" } },
     ],
   });
   assert.match(texts[0], /Omitting `scope` reads language \+ builtin\./);
@@ -511,8 +511,8 @@ test("a topic answers to its own name from any corpus", async () => {
     argv: [`--plugin=${RAY_DIR}`],
     cwd: root,
     calls: [
-      { name: "search_roc_syntax", args: { query: "ray_project" } },
-      { name: "search_roc_syntax", args: { query: "ray_project", scope: "language" } },
+      { name: "get_roc_syntax", args: { topic: "ray_project" } },
+      { name: "get_roc_syntax", args: { topic: "ray_project", scope: "language" } },
     ],
   });
   assert.match(texts[0], /^## ray_project/m);
@@ -545,8 +545,8 @@ test("a declaration that resolves to nothing is reported, and the rest is served
   const { texts, stderr, code } = await session({
     argv: ["--plugin=@roc-syntax/not-installed", `--plugin=${dir}`],
     calls: [
-      { name: "roc_overview", args: {} },
-      { name: "roc_overview", args: {} },
+      { name: "get_roc_syntax", args: {} },
+      { name: "get_roc_syntax", args: {} },
       { name: "list_roc_index", args: { kind: "scopes" } },
     ],
   });
@@ -739,7 +739,7 @@ test("a pinned package is read with the builtins, an unpinned one is named on a 
   });
   const calls = [
     { name: "list_roc_index", args: { kind: "scopes" } },
-    { name: "search_roc_syntax", args: { query: "how do I read command line arguments" } },
+    { name: "get_roc_syntax", args: { topic: "how do I read command line arguments" } },
     { name: "search_symbols", args: { query: ["Opt.flag"] } },
     { name: "get_builtin_module", args: { module: "Hidden" } },
   ];
@@ -807,9 +807,9 @@ test("a package plugin's page answers to its name, and it adds no scope", async 
     argv: [`--plugin=${dir}`],
     cwd: root,
     calls: [
-      { name: "search_roc_syntax", args: { query: "weave" } },
-      { name: "search_roc_syntax", args: { query: "someone/weave" } },
-      { name: "roc_overview", args: {} },
+      { name: "get_roc_syntax", args: { topic: "weave" } },
+      { name: "get_roc_syntax", args: { topic: "someone/weave" } },
+      { name: "get_roc_syntax", args: {} },
     ],
   });
   // The package has no overview page, so the server shows the description.
@@ -845,7 +845,7 @@ test("a self-hosted platform is detected by its URL, and another bundle is named
       argv: [`--plugin=${dir}`],
       cwd,
       calls: [
-        { name: "roc_overview" },
+        { name: "get_roc_syntax" },
         { name: "search_symbols", args: { query: ["Brush.dab!"] } },
         { name: "search", args: { query: "dab", scope: "paint" } },
       ],

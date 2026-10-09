@@ -89,7 +89,7 @@ one server, a platform adds about 21 tokens, the size of its scope name in five
 tool schemas. Nothing else changes.
 
 Topic names are the part of the tool list that grows with each plugin.
-`search_roc_syntax`'s description lists them, for the platforms that apply:
+`get_roc_syntax`'s description lists them, for the platforms that apply:
 
 | Configuration | Listed |
 |---|---|
@@ -112,7 +112,7 @@ The allowance applies per tool, not per plugin, because `plugin add` serves a
 plugin in every workspace. With ten installed plugins, an allowance per plugin
 does not limit the total. All loaded plugins together add at most
 `PLUGIN_TOOL_GROWTH` (180) tokens to one tool. Each tool spends its own
-allowance in declaration order. Topic names come first, in `search_roc_syntax`.
+allowance in declaration order. Topic names come first, in `get_roc_syntax`.
 Scope names come next, in the `scope` enum and in the "Name a platform" hint.
 A caller gets the remainder through the listing:
 
@@ -122,22 +122,22 @@ A caller gets the remainder through the listing:
 | Scope names | `scope` becomes a string, checked against the same values, and its description points at `list_roc_index(kind='scopes')` |
 
 Measured on 2026-10-07 with ten synthetic platform plugins of three topics
-each: without the allowance, `search_roc_syntax` grew by 229 tokens. With it,
+each: without the allowance, the tool that lists topic names grew by 229 tokens. With it,
 no tool grows by more than the allowance plus its pointer.
 
 The allowance is 180 tokens for these reasons. A platform plugin adds about 3
 tokens to a tool with only a `scope` enum, and about 6 to a tool that also has
-the hint. It adds 25 to 33 tokens to `search_roc_syntax`, which lists its topic
-names. Thus in practice, the allowance limits only `search_roc_syntax`:
+the hint. It adds 25 to 33 tokens to `get_roc_syntax`, which lists its topic
+names. Thus in practice, the allowance limits only `get_roc_syntax`:
 
 | Tool | Plugins that fit at 60 | At 180 |
 |---|---|---|
 | `scope` enum only | ~20 | ~60 |
 | Enum and hint | ~10 | ~30 |
-| `search_roc_syntax` | ~2 | ~6 |
+| `get_roc_syntax` | ~2 | ~6 |
 
 With an allowance of 60, roc-ray, weaver and joy together (about 82 tokens in
-`search_roc_syntax`) cut some of joy's topics. With 180, six typical plugins
+`get_roc_syntax`) cut some of joy's topics. With 180, six typical plugins
 cost about 340 tokens more than the 2770 of the shipped tool list. In the
 theoretical worst case, every tool is at its allowance. That case costs 1440
 tokens and needs about 60 platform plugins.
@@ -176,9 +176,9 @@ an app uses.
 |---|---|
 | A package the app pins beyond the platform | Searched with the builtins: every unscoped search, `scope: "builtin"`, `search_symbols` and `get_builtin_module`. Each item names its origin |
 | A documented package nobody pins | In no space. A lookup that misses names the package, shows up to three matching signatures, and gives the header line that pins it |
-| Its page | `search_roc_syntax("<name>")`, which also takes the repository path, and the resource `roc-syntax://package/<name>` |
-| Its topics and examples | Filed under `language`, so a question finds the package before any app pins it. Each example is read by the package name and the file name, as `search_roc_syntax("roc-parser/csv-movies")`, or as the resource `roc-syntax://package/roc-parser/example/csv-movies` |
-| Its name and maintainer | `list_roc_index(kind: "scopes")`, under "Documented packages", and one clause each on the default `roc_overview` |
+| Its page | `get_roc_syntax(topic: "<name>")`, which also takes the repository path, and the resource `roc-syntax://package/<name>` |
+| Its topics and examples | Filed under `language`, so a question finds the package before any app pins it. Each example is read by the package name and the file name, as `get_roc_syntax(topic: "roc-parser/csv-movies")`, or as the resource `roc-syntax://package/roc-parser/example/csv-movies` |
+| Its name and maintainer | `list_roc_index(kind: "scopes")`, under "Documented packages", and one clause each in `get_roc_syntax()` |
 
 None of these add a value to a `scope` enum. But package names and scope names
 are one set of names, so no plugin can replace a page that this server ships.
@@ -427,7 +427,7 @@ The server does not exit on a misconfigured plugin set, for three reasons:
 
 | Failure | Behavior |
 |---|---|
-| A plugin named in `--plugin=`, `ROC_MCP_PLUGINS` or `plugin add` cannot be resolved at all | Skip it, load the rest, diagnose on stderr and in the first `roc_overview` answer |
+| A plugin named in `--plugin=`, `ROC_MCP_PLUGINS` or `plugin add` cannot be resolved at all | Skip it, load the rest, diagnose on stderr and in the first `get_roc_syntax` answer |
 | A manifest is unreadable or malformed | Skip that plugin, load the rest, diagnose |
 | A manifest carries fields this host does not know | Load it |
 | A corpus file fails to parse | Skip the file, keep the plugin, diagnose |
@@ -494,7 +494,7 @@ refuses any other release, and its message names both versions.
 
 `purpose` is a few words that tell what programs the platform is for, for
 example "games, graphics and sound". Before there is code to detect,
-`roc_overview` lists every platform by name and purpose and asks the caller to
+`get_roc_syntax()` lists every platform by name and purpose and asks the caller to
 select one. Without this list, a model can only guess. Each platform gets one
 line in the list, so the field has a limit of 60 characters. If a manifest has
 no `purpose`, the server uses `description`.
@@ -524,7 +524,7 @@ a program in the plugin and the words that a question about it would use.
 }]
 ```
 
-Declared topics join the registry that `search_roc_syntax` answers from and
+Declared topics join the registry that `get_roc_syntax(topic:)` answers from and
 that `list_roc_index(kind: "topics")` lists, under the plugin's own scope. Thus
 a platform that this server does not know answers a question in the same way
 as basic-cli. The name of a topic is its address, and it is unique across all
@@ -535,7 +535,7 @@ For this reason, this repository's own roc-ray plugin shipped six programs that
 no caller could read.
 
 A lookup by the exact name of a declared topic finds the topic, whether or not
-the caller selected that platform. The description of `search_roc_syntax` names
+the caller selected that platform. The description of `get_roc_syntax` names
 the topics of each installed platform. If the server refused a name that the
 caller read there, the description would advertise a call that then answers
 "no topic matched". The reply names the corpus of the topic. A search by

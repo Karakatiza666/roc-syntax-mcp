@@ -36,7 +36,7 @@ test("a plugin's topics are served under its own scope", () => {
   assert.ok(merged.derived_methods, "the host's own topics are still there");
 });
 
-// `search_roc_syntax` finds a topic by its name, so a plugin must never change
+// `get_roc_syntax(topic:)` finds a topic by its name, so a plugin must never change
 // the answer to an existing call.
 test("a plugin cannot displace a topic this server ships", () => {
   const conflicts: string[] = [];

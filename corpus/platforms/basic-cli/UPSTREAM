@@ -28,7 +28,7 @@ examples/  <- examples/*.roc
 #   topics/       complete apps served as syntax topics
 #   scaffold.roc  the app roc_check wraps bare code in
 #   verify/       every overview snippet, in one app
-#   overview.md   the scope's roc_overview page
+#   overview.md   the page get_roc_syntax(scope:) returns
 #
 # The repinning checklist is in
 # .claude/skills/refresh-roc-upstream/reference/basic-cli.md.

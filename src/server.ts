@@ -26,14 +26,6 @@ const VERSION: string = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json
 // `Num` 1754, and at about 15 tokens a signature, those pages cost thousands.
 const NESTED_CAP = 100;
 
-function loadFullSyntax(): string {
-  try {
-    return fs.readFileSync(FULL_SYNTAX_FILE, "utf-8");
-  } catch (err) {
-    return `Error loading syntax reference: ${err}`;
-  }
-}
-
 import { type BuiltinItem } from "./builtin_parser.ts";
 import { loadTopic, matchTopic, topicsFor, type TopicMeta } from "./topics.ts";
 import { hintFor } from "./builtin_hints.ts";
@@ -382,7 +374,7 @@ export function createServer(config: ServerConfig): McpServer {
     return `No platform detected under ${d.root}. Pass \`scope\` explicitly to read one.`;
   }
 
-  /** The pages `roc_overview` returns when no scope is passed. */
+  /** The pages `get_roc_syntax()` returns, with no topic and no scope. */
   const DEFAULT_OVERVIEW_PAGES = DEFAULT_SCOPES.map((s) => SCOPE_DEFS[s].overview).filter(
     (p): p is string => !!p
   );
@@ -440,7 +432,7 @@ export function createServer(config: ServerConfig): McpServer {
   }
 
   /**
-   * The topic names that `search_roc_syntax` lists in its description, and the
+   * The topic names that `get_roc_syntax` lists in its description, and the
    * count of plugin topics that did not fit its growth budget.
    *
    * Only the platforms in reach are listed. The topics of every platform would
@@ -480,7 +472,7 @@ export function createServer(config: ServerConfig): McpServer {
     return (
       `No Roc code here imports a platform, so none is chosen yet. Available:\n${rows}\n` +
       `Pass the one you are writing for as \`scope\`, on this and every other tool, ` +
-      `for its overview, API and topics: roc_overview(scope: "${PLATFORM_SCOPES[0]}").`
+      `for its overview, API and topics: get_roc_syntax(scope: "${PLATFORM_SCOPES[0]}").`
     );
   }
 
@@ -497,7 +489,7 @@ export function createServer(config: ServerConfig): McpServer {
     );
     return (
       `\nPackages documented here: ${rows.join("; ")}. ` +
-      `search_roc_syntax("${PACKAGE_DOCS[0].name}") for one's page.`
+      `get_roc_syntax(topic: "${PACKAGE_DOCS[0].name}") for one's page.`
     );
   }
 
@@ -511,7 +503,7 @@ export function createServer(config: ServerConfig): McpServer {
    * reads resources. The text quotes a real address, not a template, so the
    * format is unambiguous.
    */
-  const readExample = (id: string) => `Read one with search_roc_syntax("${id}").`;
+  const readExample = (id: string) => `Read one with get_roc_syntax(topic: "${id}").`;
 
   /** The documented package a query names, by its plugin name or its repo path. */
   function packageNamed(query: string): PackageDoc | null {
@@ -520,7 +512,7 @@ export function createServer(config: ServerConfig): McpServer {
   }
 
   /**
-   * What `search_roc_syntax(<package name>)` returns: the package's page, the
+   * What `get_roc_syntax(topic: <package name>)` returns: the package's page, the
    * programs that teach it, and whether this app pins it.
    */
   function packagePage(doc: PackageDoc): string {
@@ -737,7 +729,7 @@ export function createServer(config: ServerConfig): McpServer {
       return [
         `${subject} is in ${doc.name} ${doc.version}, a package this app does not pin:\n` +
           `${shown.join("\n")}${more}\n${howToPin(doc)}\n` +
-          `search_roc_syntax("${doc.name}") says what the package is for.`,
+          `get_roc_syntax(topic: "${doc.name}") says what the package is for.`,
       ];
     });
     return lines.length > 0 ? `\n\n${lines.join("\n\n")}` : "";
@@ -942,14 +934,14 @@ export function createServer(config: ServerConfig): McpServer {
       // because otherwise a model that believes it knows Roc will never call a tool.
       instructions:
         "Roc language reference for the Zig-based compiler in roc-lang/roc (2026 nightlies). " +
-        "Before reading, writing, or reasoning about any Roc code, call `roc_overview` once. " +
+        "Before reading, writing, or reasoning about any Roc code, call `get_roc_syntax` once with no arguments. " +
         `It returns the whole language and its builtins as two compact pages (${pageCost(DEFAULT_OVERVIEW_PAGES)}), ` +
         "usually enough to finish the task without another call. " +
         "Do this even when you believe you know Roc: the syntax changed with this compiler, so " +
         "recalled Roc is unreliable (`Try` replaced `Result`, `value.method()` static dispatch is " +
         "the normal style, and every builtin lives in one `Builtin.roc`). " +
         "For details, use `get_roc_langref` for upstream's own prose, `get_builtin_module` for one " +
-        "module, `search_roc_syntax` for a worked example of one construct, and `roc_check` / " +
+        "module, `get_roc_syntax(topic:)` for a worked example of one construct, and `roc_check` / " +
         "`roc_fmt` to verify what you wrote. " +
         // Measured in docs/evals/agentic.md: on a local platform, agents searched the
         // source with Grep, often with one regex for several questions.
@@ -976,82 +968,64 @@ export function createServer(config: ServerConfig): McpServer {
       }) as never)) as typeof server.registerTool;
   }
 
-  server.registerTool(
-    "roc_overview",
-    {
-      annotations: READ_ONLY_FETCHES,
-      title: "Roc Overview (start here)",
-      description:
-        "Call once before reading, writing, or reasoning about any Roc code. The whole language and its builtins: syntax, types, operator desugaring, modules, and where LLMs get Roc wrong. Call it even when you believe you know Roc: the Zig-based compiler changed the syntax.",
-      inputSchema: z.object({
-        scope: scopeArg(
-            SCOPES,
-            "One corpus only. Omit for the language plus its standard library. Pass a platform name when you already know those and need the platform API."
-          ),
-      }),
-    },
-    async ({ scope }) => {
-      await ensureDetection();
-      // This is the only tool whose default is not the working set. Detection adds
-      // a platform to the default of every other tool. Here, the platform page in
-      // the default would print the language and builtins again on a call that
-      // wanted only the platform.
-      const wanted: ScopeName[] = scope ? [scope as ScopeName] : [...DEFAULT_SCOPES];
-      const pages = scope
-        ? [SCOPE_DEFS[scope as ScopeName].overview].filter((p): p is string => !!p)
-        : DEFAULT_OVERVIEW_PAGES;
-      let overview = loadOverview(ROOT, pages);
-      // The page does not state the release, so a repin does not change the page.
-      // This line states the release.
-      const version = scope ? SCOPE_DEFS[scope as ScopeName].version : undefined;
-      if (version && pages.length > 0) overview += `\n\nThis page documents ${scope} ${version}.`;
+  /** What `get_roc_syntax` returns without a topic: the overview pages, or the page of `scope`. */
+  async function overviewPage(scope?: ScopeName): Promise<{ content: { type: "text"; text: string }[] }> {
+    await ensureDetection();
+    // This is the only answer whose default is not the working set. Detection adds
+    // a platform to the default of every other tool. Here, the platform page in
+    // the default would print the language and builtins again on a call that
+    // wanted only the platform.
+    const wanted: ScopeName[] = scope ? [scope as ScopeName] : [...DEFAULT_SCOPES];
+    const pages = scope
+      ? [SCOPE_DEFS[scope as ScopeName].overview].filter((p): p is string => !!p)
+      : DEFAULT_OVERVIEW_PAGES;
+    let overview = loadOverview(ROOT, pages);
+    // The page does not state the release, so a repin does not change the page.
+    // This line states the release.
+    const version = scope ? SCOPE_DEFS[scope as ScopeName].version : undefined;
+    if (version && pages.length > 0) overview += `\n\nThis page documents ${scope} ${version}.`;
 
-      // Never add a detected platform to the default answer. The `scope`
-      // parameter exists to prevent a copy of the language and builtins pages on
-      // every platform call. Thus the answer points to `scope`.
-      if (!scope) {
-        const platform = activePlatform();
-        if (platform) {
-          const from =
-            detected?.scope === platform
-              ? ` (from ${detected.sourceFile}, pins ${detected.detectedVersion})`
-              : "";
-          const page = SCOPE_DEFS[platform].overview;
-          overview +=
-            `\n\nPlatform detected: ${platform} ${SCOPE_DEFS[platform].version}${from}.` +
-            (page ? `\nroc_overview(scope: "${platform}") adds ${pageCost([page])}.` : "");
-        } else if (detected?.relation === "unrecognized") {
-          // This is the only case where an answer without a note misleads. The app
-          // imports a platform, and nothing that this server bundles describes it.
-          overview +=
-            `\n\nThe app header here imports a platform this server does not have ` +
-            `(${detected.platformRef}). Search its files with search_project_symbols.`;
-        } else {
-          // This is the first call that a model makes, at the start of a project.
-          // Without the catalogue, a model with no platform in mind has none after
-          // the call. A model with a platform in mind cannot tell if this server
-          // knows that platform.
-          overview += `\n\n${platformCatalogue()}`;
-        }
-        overview += packageCatalogue();
+    // Never add a detected platform to the default answer. The `scope`
+    // parameter exists to prevent a copy of the language and builtins pages on
+    // every platform call. Thus the answer points to `scope`.
+    if (!scope) {
+      const platform = activePlatform();
+      if (platform) {
+        const from =
+          detected?.scope === platform
+            ? ` (from ${detected.sourceFile}, pins ${detected.detectedVersion})`
+            : "";
+        const page = SCOPE_DEFS[platform].overview;
+        overview +=
+          `\n\nPlatform detected: ${platform} ${SCOPE_DEFS[platform].version}${from}.` +
+          (page ? `\nget_roc_syntax(scope: "${platform}") adds ${pageCost([page])}.` : "");
+      } else if (detected?.relation === "unrecognized") {
+        // This is the only case where an answer without a note misleads. The app
+        // imports a platform, and nothing that this server bundles describes it.
+        overview +=
+          `\n\nThe app header here imports a platform this server does not have ` +
+          `(${detected.platformRef}). Search its files with search_project_symbols.`;
+      } else {
+        // This is the first call that a model makes, at the start of a project.
+        // Without the catalogue, a model with no platform in mind has none after
+        // the call. A model with a platform in mind cannot tell if this server
+        // knows that platform.
+        overview += `\n\n${platformCatalogue()}`;
       }
-      overview += detectionNote(wanted) + pluginProblemNote();
-
-      return {
-        content: [{ type: "text", text: overview }],
-      };
+      overview += packageCatalogue();
     }
-  );
+    overview += detectionNote(wanted) + pluginProblemNote();
 
-  /**
-   * The answer `search_roc_syntax` gives, shared with `get_roc_syntax(topic:)`.
-   * A caller who names a topic asks the same question through either tool, and
-   * the full all_syntax_test.roc answers neither.
-   */
+    return { content: [{ type: "text", text: overview }] };
+  }
+
+  /** What `get_roc_syntax(topic:)` returns: a topic, a package page or an example. */
   async function syntaxTopic(
     query: string,
     scope?: ScopeName
   ): Promise<{ content: { type: "text"; text: string }[] }> {
+    // `overview` is the name of the answer without a topic, and the name of its resource.
+    if (query.trim().toLowerCase() === "overview") return overviewPage(scope);
     await ensureDetection();
     // A package name addresses the package page for any scope, because no scope
     // holds a package.
@@ -1085,7 +1059,8 @@ export function createServer(config: ServerConfig): McpServer {
           {
             type: "text" as const,
             text:
-              `No topic matched "${query}" in scope=${wanted.join("+")}. Available topics:\n\n${list}` +
+              `No topic matched "${query}" in scope=${wanted.join("+")}. ` +
+              (list ? `Available topics:\n\n${list}` : "This corpus has no topics.") +
               trailingNotes({ read: wanted, found: { shown: 0, others } }),
           },
         ],
@@ -1119,26 +1094,42 @@ export function createServer(config: ServerConfig): McpServer {
     };
   }
 
+  // Topics spend the growth budget first. A model asks for a listed topic by
+  // name, which is worth more than an enum value that the listing also gives.
+  const SYNTAX_GROWTH = new Growth();
+  const SYNTAX_TOPICS = enumeratedTopics(SYNTAX_GROWTH);
+
+  // One tool answers the overview and the topics, because a model looks for
+  // the overview under a tool name with "syntax" in it.
   server.registerTool(
     "get_roc_syntax",
     {
       annotations: READ_ONLY_FETCHES,
-      title: "Full Roc Syntax Reference",
-      description: "Upstream's all_syntax_test.roc: every language construct as compiling code, the only bundled complete program. ~3.5k tokens, so pass `topic` for one construct.",
+      title: "Roc Overview and Syntax Topics (start here)",
+      // With no platform in reach, a keyword or an explicit `scope` finds the
+      // topics of a platform. The pointer costs fewer tokens than the names.
+      description:
+        "Call with no arguments before reading, writing, or reasoning about any Roc code. It returns the whole language and its builtins: syntax, types, operator desugaring, modules, and where LLMs get Roc wrong. Call it even when you believe you know Roc: the Zig-based compiler changed the syntax. " +
+        `Pass \`topic\` for a worked example of one construct. Topics: ${SYNTAX_TOPICS.names.join(", ")}.` +
+        (SYNTAX_TOPICS.more > 0
+          ? ` ${SYNTAX_TOPICS.more} more topics: list_roc_index(kind='topics').`
+          : ADVERTISED_PLATFORMS.length > 0
+            ? ""
+            : ` A platform's own topics are listed by list_roc_index(kind='topics').`),
       inputSchema: z.object({
-        // Declared, not refused. The SDK drops an undeclared argument before the
-        // handler runs. A caller who asks for one topic would then pay for the
-        // whole file and get no reason.
         topic: z
           .string()
           .optional()
-          .describe("One construct, answered as search_roc_syntax does. Omit for the whole file."),
+          .describe("Omit for the overview. A topic name (e.g. 'pattern_matching'), a keyword, a package name for its page (e.g. 'roc-parser'), or an example (e.g. 'basic-cli/hello')."),
+        scope: scopeArg(
+          SCOPES,
+          "One corpus only. Without `topic`, returns the page of that corpus. Omit for the language and builtins, or name a platform for its API. With `topic`, searches only the topics of that corpus.",
+          { hint: true, growth: SYNTAX_GROWTH }
+        ),
       }),
     },
-    async ({ topic }) => {
-      if (topic?.trim()) return syntaxTopic(topic);
-      return { content: [{ type: "text", text: loadFullSyntax() }] };
-    }
+    async ({ topic, scope }) =>
+      topic?.trim() ? syntaxTopic(topic, scope as ScopeName | undefined) : overviewPage(scope as ScopeName | undefined)
   );
 
   server.registerTool(
@@ -1147,7 +1138,7 @@ export function createServer(config: ServerConfig): McpServer {
       annotations: READ_ONLY_FETCHES,
       title: "List What the Other Roc Tools Accept",
       description:
-        "What the other tools accept. `scopes`: the corpora `scope` takes, and documented packages. `topics`: the topics `search_roc_syntax` takes. `builtin_modules`: the module paths `get_builtin_module` takes. `examples`: worked programs. `langref`: the upstream reference pages and their sections.",
+        "What the other tools accept. `scopes`: the corpora `scope` takes, and documented packages. `topics`: the topics `get_roc_syntax` takes. `builtin_modules`: the module paths `get_builtin_module` takes. `examples`: worked programs. `langref`: the upstream reference pages and their sections.",
       inputSchema: z.object({
         kind: z
           .enum(["scopes", "topics", "builtin_modules", "examples", "langref"])
@@ -1207,7 +1198,7 @@ export function createServer(config: ServerConfig): McpServer {
                 "",
                 ...packages,
                 "",
-                "A pinned package is searched with the builtins. search_roc_syntax(<name>) reads a package's page.",
+                "A pinned package is searched with the builtins. get_roc_syntax(topic: <name>) reads a package's page.",
               ]
             : []),
           detectionLine(),
@@ -1258,7 +1249,7 @@ export function createServer(config: ServerConfig): McpServer {
 
       if (kind === "examples") {
         // Each entry is a complete program, so the listing names the programs and
-        // does not quote them. search_roc_syntax reads one by its address.
+        // does not quote them. get_roc_syntax(topic:) reads one by its address.
         const items = wanted.flatMap((sc) => filedExamples(sc).map(({ id, ex }) => ({ name: id, detail: ex.title })));
         const others = elsewhere(SCOPES, wanted, "pinned", (sc) => filedExamples(sc).length);
         const body =
@@ -1308,35 +1299,6 @@ export function createServer(config: ServerConfig): McpServer {
     }
   );
 
-  // Topics spend the growth budget first. A model asks for a listed topic by
-  // name, which is worth more than an enum value that the listing also gives.
-  const SYNTAX_GROWTH = new Growth();
-  const SYNTAX_TOPICS = enumeratedTopics(SYNTAX_GROWTH);
-
-  server.registerTool(
-    "search_roc_syntax",
-    {
-      annotations: READ_ONLY_FETCHES,
-      title: "Search Roc Syntax by Topic",
-      // With no platform in reach, a keyword or an explicit `scope` finds the
-      // topics of a platform. The pointer costs fewer tokens than the names.
-      description:
-        `Roc syntax snippet for a topic or keyword. Topics: ${SYNTAX_TOPICS.names.join(", ")}.` +
-        (SYNTAX_TOPICS.more > 0
-          ? ` ${SYNTAX_TOPICS.more} more topics: list_roc_index(kind='topics').`
-          : ADVERTISED_PLATFORMS.length > 0
-            ? ""
-            : ` A platform's own topics are listed by list_roc_index(kind='topics').`),
-      inputSchema: z.object({
-        query: z.string().describe("Topic name (e.g. 'pattern_matching'), a keyword, a package name for its page (e.g. 'roc-parser'), or an example (e.g. 'basic-cli/hello')."),
-        scope: scopeArg(SYNTAX_SCOPES, "Search one corpus's topics only. Omit for the working set.", {
-          hint: true,
-          growth: SYNTAX_GROWTH,
-        }),
-      }),
-    },
-    async ({ query, scope }) => syntaxTopic(query, scope as ScopeName | undefined)
-  );
 
   // -----------------------------------------------------------------------------
   // Symbol search: by name, by type, or both. See docs/design/symbol-search.md.
@@ -2293,7 +2255,7 @@ export function createServer(config: ServerConfig): McpServer {
       // Without this note, a placeholder page reads as "Roc has no such feature".
       const note =
         !section && pg.isTodo
-          ? `\n\n(Upstream has not written this page yet. Use \`get_roc_syntax\` or \`search\` for a working example.)`
+          ? `\n\n(Upstream has not written this page yet. Use \`get_roc_syntax(topic:)\` or \`search\` for a working example.)`
           : "";
 
       return {
@@ -2382,7 +2344,7 @@ export function createServer(config: ServerConfig): McpServer {
     for (const { id, ex } of filedExamples(scope)) {
       const score = scoreExample(q, ex);
       if (score > 0) {
-        hits.push({ kind: "example", scope, id, title: ex.name, snippet: `${ex.title}\n   Read with search_roc_syntax("${id}")`, score });
+        hits.push({ kind: "example", scope, id, title: ex.name, snippet: `${ex.title}\n   Read with get_roc_syntax(topic: "${id}")`, score });
       }
     }
 
@@ -2867,7 +2829,7 @@ export function createServer(config: ServerConfig): McpServer {
     }
   );
 
-  // A documented package's page, the same text `search_roc_syntax(<name>)` returns.
+  // A documented package's page, the same text `get_roc_syntax(topic: <name>)` returns.
   server.registerResource(
     "roc-package-page",
     new ResourceTemplate("roc-syntax://package/{package}", {

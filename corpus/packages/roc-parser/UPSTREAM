@@ -21,7 +21,7 @@ topics/    <- ours: one per module family, compiled by check:platforms. Each
               ends with links to the manual pages at tag 2.0.0. The manual
               itself is not bundled
 verify/    <- ours: every snippet on overview.md, in one app
-overview.md <- ours: the page search_roc_syntax("roc-parser") returns
+overview.md <- ours: the page get_roc_syntax(topic: "roc-parser") returns
 
 # Yaml.roc:1 at this tag is `import Parser exposing [Parser]`. Nightlies from
 # 2026-10-04 reject that line with a redundant-expose error. The compiler loads

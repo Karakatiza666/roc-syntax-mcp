@@ -37,4 +37,4 @@ import rand.Random
   empty list. `Random.choice_try` takes a plain list and returns a `Try`.
 
 The worked program is the `random_generators` topic:
-`search_roc_syntax("random_generators")`.
+`get_roc_syntax(topic: "random_generators")`.

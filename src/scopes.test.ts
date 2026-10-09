@@ -578,7 +578,7 @@ test("every platform name an overview mentions resolves", () => {
   }
 });
 
-// The page that `search_roc_syntax(<name>)` returns for a package that this
+// The page that `get_roc_syntax(topic: <name>)` returns for a package that this
 // server documents. The rules are the same as for a platform, plus the snippet
 // rule of `plugin validate`: a page line that no compiled app holds can go out
 // of date.

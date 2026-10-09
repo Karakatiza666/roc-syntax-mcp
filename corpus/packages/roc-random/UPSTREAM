@@ -19,7 +19,7 @@ verify/  <- ours: one basic-cli app that calls the package, so
             scripts/check-platform-examples.sh measures this tag and the
             nightly above as a pair
 topics/  <- ours: random_generators.roc, compiled by the same gate
-overview.md <- ours: the page search_roc_syntax("roc-random") returns
+overview.md <- ours: the page get_roc_syntax(topic: "roc-random") returns
 
 # No platform that this server bundles pins this package. The server bundles it
 # so that the namespace has a provider when no plugin is installed. roc-ray's

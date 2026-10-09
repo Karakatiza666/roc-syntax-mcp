@@ -1,6 +1,6 @@
 # The overview page
 
-`roc_overview` returns this page whole. It is the first text that a model reads
+`get_roc_syntax(scope: <name>)` returns this page whole. It is the first text that a model reads
 about your platform, and often the only text that it reads before it writes
 code. Thus each sentence on the page costs tokens on every call, and the model
 guesses each fact that the page omits.

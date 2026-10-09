@@ -122,11 +122,11 @@ interface ModuleDir extends TreeSource {
 /**
  * One worked program from a corpus, addressed by name, not read as a whole
  * file. The shape is the same as the topics that this server ships. The server
- * merges the topics of a plugin into that registry, so `search_roc_syntax` can
+ * merges the topics of a plugin into that registry, so `get_roc_syntax(topic:)` can
  * answer for a platform that this server does not bundle.
  */
 export interface ScopeTopic {
-  /** The name `search_roc_syntax` accepts, unique across every corpus. */
+  /** The `topic` that `get_roc_syntax` accepts, unique across every corpus. */
   name: string;
   /** The program, relative to the repo root or absolute for a declared plugin. */
   file: string;
@@ -151,14 +151,14 @@ export interface ScopeDef {
   maintainer: string | null;
   /** The upstream release this corpus is pinned to, when it tracks one. */
   version?: string;
-  /** The page `roc_overview` returns for this scope, relative to the repo root. */
+  /** The page `get_roc_syntax(scope:)` returns for this scope, relative to the repo root. */
   overview?: string;
   modules: ModuleDir[];
   /** Worked programs, relative to the repo root. */
   examples?: string;
   /** Prose bundled as is, relative to the repo root. */
   docs?: string;
-  /** Worked programs this corpus answers `search_roc_syntax` with. */
+  /** Worked programs this corpus answers `get_roc_syntax(topic:)` with. */
   topics?: readonly ScopeTopic[];
   /**
    * Recognizes this platform in an app header's `pf: platform "..."` string.
@@ -193,7 +193,7 @@ export interface ScopeDef {
  * nothing that a caller needs.
  */
 export interface PackageDoc {
-  /** The plugin's name, which `search_roc_syntax` accepts: `roc-random`. */
+  /** The plugin's name, which `get_roc_syntax(topic:)` accepts: `roc-random`. */
   name: string;
   /** The package it documents, by repo path: `kili-ilo/roc-random`. */
   id: string;
@@ -204,7 +204,7 @@ export interface PackageDoc {
   /** What the package is for, in a few words, for the catalogue. */
   purpose: string;
   maintainer: string | null;
-  /** The page `search_roc_syntax(<name>)` returns, relative to the repo root. */
+  /** The page `get_roc_syntax(topic: <name>)` returns, relative to the repo root. */
   overview?: string;
   /** Worked programs, relative to the repo root. */
   examples?: string;
@@ -1016,7 +1016,7 @@ export const HOST_PACKAGES: readonly PackageProvider[] = CORE_PLUGINS.flatMap((p
  * separate budget for the shipped tool text.
  *
  * 180 because a platform plugin adds 25 to 33 tokens of topic names to
- * `search_roc_syntax`, so 180 covers the topics of about six plugins. Other
+ * `get_roc_syntax`, so 180 covers the topics of about six plugins. Other
  * tools grow by 3 to 6 tokens per plugin and rarely reach the limit.
  * `docs/design/plugins.md` has the table.
  */

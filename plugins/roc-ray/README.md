@@ -20,7 +20,7 @@ To serve it from one client entry only, start the server with
 When the server detects an app header that pins a roc-ray release, it adds the
 scope to the default working set, and nobody has to name it. Before there is a
 header, the server reads nothing here until a caller asks for it.
-`roc_overview` lists roc-ray as "games, graphics and sound" beside the bundled
+`get_roc_syntax()` lists roc-ray as "games, graphics and sound" beside the bundled
 platforms and asks the caller to pick one. `scope: "roc-ray"` on any tool picks
 it. A search for a topic name finds the topic, whether the scope is chosen or
 not.
@@ -29,10 +29,10 @@ not.
 
 | Part | Is |
 |---|---|
-| `overview.md` | What `roc_overview` returns for the scope: how a project is started and run, the callback contract, the phase rules, the shape a game takes, where to start reading, and the traps |
+| `overview.md` | What `get_roc_syntax(scope: "roc-ray")` returns: how a project is started and run, the callback contract, the phase rules, the shape a game takes, where to start reading, and the traps |
 | `index.json` | The release's own modules, parsed by `plugin index`. No source is vendored |
 | `examples/` | Complete programs from the release, all of which type-check |
-| `topics/` | Programs `search_roc_syntax` answers with: how a project is started and run, how a game is put together, and the places a model gets this platform wrong |
+| `topics/` | Programs `get_roc_syntax(topic:)` answers with: how a project is started and run, how a game is put together, and the places a model gets this platform wrong |
 | `scaffold.roc` | The app `roc_check` wraps bare source in, so a snippet can be checked without a header |
 
 ## Pinned to

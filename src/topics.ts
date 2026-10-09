@@ -417,7 +417,7 @@ const BUILTIN_TOPICS: Record<string, TopicMeta> = {
 /**
  * Merges this server's topics with the topics of every declared plugin.
  *
- * `search_roc_syntax` finds a topic by its name, so two corpora cannot share
+ * `get_roc_syntax(topic:)` finds a topic by its name, so two corpora cannot share
  * one name. A plugin topic with a name that is already served goes into
  * `conflicts` and is not served. This server's own names win, because a plugin
  * must never change the answer to an existing call.

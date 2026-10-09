@@ -42,9 +42,9 @@ the directory.
 | `plugin.json` | The full declaration. It holds only data, with no regex, no code and no path outside the plugin. See `reference/manifest.md` |
 | `package.json` | The npm metadata. This host does not read it, but `validate` checks it, because a path that it leaves out of the tarball is missing after install |
 | `index.json` | The parsed modules of the release. `plugin index` writes it from the release that the manifest names. The plugin vendors no source |
-| `overview.md` | The page that `roc_overview(scope: <name>)` returns for a platform, or that `search_roc_syntax("<name>")` returns for a package. Of all files here, it has the most effect on what a model writes. See `reference/overview-page.md` |
+| `overview.md` | The page that `get_roc_syntax(scope: <name>)` returns for a platform, or that `get_roc_syntax(topic: "<name>")` returns for a package. Of all files here, it has the most effect on what a model writes. See `reference/overview-page.md` |
 | `topics/` | Complete programs, one for each area that a model gets wrong. `init` does not write them. You add them |
-| `examples/` | Worked programs from the release, listed by `list_roc_index(kind: "examples")`. A caller reads each one by the corpus name and the file name, as in `search_roc_syntax("roc-ray/camera")` |
+| `examples/` | Worked programs from the release, listed by `list_roc_index(kind: "examples")`. A caller reads each one by the corpus name and the file name, as in `get_roc_syntax(topic: "roc-ray/camera")` |
 | `verify/` | One app that holds every snippet that the overview shows, so the page cannot drift from code that compiles |
 | `scaffold.roc` | The app that `roc_check` wraps a caller's bare source in. Its full contract is two markers |
 | `sample.roc` | Bare source with no header, which is the input that `roc_check` receives. `validate` compiles it through the scaffold |
@@ -201,7 +201,7 @@ recall that the plugin must replace.
 
 ## Step 4: write the overview page
 
-`roc_overview` returns this page whole. Thus every call that reads the page pays
+`get_roc_syntax(scope: <name>)` returns this page whole. Thus every call that reads the page pays
 its full token cost, and the page is the first text that a model sees.
 `reference/overview-page.md` describes its parts. `validate` enforces a ceiling
 of 4000 tokens. A page near the ceiling should hold what a reader needs before
@@ -228,7 +228,7 @@ say why it annotates every binding.
 
 `checks` and `topics` do different jobs, and a plugin needs both. A `checks`
 entry is a directory that `validate` compiles and that the server does not
-serve. A `topics` entry is a program that `search_roc_syntax` returns, by name
+serve. A `topics` entry is a program that `get_roc_syntax(topic:)` returns, by name
 or by keyword:
 
 ```json
@@ -356,7 +356,7 @@ that a real user would have. Then ask the questions that a user would ask.
 | A topic, by its own name | The name is an address, and it must resolve |
 | A topic, as the question that its description states, with no `scope` | This is the query that fails. Retrieval takes the first match across all installed corpora, and your corpus is the newest |
 | One name, with `search_symbols` and no `scope` | Ask once. If the name gets two answers, the server indexes one tree twice. For a package, ask from a workspace that pins it and from one that does not. In the second workspace, the answer is a miss that names your package |
-| `roc_overview scope="<name>"` for a platform, `search_roc_syntax("<name>")` for a package | The server returns the full page, and it is the page that you wrote |
+| `get_roc_syntax(scope: "<name>")` for a platform, `get_roc_syntax(topic: "<name>")` for a package | The server returns the full page, and it is the page that you wrote |
 
 A wrong answer here is not always a defect in your plugin. If the corpus is
 correct and retrieval is wrong, the bug is in the host.

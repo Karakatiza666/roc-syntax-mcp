@@ -7,7 +7,7 @@ transcript or from `roc check`, never from the model's prose.
 
 A footer column reading `none shown` means the model never called a tool that
 emits one, not that it ignored one. Scope footers appear on `search`,
-`search_symbols` type queries, the `list_roc_index` kinds, and a `search_roc_syntax`
+`search_symbols` type queries, the `list_roc_index` kinds, and a `get_roc_syntax` topic
 miss. The host-tier footer appears on `search` and `get_builtin_module`.
 
 | Arm | Runs | `tools/list` | Compiles | Set `scope` | Called `roc_check` | Footer retries | Host footers | Tool output | Output tokens | Cost |
@@ -18,6 +18,8 @@ miss. The host-tier footer appears on `search` and `get_builtin_module`.
 | search-project-symbols | 6 | 2665 tok | 6/6 | 0% (0/13) | 6/6 | none shown | none shown | 12.1k ch | 2.3k | $0.28 |
 | query-lists | 6 | 2697 tok | 6/6 | 23% (7/31) | 6/6 | none shown | none shown | 21.8k ch | 2.8k | $0.34 |
 | query-shapes | 3 | 2723 tok | 3/3 | 13% (2/15) | 3/3 | none shown | none shown | 20.3k ch | 3.5k | $0.40 |
+| pre-merge | 6 | 2723 tok | 6/6 | 15% (4/26) | 6/6 | none shown | none shown | 20.7k ch | 1.8k | $0.27 |
+| merged-syntax | 12 | 2481 tok | 12/12 | 28% (15/54) | 12/12 | none shown | none shown | 20.3k ch | 2.1k | $0.27 |
 
 ## Per run
 
@@ -50,6 +52,24 @@ miss. The host-tier footer appears on `search` and `get_builtin_module`.
 | query-shapes | roc-ray-local | project | builtin | roc_overview | 5 | pass | 23.5k ch | $0.49 |
 | query-shapes | roc-ray-local | project | none | roc_overview | 4 | pass | 17.1k ch | $0.33 |
 | query-shapes | roc-ray-local | project | builtin | roc_overview | 6 | pass | 20.4k ch | $0.38 |
+| pre-merge | todos-sqlite | basic-webserver | basic-webserver | roc_overview | 6 | pass | 29.1k ch | $0.40 |
+| pre-merge | sse-stream | basic-webserver | basic-webserver | roc_overview | 4 | pass | 22.4k ch | $0.24 |
+| pre-merge | form-post | basic-webserver | basic-webserver | roc_overview | 6 | pass | 23.1k ch | $0.27 |
+| pre-merge | builtin-only | builtin | none | roc_overview | 3 | pass | 15.9k ch | $0.21 |
+| pre-merge | local-platform | project | none | roc_overview | 2 | pass | 11.8k ch | $0.19 |
+| pre-merge | roc-ray-local | project | none | roc_overview | 5 | pass | 21.9k ch | $0.30 |
+| merged-syntax | todos-sqlite | basic-webserver | basic-webserver | get_roc_syntax | 7 | pass | 27.4k ch | $0.31 |
+| merged-syntax | sse-stream | basic-webserver | basic-webserver | get_roc_syntax | 5 | pass | 22.3k ch | $0.26 |
+| merged-syntax | form-post | basic-webserver | basic-webserver | get_roc_syntax | 6 | pass | 26.1k ch | $0.29 |
+| merged-syntax | builtin-only | builtin | none | get_roc_syntax | 3 | pass | 15.7k ch | $0.22 |
+| merged-syntax | local-platform | project | none | get_roc_syntax | 2 | pass | 11.8k ch | $0.19 |
+| merged-syntax | roc-ray-local | project | none | get_roc_syntax | 5 | pass | 16.9k ch | $0.37 |
+| merged-syntax | todos-sqlite | basic-webserver | basic-webserver | get_roc_syntax | 5 | pass | 22.6k ch | $0.28 |
+| merged-syntax | sse-stream | basic-webserver | basic-webserver | get_roc_syntax | 4 | pass | 22.1k ch | $0.25 |
+| merged-syntax | form-post | basic-webserver | basic-webserver | get_roc_syntax | 6 | pass | 29.6k ch | $0.32 |
+| merged-syntax | builtin-only | builtin | none | get_roc_syntax | 3 | pass | 13.8k ch | $0.22 |
+| merged-syntax | local-platform | project | none | get_roc_syntax | 3 | pass | 12.7k ch | $0.21 |
+| merged-syntax | roc-ray-local | project | none | get_roc_syntax | 5 | pass | 22.5k ch | $0.39 |
 
 ## Tool call order
 
@@ -80,3 +100,21 @@ miss. The host-tier footer appears on `search` and `get_builtin_module`.
 - `query-shapes/roc-ray-local`: roc_overview -> search_project_symbols -> search_symbols(builtin) -> roc_check -> roc_check
 - `query-shapes/roc-ray-local`: roc_overview -> search_project_symbols -> search_symbols -> roc_check
 - `query-shapes/roc-ray-local`: roc_overview -> search_project_symbols -> search_project_symbols -> search_project_symbols -> search_symbols(builtin) -> roc_check
+- `pre-merge/todos-sqlite`: roc_overview -> roc_overview(basic-webserver) -> search_symbols -> search_roc_syntax(basic-webserver) -> search_symbols -> roc_check
+- `pre-merge/sse-stream`: roc_overview -> roc_overview(basic-webserver) -> search_symbols -> roc_check
+- `pre-merge/form-post`: roc_overview -> roc_overview(basic-webserver) -> search_symbols -> search_symbols -> get_builtin_module -> roc_check
+- `pre-merge/builtin-only`: roc_overview -> search_symbols -> roc_check
+- `pre-merge/local-platform`: roc_overview -> roc_check
+- `pre-merge/roc-ray-local`: roc_overview -> search_project_symbols -> search_project_symbols -> search_project_symbols -> roc_check
+- `merged-syntax/todos-sqlite`: get_roc_syntax -> get_roc_syntax(basic-webserver) -> search_symbols(basic-webserver) -> search_symbols(basic-webserver) -> search_symbols(basic-webserver) -> get_roc_syntax(basic-webserver) -> roc_check
+- `merged-syntax/sse-stream`: get_roc_syntax -> get_roc_syntax(basic-webserver) -> search_symbols -> roc_check -> search_symbols
+- `merged-syntax/form-post`: get_roc_syntax -> get_roc_syntax(basic-webserver) -> search_symbols -> search_symbols -> search_symbols -> roc_check
+- `merged-syntax/builtin-only`: get_roc_syntax -> search_symbols -> roc_check
+- `merged-syntax/local-platform`: get_roc_syntax -> roc_check
+- `merged-syntax/roc-ray-local`: get_roc_syntax -> search_project_symbols -> search_project_symbols -> search_symbols -> roc_check
+- `merged-syntax/todos-sqlite`: get_roc_syntax -> get_roc_syntax(basic-webserver) -> get_roc_syntax(basic-webserver) -> search_symbols(basic-webserver) -> roc_check
+- `merged-syntax/sse-stream`: get_roc_syntax -> get_roc_syntax(basic-webserver) -> search_symbols -> roc_check
+- `merged-syntax/form-post`: get_roc_syntax -> get_roc_syntax(basic-webserver) -> search_symbols(basic-webserver) -> search_symbols(basic-webserver) -> search_symbols(basic-webserver) -> roc_check
+- `merged-syntax/builtin-only`: get_roc_syntax -> search_symbols -> roc_check
+- `merged-syntax/local-platform`: get_roc_syntax -> roc_check -> roc_check
+- `merged-syntax/roc-ray-local`: get_roc_syntax -> search_project_symbols -> search_project_symbols -> roc_check -> roc_check

@@ -356,7 +356,7 @@
 # The basic-cli fragments above are quotes. This server bundles basic-webserver
 # 0.17.0 in full, so you can read all of it:
 #
-#   roc_overview(scope: "basic-webserver")     the app-facing API in one page
+#   get_roc_syntax(scope: "basic-webserver")   the app-facing API in one page
 #   get_builtin_module("Server")               one module's methods and types
 #   search_symbols("Server.Config.to_host")    one glue method, by name
 #   list_roc_index(kind: "examples")           27 programs that all pass roc check

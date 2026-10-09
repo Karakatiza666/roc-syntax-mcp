@@ -221,9 +221,9 @@ test("a workspace with no app header keeps the default working set", async () =>
   assert.match(text, /Omitting `scope` reads language \+ builtin\./);
 });
 
-test("roc_overview points at the platform page without folding it in", async () => {
+test("get_roc_syntax points at the platform page without folding it in", async () => {
   const root = workspace("overview", { "main.roc": appFile("0.15.0") });
-  const [text] = await session({ cwd: root }, [{ name: "roc_overview" }]);
+  const [text] = await session({ cwd: root }, [{ name: "get_roc_syntax" }]);
   assert.match(text, /Platform detected: basic-webserver 0\.17\.0 \(from main\.roc, pins 0\.15\.0\)/);
   // The platform page must not be in the default answer. The scope parameter
   // exists to prevent that copy.
@@ -260,7 +260,7 @@ test("each platform topic loads from beside its platform, not corpus/language/to
                  "webserver_html", "webserver_forms", "webserver_static"];
   const texts = await session(
     { cwd: ROOT },
-    names.map((n) => ({ name: "search_roc_syntax", args: { query: n, scope: "basic-webserver" } }))
+    names.map((n) => ({ name: "get_roc_syntax", args: { topic: n, scope: "basic-webserver" } }))
   );
   names.forEach((n, i) => {
     assert.match(texts[i], new RegExp(`^## ${n}\\n`), `${n} did not resolve`);
@@ -273,7 +273,7 @@ test("each basic-cli topic loads from beside its platform", async () => {
                  "cli_terminal", "cli_net"];
   const texts = await session(
     { cwd: ROOT },
-    names.map((n) => ({ name: "search_roc_syntax", args: { query: n, scope: "basic-cli" } }))
+    names.map((n) => ({ name: "get_roc_syntax", args: { topic: n, scope: "basic-cli" } }))
   );
   names.forEach((n, i) => {
     assert.match(texts[i], new RegExp(`^## ${n}\\n`), `${n} did not resolve`);
@@ -469,9 +469,9 @@ test("an example is listed, searchable, and read through a tool", async () => {
   for (const text of [listed, searched]) assert.ok(!text.includes("roc-syntax://"), text);
   assert.match(listed, /^- basic-webserver\/sse$/m);
   // A real address, not a template, so the format needs no explanation.
-  assert.match(listed, /^Read one with search_roc_syntax\("basic-webserver\/[a-z.-]+"\)\.$/m);
+  assert.match(listed, /^Read one with get_roc_syntax\(topic: "basic-webserver\/[a-z.-]+"\)\.$/m);
   assert.match(searched, /\[example\] sse/);
-  assert.match(searched, /Read with search_roc_syntax\("basic-webserver\/sse"\)/);
+  assert.match(searched, /Read with get_roc_syntax\(topic: "basic-webserver\/sse"\)/);
   // The topic is the better answer for a question, so it must outrank the file.
   assert.ok(
     searched.indexOf("[topic] webserver_sse") < searched.indexOf("[example] sse"),
@@ -479,15 +479,15 @@ test("an example is listed, searchable, and read through a tool", async () => {
   );
 });
 
-test("search_roc_syntax reads an example by its address or its URI", async () => {
+test("get_roc_syntax reads an example by its address or its URI", async () => {
   const [cli, web, uri, pkg, page, missing, keyword] = await session({ cwd: ROOT }, [
-    { name: "search_roc_syntax", args: { query: "basic-cli/command" } },
-    { name: "search_roc_syntax", args: { query: "basic-webserver/command", scope: "basic-cli" } },
-    { name: "search_roc_syntax", args: { query: "roc-syntax://platform/basic-webserver/example/sse" } },
-    { name: "search_roc_syntax", args: { query: "roc-parser/csv-movies" } },
-    { name: "search_roc_syntax", args: { query: "roc-parser" } },
-    { name: "search_roc_syntax", args: { query: "basic-cli/nope" } },
-    { name: "search_roc_syntax", args: { query: "sqlite", scope: "basic-cli" } },
+    { name: "get_roc_syntax", args: { topic: "basic-cli/command" } },
+    { name: "get_roc_syntax", args: { topic: "basic-webserver/command", scope: "basic-cli" } },
+    { name: "get_roc_syntax", args: { topic: "roc-syntax://platform/basic-webserver/example/sse" } },
+    { name: "get_roc_syntax", args: { topic: "roc-parser/csv-movies" } },
+    { name: "get_roc_syntax", args: { topic: "roc-parser" } },
+    { name: "get_roc_syntax", args: { topic: "basic-cli/nope" } },
+    { name: "get_roc_syntax", args: { topic: "sqlite", scope: "basic-cli" } },
   ]);
   const file = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf-8").trimEnd();
   // Two platforms ship a `command` example. The address picks one, for any scope.
@@ -495,7 +495,7 @@ test("search_roc_syntax reads an example by its address or its URI", async () =>
   assert.ok(web.includes(file("corpus/platforms/basic-webserver/examples/command.roc")), web);
   assert.ok(uri.includes(file("corpus/platforms/basic-webserver/examples/sse.roc")), uri);
   assert.ok(pkg.includes(file("corpus/packages/roc-parser/examples/csv-movies.roc")), pkg);
-  assert.match(page, /^Examples: roc-parser\/csv-movies, .*\. Read one with search_roc_syntax\("roc-parser\/csv-movies"\)\.$/m);
+  assert.match(page, /^Examples: roc-parser\/csv-movies, .*\. Read one with get_roc_syntax\(topic: "roc-parser\/csv-movies"\)\.$/m);
   assert.match(missing, /^No example "nope" in basic-cli\. Its examples: .*\bhello-world\b/);
   // A bare word is a topic search, never the name of an example.
   assert.match(keyword, /^## cli_sqlite\n/);
@@ -565,8 +565,8 @@ test("a package release nothing serves is fetched before the first answer", asyn
     { name: "search_symbols", args: { query: ["Random.brand_new"] } },
     scopes,
     { name: "search_symbols", args: { query: ["brand_new"] } },
-    { name: "search_roc_syntax", args: { query: "roc-random" } },
-    { name: "search_roc_syntax", args: { query: "random_generators" } },
+    { name: "get_roc_syntax", args: { topic: "roc-random" } },
+    { name: "get_roc_syntax", args: { topic: "random_generators" } },
   ]);
   // The prose was written for 0.9.2, and the server serves it for any release.
   // Most of what it teaches is correct, and the signatures above come from the
@@ -643,7 +643,7 @@ test("a platform pinned at another release is read from that release", async () 
     { name: "search_symbols", args: { query: ["Stdout.line!"] } },
     scopes,
     { name: "search", args: { query: "line_new" } },
-    { name: "roc_overview", args: { scope: "basic-cli" } },
+    { name: "get_roc_syntax", args: { scope: "basic-cli" } },
   ]);
   assert.match(overview, /basic-cli/);
   assert.ok(overview.length > 2000, "the 0.24.0 overview was withheld from a 0.25.0 app");
@@ -675,7 +675,7 @@ test("a bundled package is in the space only when the app pins it", async () => 
   assert.match(missed, /`Random\.bounded_u8` is in roc-random 0\.9\.2, a package this app does not pin:/);
   assert.match(missed, /^ {4}Random\.bounded_u8 : U8, U8 -> Generator\(U8\)$/m);
   assert.match(missed, /<alias>: "https:\/\/github\.com\/kili-ilo\/roc-random\/releases\/download\/0\.9\.2\/2ZXLX8WR/);
-  assert.match(missed, /search_roc_syntax\("roc-random"\)/);
+  assert.match(missed, /get_roc_syntax\(topic: "roc-random"\)/);
 
   const pinned = workspace("cli-with-rand", {
     "main.roc": cliPinning(
@@ -686,7 +686,7 @@ test("a bundled package is in the space only when the app pins it", async () => 
     { name: "search_symbols", args: { query: ["Random.bounded_u8"] } },
     { name: "search_symbols", args: { query: ["U8, U8 -> Generator(U8)"] } },
     { name: "search_symbols", args: { query: ["U8, U8 -> Generator(U8)"], scope: "builtin" } },
-    { name: "roc_overview", args: {} },
+    { name: "get_roc_syntax", args: {} },
   ]);
   assert.match(found, /Random\.bounded_u8 \(roc-random 0\.9\.2\)/);
   // A pinned package is read with the builtins, so both an unscoped search and
@@ -699,16 +699,16 @@ test("a bundled package is in the space only when the app pins it", async () => 
 test("a bundled package has an overview and a topic", async () => {
   const root = workspace("pkg-docs", { "main.roc": cliAppFile("0.24.0") });
   const [random, parser, topic, scopesList, tour] = await session({ cwd: root }, [
-    { name: "search_roc_syntax", args: { query: "roc-random" } },
-    { name: "search_roc_syntax", args: { query: "lukewilliamboswell/roc-parser", scope: "basic-cli" } },
-    { name: "search_roc_syntax", args: { query: "parser_combinators" } },
+    { name: "get_roc_syntax", args: { topic: "roc-random" } },
+    { name: "get_roc_syntax", args: { topic: "lukewilliamboswell/roc-parser", scope: "basic-cli" } },
+    { name: "get_roc_syntax", args: { topic: "parser_combinators" } },
     scopes,
-    { name: "roc_overview", args: {} },
+    { name: "get_roc_syntax", args: {} },
   ]);
   // A model learns that these packages exist from its first call.
   assert.match(
     tour,
-    /Packages documented here: roc-parser \(parsing text formats, on any platform\); roc-random \(pseudorandom values, on any platform\)\. search_roc_syntax\("roc-parser"\) for one's page\./
+    /Packages documented here: roc-parser \(parsing text formats, on any platform\); roc-random \(pseudorandom values, on any platform\)\. get_roc_syntax\(topic: "roc-parser"\) for one's page\./
   );
   // A package page answers to its name or its repo path, for any scope.
   assert.match(random, /^# roc-random\n/);

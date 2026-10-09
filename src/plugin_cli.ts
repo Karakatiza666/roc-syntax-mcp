@@ -128,7 +128,7 @@ export function packageSkeleton(
     corpora: [
       {
         ...namedUnlessRepo(name, repo),
-        // `search_roc_syntax` returns the overview for this name.
+        // `get_roc_syntax(topic: <name>)` returns the page for this name.
         release: url,
         description: `The ${name} package: one line, and it is what list_roc_index(kind: "scopes") shows.`,
         purpose: `what ${name} is for, in a few words`,
@@ -308,7 +308,7 @@ export function init(
 
 /**
  * The token ceiling for one overview page. The pages of this host are 1500 to
- * 2000 tokens, and `roc_overview` returns a page whole. A page above this
+ * 2000 tokens, and `get_roc_syntax` returns a page whole. A page above this
  * ceiling is a full document.
  *
  * A platform page holds more than a package page. It tells how to start and
@@ -681,7 +681,7 @@ function overviewChecks(dir: string, manifest: PluginManifest, corpus: PluginMan
   const cost = tokens(page);
   const out: Check[] = [
     cost > OVERVIEW_CEILING
-      ? bad("overview", `${name}: ~${cost} tokens, ceiling is ${OVERVIEW_CEILING}. roc_overview returns it whole`)
+      ? bad("overview", `${name}: ~${cost} tokens, ceiling is ${OVERVIEW_CEILING}. get_roc_syntax returns it whole`)
       : ok("overview", `${name}: ~${cost} tokens, ceiling is ${OVERVIEW_CEILING}`),
   ];
 
@@ -870,7 +870,7 @@ export function inspect(dir: string): string {
     const byTier = new Map<string, number>();
     for (const i of idx.items) byTier.set(i.tier, (byTier.get(i.tier) ?? 0) + 1);
     for (const [tier, n] of [...byTier].sort()) lines.push(`  ${tier.padEnd(26)} ${n} items`);
-    lines.push("", `page       search_roc_syntax("${doc.name}")${doc.overview ? "" : ", from the description alone"}`);
+    lines.push("", `page       get_roc_syntax(topic: "${doc.name}")${doc.overview ? "" : ", from the description alone"}`);
     if (doc.topics?.length) {
       lines.push("", "topics served by name");
       for (const t of doc.topics) lines.push(`  ${t.name.padEnd(26)} ${t.description}`);
@@ -937,7 +937,7 @@ export function inspect(dir: string): string {
 function served(loaded: LoadedPlugin): string[] {
   const out = [
     ...loaded.defs.map((def) => `scope ${def.name}`),
-    ...loaded.docs.map((doc) => `package ${doc.name}, read as search_roc_syntax("${doc.name}")`),
+    ...loaded.docs.map((doc) => `package ${doc.name}, read as get_roc_syntax(topic: "${doc.name}")`),
   ];
   const bare = loaded.providers.length - loaded.docs.length;
   if (bare > 0) out.push(`${bare} package namespace(s), signatures only`);

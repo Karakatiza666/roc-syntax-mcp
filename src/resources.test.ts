@@ -95,7 +95,7 @@ test("every static resource stays small enough to read", async () => {
 });
 
 // A package is not a scope, so its page needs its own address next to
-// `search_roc_syntax(<name>)`. A resource costs nothing on `tools/list`.
+// `get_roc_syntax(topic: <name>)`. A resource costs nothing on `tools/list`.
 test("a documented package's page is a resource", async () => {
   const replies = await rpc([
     INIT,
@@ -194,12 +194,12 @@ test("the overview names only tools the server actually registers", async () => 
     INITIALIZED,
     { jsonrpc: "2.0", id: 1, method: "tools/list", params: {} },
     { jsonrpc: "2.0", id: 2, method: "resources/read", params: { uri: "roc-syntax://overview" } },
-    { jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: "roc_overview", arguments: {} } },
-    { jsonrpc: "2.0", id: 4, method: "tools/call", params: { name: "roc_overview", arguments: { scope: "builtin" } } },
+    { jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: "get_roc_syntax", arguments: {} } },
+    { jsonrpc: "2.0", id: 4, method: "tools/call", params: { name: "get_roc_syntax", arguments: { scope: "builtin" } } },
   ]);
 
   const registered = new Set((replies.get(1).result.tools as { name: string }[]).map((t) => t.name));
-  assert.ok(registered.has("roc_overview"), "roc_overview is not registered");
+  assert.ok(registered.has("get_roc_syntax"), "get_roc_syntax is not registered");
 
   const instructions = replies.get(0).result.instructions as string;
   assert.ok(instructions, "the server sends no instructions");
@@ -209,9 +209,9 @@ test("the overview names only tools the server actually registers", async () => 
   // reads "an overview exists" and believes it knows Roc skips the call. This
   // entry point exists to prevent that failure.
   const overviewTool = (replies.get(1).result.tools as { name: string; description: string }[])
-    .find((t) => t.name === "roc_overview")!;
-  for (const [source, text] of [["instructions", instructions], ["roc_overview", overviewTool.description]] as const) {
-    assert.match(text, /before (reading|writing)/i, `${source} states no precondition for calling roc_overview`);
+    .find((t) => t.name === "get_roc_syntax")!;
+  for (const [source, text] of [["instructions", instructions], ["get_roc_syntax", overviewTool.description]] as const) {
+    assert.match(text, /before (reading|writing)/i, `${source} states no precondition for calling get_roc_syntax`);
     assert.match(text, /Roc code/i, `${source} does not say the precondition is about Roc code`);
     assert.match(text, /even (when|if) you (believe|think)/i, `${source} does not override a model's own recall of Roc`);
   }
@@ -248,7 +248,7 @@ test("the overview names only tools the server actually registers", async () => 
 test("every tool advertises itself as read-only, and as open-world when it can download", async () => {
   const replies = await rpc([INIT, INITIALIZED, { jsonrpc: "2.0", id: 1, method: "tools/list", params: {} }]);
   const tools = replies.get(1).result.tools as { name: string; annotations?: Record<string, unknown> }[];
-  assert.ok(tools.length > 10, `only ${tools.length} tools listed`);
+  assert.ok(tools.length > 8, `only ${tools.length} tools listed`);
 
   for (const t of tools) {
     assert.deepEqual(
@@ -289,12 +289,12 @@ test("the server serves the latest protocol revision, not just the legacy era", 
     init,
     INITIALIZED,
     { jsonrpc: "2.0", id: 1, method: "tools/list", params: {} },
-    { jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "roc_overview", arguments: { part: "language" } } },
+    { jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "get_roc_syntax", arguments: { part: "language" } } },
     { jsonrpc: "2.0", id: 3, method: "resources/read", params: { uri: "roc-syntax://overview" } },
   ]);
 
   assert.strictEqual(replies.get(0).result.protocolVersion, LATEST_PROTOCOL_VERSION);
-  assert.strictEqual((replies.get(1).result.tools as unknown[]).length, 11);
+  assert.strictEqual((replies.get(1).result.tools as unknown[]).length, 9);
   assert.match(replies.get(2).result.content[0].text, /Roc/);
   assert.ok(!replies.get(2).result.isError);
   assert.match(replies.get(3).result.contents[0].text, /Roc/);
@@ -309,11 +309,11 @@ test("tool input schemas survive the trip to the wire", async () => {
     INIT,
     INITIALIZED,
     { jsonrpc: "2.0", id: 1, method: "tools/list", params: {} },
-    { jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "roc_overview", arguments: { scope: "nonsense" } } },
+    { jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "get_roc_syntax", arguments: { scope: "nonsense" } } },
   ]);
 
   const tools = replies.get(1).result.tools as { name: string; inputSchema: any }[];
-  const overview = tools.find((t) => t.name === "roc_overview")!;
+  const overview = tools.find((t) => t.name === "get_roc_syntax")!;
   assert.deepEqual(overview.inputSchema.properties.scope.enum, [
     "language",
     "builtin",
@@ -347,14 +347,14 @@ test("the whole tool list stays inside its token budget", async () => {
   assert.ok(cost < 2800, `tools/list costs ~${cost} tokens for ${tools.length} tools`);
 });
 
-/** `search_roc_syntax`'s description, which is where topic names are spelled out. */
+/** `get_roc_syntax`'s description, which is where topic names are spelled out. */
 async function syntaxToolDescription(serverArgs: string[] = []): Promise<string> {
   const replies = await rpc(
     [INIT, INITIALIZED, { jsonrpc: "2.0", id: 1, method: "tools/list", params: {} }],
     serverArgs
   );
   const tools = replies.get(1).result.tools as { name: string; description: string }[];
-  return tools.find((t) => t.name === "search_roc_syntax")!.description;
+  return tools.find((t) => t.name === "get_roc_syntax")!.description;
 }
 
 // Only one platform is active at a time. The topics of a different platform
@@ -400,7 +400,7 @@ test("a declared platform's topics are enumerated without being configured", asy
 test("every tool taking a scope says when to name a platform in it", async () => {
   const replies = await rpc([INIT, INITIALIZED, { jsonrpc: "2.0", id: 1, method: "tools/list", params: {} }]);
   const tools = replies.get(1).result.tools as { name: string; inputSchema: any }[];
-  for (const name of ["search", "search_roc_syntax", "search_symbols"]) {
+  for (const name of ["search", "get_roc_syntax", "search_symbols"]) {
     const scope = tools.find((t) => t.name === name)!.inputSchema.properties.scope.description as string;
     assert.match(scope, /Name a platform \(basic-webserver, basic-cli\)/, name);
     assert.match(scope, /rather than the language or the builtins/, name);
@@ -426,7 +426,7 @@ test("the enumeration names exactly the topics list_roc_index offers", async () 
   );
 
   const tools = replies.get(1).result.tools as { name: string; description: string }[];
-  const description = tools.find((t) => t.name === "search_roc_syntax")!.description;
+  const description = tools.find((t) => t.name === "get_roc_syntax")!.description;
   const enumerated = description
     .match(/Topics: ([^.]*(?:\.\w)?[^.]*)\./)![1]
     .split(", ")
@@ -447,7 +447,7 @@ test("the enumeration names exactly the topics list_roc_index offers", async () 
 // no warning, and also makes the tool list cost more.
 test("no tool declares an output schema or returns structured content", async () => {
   const calls: [string, Record<string, unknown>][] = [
-    ["roc_overview", {}],
+    ["get_roc_syntax", {}],
     ["list_roc_index", { kind: "scopes" }],
     ["search", { query: "sqlite", scope: "builtin" }],
     ["search_symbols", { query: ["Str.concat"] }],
@@ -556,27 +556,33 @@ test("list_roc_index serves all three indexes and rejects an unknown page", asyn
   assert.match(body(6), /Unknown langref page: no-such-page/);
 });
 
-// The SDK drops each undeclared argument before the handler sees it. A caller
-// who asked for one topic would pay for the whole 12k-character syntax file and
-// get no reason. `topic` is declared, and the tool answers it.
-test("get_roc_syntax answers a topic instead of dumping the whole file", async () => {
+// One tool answers the overview and the topics. `overview` is an address,
+// because a model asks for the overview by that name, and a miss costs 6k characters.
+test("get_roc_syntax answers the overview without a topic, and one topic with one", async () => {
+  const call = (id: number, args: unknown) =>
+    ({ jsonrpc: "2.0", id, method: "tools/call", params: { name: "get_roc_syntax", arguments: args } });
   const replies = await rpc([
     INIT,
     INITIALIZED,
-    { jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "get_roc_syntax", arguments: { topic: "pattern_matching" } } },
-    { jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "get_roc_syntax", arguments: { topic: "no_such_topic_here" } } },
-    { jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: "get_roc_syntax", arguments: {} } },
+    call(1, {}),
+    call(2, { topic: "overview" }),
+    call(3, { topic: "pattern_matching" }),
+    call(4, { topic: "no_such_topic_here" }),
+    call(5, { topic: "pattern_matching", scope: "builtin" }),
   ]);
   const text = (id: number) => replies.get(id).result.content[0].text as string;
 
-  assert.match(text(1), /^## pattern_matching/);
-  assert.ok(text(1).length < 6000, `a topic answered with ${text(1).length} chars`);
+  assert.match(text(1), /^# Roc in one page/);
+  assert.equal(text(2), text(1));
 
-  // A miss must not return the whole file either.
-  assert.match(text(2), /No topic matched "no_such_topic_here"/);
-  assert.ok(text(2).length < 6000, `a miss answered with ${text(2).length} chars`);
+  assert.match(text(3), /^## pattern_matching/);
+  assert.ok(text(3).length < 6000, `a topic answered with ${text(3).length} chars`);
 
-  assert.ok(text(3).length > 10_000, "the whole syntax file is still the no-argument answer");
+  assert.match(text(4), /No topic matched "no_such_topic_here"/);
+  assert.ok(text(4).length < 6000, `a miss answered with ${text(4).length} chars`);
+
+  // `scope` takes every corpus, because without a topic it selects a page. Some corpora have no topics.
+  assert.match(text(5), /in scope=builtin\. This corpus has no topics\./);
 });
 
 // `roc_check` takes `code` or `path`, and `roc_fmt` must take the same inputs.

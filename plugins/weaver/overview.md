@@ -8,7 +8,7 @@ neither of which an app needs to pin unless it names their types.
 
 `get_builtin_module Opt` for every field constructor, `search_symbols
 Cli.parse_or_display_message` for one signature, `search` when you do not
-know the name, `search_roc_syntax weaver_cli` for a complete program,
+know the name, `get_roc_syntax(topic: "weaver_cli")` for a complete program,
 `list_roc_index kind="examples"` for five more that all compile.
 
 ## The contract

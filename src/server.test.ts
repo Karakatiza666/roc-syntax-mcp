@@ -81,7 +81,7 @@ test("two servers in one process each serve their own plugins", async () => {
     assert.deepEqual(withRay.config.catalog.diagnostics, []);
     assert.match(await withRay.call("list_roc_index", { kind: "scopes" }), /roc-ray/);
     assert.doesNotMatch(await plain.call("list_roc_index", { kind: "scopes" }), /roc-ray/);
-    assert.match(await withRay.call("roc_overview", { scope: "roc-ray" }), /roc-ray/);
+    assert.match(await withRay.call("get_roc_syntax", { scope: "roc-ray" }), /roc-ray/);
   } finally {
     await withRay.close();
     await plain.close();

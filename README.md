@@ -53,7 +53,7 @@ For Claude Code, `--scope user` makes the server available in every project.
 Use `--scope project` to store the entry in `.mcp.json` and commit it for your
 team.
 
-To check the connection, ask the agent to call `roc_overview`. The reply
+To check the connection, ask the agent to call `get_roc_syntax` with no arguments. The reply
 should contain the language and builtin pages, not an error.
 
 ### Running with other package managers
@@ -152,14 +152,12 @@ Your AI harness keeps its entry for the server. In Claude Code, run
 
 | Tool | What it does |
 |------|--------------|
-| `roc_overview` | Call this tool first. It returns the whole language and its builtins as two compact pages, which answer most questions with no second call. The server also points to this tool in the MCP `instructions` that it sends when the client connects |
+| `get_roc_syntax` | Call this tool first, with no arguments. It returns the whole language and its builtins as two compact pages, which answer most questions with no second call. The server also points to this tool in the MCP `instructions` that it sends when the client connects. With `topic`, it returns a topic example by name or keyword, a package page by the package name, or a worked program by its corpus and file name, such as `basic-cli/hello`. With `scope` and no `topic`, it returns the page of that corpus |
 | `list_roc_index` | Every index, selected by `kind`: `scopes`, `topics`, `builtin_modules`, `examples`, `langref` |
 | `search` | Ranked free-text search across topics, signatures, the langref and worked programs. Use it when you do not know which of them has the answer |
-| `get_roc_syntax` | The full `all_roc_syntax.roc` reference, or one construct via `topic` |
-| `search_roc_syntax` | One focused topic example, by name or keyword, or one worked program by its platform or package and file name, such as `basic-cli/hello` |
 | `search_symbols` | Builtins and platform APIs by name, by type, or both, written as a Roc annotation. A name (`concat`, `Str.concat`) returns the signature and docstring, else the names that contain it. A type is a Hoogle-style structural search: `List(x), (x -> y) -> List(y)` finds `List.map`, and `-> Bool` searches by return type. `ceil : -> Dec` lists the names that contain `ceil`, ranked by type. One call takes up to 8 queries |
-| `get_builtin_module` | Every method of a module (`Str`, `List`, `U64`, ...) as a signature list, with one-line hints above the builtins whose name and type mislead. `detail: "full"` adds upstream docstrings |
 | `search_project_symbols` | The search of `search_symbols`, by name, type, or both, over the `.roc` files in your own project. Each entry gives its `file:line`. With this tool, an agent can find the API of a platform that this server does not bundle |
+| `get_builtin_module` | Every method of a module (`Str`, `List`, `U64`, ...) as a signature list, with one-line hints above the builtins whose name and type mislead. `detail: "full"` adds upstream docstrings |
 | `get_roc_langref` | Upstream's own prose, as a page or one section of a page. Where it overlaps a curated topic, use the langref |
 | `roc_check` | Runs `roc check` over a code string or a path. It wraps code that has no header in a verified app for the platform in scope, and it reports line numbers in your own source |
 | `roc_fmt` | Runs `roc fmt` the same way, and returns the canonical formatting. A path is read, never written |
@@ -196,7 +194,7 @@ run.
 
 Topics are worked examples. Each topic shows one construct or one task, not a
 whole program. `list_roc_index(kind: "topics")` prints them with descriptions.
-The agent gets a topic through `search_roc_syntax` or `search`.
+The agent gets a topic through `get_roc_syntax(topic:)` or `search`.
 
 | Group | Topics |
 |---|---|
@@ -265,7 +263,7 @@ language, the commit.
 | `roc-parser` | Package | Parser combinators, and parsers for CSV, YAML, XML, Markdown and HTTP/1.1 messages that decode into your own types |
 | `roc-random` | Package | Pseudorandom values from a seed |
 
-The packages work on any platform. `search_roc_syntax("roc-parser")` returns a
+The packages work on any platform. `get_roc_syntax(topic: "roc-parser")` returns a
 package's overview page.
 
 Signature search covers every package that your app header pins, including
@@ -350,7 +348,7 @@ in the project's own client config, such as `.mcp.json`. The server reads all
 of these values at startup, so restart it after a change.
 
 If the server cannot find or load a plugin, it skips that plugin and serves
-the rest. The server writes the reason to its log, and the first `roc_overview`
+the rest. The server writes the reason to its log, and the first `get_roc_syntax`
 answer gives the reason to the agent.
 
 ## Plugins

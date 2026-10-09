@@ -56,7 +56,7 @@ corpus:
 
 One more rule applies to what a caller can read. `validate` compiles each
 program under a `checks` directory, but the server serves such a program only
-if a `topics` entry in the manifest names it. Then `search_roc_syntax` can
+if a `topics` entry in the manifest names it. Then `get_roc_syntax(topic:)` can
 return the program. `validate` prints the number of programs and the number of
 topics, so that you can see the difference.
 
@@ -68,15 +68,15 @@ has:
 
 | A plugin adds | A caller reaches it through |
 |---|---|
-| A platform scope, with its overview, API and examples | `scope` on every tool that takes one, and `roc_overview(scope: "<name>")` |
+| A platform scope, with its overview, API and examples | `scope` on every tool that takes one, and `get_roc_syntax(scope: "<name>")` |
 | A scaffold | `roc_check(scope: "<name>")`, which wraps a bare snippet in the platform's app |
 | A package's signatures | The builtin lookups and searches, once an app header pins the package |
-| A package's page | `search_roc_syntax("<name>")` |
-| Topics | `search_roc_syntax`, by name or by keyword |
+| A package's page | `get_roc_syntax(topic: "<name>")` |
+| Topics | `get_roc_syntax(topic:)`, by name or by keyword |
 
 A plugin adds text to `tools/list`, and every request carries that text. The
 plugin adds its scope name to the `scope` enum of each tool that takes one, and
-its topic names to the `search_roc_syntax` description. `plugin add` serves a
+its topic names to the `get_roc_syntax` description. `plugin add` serves a
 plugin in every workspace, so the limit applies per tool, not per plugin. All
 loaded plugins together add at most 180 tokens to one tool
 (`PLUGIN_TOOL_GROWTH` in `src/scopes.ts`). Above that limit, the tool points to
@@ -123,7 +123,7 @@ for a platform: one corpus that names one release. The header of the release
 makes it a package, and a package ships no scaffold. A package is not a scope.
 It is the provider for each app whose header pins that release. In such an
 app, searches include its items with the builtins, and
-`search_roc_syntax("<name>")` returns its page. The apps in a package
+`get_roc_syntax(topic: "<name>")` returns its page. The apps in a package
 skeleton pin a platform for I/O. `--platform=` names that platform, and the default is
 the basic-cli that this server bundles.
 

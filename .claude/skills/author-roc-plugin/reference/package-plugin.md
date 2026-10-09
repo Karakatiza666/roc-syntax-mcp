@@ -68,10 +68,10 @@ nothing could read them.
 |---|---|
 | Its items, after the app header pins it | With the builtins: every unscoped search, `scope: "builtin"`, and `search_symbols` |
 | Its items, before an app pins it | Only on a miss. The answer names the package, shows up to three matching signatures, and gives the header line that pins it |
-| Its page | `search_roc_syntax("<name>")`, or the repo path. The page lists the topics and examples, and says whether this app pins the package |
+| Its page | `get_roc_syntax(topic: "<name>")`, or the repo path. The page lists the topics and examples, and says whether this app pins the package |
 | Its topics | Filed under `language`, so they answer an unscoped question before an app pins the package. An answer from a package that is not pinned ends with the header line |
-| Its examples | Read by the package name and the file name, as in `search_roc_syntax("weaver/basic")`. Listed by `list_roc_index(kind: "examples")` |
-| Its name and maintainer | `list_roc_index(kind: "scopes")`, under "Documented packages", and the catalogue line on the default `roc_overview` |
+| Its examples | Read by the package name and the file name, as in `get_roc_syntax(topic: "weaver/basic")`. Listed by `list_roc_index(kind: "examples")` |
+| Its name and maintainer | `list_roc_index(kind: "scopes")`, under "Documented packages", and the catalogue line of `get_roc_syntax()` |
 
 The install adds no item to any address space. The app header states what the
 app uses, and that is the same evidence rule that a platform gets. The host

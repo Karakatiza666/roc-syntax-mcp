@@ -129,8 +129,8 @@ runs directly under `roc file.roc`, where `echo!` is available without import.
 - `for` patterns must be exhaustive: bind the whole item and `match` inside.
 - Errors go in the `Try` err position as an anonymous tag union, or `_`.
   Declaring an error type is the exception.
-- For a worked example, call `search_roc_syntax` with a construct name, with
-  `idioms` to choose a construct, or with `scripting` for a complete standalone
-  `.roc` utility. For a whole program that compiles, call `get_roc_syntax`.
+- For a worked example, call `get_roc_syntax` with a `topic`: a construct name,
+  `idioms` to choose a construct, or `scripting` for a complete standalone `.roc`
+  utility.
 - Type-check with the `roc_check` tool before claiming any of this compiles.
 - Old `roc` CLI flags are wrong. See the `compiler` topic or `roc <cmd> --help`.

@@ -14,12 +14,12 @@ basic-webserver and joy-html.
 
 | To find | Ask |
 |---|---|
-| The view API, joy-html | `search_roc_syntax query="joy-html"` |
+| The view API, joy-html | `get_roc_syntax(topic: "joy-html")` |
 | One module, whole | `get_builtin_module Http` |
 | One signature | `search_symbols Time.debounce` |
 | A name you do not know | `search scope="joy"` |
 | Complete programs that compile | `list_roc_index kind="examples"` |
-| A worked program on one subject | `search_roc_syntax`: `joy_app`, `joy_http`, `joy_subscriptions`, `html_views`, `html_ssr` |
+| A worked program on one subject | `get_roc_syntax(topic:)`: `joy_app`, `joy_http`, `joy_subscriptions`, `html_views`, `html_ssr` |
 
 ## Starting a project
 

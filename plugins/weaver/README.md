@@ -15,7 +15,7 @@ topics and examples answer even before any app pins weaver.
 roc-syntax-mcp plugin add @roc-syntax/weaver
 ```
 
-Then `search_roc_syntax weaver` for the page, `search_roc_syntax weaver_cli`
+Then `get_roc_syntax(topic: "weaver")` for the page, `get_roc_syntax(topic: "weaver_cli")`
 for a complete program, `search_symbols Opt.flag` for one signature.
 
 | Path | Is |
@@ -24,7 +24,7 @@ for a complete program, `search_symbols Opt.flag` for one signature.
 | `examples/` | Upstream's examples, repinned to the release tarball and moved onto the basic-cli this server bundles |
 | `topics/` | Five programs written for this corpus, answerable by name |
 | `verify/` | Every snippet the overview shows, compiled as one app |
-| `overview.md` | What `search_roc_syntax weaver` returns |
+| `overview.md` | What `get_roc_syntax(topic: "weaver")` returns |
 | `UPSTREAM` | What was vendored, from where, and what was changed |
 
 Weaver ships no license file at this tag. [`LICENSE`](LICENSE) says which files
