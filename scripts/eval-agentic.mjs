@@ -87,12 +87,50 @@ const TASKS = [
       "it responds with the slug of the greeting. Use the roc-syntax MCP server for " +
       "anything you are unsure of. Reply with just DONE.",
   },
+  {
+    name: "local-platform",
+    wants: "project",
+    // The app pins a platform by path, and no bundled corpus describes it. The
+    // task measures whether the model finds the platform API, and whether it
+    // finds it with `search_project_symbols` or by reading the files.
+    fixture: "fixture-local-platform",
+    prompt:
+      "In main.roc, use the platform's ledger API to record three expenses: coffee " +
+      "at 3.50, lunch at 12.05, and a train ticket at 2.75. Print each expense on " +
+      "its own line, then a line with the total. Use the roc-syntax MCP server for " +
+      "anything you are unsure of. Reply with just DONE.",
+  },
+  {
+    name: "roc-ray-local",
+    wants: "project",
+    // The same question on a platform of 37 modules and 580 KB of source. Reading
+    // all of it costs far more than a search. The server loads no roc-ray plugin,
+    // so no bundled corpus answers either.
+    fixture: "fixture-roc-ray-local",
+    // roc-ray 0.10.0, which the roc-ray plugin pins. Its source comes from the
+    // Roc package cache at run time, so this repo vendors none of it.
+    localPlatform: "5xecDmRJroKT9fnSiYsGdCKEzNWLnRKGtHJ5CxuCnpb9",
+    prompt:
+      "In main.roc, add a ball that moves on its own and bounces off the edges of " +
+      "the window. The space key pauses and resumes it. Draw the number of bounces " +
+      "as text in the top-left corner. Use the roc-syntax MCP server for anything " +
+      "you are unsure of. Reply with just DONE.",
+  },
 ];
+
+/** The unpacked release `hash` in the Roc package cache, or null. */
+function cachedRelease(hash) {
+  const roots = [
+    ...(process.env.XDG_CACHE_HOME ? [path.join(process.env.XDG_CACHE_HOME, "roc", "packages")] : []),
+    path.join(os.homedir(), ".cache", "roc", "packages"),
+  ];
+  return roots.map((r) => path.join(r, hash)).find((d) => fs.existsSync(path.join(d, "main.roc"))) ?? null;
+}
 
 const MCP_TOOLS = [
   "roc_overview", "get_roc_syntax", "list_roc_index", "search_roc_syntax",
   "search_symbols", "get_builtin_module", "roc_check", "roc_fmt",
-  "get_roc_langref", "search", "search_project_signatures",
+  "get_roc_langref", "search", "search_project_symbols",
 ];
 const PREFIX = "mcp__roc-syntax__";
 const ALLOWED = [...MCP_TOOLS.map((t) => PREFIX + t), "Read", "Write", "Edit"];
@@ -190,10 +228,16 @@ function analyze(lines) {
     rocCalls: rocCalls.map((s) => ({
       tool: s.name.slice(PREFIX.length),
       scope: s.input.scope ?? null,
+      // The argument that says what the call asked, so a run of similar calls can be read.
+      query: s.input.query ?? s.input.module ?? s.input.name ?? s.input.topic ?? null,
       resultChars: s.result?.length ?? 0,
     })),
     firstRocCall: rocCalls[0] ? rocCalls[0].name.slice(PREFIX.length) : null,
     usedToolSearch: seq.some((s) => s.name === "ToolSearch"),
+    // What the model read without the server. On a local platform, it can read the platform source.
+    fileReads: seq
+      .filter((s) => ["Read", "Glob", "Grep"].includes(s.name))
+      .map((s) => `${s.name} ${s.input.file_path ?? s.input.pattern ?? s.input.path ?? ""}`),
     rocCallCount: rocCalls.length,
     scopedCount: scoped.length,
     scopeValues: [...new Set(scoped.map((s) => s.input.scope))].sort(),
@@ -213,9 +257,17 @@ function analyze(lines) {
 
 function run(task, opts) {
   const dir = fs.mkdtempSync(path.join(opts.work, `${task.name}-`));
+  fs.cpSync(path.join(ROOT, "eval", task.fixture ?? "fixture"), dir, { recursive: true });
+  if (task.localPlatform) {
+    // Only the modules. The host binaries are 50 MB, and `roc check` reads none of them.
+    const release = cachedRelease(task.localPlatform);
+    fs.mkdirSync(path.join(dir, "platform"));
+    for (const f of fs.readdirSync(release).filter((f) => f.endsWith(".roc"))) {
+      fs.copyFileSync(path.join(release, f), path.join(dir, "platform", f));
+    }
+  }
   fs.mkdirSync(path.join(dir, ".git"), { recursive: true });
-  const before = fs.readFileSync(path.join(ROOT, "eval", "fixture", "main.roc"), "utf8");
-  fs.writeFileSync(path.join(dir, "main.roc"), before);
+  const before = fs.readFileSync(path.join(dir, "main.roc"), "utf8");
 
   const args = [
     "-p", task.prompt,
@@ -243,8 +295,9 @@ function run(task, opts) {
   return new Promise((resolve) => {
     proc.on("close", (code) => {
       const metrics = analyze(out.split("\n").filter((l) => l.trim()));
+      metrics.fileReads = metrics.fileReads.map((r) => r.replace(dir + path.sep, ""));
       const after = fs.readFileSync(path.join(dir, "main.roc"), "utf8");
-      const check = rocCheck(path.join(dir, "main.roc"), opts.roc);
+      const check = rocCheck(dir, opts.roc);
       resolve({
         arm: opts.arm,
         task: task.name,
@@ -295,20 +348,23 @@ function toolListTokens() {
   });
 }
 
-/** Checks whether the file that the model wrote compiles. */
-function rocCheck(file, roc) {
-  // Copy the file first, because `roc check` deletes every /tmp/roc-* directory
-  // that it finds. The fixture tree must stay, or the comparison in run() means
-  // nothing.
+/** Checks whether the `main.roc` that the model wrote in `dir` compiles. */
+function rocCheck(dir, roc) {
+  // Copy the project first, because `roc check` deletes every /tmp/roc-*
+  // directory that it finds. The fixture tree must stay, or the comparison in
+  // run() means nothing. The copy keeps a local platform beside the app.
   const scratch = fs.mkdtempSync(path.join(os.tmpdir(), "mcp-roc-eval-"));
   const target = path.join(scratch, "main.roc");
-  fs.copyFileSync(file, target);
+  fs.cpSync(dir, scratch, { recursive: true, filter: (src) => path.basename(src) !== ".git" });
   try {
     execFileSync(roc, ["check", "--no-color", target], { stdio: "pipe", timeout: 180_000 });
     return { pass: true, summary: "no errors" };
   } catch (e) {
     const text = `${e.stderr ?? ""}${e.stdout ?? ""}`;
     const tally = text.match(/──\s+(\d+ errors? and \d+ warnings?)/);
+    // `roc check` exits nonzero on a warning too, such as a platform that pins
+    // another nightly. Only an error means the program does not compile.
+    if (tally && /^0 errors/.test(tally[1])) return { pass: true, summary: tally[1] };
     return { pass: false, summary: tally ? tally[1] : (e.code === "ETIMEDOUT" ? "timed out" : "failed to run") };
   } finally {
     fs.rmSync(scratch, { recursive: true, force: true });
@@ -456,6 +512,12 @@ const repeat = Number(flags.repeat ?? 1);
 const queue = [];
 for (let i = 0; i < repeat; i++) {
   for (const t of TASKS.filter((t) => wanted.includes(t.name))) queue.push(t);
+}
+for (const t of queue) {
+  if (t.localPlatform && !cachedRelease(t.localPlatform)) {
+    console.error(`${t.name}: release ${t.localPlatform} is not in the Roc package cache. Run \`roc check\` on a roc-ray plugin example to fetch it.`);
+    process.exit(2);
+  }
 }
 if (queue.length === 0) {
   console.error(`no task matched --tasks=${flags.tasks}`);

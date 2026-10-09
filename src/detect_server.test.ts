@@ -292,7 +292,7 @@ test("a pinned workspace answers from its own platform and not the other", async
   const root = workspace("cli-pinned", { "main.roc": cliAppFile("0.24.0") });
   const [scoped, shared, module] = await session({ cwd: root }, [
     scopes,
-    { name: "search_symbols", args: { query: "Cmd.exec!" } },
+    { name: "search_symbols", args: { query: ["Cmd.exec!"] } },
     { name: "get_builtin_module", args: { module: "Path" } },
   ]);
   assert.match(scoped, /Detected basic-cli 0\.24\.0 from main\.roc, bundled 0\.24\.0\./);
@@ -339,7 +339,7 @@ test("a module name two namespaces share is listed per origin", async () => {
 test("a name from the platform not pinned is reported as out of scope", async () => {
   const root = workspace("cli-pinned-2", { "main.roc": cliAppFile("0.24.0") });
   const [name, module] = await session({ cwd: root }, [
-    { name: "search_symbols", args: { query: "Server.Outcome" } },
+    { name: "search_symbols", args: { query: ["Server.Outcome"] } },
     { name: "get_builtin_module", args: { module: "Sse" } },
   ]);
   for (const text of [name, module]) {
@@ -361,7 +361,7 @@ test("a name from the platform not pinned is reported as out of scope", async ()
 test("scope reaches the platform the workspace does not pin", async () => {
   const root = workspace("cli-pinned-3", { "main.roc": cliAppFile("0.24.0") });
   const [name, module] = await session({ cwd: root }, [
-    { name: "search_symbols", args: { query: "Server.Outcome", scope: "basic-webserver" } },
+    { name: "search_symbols", args: { query: ["Server.Outcome"], scope: "basic-webserver" } },
     { name: "get_builtin_module", args: { module: "Path", scope: "basic-webserver" } },
   ]);
   assert.match(name, /basic-webserver 0\.17\.0/);
@@ -375,7 +375,7 @@ test("scope reaches the platform the workspace does not pin", async () => {
 test("with nothing pinned, no platform answers and the note says where to look", async () => {
   const root = workspace("unpinned", { "lib.roc": "module [x]\n\nx = 1\n" });
   const [shared, module] = await session({ cwd: root }, [
-    { name: "search_symbols", args: { query: "Cmd.exec!" } },
+    { name: "search_symbols", args: { query: ["Cmd.exec!"] } },
     { name: "get_builtin_module", args: { module: "Path" } },
   ]);
   for (const text of [shared, module]) {
@@ -562,9 +562,9 @@ test("a package release nothing serves is fetched before the first answer", asyn
   });
   const root = workspace("fetch-pkg-app", { "main.roc": cliPinning(`rand: "${randUrl("9.9.9")}",`) });
   const [found, listing, again, page, topic] = await session({ cwd: root, env: roc.env }, [
-    { name: "search_symbols", args: { query: "Random.brand_new" } },
+    { name: "search_symbols", args: { query: ["Random.brand_new"] } },
     scopes,
-    { name: "search_symbols", args: { query: "brand_new" } },
+    { name: "search_symbols", args: { query: ["brand_new"] } },
     { name: "search_roc_syntax", args: { query: "roc-random" } },
     { name: "search_roc_syntax", args: { query: "random_generators" } },
   ]);
@@ -586,7 +586,7 @@ test("a release that cannot be fetched falls back to the bundled one", async () 
   const roc = fakeRoc("fetch-fail", {});
   const root = workspace("fetch-fail-app", { "main.roc": cliPinning(`rand: "${randUrl("9.9.9")}",`) });
   const [found, searched] = await session({ cwd: root, env: roc.env }, [
-    { name: "search_symbols", args: { query: "Random.bounded_u8" } },
+    { name: "search_symbols", args: { query: ["Random.bounded_u8"] } },
     { name: "search", args: { query: "bounded_u8" } },
   ]);
   assert.match(found, /\(roc-random 0\.9\.2\)/);
@@ -611,10 +611,10 @@ test("a slow fetch stops holding up answers, and lands for a later one", async (
   const root = workspace("fetch-slow-app", { "main.roc": cliPinning(`rand: "${randUrl("9.9.9")}",`) });
   const started = Date.now();
   const [early, again, late] = await session({ cwd: root, env: { ...roc.env, ROC_MCP_FETCH_WAIT_MS: "300" } }, [
-    { name: "search_symbols", args: { query: "Random.bounded_u8" } },
+    { name: "search_symbols", args: { query: ["Random.bounded_u8"] } },
     // Detection runs again on a workspace change, and finds the download running.
-    { name: "search_symbols", args: { query: "Random.bounded_u8" }, delayMs: 800, notifyFirst: "notifications/roots/list_changed" },
-    { name: "search_symbols", args: { query: "Random.brand_new" }, delayMs: 4000 },
+    { name: "search_symbols", args: { query: ["Random.bounded_u8"] }, delayMs: 800, notifyFirst: "notifications/roots/list_changed" },
+    { name: "search_symbols", args: { query: ["Random.brand_new"] }, delayMs: 4000 },
   ]);
   assert.match(early, /\(roc-random 0\.9\.2\)/);
   assert.match(early, /`roc deps` is still downloading .*roc-random.*This answer is from the release this server bundles/s);
@@ -639,8 +639,8 @@ test("a platform pinned at another release is read from that release", async () 
     "main.roc": `app [main!] { pf: platform "${pinned}" }\n\nmain! = |_args| Ok({})\n`,
   });
   const [found, old, listing, searched, overview] = await session({ cwd: root, env: roc.env }, [
-    { name: "search_symbols", args: { query: "Stdout.line_new!" } },
-    { name: "search_symbols", args: { query: "Stdout.line!" } },
+    { name: "search_symbols", args: { query: ["Stdout.line_new!"] } },
+    { name: "search_symbols", args: { query: ["Stdout.line!"] } },
     scopes,
     { name: "search", args: { query: "line_new" } },
     { name: "roc_overview", args: { scope: "basic-cli" } },
@@ -666,7 +666,7 @@ test("a bundled package is in the space only when the app pins it", async () => 
   const bare = workspace("cli-no-rand", { "main.roc": cliAppFile("0.24.0") });
   const [module, missed] = await session({ cwd: bare }, [
     { name: "get_builtin_module", args: { module: "Random" } },
-    { name: "search_symbols", args: { query: "Random.bounded_u8" } },
+    { name: "search_symbols", args: { query: ["Random.bounded_u8"] } },
   ]);
   assert.match(module, /From basic-cli 0\.24\.0\./);
   assert.doesNotMatch(module, /roc-random/);
@@ -683,9 +683,9 @@ test("a bundled package is in the space only when the app pins it", async () => 
     ),
   });
   const [found, searched, narrowed, tour] = await session({ cwd: pinned }, [
-    { name: "search_symbols", args: { query: "Random.bounded_u8" } },
-    { name: "search_symbols", args: { query: "U8, U8 -> Generator(U8)" } },
-    { name: "search_symbols", args: { query: "U8, U8 -> Generator(U8)", scope: "builtin" } },
+    { name: "search_symbols", args: { query: ["Random.bounded_u8"] } },
+    { name: "search_symbols", args: { query: ["U8, U8 -> Generator(U8)"] } },
+    { name: "search_symbols", args: { query: ["U8, U8 -> Generator(U8)"], scope: "builtin" } },
     { name: "roc_overview", args: {} },
   ]);
   assert.match(found, /Random\.bounded_u8 \(roc-random 0\.9\.2\)/);

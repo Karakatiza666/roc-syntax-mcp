@@ -279,8 +279,8 @@ export function mismatchNote(d: Detection, catalog: Catalog): string | null {
     const bundled = catalog.platformScopes.map((s) => `${s} ${catalog.scopeDefs[s].version}`).join(" and ");
     return (
       `Note: your app points at a local or unrecognized platform (${d.platformRef}). ` +
-      `This server indexes ${bundled} and may not match it. Use search_project_signatures ` +
-      `to index the platform in your workspace instead.`
+      `This server indexes ${bundled} and may not match it. Use search_project_symbols ` +
+      `to search the platform in your workspace instead.`
     );
   }
   if (!d.scope || !d.detectedVersion) return null;

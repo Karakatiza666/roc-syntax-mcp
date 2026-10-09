@@ -188,7 +188,7 @@ test("a local platform is reported, not silently ignored", () => {
   const d = detectAt(root, 1000, CORE);
   assert.equal(d.scope, null);
   assert.equal(d.relation, "unrecognized");
-  assert.match(mismatchNote(d, CORE)!, /search_project_signatures/);
+  assert.match(mismatchNote(d, CORE)!, /search_project_symbols/);
 });
 
 // A platform author's checkout holds both a real app and a stub. Detection must

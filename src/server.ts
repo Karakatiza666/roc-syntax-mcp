@@ -71,11 +71,14 @@ import {
 import { type LangrefPage, loadLangref, renderLangref } from "./langref.ts";
 import { elsewhere as elsewhereIn, type Candidate, type Reach } from "./elsewhere.ts";
 import { loadOverview } from "./overview.ts";
-import { compareItems, searchBySig, SUBSTRING_SCORE } from "./sig_search.ts";
+import { compareItems, type SigMatch, searchBySig, SUBSTRING_SCORE } from "./sig_search.ts";
 import { type NamePattern, nameQuality, parseSymbolQuery } from "./symbol_query.ts";
-import { type ProjectSignature, ProjectIndex, parserSource } from "./project_index.ts";
+import { type ProjectSignature, ProjectIndex, parserSource, type SignatureSource } from "./project_index.ts";
 
 /** What one server serves, read from its arguments and environment once. */
+/** What a reply prints of a declaration, from a bundled index or from a project file. */
+type Decl = Pick<BuiltinItem, "kind" | "name" | "modulePath" | "fullName" | "signature" | "docs" | "decl" | "head" | "unannotated">;
+
 export interface ServerConfig {
   catalog: Catalog;
   /** The platform `--platform=` named, or null. */
@@ -85,6 +88,8 @@ export interface ServerConfig {
   /** The input that locates the compiler and the workspace. The server reads it again on every call. */
   argv: readonly string[];
   env: Record<string, string | undefined>;
+  /** The signature sources of `search_project_symbols`. The default reads only the annotations in the files. */
+  projectSources?: readonly SignatureSource[];
 }
 
 /**
@@ -803,16 +808,22 @@ export function createServer(config: ServerConfig): McpServer {
     detection?: boolean;
     /** For an answer that is a miss without being a listing, such as a lookup. */
     empty?: boolean;
+    /**
+     * Collects the notes about the session in place of the return value. A reply
+     * to several queries prints each of these notes once, after the last query.
+     */
+    sessionNotes?: Set<string>;
   }): string {
     // An unserved namespace matters only when the answer is empty. It is the only
     // reason why a miss may not mean that the name does not exist. The flag comes
     // from the answer, not from an argument, so no site can forget it.
     const empty = opts.found ? opts.found.shown === 0 : (opts.empty ?? false);
+    const session = (opts.detection ? detectionNote(opts.read) : "") + (empty ? unservedNote(activePlatform()) : "");
+    if (opts.sessionNotes && session) opts.sessionNotes.add(session);
     return (
       (opts.found ? scopeFooter(opts.read, opts.found.shown, opts.found.others) : "") +
       hostTierFooter(opts.hostTier ?? 0) +
-      (opts.detection ? detectionNote(opts.read) : "") +
-      (empty ? unservedNote(activePlatform()) : "")
+      (opts.sessionNotes ? "" : session)
     );
   }
 
@@ -854,7 +865,7 @@ export function createServer(config: ServerConfig): McpServer {
    * `Bool := [False, True]` is a nominal type, `Bool : [False, True]` would be an
    * alias, and a model that copies the wrong one writes code that will not compile.
    */
-  function declLine(item: BuiltinItem, sig: string): string {
+  function declLine(item: Decl, sig: string): string {
     if (item.kind === "type") return `${item.head} ${item.decl} ${sig}`;
     // An unannotated value has no type to print. A lambda head after `:` would
     // look like a type, so the line keeps the `=` from the source.
@@ -937,9 +948,14 @@ export function createServer(config: ServerConfig): McpServer {
         "Do this even when you believe you know Roc: the syntax changed with this compiler, so " +
         "recalled Roc is unreliable (`Try` replaced `Result`, `value.method()` static dispatch is " +
         "the normal style, and every builtin lives in one `Builtin.roc`). " +
-        "For details, use `get_roc_langref` for upstream's own prose, `get_builtin_module` / " +
-        "`search_symbols` for builtin APIs by name or type, `search_roc_syntax` for a " +
-        "worked example of one construct, and `roc_check` / `roc_fmt` to verify what you wrote. " +
+        "For details, use `get_roc_langref` for upstream's own prose, `get_builtin_module` for one " +
+        "module, `search_roc_syntax` for a worked example of one construct, and `roc_check` / " +
+        "`roc_fmt` to verify what you wrote. " +
+        // Measured in docs/evals/agentic.md: on a local platform, agents searched the
+        // source with Grep, often with one regex for several questions.
+        "To find a Roc function or type, call `search_symbols`, and `search_project_symbols` for " +
+        "the `.roc` files of a project, before Grep. They return the whole signature with its docs, " +
+        "and one call takes up to 8 queries. Use Grep only when both find nothing. " +
         "Name the platform in `scope` when the workspace has no app header yet: a project you are " +
         "starting has no app header yet, so nothing but you knows which platform its code is for. " +
         "Never request `Builtin.roc` whole. It is hundreds of thousands of tokens.",
@@ -1009,7 +1025,7 @@ export function createServer(config: ServerConfig): McpServer {
           // imports a platform, and nothing that this server bundles describes it.
           overview +=
             `\n\nThe app header here imports a platform this server does not have ` +
-            `(${detected.platformRef}). Index it with search_project_signatures.`;
+            `(${detected.platformRef}). Search its files with search_project_symbols.`;
         } else {
           // This is the first call that a model makes, at the start of a project.
           // Without the catalogue, a model with no platform in mind has none after
@@ -1327,16 +1343,19 @@ export function createServer(config: ServerConfig): McpServer {
   // -----------------------------------------------------------------------------
 
   /** One entry of a list. The signature is complete, because a `where` clause on a later line changes what the item accepts. */
-  function compactItem(item: ScopedItem, label = ""): string {
+  function compactEntry(item: Decl, head: string): string {
     const decl = declLine(item, item.signature.replace(/\t/g, "  "));
-    return (
-      `**${item.fullName}**${originSuffix(item)}${label ? ` (${label})` : ""}\n\`\`\`roc\n${decl}\n\`\`\`` +
-      (item.docs ? "\n" + item.docs.split("\n")[0] : "")
-    );
+    return `${head}\n\`\`\`roc\n${decl}\n\`\`\`` + (item.docs ? "\n" + item.docs.split("\n")[0] : "");
+  }
+
+  /** An entry from a bundled index. `match` adds the match kind and the type score. */
+  function compactItem(item: ScopedItem, match?: SigMatch): string {
+    const label = match ? ` (${match.matchKind}, score ${match.score})` : "";
+    return compactEntry(item, `**${item.fullName}**${originSuffix(item)}${label}`);
   }
 
   /** Items in order of how well their names match `pattern`, best first. */
-  function byNameQuality(items: ScopedItem[], pattern: NamePattern): ScopedItem[] {
+  function byNameQuality<T extends Decl>(items: T[], pattern: NamePattern): T[] {
     return items
       .map((item) => ({ item, q: nameQuality(item, pattern) }))
       .filter(({ q }) => q >= 0)
@@ -1350,12 +1369,89 @@ export function createServer(config: ServerConfig): McpServer {
   }
 
   /**
+   * The list for a name with no exact match: the names that contain the last
+   * segment, or the symbols in a module for a query that ends in `.`. Null when
+   * nothing matches. `F32.floor_to_i64` searches for `floor_to_i64` in the
+   * modules that `F32` names, and finds `Num.F32.floor_to_i64_try`.
+   */
+  function closeNames<T extends Decl>(
+    query: string,
+    items: T[],
+    max: number,
+    entry: (item: T) => string
+  ): { text: string; shown: T[] } | null {
+    const dot = query.lastIndexOf(".");
+    const pattern: NamePattern = { raw: query, module: dot > 0 ? query.slice(0, dot) : "", part: query.slice(dot + 1) };
+    const close = byNameQuality(items, pattern);
+    if (close.length === 0) return null;
+    const shown = close.slice(0, max);
+    const head = pattern.part
+      ? `Nothing is named \`${query}\`. ${close.length} ${close.length === 1 ? "name contains" : "names contain"} \`${pattern.part}\`:`
+      : `Nothing is named \`${query}\`. ${close.length} ${close.length === 1 ? "symbol is" : "symbols are"} in \`${pattern.module}\`:`;
+    return {
+      text:
+        `${head}\n\n${shown.map(entry).join("\n\n")}` +
+        moreLine(close.length, max, `add a type to rank them, as in \`${query} : -> Bool\``),
+      shown,
+    };
+  }
+
+  /** The matches of `type` among `named`, above a substring match, and with the name level to break a tie. */
+  function typedHits<T extends Decl>(named: T[], pattern: NamePattern, type: string): SigMatch<T>[] {
+    return searchBySig(named, type, Number.MAX_SAFE_INTEGER, (it) => nameQuality(it, pattern)).filter(
+      (m) => m.score > SUBSTRING_SCORE
+    );
+  }
+
+  /**
+   * The reply to a name and a type, for symbols whose names match. The name
+   * filters, and the type ranks. The name decides only the order of matches
+   * with equal type scores, so the answer uses one ranking. A `substring` match
+   * only contains the type as text, so it does not count as an answer here.
+   * Without a name filter, stronger matches hide such a match. When nothing
+   * matches, the substring matches come first in the list of closest symbols.
+   */
+  function nameAndType<T extends Decl>(
+    pattern: NamePattern,
+    type: string,
+    named: T[],
+    max: number,
+    entry: (item: T, match?: SigMatch<T>) => string
+  ): { text: string; shown: number } {
+    const hits = typedHits(named, pattern, type);
+    if (hits.length === 0) {
+      // A type that contains the query type as text is closer than one that does
+      // not. So `ceiling_to_i32_try : F32 -> ..` comes before
+      // `Dec.ceiling : Dec -> Dec`.
+      const near = searchBySig(named, type, Number.MAX_SAFE_INTEGER, (it) => nameQuality(it, pattern)).map((m) => m.item);
+      const closest = [...new Set([...near, ...byNameQuality(named, pattern)])];
+      const shown = closest.slice(0, max);
+      return {
+        text:
+          `No symbol similar to \`${pattern.raw}\` matches \`${type}\`. ` +
+          `${named.length} ${named.length === 1 ? "symbol has" : "symbols have"} a different type. ` +
+          `Closest ${shown.length === 1 ? "match" : "matches"}:\n\n` +
+          shown.map((it) => entry(it)).join("\n\n") +
+          moreLine(closest.length, max, "change the type"),
+        shown: 0,
+      };
+    }
+    const shown = hits.slice(0, max);
+    return {
+      text: shown.map((m) => entry(m.item, m)).join("\n\n") + moreLine(hits.length, max, "narrow the name"),
+      shown: shown.length,
+    };
+  }
+
+  const TYPE_TIP = "Tip: type variable names don't matter (structural match), but argument order does.";
+
+  /**
    * A name. An exact hit resolves across the whole address space, so a caller
    * who has a name never gets "not found" because of a wrong corpus guess.
    * Without an exact hit, the answer is a list of the names that contain the
    * query, from the `scope` corpus when the call names one.
    */
-  function searchByName(query: string, scope: ScopeName | undefined, max: number): string {
+  function searchByName(query: string, scope: ScopeName | undefined, max: number, notes: Set<string>): string {
     // The address space holds one platform at most, so platform names do not
     // collide in it. A name outside it gets an "out of scope" report, not
     // "unknown".
@@ -1411,22 +1507,8 @@ export function createServer(config: ServerConfig): McpServer {
       return sharedNote + matches.map(formatScopedItem).join("\n\n") + hostNote(matches) + alsoModule;
     }
 
-    // `F32.floor_to_i64` searches for `floor_to_i64` in the modules that `F32`
-    // names, and finds `Num.F32.floor_to_i64_try`.
-    const dot = query.lastIndexOf(".");
-    const pattern: NamePattern = { raw: query, module: dot > 0 ? query.slice(0, dot) : "", part: query.slice(dot + 1) };
-    const close = byNameQuality(scope ? scopeIndex(scope, scope).items : idx.items, pattern);
-    if (close.length > 0) {
-      const shown = close.slice(0, max);
-      const head = pattern.part
-        ? `Nothing is named \`${query}\`. ${close.length} ${close.length === 1 ? "name contains" : "names contain"} \`${pattern.part}\`:`
-        : `Nothing is named \`${query}\`. ${close.length} ${close.length === 1 ? "symbol is" : "symbols are"} in \`${pattern.module}\`:`;
-      return (
-        `${head}\n\n${shown.map((it) => compactItem(it)).join("\n\n")}` +
-        moreLine(close.length, max, `add a type to rank them, as in \`${query} : -> Bool\``) +
-        hostNote(shown)
-      );
-    }
+    const close = closeNames(query, scope ? scopeIndex(scope, scope).items : idx.items, max, (it) => compactItem(it));
+    if (close) return close.text + hostNote(close.shown);
 
     const found = elsewhere(PLATFORM_SCOPES, active ? [active] : [], "anywhere", (sc) =>
       nameMatchCount(registry.index(sc), query)
@@ -1435,7 +1517,7 @@ export function createServer(config: ServerConfig): McpServer {
       (outOfScopeNote(`\`${query}\``, found, active) ??
         `Nothing matched "${query}". Call \`list_roc_index\` with kind='builtin_modules', or \`get_builtin_module\` with a name like Str, List, Num, U64, Dec.`) +
       unpinnedPackageNote(`\`${query}\``, (idx) => nameMatches(idx, query)) +
-      trailingNotes({ read: active ? [active] : [], empty: true })
+      trailingNotes({ read: active ? [active] : [], empty: true, sessionNotes: notes })
     );
   }
 
@@ -1449,7 +1531,7 @@ export function createServer(config: ServerConfig): McpServer {
   }
 
   /** A Hoogle-style structural search, over the working set or the one corpus that `scope` names. */
-  function searchByType(type: string, scope: ScopeName | undefined, max: number): string {
+  function searchByType(type: string, scope: ScopeName | undefined, max: number, notes: Set<string>): string {
     const wanted = resolveScopes(scope, SIGNATURE_SCOPES);
     const top = searchBySig(wanted.flatMap((s) => typedValuesIn(s, scope)), type, max);
 
@@ -1465,32 +1547,26 @@ export function createServer(config: ServerConfig): McpServer {
 
     if (top.length === 0) {
       return (
-        `No matches for \`${type}\` in scope=${wanted.join("+")}.\n\n` +
-        `Tip: type variable names don't matter (structural match), but argument order does.` +
-        trailingNotes({ read: wanted, found: { shown: 0, others } })
+        `No matches for \`${type}\` in scope=${wanted.join("+")}.\n\n${TYPE_TIP}` +
+        trailingNotes({ read: wanted, found: { shown: 0, others }, sessionNotes: notes })
       );
     }
     return (
-      top.map(({ item, score, matchKind }) => compactItem(item, `${matchKind}, score ${score}`)).join("\n\n") +
-      trailingNotes({ read: wanted, found: { shown: top.length, others }, detection: true })
+      top.map((m) => compactItem(m.item, m)).join("\n\n") +
+      trailingNotes({ read: wanted, found: { shown: top.length, others }, detection: true, sessionNotes: notes })
     );
   }
 
-  /**
-   * A name and a type. The name filters, and the type ranks. The name decides
-   * only the order of matches with equal type scores, so the answer uses one
-   * ranking. A `substring` match only contains the type as text, so it does not
-   * count as an answer here. Without a name filter, stronger matches hide such
-   * a match. When nothing matches, the substring matches come first in the list
-   * of closest symbols.
-   */
-  function searchByNameAndType(pattern: NamePattern, type: string, scope: ScopeName | undefined, max: number): string {
+  /** A name and a type, over the working set or the one corpus that `scope` names. */
+  function searchByNameAndType(
+    pattern: NamePattern,
+    type: string,
+    scope: ScopeName | undefined,
+    max: number,
+    notes: Set<string>
+  ): string {
     const wanted = resolveScopes(scope, SIGNATURE_SCOPES);
     const namedIn = (s: ScopeName) => typedValuesIn(s, scope).filter((it) => nameQuality(it, pattern) >= 0);
-    const typed = (items: ScopedItem[]) =>
-      searchBySig(items, type, Number.MAX_SAFE_INTEGER, (it) => nameQuality(it, pattern)).filter(
-        (m) => m.score > SUBSTRING_SCORE
-      );
     const named = wanted.flatMap(namedIn);
 
     if (named.length === 0) {
@@ -1498,41 +1574,47 @@ export function createServer(config: ServerConfig): McpServer {
       return (
         `No annotated symbol in scope=${wanted.join("+")} has a name that matches \`${pattern.raw}\`.` +
         unpinnedPackageNote(`\`${pattern.raw}\``, (idx) => idx.items.filter((it) => nameQuality(it, pattern) >= 0)) +
-        trailingNotes({ read: wanted, found: { shown: 0, others } })
+        trailingNotes({ read: wanted, found: { shown: 0, others }, sessionNotes: notes })
       );
     }
 
-    const hits = typed(named);
-    const others = elsewhere(SCOPES.filter((s) => s !== "language"), wanted, "pinned", (s) => typed(namedIn(s)).length);
-    if (hits.length === 0) {
-      // A type that contains the query type as text is closer than one that does
-      // not. So `ceiling_to_i32_try : F32 -> ..` comes before
-      // `Dec.ceiling : Dec -> Dec`.
-      const near = searchBySig(named, type, Number.MAX_SAFE_INTEGER, (it) => nameQuality(it, pattern)).map((m) => m.item);
-      const closest = [...new Set([...near, ...byNameQuality(named, pattern)])];
-      const shown = closest.slice(0, max);
-      return (
-        `No symbol similar to \`${pattern.raw}\` matches \`${type}\`. ` +
-        `${named.length} ${named.length === 1 ? "symbol has" : "symbols have"} a different type. ` +
-        `Closest ${shown.length === 1 ? "match" : "matches"}:\n\n` +
-        shown.map((it) => compactItem(it)).join("\n\n") +
-        moreLine(closest.length, max, "change the type") +
-        trailingNotes({ read: wanted, found: { shown: 0, others } })
-      );
-    }
-    const shown = hits.slice(0, max);
-    return (
-      shown.map(({ item, score, matchKind }) => compactItem(item, `${matchKind}, score ${score}`)).join("\n\n") +
-      moreLine(hits.length, max, "narrow the name") +
-      trailingNotes({ read: wanted, found: { shown: shown.length, others }, detection: true })
+    const reply = nameAndType(pattern, type, named, max, compactItem);
+    const others = elsewhere(
+      SCOPES.filter((s) => s !== "language"),
+      wanted,
+      "pinned",
+      (s) => typedHits(namedIn(s), pattern, type).length
     );
+    return (
+      reply.text +
+      trailingNotes({ read: wanted, found: { shown: reply.shown, others }, detection: reply.shown > 0, sessionNotes: notes })
+    );
+  }
+
+  /**
+   * At most 8 queries, so one call cannot return a whole corpus. The schema
+   * shows only the list, but a lone string also answers, because a caller that
+   * sends one by habit must not lose a turn to a validation error.
+   */
+  const QUERY_LIST = z.preprocess((v) => (typeof v === "string" ? [v] : v), z.array(z.string()).min(1).max(8));
+
+  /** The entries per list: 10 for one query, 5 each for several, unless `limit` says otherwise. */
+  const listMax = (queries: string[], limit?: number) => limit ?? (queries.length === 1 ? 10 : 5);
+
+  /** One reply per query, each under its query when there are several, then the notes about the session. */
+  function joinReplies(queries: string[], answer: (query: string) => string, notes: Iterable<string>): string {
+    const body =
+      queries.length === 1
+        ? answer(queries[0])
+        : queries.map((q) => `# \`${q.trim()}\`\n\n${answer(q)}`).join("\n\n");
+    return body + [...notes].join("");
   }
 
   server.registerTool(
     "search_symbols",
     {
       annotations: READ_ONLY_FETCHES,
-      title: "Search Roc Symbols by Name or Type",
+      title: "Search Symbols by Name or Type",
       description:
         "Find builtins and platform APIs by name, by type, or both, written as a Roc annotation `name : Type`. " +
         "A name (`concat`, `Str.concat`) returns each exact match with its docs, else the names that contain it. " +
@@ -1540,31 +1622,33 @@ export function createServer(config: ServerConfig): McpServer {
         "`-> T` matches the return type, `T ->` the arguments, and argument order matters. " +
         "Both, as in `ceil : -> Dec`, lists the names that contain `ceil`, ranked by type.",
       inputSchema: z.object({
-        query: z
-          .string()
-          .describe("A name, a type, or both: 'Str.concat', 'map', '-> Bool', 'List(a), (a -> b) -> List(b)', 'F32.floor : F32 ->'."),
+        query: QUERY_LIST.describe(
+          "Up to 8 queries, each a name, a type, or both: ['Str.concat', 'map', '-> Bool', 'List(a), (a -> b) -> List(b)', 'F32.floor : F32 ->']."
+        ),
         scope: scopeArg(
           SIGNATURE_SCOPES,
           "A platform to read in place of the one this app's header imports, or one corpus to limit a list to.",
           { hint: true }
         ),
-        limit: z.number().int().positive().optional().describe("Max list entries (default 10)."),
+        limit: z.number().int().positive().optional().describe("Max list entries per query (default 10, or 5 for several queries)."),
       }),
     },
     async ({ query, scope, limit }) => {
       await ensureDetection();
-      const q = parseSymbolQuery(query);
       const sc = scope as ScopeName | undefined;
-      const max = limit ?? 10;
-      const text =
-        q.kind === "error"
+      const max = listMax(query, limit);
+      const notes = new Set<string>();
+      const answer = (one: string) => {
+        const q = parseSymbolQuery(one);
+        return q.kind === "error"
           ? q.message
           : q.kind === "name"
-            ? searchByName(q.name, sc, max)
+            ? searchByName(q.name, sc, max, notes)
             : q.kind === "type"
-              ? searchByType(q.type, sc, max)
-              : searchByNameAndType(q.name, q.type, sc, max);
-      return { content: [{ type: "text", text }] };
+              ? searchByType(q.type, sc, max, notes)
+              : searchByNameAndType(q.name, q.type, sc, max, notes);
+      };
+      return { content: [{ type: "text", text: joinReplies(query, answer, notes) }] };
     }
   );
 
@@ -2359,31 +2443,93 @@ export function createServer(config: ServerConfig): McpServer {
   // -----------------------------------------------------------------------------
 
   // The parser is the only source. See the TODO in project_index.ts.
-  const projectIndex = new ProjectIndex([parserSource]);
+  const projectIndex = new ProjectIndex(config.projectSources ?? [parserSource]);
+
+  /** An entry from a project file. It marks a type that a compiler inferred, because the author did not write that type. */
+  function projectEntry(item: ProjectSignature, match?: SigMatch): string {
+    const label = [match?.matchKind, item.origin === "inferred" ? "inferred" : "", match ? `score ${match.score}` : ""]
+      .filter(Boolean)
+      .join(", ");
+    return compactEntry(item, `**${item.fullName}**${label ? ` (${label})` : ""} at \`${item.file}:${item.line}\``);
+  }
+
+  /** The exact matches of a name. A full name comes first, else a suffix, as in the bundled indexes. A bare name matches the last segment. */
+  function exactIn<T extends Decl>(items: T[], query: string): T[] {
+    if (!query.includes(".")) return items.filter((it) => it.name === query);
+    const full = items.filter((it) => it.fullName === query);
+    return full.length > 0 ? full : items.filter((it) => it.fullName.endsWith("." + query));
+  }
+
+  /** The note on a project miss when `search_symbols` has `count` matches. */
+  function bundledNote(count: number, query: string): string {
+    if (count === 0) return "";
+    return `\n\n\`search_symbols\` has ${count} ${count === 1 ? "match" : "matches"} for \`${query}\` in the bundled indexes.`;
+  }
+
+  /** The annotated values of the working set, which a type search reads when it has no `scope`. */
+  function workingSetValues(): ScopedItem[] {
+    return resolveScopes(undefined, SIGNATURE_SCOPES).flatMap((s) => typedValuesIn(s, undefined));
+  }
+
+  /**
+   * `search_symbols` over the project, with the same grammar and the same
+   * order. The project is one corpus, so the reply has no scope footer. A miss
+   * says if the bundled indexes have the symbol.
+   */
+  function searchProject(query: string, items: ProjectSignature[], where: string, max: number): string {
+    const q = parseSymbolQuery(query);
+    if (q.kind === "error") return `${q.message} Indexed ${items.length} declarations in ${where}.`;
+    if (q.kind === "name") {
+      const exact = exactIn(items, q.name);
+      if (exact.length > 0) {
+        return exact
+          .map(
+            (it) =>
+              `## ${it.fullName}${it.origin === "inferred" ? " (inferred)" : ""} at \`${it.file}:${it.line}\`\n` +
+              "```roc\n" + declLine(it, it.signature) + "\n```" + (it.docs ? `\n${it.docs}` : "")
+          )
+          .join("\n\n");
+      }
+      const close = closeNames(q.name, items, max, (it) => projectEntry(it));
+      if (close) return close.text;
+      return `Nothing in ${where} is named \`${q.name}\`.` + bundledNote(nameMatchCount(getMergedIndex(undefined), q.name), q.name);
+    }
+    // A type body is not a function signature, so a type query reads values only.
+    const values = items.filter((it) => it.kind === "value");
+    if (q.kind === "type") {
+      const all = searchBySig(values, q.type, Number.MAX_SAFE_INTEGER);
+      if (all.length === 0) {
+        return (
+          `No matches for \`${q.type}\` in ${where}.\n\n${TYPE_TIP}` +
+          bundledNote(searchBySig(workingSetValues(), q.type, 1000).length, q.type)
+        );
+      }
+      return all.slice(0, max).map((m) => projectEntry(m.item, m)).join("\n\n") + moreLine(all.length, max, "narrow the type");
+    }
+    const pattern = q.name;
+    const named = values.filter((it) => nameQuality(it, pattern) >= 0);
+    const bundled = () =>
+      bundledNote(typedHits(workingSetValues().filter((it) => nameQuality(it, pattern) >= 0), pattern, q.type).length, query.trim());
+    if (named.length === 0) return `No annotated value in ${where} has a name that matches \`${pattern.raw}\`.` + bundled();
+    const reply = nameAndType(pattern, q.type, named, max, projectEntry);
+    return reply.text + (reply.shown === 0 ? bundled() : "");
+  }
 
   server.registerTool(
-    "search_project_signatures",
+    "search_project_symbols",
     {
       annotations: READ_ONLY_FETCHES,
-      title: "Search Project Roc Files by Type Signature",
+      title: "Search in Codebase by Name or Type",
       description:
-        "Like a type query of `search_symbols`, but across user project files.",
+        "`search_symbols` over the `.roc` files of your project or other codebase.",
       inputSchema: z.object({
-        query: z
-          .string()
-          .describe(
-            "Type expression, e.g. `List(a), U64 -> List(a)` or `-> Bool` or `Str, U64 ->`."
-          ),
-        root: z
-          .string()
-          .optional()
-          .describe(
-            "Project root, absolute. The workspace by default."
-          ),
-        limit: z.number().int().positive().optional().describe("Max results to return (default 10)."),
+        query: QUERY_LIST.describe("As for `search_symbols`."),
+        root: z.string().optional().describe("Root of the codebase, absolute. The workspace by default."),
+        limit: z.number().int().positive().optional().describe("As for `search_symbols`."),
       }),
     },
     async ({ query, root, limit }) => {
+      await ensureDetection();
       const searchRoot = root ?? (await detectionRoot().catch(() => process.cwd()));
 
       let snap;
@@ -2394,52 +2540,12 @@ export function createServer(config: ServerConfig): McpServer {
           content: [{ type: "text", text: `Failed to discover .roc files under ${searchRoot}: ${err}` }],
         };
       }
-      const { items, files } = snap;
-      // Report each source that could not run, because its signatures are missing.
+      // Report each source that could not run, because its declarations are missing.
       const notes = snap.notes.length ? `\n\nNot indexed: ${snap.notes.join("; ")}` : "";
-
-      const raw = query.trim();
-      if (!raw) {
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Empty query. Indexed ${items.length} signatures across ${files} .roc files under ${searchRoot}.${notes}`,
-            },
-          ],
-        };
-      }
-
-      const top = searchBySig(items, raw, limit ?? 10);
-
-      if (top.length === 0) {
-        return {
-          content: [
-            {
-              type: "text",
-              text: `No matches for \`${raw}\` across ${items.length} signatures in ${files} .roc files.\n\nTip: type variable names don't matter (structural match), but argument order does.${notes}`,
-            },
-          ],
-        };
-      }
-
-      const text =
-        top
-          .map(({ item, score, matchKind }) => {
-            const fi = item as ProjectSignature;
-            // Mark an inferred type, because the compiler wrote it and not the author.
-            const origin = fi.origin === "inferred" ? ", inferred" : "";
-            return (
-              `**${fi.fullName}** (${matchKind}${origin}, score ${score}) at \`${fi.file}:${fi.line}\`` +
-              `\n\`\`\`roc\n${fi.fullName} : ${fi.signature.split("\n")[0]}\n\`\`\`` +
-              (fi.docs ? "\n" + fi.docs.split("\n")[0] : "")
-            );
-          })
-          .join("\n\n") + notes;
-
-      return {
-        content: [{ type: "text", text }],
-      };
+      const where = `${snap.files} .roc ${snap.files === 1 ? "file" : "files"} under \`${searchRoot}\``;
+      const max = listMax(query, limit);
+      const text = joinReplies(query, (one) => searchProject(one, snap.items, where, max), notes ? [notes] : []);
+      return { content: [{ type: "text", text }] };
     }
   );
 

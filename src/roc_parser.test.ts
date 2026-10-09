@@ -9,7 +9,7 @@ const names = (src: string) => parseRocFile(src, "/p/Geo.roc", "/p").map((it) =>
 
 // Methods are indented inside `Name := [].{ ... }` blocks. A parser that reads
 // only column 0 indexes nothing in a type module.
-test("methods inside a type block are indexed, qualified by the type", () => {
+test("methods and types inside a type block are indexed, qualified by the type", () => {
   const src = [
     "Geo := [].{",
     "\t## Scales a point.",
@@ -24,11 +24,13 @@ test("methods inside a type block are indexed, qualified by the type", () => {
     "}",
   ].join("\n");
   const items = parseRocFile(src, "/p/Geo.roc", "/p");
-  assert.deepEqual(items.map((it) => it.fullName), ["Geo.scale", "Geo.norm"]);
+  assert.deepEqual(items.map((it) => it.fullName), ["Geo.scale", "Geo.Point", "Geo.norm"]);
+  // A name search reads the name and the module, and a type prints with its operator.
+  assert.deepEqual([items[1].kind, items[1].name, items[1].modulePath, items[1].decl], ["type", "Point", "Geo", ":"]);
   assert.equal(items[0].docs, "Scales a point.");
   assert.equal(items[0].file, "Geo.roc");
   assert.equal(items[0].line, 3);
-  assert.equal(items[1].signature, "Point\n\t\t-> F64");
+  assert.equal(items[2].signature, "Point\n\t\t-> F64");
 });
 
 test("top-level annotations are still indexed", () => {

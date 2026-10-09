@@ -10,7 +10,8 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { spawnSync } from "node:child_process";
 import { InMemoryTransport, LATEST_PROTOCOL_VERSION } from "@modelcontextprotocol/server";
-import { createServer, serverConfig } from "./server.ts";
+import { createServer, type ServerConfig, serverConfig } from "./server.ts";
+import { parserSource, type SignatureSource } from "./project_index.ts";
 
 const ROOT = path.join(import.meta.dirname, "..");
 const TSX_LOADER = import.meta.resolve("tsx/esm");
@@ -49,8 +50,8 @@ test("importing the server reads no configuration and starts nothing", () => {
 });
 
 /** A server for `argv`, connected in this process, and a way to call its tools. */
-async function inProcess(argv: string[]) {
-  const config = serverConfig(argv, { ...process.env, CLAUDE_PROJECT_DIR: tmp });
+async function inProcess(argv: string[], extra: Partial<ServerConfig> = {}) {
+  const config = { ...serverConfig(argv, { ...process.env, CLAUDE_PROJECT_DIR: tmp }), ...extra };
   const [client, server] = InMemoryTransport.createLinkedPair();
   const waiting = new Map<number, (m: any) => void>();
   client.onmessage = (m: any) => waiting.get(m.id)?.(m);
@@ -92,7 +93,7 @@ test("two servers in one process each serve their own plugins", async () => {
 test("a missed qualified name lists close names in that module", async () => {
   const s = await inProcess([]);
   try {
-    const text = await s.call("search_symbols", { query: "F32.floor_to_i64" });
+    const text = await s.call("search_symbols", { query: ["F32.floor_to_i64"] });
     assert.match(text, /^Nothing is named `F32.floor_to_i64`. 1 name contains `floor_to_i64`:/);
     assert.match(text, /Num\.F32\.floor_to_i64_try/);
     assert.doesNotMatch(text, /Num\.F64\./);
@@ -124,13 +125,13 @@ test("a module page lists the methods of its nested types, up to a cap", async (
 test("a name and a type search the names, ranked by type", async () => {
   const s = await inProcess([]);
   try {
-    const dec = await s.call("search_symbols", { query: "ceil : -> Dec" });
+    const dec = await s.call("search_symbols", { query: ["ceil : -> Dec"] });
     assert.match(dec, /^\*\*Num\.Dec\.ceiling\*\* \(return_type, score 90\)/);
     assert.doesNotMatch(dec, /Num\.Dec\.round/);
     // Both score 90. The whole name `floor` breaks the tie, before the order by name.
-    const floor = await s.call("search_symbols", { query: "floor : -> Dec" });
+    const floor = await s.call("search_symbols", { query: ["floor : -> Dec"] });
     assert.ok(floor.indexOf("**Num.Dec.floor**") < floor.indexOf("**Num.Dec.div_floor_by**"), floor);
-    const f32 = await s.call("search_symbols", { query: "ceil : -> F32" });
+    const f32 = await s.call("search_symbols", { query: ["ceil : -> F32"] });
     assert.match(f32, /^No symbol similar to `ceil` matches `-> F32`\. \d+ symbols have a different type\. Closest matches:/);
     assert.doesNotMatch(f32, /substring/);
     // A type that names `F32` is closer than `Num.Dec.ceiling : Dec -> Dec`.
@@ -145,14 +146,14 @@ test("a name and a type search the names, ranked by type", async () => {
 test("a partial name lists compact entries, prefixes first", async () => {
   const s = await inProcess([]);
   try {
-    const text = await s.call("search_symbols", { query: "ceil", limit: 100 });
+    const text = await s.call("search_symbols", { query: ["ceil"], limit: 100 });
     assert.ok(text.indexOf("**Num.Dec.ceiling**") >= 0, text);
     assert.ok(text.indexOf("**Num.Dec.ceiling**") < text.indexOf("div_ceil_by**"), "a prefix ranks first");
     // The default order puts the shallower `Num.F32.infinity` first.
-    const fini = await s.call("search_symbols", { query: "fini" });
+    const fini = await s.call("search_symbols", { query: ["fini"] });
     assert.ok(fini.indexOf(".finish**") >= 0 && fini.indexOf(".finish**") < fini.indexOf(".infinity**"), fini);
     assert.doesNotMatch(text, /expect /);
-    assert.match(await s.call("search_symbols", { query: "ceil", limit: 3 }), /Showing 3 of \d+\./);
+    assert.match(await s.call("search_symbols", { query: ["ceil"], limit: 3 }), /Showing 3 of \d+\./);
   } finally {
     await s.close();
   }
@@ -162,9 +163,123 @@ test("a partial name lists compact entries, prefixes first", async () => {
 test("a one-word query is a name, and a colon makes it a type", async () => {
   const s = await inProcess([]);
   try {
-    assert.match(await s.call("search_symbols", { query: "Try" }), /`Try` is also a module/);
-    assert.match(await s.call("search_symbols", { query: ": Str" }), /\(return_type, score 80\)/);
+    assert.match(await s.call("search_symbols", { query: ["Try"] }), /`Try` is also a module/);
+    assert.match(await s.call("search_symbols", { query: [": Str"] }), /\(return_type, score 80\)/);
   } finally {
     await s.close();
   }
 });
+
+const GEO = [
+  "Geo := [].{",
+  "\t## Scales a point.",
+  "\t## By a factor.",
+  "\tscale : (F64, F64), F64 -> (F64, F64)",
+  "\tscale = |(x, y), k| (x * k, y * k)",
+  "",
+  "\tPoint : { x : F64, y : F64 }",
+  "",
+  "\tnorm : Point -> F64",
+  "\tnorm = |p| p.x",
+  "}",
+  "",
+].join("\n");
+
+/** A project in the workspace, at `proj/Geo.roc`. */
+function geoProject(): string {
+  const dir = path.join(tmp, "proj");
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, "Geo.roc"), GEO);
+  return dir;
+}
+
+// The project search reads the same grammar as `search_symbols`, and each entry
+// says where the declaration is.
+test("a project search finds names, types, and both", async () => {
+  const root = geoProject();
+  const s = await inProcess([]);
+  try {
+    const exact = await s.call("search_project_symbols", { query: ["Geo.scale"], root });
+    assert.match(exact, /^## Geo\.scale at `Geo\.roc:4`\n```roc\nscale : \(F64, F64\), F64 -> \(F64, F64\)\n```\nScales a point\.\nBy a factor\./);
+    assert.match(await s.call("search_project_symbols", { query: ["Point"], root }), /^## Geo\.Point at `Geo\.roc:7`\n```roc\nPoint : \{ x : F64, y : F64 \}/);
+    assert.match(await s.call("search_project_symbols", { query: ["sca"], root }), /^Nothing is named `sca`\. 1 name contains `sca`:\n\n\*\*Geo\.scale\*\* at `Geo\.roc:4`/);
+    assert.match(await s.call("search_project_symbols", { query: ["-> F64"], root }), /^\*\*Geo\.norm\*\* \(return_type, score 90\) at `Geo\.roc:9`/);
+    const both = await s.call("search_project_symbols", { query: ["nor : -> Bool"], root });
+    assert.match(both, /^No symbol similar to `nor` matches `-> Bool`\. 1 symbol has a different type\./);
+  } finally {
+    await s.close();
+  }
+});
+
+// The workspace is the default root. The bundled indexes never read it, and a
+// project miss says when they have the name.
+test("a project search reads the workspace, and only it does", async () => {
+  geoProject();
+  const s = await inProcess([]);
+  try {
+    assert.match(await s.call("search_project_symbols", { query: ["Geo.norm"] }), /^## Geo\.norm at `proj\/Geo\.roc:9`/);
+    assert.doesNotMatch(await s.call("search_symbols", { query: ["Geo.norm"] }), /proj\/Geo|## Geo\.norm/);
+    const miss = await s.call("search_project_symbols", { query: ["Str.concat"] });
+    assert.match(miss, /^Nothing in \d+ \.roc files? under `[^`]+` is named `Str\.concat`\.\n\n`search_symbols` has 1 match for `Str\.concat` in the bundled indexes\./);
+  } finally {
+    await s.close();
+  }
+});
+
+// The reply marks a type that a compiler inferred, because the author did not write that type.
+test("a project search marks an inferred type", async () => {
+  const root = geoProject();
+  const inferred: SignatureSource = {
+    name: "fake",
+    index: async () => [
+      { kind: "value", name: "pair_up", modulePath: "Geo", fullName: "Geo.pair_up", signature: "a, b -> (a, b)", docs: "", file: "Geo.roc", line: 12, origin: "inferred" },
+    ],
+  };
+  const s = await inProcess([], { projectSources: [parserSource, inferred] });
+  try {
+    assert.match(await s.call("search_project_symbols", { query: ["a, b -> (a, b)"], root }), /^\*\*Geo\.pair_up\*\* \(exact, inferred, score 100\) at `Geo\.roc:12`/);
+    assert.match(await s.call("search_project_symbols", { query: ["pair_up"], root }), /^## Geo\.pair_up \(inferred\) at/);
+  } finally {
+    await s.close();
+  }
+});
+
+// Several queries answer in one call, each in its own section, in the order sent.
+// A list then shows 5 entries, so 8 queries cannot return 80.
+test("a list of queries answers each one under its own heading", async () => {
+  const s = await inProcess([]);
+  try {
+    const text = await s.call("search_symbols", { query: ["Str.concat", "-> Bool", "foo bar : Str"] });
+    const heads = [...text.matchAll(/^# `([^`]+)`$/gm)].map((m) => m[1]);
+    assert.deepEqual(heads, ["Str.concat", "-> Bool", "foo bar : Str"]);
+    const bools = text.slice(text.indexOf("# `-> Bool`"), text.indexOf("# `foo bar : Str`"));
+    assert.equal(bools.match(/\(return_type, score 90\)/g)?.length, 5);
+    // An invalid query gets its own error, and the others still answer.
+    assert.match(text, /^## Str\.concat$/m);
+    assert.match(text, /`foo bar` is not a name\./);
+    const wide = await s.call("search_symbols", { query: ["-> Bool", "-> Str"], limit: 7 });
+    assert.equal(wide.match(/\(return_type, score 90\)/g)?.length, 14);
+    // One query keeps the reply without a heading.
+    assert.doesNotMatch(await s.call("search_symbols", { query: ["Str.concat"] }), /^# /m);
+    // A lone string is one query.
+    assert.match(await s.call("search_symbols", { query: "Str.concat" }), /^## Str\.concat$/m);
+  } finally {
+    await s.close();
+  }
+});
+
+// A note about the index, as opposed to one query, prints once after all queries.
+test("a project batch prints the index notes once", async () => {
+  const root = geoProject();
+  const broken: SignatureSource = { name: "lsp", index: async () => { throw new Error("no roc on PATH"); } };
+  const s = await inProcess([], { projectSources: [parserSource, broken] });
+  try {
+    const text = await s.call("search_project_symbols", { query: ["Geo.scale", "-> F64"], root });
+    assert.equal(text.match(/Not indexed: lsp: no roc on PATH/g)?.length, 1);
+    assert.match(text, /\n\nNot indexed: lsp: no roc on PATH$/);
+    assert.match(text, /^# `Geo\.scale`\n\n## Geo\.scale at/);
+  } finally {
+    await s.close();
+  }
+});
+

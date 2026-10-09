@@ -34,6 +34,7 @@ function inferred(calls: { n: number }): SignatureSource {
     async index() {
       calls.n++;
       const at = (fullName: string, signature: string, line: number): ProjectSignature => ({
+        kind: "value", name: fullName.split(".").pop()!, modulePath: "Geo",
         fullName, signature, docs: "", file: "Geo.roc", line, origin: "inferred",
       });
       return [at("Geo.scale", "(a, b), d -> (a, b)", 3), at("Geo.pair_up", "a, b -> (a, b)", 4)];

@@ -170,7 +170,7 @@ test("hints appear only in the signature list, never with the real docs", async 
     INITIALIZED,
     { jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "get_builtin_module", arguments: { module: "List" } } },
     { jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "get_builtin_module", arguments: { module: "List", detail: "full" } } },
-    { jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: "search_symbols", arguments: { query: "List.drop_swap" } } },
+    { jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: "search_symbols", arguments: { query: ["List.drop_swap"] } } },
   ]);
 
   const brief = replies.get(1).result;
@@ -450,8 +450,8 @@ test("no tool declares an output schema or returns structured content", async ()
     ["roc_overview", {}],
     ["list_roc_index", { kind: "scopes" }],
     ["search", { query: "sqlite", scope: "builtin" }],
-    ["search_symbols", { query: "Str.concat" }],
-    ["search_symbols", { query: "-> Bool" }],
+    ["search_symbols", { query: ["Str.concat"] }],
+    ["search_symbols", { query: ["-> Bool"] }],
   ];
   const replies = await rpc([
     INIT,

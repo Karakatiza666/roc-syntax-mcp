@@ -3,12 +3,11 @@
 
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { parseBuiltin } from "./builtin_parser.ts";
-import type { SigSearchItem } from "./sig_search.ts";
+import { type BuiltinItem, parseBuiltin } from "./builtin_parser.ts";
 
-export interface RocFileItem extends SigSearchItem {
+/** A declaration in a project file. A type keeps `decl` and `head`, so a reply can print it as the source does. */
+export interface RocFileItem extends Pick<BuiltinItem, "kind" | "name" | "modulePath" | "fullName" | "signature" | "docs" | "line" | "decl" | "head"> {
   file: string;   // path relative to root
-  line: number;
 }
 
 const SKIP_DIRS = new Set([
@@ -41,13 +40,15 @@ export function discoverRocFiles(root: string): string[] {
 }
 
 /**
- * Extract the type annotations in a Roc source file: those at column 0 and the
- * methods inside a `Name := [].{ ... }` block, qualified as `Name.method`.
- * Unannotated definitions are left out, because they have no type to search by.
+ * Extract the type declarations and the annotated values in a Roc source file:
+ * those at column 0 and those inside a `Name := [].{ ... }` block, qualified as
+ * `Name.method`. It leaves out unannotated values, because they have no type.
  */
 export function parseRocFile(content: string, filePath: string, root: string): RocFileItem[] {
-  const rel = path.relative(root, filePath);
+  const file = path.relative(root, filePath);
   return parseBuiltin(content, { topLevel: true })
-    .items.filter((it) => it.kind === "value" && !it.unannotated)
-    .map((it) => ({ fullName: it.fullName, signature: it.signature, docs: it.docs, file: rel, line: it.line }));
+    .items.filter((it) => !it.unannotated)
+    .map(({ kind, name, modulePath, fullName, signature, docs, line, decl, head }) => ({
+      kind, name, modulePath, fullName, signature, docs, line, decl, head, file,
+    }));
 }

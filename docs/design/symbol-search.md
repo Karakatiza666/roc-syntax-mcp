@@ -2,17 +2,21 @@
 
 `search_symbols` finds a symbol by its name, by its type, or by both. This
 page gives every rule that the tool applies, from the parse of the query to
-the order of the list in a failed search. The code states each rule as a
-comment at the step that applies it. This page collects all the rules in one
-place.
+the order of the list in a failed search. `search_project_symbols` applies the
+same rules to the `.roc` files of a project, and section 8 gives the
+differences. The code states each rule as a comment at the step that applies
+it. This page collects all the rules in one place.
 
 | Step | Code |
 |---|---|
-| Parse the query | `parseSymbolQuery`, `namePattern` in `src/symbol_query.ts:42,67` |
-| Match a name | `nameQuality` in `src/symbol_query.ts:86` |
-| Match and score a type | `normalizeTypeSig`, `scoreItem`, `searchBySig` in `src/sig_search.ts:33,210,257` |
-| Break ties | `compareMatches`, `compareItems` in `src/sig_search.ts:151,161` |
-| Build the reply | `searchByName`, `searchByType`, `searchByNameAndType` in `src/server.ts:1358,1452,1487` |
+| Parse the query | `parseSymbolQuery`, `namePattern` in `src/symbol_query.ts:43,68` |
+| Match a name | `nameQuality` in `src/symbol_query.ts:87` |
+| Match and score a type | `normalizeTypeSig`, `scoreItem`, `searchBySig` in `src/sig_search.ts:34,211,258` |
+| Break ties | `compareMatches`, `compareItems` in `src/sig_search.ts:152,162` |
+| Answer a list of queries | `QUERY_LIST`, `joinReplies` in `src/server.ts:1599,1605` |
+| Build the reply, for both tools | `closeNames`, `nameAndType` in `src/server.ts:1377,1414` |
+| Build the reply, bundled indexes | `searchByName`, `searchByType`, `searchByNameAndType` in `src/server.ts:1454,1534,1561` |
+| Build the reply, project files | `exactIn`, `searchProject` in `src/server.ts:2457,2479` |
 
 ## Terms
 
@@ -188,10 +192,19 @@ fill the first 10 entries.
 
 ## 6. Replies
 
-`limit` (default 10) sets the maximum number of entries in a list. An exact
-match does not make a list, so the reply shows all exact matches. When a list
-has more entries than `limit`, its last line is "Showing 10 of N." and a next
-step.
+`query` is a list of up to 8 queries, and a lone string is one query. Each
+query gets its own reply, as if it were the only one. With several queries,
+each reply is under a heading `` # `<query>` ``, in the order sent. An invalid
+query gives an error in its own section, and the other queries still answer.
+The notes about the session, such as the detection note, come once, after the
+last section. The scope footer of a query stays in its section, because its
+counts are for that query.
+
+`limit` sets the maximum number of entries in each list. The default is 10 for
+one query and 5 for several queries, so 8 queries return at most 40 entries.
+An exact match does not make a list, so the reply shows all exact matches. When
+a list has more entries than `limit`, its last line is "Showing 10 of N." and a
+next step.
 
 | Mode | Result | Reply |
 |---|---|---|
@@ -253,3 +266,23 @@ can name. Its `reach` has two values:
 
 A miss also names a documented package that has the name, if the app does
 not pin that package. The note shows the header line that pins it.
+
+## 8. Project search
+
+`search_project_symbols` reads the `.roc` files under `root`, or under the
+workspace when the call gives no `root`. The parse, the name levels, the type
+scores and the order are the same as in sections 1 to 5. These rules differ:
+
+| Rule | Bundled indexes | Project |
+|---|---|---|
+| Corpus | The address space or the working set (section 2) | All declarations in the project files. A search never mixes the two, and `search_symbols` never reads project files |
+| Symbols | Types and values, by tier | Types and annotated values (`parseRocFile`, `src/roc_parser.ts:47`). A Type or Both search reads the values only |
+| Exact match | The full name, a collision, a suffix, or the bare name | The full name, else a suffix. A bare name matches the last segment |
+| Entry | The origin and the match kind | `file:line`, and `inferred` when a compiler gave the type and the author did not |
+| Miss | The footers of section 7 | "Nothing in N .roc files under `root` is named `X`.", and a note when `search_symbols` has matches for the query |
+| Footer | Section 7 | None, because the project is one corpus. "Not indexed:" names each source that could not run |
+
+The tool exists apart from `search_symbols` because it reads the disk at each
+call. Its own name also gives the note on an unknown platform a direct call
+to name.
+
