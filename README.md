@@ -153,12 +153,11 @@ Your AI harness keeps its entry for the server. In Claude Code, run
 | Tool | What it does |
 |------|--------------|
 | `get_roc_syntax` | Call this tool first, with no arguments. It returns the whole language and its builtins as two compact pages, which answer most questions with no second call. The server also points to this tool in the MCP `instructions` that it sends when the client connects. With `topic`, it returns a topic example by name or keyword, a package page by the package name, or a worked program by its corpus and file name, such as `basic-cli/hello`. With `scope` and no `topic`, it returns the page of that corpus |
-| `list_roc_index` | Every index, selected by `kind`: `scopes`, `topics`, `modules`, `examples`, `langref` |
-| `search` | Ranked free-text search across topics, signatures, the langref and worked programs. Use it when you do not know which of them has the answer |
+| `list_roc_index` | Every index, selected by `kind`: `scopes`, `topics`, `modules`, `examples` |
+| `search` | Ranked free-text search across topics, signatures and worked programs. Use it when you do not know which of them has the answer |
 | `search_symbols` | Builtins and platform APIs by name, by type, or both, written as a Roc annotation. A name (`concat`, `Str.concat`) returns the signature and docstring, else the names that contain it. A type is a Hoogle-style structural search: `List(x), (x -> y) -> List(y)` finds `List.map`, and `-> Bool` searches by return type. `ceil : -> Dec` lists the names that contain `ceil`, ranked by type. One call takes up to 8 queries |
 | `search_project_symbols` | The search of `search_symbols`, by name, type, or both, over the `.roc` files in your own project. Each entry gives its `file:line`. With this tool, an agent can find the API of a platform that this server does not bundle |
 | `get_roc_module` | Every function and type of one module as a signature list: a builtin (`Str`, `U64`, ...), a module of the app's platform or a documented package. `detail: "full"` includes the original docstrings. For a module of your project, it names the file to read |
-| `get_roc_langref` | Upstream's own prose, as a page or one section of a page. Where it overlaps a curated topic, use the langref |
 | `roc_check` | Runs `roc check` over a code string or a path. It wraps code that has no header in a verified app for the platform in scope, and it reports line numbers in your own source |
 | `roc_fmt` | Runs `roc fmt` the same way, and returns the canonical formatting. A path is read, never written |
 
@@ -193,12 +192,14 @@ run.
 ### Topics
 
 Topics are worked examples. Each topic shows one construct or one task, not a
-whole program. `list_roc_index(kind: "topics")` prints them with descriptions.
-The agent gets a topic through `get_roc_syntax(topic:)` or `search`.
+whole program. The language topics also carry every rule of upstream's language
+reference, as comments, `expect`s and `# @rejects` / `# @warns` blocks that
+`check:roc` compiles. `list_roc_index(kind: "topics")` prints them with
+descriptions. The agent gets a topic through `get_roc_syntax(topic:)` or `search`.
 
 | Group | Topics |
 |---|---|
-| Language | `idioms`, `iterators`, `ranges`, `record_fields`, `derived_methods`, `json`, `hashing`, `operators`, `pattern_matching`, `list_patterns`, `tag_unions`, `try_operator`, `strings`, `effects`, `loops`, `conditionals`, `tuples`, `records`, `types`, `numbers`, `opaque`, `nominal`, `functions`, `static_dispatch`, `imports`, `testing`, `compiler`, `app_header`, `dbg_crash`, `platforms`, `builder_pattern`, `scripting`, `error_design` |
+| Language | `idioms`, `iterators`, `ranges`, `record_fields`, `derived_methods`, `json`, `hashing`, `operators`, `pattern_matching`, `list_patterns`, `tag_unions`, `try_operator`, `strings`, `effects`, `loops`, `conditionals`, `tuples`, `records`, `types`, `naming`, `numbers`, `opaque`, `nominal`, `functions`, `compile_time`, `memory`, `dict_set`, `static_dispatch`, `imports`, `modules`, `packages`, `comments`, `testing`, `compiler`, `app_header`, `dbg_crash`, `platforms`, `platform_abi`, `builder_pattern`, `scripting`, `error_design` |
 | basic-webserver | `webserver_handler`, `webserver_sqlite`, `webserver_sse`, `webserver_html`, `webserver_forms`, `webserver_static` |
 | basic-cli | `cli_app`, `cli_files`, `cli_command`, `cli_http`, `cli_sqlite`, `cli_terminal`, `cli_net` |
 | roc-parser | `parser_combinators`, `parser_csv`, `parser_yaml`, `parser_xml`, `parser_markdown`, `parser_http` |
@@ -217,7 +218,6 @@ Clients that support MCP resources can attach these without a tool call:
 | `roc-syntax://reference` | The full `all_roc_syntax.roc` reference |
 | `roc-syntax://builtin` | Index of the builtin modules and their method counts |
 | `roc-syntax://topic/{name}` | One topic, with tab-completion of `{name}` |
-| `roc-syntax://langref/{name}` | One langref page, with tab-completion of `{name}` |
 
 ### Choosing the platform
 

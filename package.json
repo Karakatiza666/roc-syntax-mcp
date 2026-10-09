@@ -23,7 +23,9 @@
     "!**/*.test.js",
     "!**/*.test.d.ts",
     "!src/testdata",
-    "!dist/testdata"
+    "!dist/testdata",
+    "!corpus/language/langref",
+    "!corpus/language/langref-map.txt"
   ],
   "scripts": {
     "build:ts": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\" && tsc",

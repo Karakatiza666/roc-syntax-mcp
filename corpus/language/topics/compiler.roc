@@ -40,6 +40,11 @@ expect [1, 2, 3].len() == 3
 #
 # So a non-zero `roc run` does not mean the app failed. Read the output. Remove
 # every `dbg` and fix every warning, and the exit code is the app's own.
+#
+# Errors do not stop `roc run` or `roc build`. They report the errors, exit 1,
+# and still compile the program. Code with an error crashes with "runtime
+# error" only when it runs, so a program can work until it reaches that code.
+# Check the report, not only whether the program runs. See `compile_time`.
 
 # ---------------------------------------------------------------------------
 # Optimization: --opt
@@ -78,19 +83,51 @@ expect [1, 2, 3].len() == 3
 #   roc fmt --check app.roc    exit 1 if a file needs formatting. Writes nothing
 #   roc fmt --stdin            formats stdin to stdout
 #
-# `roc fmt` also rewrites a header's nightly pin to the running nightly when
-# that one is newer. `--check` reports a stale pin as needing formatting.
+# ---------------------------------------------------------------------------
+# Version pin
+# ---------------------------------------------------------------------------
+#
+# Any app, package or platform header can pin the compiler with the reserved
+# `roc` entry:
+#
+#   app [main!] { pf: platform "../basic-cli/main.roc", roc: "nightly-2026-10-06-c34079d" }
+#
+# The value is a string that `roc version` prints: a nightly tag or a release
+# such as "0.1.0". Any other value is "invalid roc version", and so is a
+# package called `roc`. A pin that names another compiler gives the warning
+# "roc version mismatch" (exit 2) and the build continues.
+#
+# `roc fmt` rewrites a nightly pin to the running nightly when that one is
+# newer. It does not change a release pin or a pin newer than the running
+# compiler. `roc fmt --check` reports a stale nightly pin as needing formatting.
 
 # ---------------------------------------------------------------------------
 # Dependencies
 # ---------------------------------------------------------------------------
 #
-#   roc deps app.roc     print every declared package source, in full
+#   roc deps app.roc     print the dependency tree without compiling. Each
+#                        edge is the full URL or path that a header declares,
+#                        never its shorthand
 #   --replace-dep OLD NEW
 #                        load NEW wherever a dependency declares exactly OLD,
-#                        for this one command. NEW is a package URL or a path
-#                        to a root .roc file. Works on check, test, run, build
-#                        and docs, and you can repeat it.
+#                        for this one command. Works on check, test, run,
+#                        build, docs and deps, and you can repeat it
+#
+# Marks in the `roc deps` tree:
+#   [shared]            shown above already, with its dependencies
+#   [resolved to URL]   version selection chose this compatible release
+#   [replaced by PATH]  a --replace-dep flag loaded this source
+#
+# Rules for --replace-dep:
+#   - OLD and NEW are each a full package URL or an explicit path to a root
+#     .roc file: `./lib/main.roc`, `../lib/main.roc` or an absolute path. A
+#     shorthand, a directory or `lib/main.roc` is "invalid dependency
+#     replacement".
+#   - OLD matches exactly, version and hash included, in every header of the
+#     graph. Each release URL needs its own flag. A flag that matches nothing
+#     is "unused dependency replacement".
+#   - The header of NEW decides its own dependencies, and the same flags apply.
+#   - It edits no file and no cached package.
 #
 # To try a local fork of a platform without editing the header:
 #

@@ -1,0 +1,313 @@
+# One line per section of corpus/language/langref/: the key, then the topics
+# that carry its ideas, or `skip: <reason>` when it has no rule for code. The
+# key of a page alone is its intro. scripts/langref-diff.roc reads this file to
+# name the topics that a refresh must review. src/langref.test.ts and
+# `roc scripts/langref-diff.roc -- --check-map` fail when a section has no line.
+
+README                                                      skip: work-in-progress banner and a pointer to the tutorial
+README#outline                                              skip: table of contents of the langref, no rule for code
+
+comments-and-docs                                           comments
+comments-and-docs#single-line-comments                      comments
+comments-and-docs#shebang-comments                          comments
+comments-and-docs#doc-comments                              comments
+comments-and-docs#code-blocks-in-doc-comments               comments
+comments-and-docs#autolinks                                 comments
+comments-and-docs#generating-docs-with-roc-docs             comments, compiler
+comments-and-docs#viewing-docs-locally-with-serve           comments, compiler
+comments-and-docs#bidirectional-controls                    comments
+
+compile-time                                                compile_time
+compile-time#which-expressions-get-evaluated                compile_time
+compile-time#top-level-declarations                         compile_time
+compile-time#top-level-equivalent-expressions               compile_time
+compile-time#effectful-functions-never-run-at-compile-time  compile_time, effects
+compile-time#terminology                                    skip: names for compile-time evaluation (comptime, CTFE), no rule for code
+compile-time#empty-builtin-collections-never-get-stored     compile_time
+compile-time#code-with-errors                               compile_time, testing
+compile-time#performance                                    compile_time
+compile-time#uses                                           compile_time, json
+
+dictionaries-and-sets                                       dict_set
+dictionaries-and-sets#dictionaries                          dict_set
+dictionaries-and-sets#looking-up-values                     dict_set, operators
+dictionaries-and-sets#iteration-order                       dict_set, iterators
+dictionaries-and-sets#sets                                  dict_set
+dictionaries-and-sets#keys-and-hashing                      dict_set, hashing, derived_methods
+
+expressions                                                 skip: definition of an expression and the parenthesization rule, no rule for code
+expressions#types-of-expressions                            functions
+expressions#values                                          memory, loops
+expressions#value-identity                                  memory, platforms
+expressions#reference-counting                              memory
+expressions#reference-cycles                                memory
+expressions#opportunistic-mutation                          memory
+expressions#block-expressions                               functions, records
+expressions#evaluation                                      skip: evaluation is strict, as in most languages, no rule for code
+expressions#side-effects-during-evaluation                  dbg_crash, platforms
+expressions#compile-time-evaluation                         compile_time
+
+functions                                                   functions
+functions#pure-functions                                    effects, compile_time, dbg_crash, memory
+functions#effectful-functions                               effects
+functions#side-effects                                      skip: list of example side effects, no rule for code
+functions#function-type-annotations                         effects, types
+functions#and-in-function-type-annotations                  effects
+functions#suffix-in-function-names                          effects
+functions#purity-inference                                  effects, compile_time
+functions#recursive-functions                               functions
+functions#self-recursive-functions                          functions
+functions#tail-calls                                        functions
+functions#self-tail-calls                                   functions
+functions#tail-call-optimization                            functions
+functions#mutually-recursive-functions                      functions
+
+if-else                                                     conditionals
+if-else#if-and-else                                         conditionals
+if-else#else-if                                             conditionals
+if-else#if-without-else                                     conditionals
+if-else#and-or                                              conditionals, operators
+
+iterators                                                   iterators, ranges
+iterators#transforming-iterators                            iterators
+iterators#collecting                                        iterators
+iterators#laziness                                          iterators
+iterators#custom-iterators                                  iterators
+iterators#how-iteration-works                               iterators
+iterators#effectful-iteration                               iterators, effects
+
+loops                                                       skip: intro, no rule for code
+loops#for-loops                                             loops, ranges
+loops#iterating-over-types-that-have-iter                   loops, iterators
+loops#looping-backwards                                     loops, iterators
+loops#pattern-matching-in-for                               loops, pattern_matching
+loops#looping-over-streams-with-for                         loops, iterators
+loops#while-loops                                           loops
+loops#break-statement                                       loops
+loops#infinite-loops                                        loops
+
+modules                                                     modules
+modules#type-modules                                        modules
+modules#hiding-implementation-details                       modules
+modules#alias-modules                                       modules, imports, error_design
+modules#void-modules                                        modules
+modules#design-notes-on-type-modules                        modules, imports, error_design
+modules#import-statements                                   imports
+modules#exposing                                            imports
+modules#renaming-imported-modules-with-as                   imports
+modules#modules-in-subdirectories                           imports, packages
+modules#importing-types-from-packages                       imports
+modules#importing-constants                                 imports, modules
+modules#importing-mutually-recursive-types                  imports
+modules#design-notes-on-imports                             modules
+modules#module-headers                                      modules
+modules#package-modules                                     packages, app_header
+modules#package-shorthands                                  packages
+modules#platform-modules                                    platforms
+modules#requires                                            platforms
+modules#exposes                                             platforms
+modules#packages                                            platforms
+modules#provides                                            platforms
+modules#targets                                             platforms
+modules#hosted-type-modules                                 platforms
+modules#application-modules                                 app_header
+modules#pinning-a-roc-version                               compiler
+modules#nominal-type-identity-across-packages               packages, platforms
+modules#headerless-application-modules                      app_header
+
+naming                                                      skip: page intro has no content
+naming#rules                                                naming
+naming#lowercase-names                                      naming
+naming#uppercase-names                                      naming
+naming#unused-names                                         naming
+naming#shadowing                                            naming
+naming#constants                                            naming, compile_time
+naming#variables-with-var                                   naming, loops
+naming#var-keyword                                          naming, loops
+naming#prefix                                               naming
+naming#type-variables                                       types
+naming#type-aliases                                         types
+naming#parameterized-type-aliases                           types
+naming#module-names                                         imports
+naming#as                                                   naming, imports, list_patterns
+
+numbers                                                     numbers
+numbers#number-literals                                     numbers
+numbers#type-suffixes                                       numbers
+numbers#defaulting-to-dec                                   numbers
+numbers#builtin-number-types                                numbers
+numbers#integers                                            numbers
+numbers#fractions                                           numbers
+numbers#ranges                                              ranges
+numbers#custom-number-types                                 numbers, derived_methods
+numbers#inferred-custom-number-types                        numbers
+numbers#custom-number-types-and-operators                   numbers, operators
+numbers#creating-a-from-numeral-implementation              numbers
+
+operators                                                   operators
+operators#desugaring                                        operators, static_dispatch
+operators#binary-infix-operations                           operators
+operators#and                                               operators, conditionals
+operators#or                                                operators, conditionals
+operators#arithmetic-operators                              operators, static_dispatch
+operators#comparison-operators                              operators
+operators#range-operators                                   operators, ranges
+operators#default-value-on-err                              operators, try_operator
+operators#unary-prefix-operators                            operators
+operators#negate                                            operators
+operators#not                                               operators
+operators#unary-postfix-operators                           try_operator
+operators#unwrap-if-ok-early-return-if-err                  try_operator, error_design, testing
+operators#subscript-operator                                operators
+
+packages                                                    packages
+packages#depending-on-packages                              packages
+packages#url-packages                                       packages, compiler
+packages#package-versions                                   packages, compiler
+packages#path-packages                                      packages
+packages#shorthands                                         packages
+packages#platforms                                          packages, app_header
+packages#inspecting-dependencies-with-roc-deps              compiler
+packages#replacing-dependencies-with-replace-dep            compiler
+
+parsers                                                     json
+parsers#parsing-json                                        json
+parsers#which-types-can-be-parsed                           json
+parsers#optional-fields                                     json, record_fields
+parsers#nominal-types                                       json, derived_methods
+parsers#parsers-at-compile-time                             json
+parsers#writing-generic-parsing-functions                   json
+parsers#other-formats                                       json
+
+pattern-matching                                            pattern_matching
+pattern-matching#match                                      pattern_matching
+pattern-matching#branch-alternatives                        pattern_matching
+pattern-matching#if-guards-on-branches                      pattern_matching, list_patterns
+pattern-matching#pattern-forms                              skip: heading with no text of its own
+pattern-matching#bindings-and-wildcards                     pattern_matching
+pattern-matching#literal-patterns                           pattern_matching
+pattern-matching#tag-patterns                               pattern_matching
+pattern-matching#record-patterns                            records, record_fields
+pattern-matching#tuple-patterns                             tuples
+pattern-matching#list-patterns                              list_patterns
+pattern-matching#nested-patterns-and-as                     pattern_matching, list_patterns, records, naming
+pattern-matching#nominal-patterns                           pattern_matching, nominal
+pattern-matching#exhaustiveness                             pattern_matching
+pattern-matching#underscore                                 pattern_matching
+pattern-matching#destructuring                              pattern_matching
+pattern-matching#destructuring-assignments-with             pattern_matching, loops, tag_unions
+
+platforms                                                   platforms
+platforms#applications                                      app_header
+platforms#domain-specific-functionality                     platforms
+platforms#platform-scope                                    platforms
+platforms#ecosystem-benefits                                platforms
+platforms#security-benefits                                 platforms
+platforms#performance-benefits                              platforms
+platforms#how-platforms-are-implemented                     platforms
+platforms#host                                              platforms
+platforms#memory-management                                 platforms
+platforms#program-start                                     platforms
+platforms#summary                                           skip: recap of the page and a list of example platforms
+
+records                                                     records
+records#fields                                              records
+records#record-literals                                     records
+records#accessing-fields                                    records
+records#record-types                                        records
+records#updating-records                                    records
+records#compared-to-dictionaries                            records
+records#structural-records                                  records
+records#open-record-types                                   records, types
+records#optional-fields                                     record_fields
+records#nominal-records                                     nominal, opaque
+records#defaulted-fields                                    record_fields
+records#runtime-layout                                      records, compiler, platform_abi, memory
+records#empty-record                                        records, imports, platform_abi
+
+statements                                                  skip: statements run when reached and have no value, no rule for code
+statements#assignment                                       naming
+statements#assignment-patterns                              pattern_matching
+statements#assignment-order                                 functions, naming
+statements#assignment-cycles                                functions
+statements#reassignment                                     loops, naming, testing
+statements#import                                           imports
+statements#import-exposing                                  imports
+statements#renaming-imports                                 imports
+statements#importing-non-roc-files                          imports, compile_time
+statements#dbg                                              dbg_crash, compiler
+statements#expect                                           testing
+statements#top-level-expect                                 testing
+statements#inline-expect                                    testing
+statements#expect-control-flow                              testing
+statements#return                                           functions
+statements#break                                            loops
+statements#continue                                         dbg_crash
+statements#crash                                            dbg_crash
+statements#block-statements                                 functions
+
+static-dispatch                                             static_dispatch
+static-dispatch#methods                                     static_dispatch
+static-dispatch#well-known-methods                          derived_methods, static_dispatch
+static-dispatch#compiler-derived-methods                    derived_methods, tag_unions
+static-dispatch#to-inspect                                  derived_methods
+static-dispatch#equality-and-hashing                        derived_methods, hashing, operators
+static-dispatch#operators                                   operators, derived_methods, ranges
+static-dispatch#literal-conversion                          derived_methods, numbers, strings
+static-dispatch#iteration                                   iterators
+static-dispatch#parsing-and-encoding                        json
+static-dispatch#number-literal-defaulting                   numbers
+static-dispatch#where-clauses                               types, static_dispatch
+static-dispatch#calling-methods-on-type-variables           types, json
+static-dispatch#aliases                                     types, json
+
+strings                                                     skip: intro, no rule for code
+strings#unicode                                             skip: glossary pointer, no rule for code
+strings#graphemes                                           strings
+strings#code-points                                         strings
+strings#combining-code-points                               skip: emoji joiner walk-through, no rule for code
+strings#single-quote-syntax                                 strings, pattern_matching
+strings#string-literal-conversion-and-interpolation         strings, derived_methods
+strings#string-equality-and-normalization                   strings
+strings#string-normalization                                strings
+strings#why-not-normalize-automatically                     strings
+strings#utf-8                                               strings
+strings#when-to-use-each-of-these                           strings
+strings#low-level                                           strings
+strings#bidirectional-controls                              strings
+
+tag-unions                                                  tag_unions
+tag-unions#tags                                             tag_unions
+tag-unions#structural-tag-unions                            tag_unions, idioms
+tag-unions#extending-structural-tag-unions                  tag_unions, error_design
+tag-unions#structural-tag-union-type-parameters             tag_unions
+tag-unions#closed-tag-unions                                tag_unions, idioms, platform_abi
+tag-unions#structural-tag-unions-limitations                types, platform_abi
+tag-unions#nominal-tag-unions                               tag_unions, nominal
+tag-unions#qualified-tags                                   tag_unions, pattern_matching
+tag-unions#opaque-tag-unions                                opaque
+tag-unions#structural-nominal-compatibility                 tag_unions, opaque
+tag-unions#nominal-tag-unions-limitations                   tag_unions, types
+tag-unions#void                                             tag_unions
+
+tuples                                                      tuples, memory
+tuples#tuple-literals                                       tuples
+tuples#accessing-tuple-elements                             tuples
+tuples#tuple-types                                          skip: tuple type syntax only, shown in tuples and types
+tuples#destructuring-tuples                                 tuples
+tuples#tuples-vs-records                                    tuples, memory
+
+types                                                       types
+types#roc-s-type-system                                     types
+types#generalization                                        types, naming
+types#type-annotations                                      types
+types#where-clauses                                         types
+types#structural-types                                      types, records, tag_unions
+types#nominal-types                                         nominal
+types#constructing-nominal-types                            nominal, tag_unions
+types#destructuring-nominal-types                           nominal, types, pattern_matching
+types#opaque-nominal-types                                  opaque
+types#nested-nominal-types                                  imports
+types#type-aliases                                          types, nominal
+types#recursive                                             types
+types#mutually-recursive                                    types, imports

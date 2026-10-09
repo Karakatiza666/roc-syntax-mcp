@@ -85,7 +85,7 @@ const BUILTIN_TOPICS: Record<string, TopicMeta> = {
   },
   pattern_matching: {
     file: "pattern_matching.roc",
-    description: "`match` expressions: branches, exhaustiveness, tuple/tag patterns, string capture patterns.",
+    description: "`match` expressions: alternatives, guards, literal and code-point patterns, `as`, exhaustiveness and redundancy, destructuring, string captures.",
     keywords: ["match", "pattern", "case", "switch", "branch", "capture", "route"],
   },
   list_patterns: {
@@ -95,7 +95,7 @@ const BUILTIN_TOPICS: Record<string, TopicMeta> = {
   },
   tag_unions: {
     file: "tag_unions.roc",
-    description: "Tag unions (sum types), Try, multi-payload tags, open tag unions.",
+    description: "Tag unions, nominal `Try`, multi-payload tags, open unions and `..others` pass-through, qualified tags, nominal vs structural tags, and the empty union `[]`.",
     keywords: ["tag", "union", "variant", "enum", "Ok", "Err", "Try", "Result", "open", "extensible"],
   },
   try_operator: {
@@ -105,12 +105,12 @@ const BUILTIN_TOPICS: Record<string, TopicMeta> = {
   },
   strings: {
     file: "strings.roc",
-    description: "String literals, interpolation `${...}`, multi-line `\\\\`, unicode escapes.",
+    description: "String literals, interpolation `${...}`, multi-line `\\\\`, unicode escapes, UTF-8 conversion, `Str.len`, single-quote code points, equality without normalization, and bidi controls.",
     keywords: ["string", "str", "multiline", "interpolation", "unicode", "escape"],
   },
   effects: {
     file: "effects.roc",
-    description: "Effectful functions (`!` suffix, `=>` arrow). `echo!` is built-in and appends no newline.",
+    description: "Effectful functions (`!` suffix, `=>` arrow), purity inference, the errors and the warning for wrong purity, and the `!` twins of higher-order builtins. `echo!` is built-in and appends no newline.",
     keywords: ["effect", "effectful", "!", "io", "side effect", "echo", "newline", "stdout"],
   },
   loops: {
@@ -130,18 +130,42 @@ const BUILTIN_TOPICS: Record<string, TopicMeta> = {
   },
   records: {
     file: "records.roc",
-    description: "Record literals, field access, destructuring, and `{ ..base, ... }` update.",
+    description: "Record literals, puns, field access, record patterns, `{ ..base, ... }` update and its limits, and open records.",
     keywords: ["record", "struct", "object", "field", "update", ".."],
   },
   types: {
     file: "types.roc",
-    description: "Type annotations, type variables, `where` constraints and named `where` aliases, pure (`->`) vs effectful (`=>`) arrows.",
+    description: "Type annotations, type variables (`_`, `_elem`), generalization, `where` clauses and `where` aliases, `Thing : thing`, rank-1 and no-HKT limits, aliases, and recursive types.",
     keywords: ["type", "annotation", "signature", "where", "where alias", "constraint",
       "variable", "->", "=>"],
   },
+  compile_time: {
+    file: "compile_time.roc",
+    description: "Compile-time evaluation of top-level constants and pure calls, compile-time crashes as compile errors, no effects at build time, empty collections, binary size, and code with errors.",
+    keywords: ["compile time", "comptime", "constant", "top-level", "build time", "lookup table",
+      "with_capacity", "binary size"],
+  },
+  dict_set: {
+    file: "dict_set.roc",
+    description: "`Dict` and `Set`: building them with `empty`/`single`/`from_list`, `get` with `??`, `insert`/`remove`/`update`, insertion-order iteration and how `remove` changes it, set operations, and what a key type needs.",
+    keywords: ["dict", "set", "hashmap", "dictionary", "from_list", "iteration order", "KeyNotFound",
+      "intersection", "difference"],
+  },
+  memory: {
+    file: "memory.roc",
+    description: "Immutable values, reference counting, opportunistic in-place updates (`List.set`), no pointers or value identity, no reference cycles.",
+    keywords: ["memory", "reference counting", "refcount", "heap", "allocation", "mutation", "in place",
+      "copy", "clone", "pointer", "identity", "cycle", "garbage collection"],
+  },
+  naming: {
+    file: "naming.roc",
+    description: "Naming rules for values, types and `var`s, definition order, unused-name warnings, shadowing and duplicate definitions, and the rules for capturing a `var`.",
+    keywords: ["name", "naming", "identifier", "shadow", "shadowing", "duplicate definition", "redefine",
+      "unused", "_name", "underscore", "capture", "closure", "before definition"],
+  },
   numbers: {
     file: "numbers.roc",
-    description: "Numeric types and literals (`5.U64`, `0x5`, `0o5`, `0b0101`). Default is `Dec`.",
+    description: "Numeric types and literals (`5.U64`, `0x5`, `1.5e-2`, underscores), `Dec` versus floats, literal defaulting, and custom number types through `from_numeral` and `Numeral`.",
     keywords: ["number", "int", "float", "decimal", "u8", "i64", "f64", "hex", "binary", "octal", "Dec"],
   },
   opaque: {
@@ -151,13 +175,14 @@ const BUILTIN_TOPICS: Record<string, TopicMeta> = {
   },
   nominal: {
     file: "nominal.roc",
-    description: "Distinct nominal types (`:=`) with optional methods, e.g. `is_eq`.",
+    description: "Distinct nominal types (`:=`), explicit construction and destructuring (`T.(v)`, `T.{...}`), when literals lift, and associated constants.",
     keywords: ["nominal", ":=", "custom", "method", "is_eq"],
   },
   functions: {
     file: "functions.roc",
-    description: "Function literals `|args| body`, blocks, `return`, and `crash`/`...` placeholders.",
-    keywords: ["function", "lambda", "anonymous", "return", "placeholder", "crash", "..."],
+    description: "Function literals `|args| body`, blocks, `return`, `...`, recursion, top-level cycles, and tail calls (accumulators, modulo cons).",
+    keywords: ["function", "lambda", "anonymous", "return", "placeholder", "...", "recursion", "recursive",
+      "tail call", "stack overflow", "accumulator"],
   },
   static_dispatch: {
     file: "static_dispatch.roc",
@@ -166,12 +191,28 @@ const BUILTIN_TOPICS: Record<string, TopicMeta> = {
   },
   imports: {
     file: "imports.roc",
-    description: "Module imports, aliases (`as`), and file embedding (`import \"x\" as y : Str`).",
-    keywords: ["import", "module", "as", "alias", "embed"],
+    description: "Module imports, aliases (`as`), file embedding (`import \"x\" as y : Str` or `List(U8)`), and mutually recursive types in a void module.",
+    keywords: ["import", "as", "alias", "embed"],
+  },
+  modules: {
+    file: "modules.roc",
+    description: "Type modules (one nominal type per file, named like the file), what a module hides, nested types (`Url.ParseErr`), void modules (`Util :: [].{ ... }`), no import cycles, and the four module kinds and their headers.",
+    keywords: ["module", "type module", "void module", "namespace", "nested type", "private", "hide", "pub",
+      "import cycle", "Util"],
+  },
+  packages: {
+    file: "packages.roc",
+    description: "Package headers and dependencies: `package [...] { ... }`, URL (`.tar.zst`, hash) and path packages, version resolution, shorthands, platform-specific packages, and nominal type identity across packages.",
+    keywords: ["package", "dependency", "dependencies", "version", "semver", "shorthand", "tar.zst"],
+  },
+  comments: {
+    file: "comments.roc",
+    description: "Comments: `#`, `##` doc comments in Markdown, code blocks and `[Name]` autolinks in docs, `roc docs`, shebang lines, and the ban on bidirectional controls.",
+    keywords: ["comment", "doc comment", "##", "docs", "roc docs", "autolink", "shebang", "bidi", "documentation"],
   },
   testing: {
     file: "testing.roc",
-    description: "Testing with `expect`, multi-line `expect { ... }` blocks, inline assertions, and `?` inside `expect`.",
+    description: "Testing with `expect`, multi-line `expect { ... }` blocks, inline assertions, `?` inside `expect`, and the control flow rules inside `expect`.",
     keywords: ["test", "expect", "assert", "roc test"],
   },
   compiler: {
@@ -190,18 +231,17 @@ const BUILTIN_TOPICS: Record<string, TopicMeta> = {
   },
   dbg_crash: {
     file: "dbg_crash.roc",
-    description: "`dbg`, `crash`, and `return` statements.",
-    keywords: ["dbg", "crash", "return", "debug", "panic"],
+    description: "`dbg` output (stderr, `to_inspect`, compile time), `crash`, and the planned `continue`.",
+    keywords: ["dbg", "crash", "debug", "panic", "continue"],
   },
   platforms: {
     file: "platforms.roc",
     description:
-      "Writing/maintaining a Roc platform: platform header, `main_for_host!`, hosted FFI (wrapper and host-direct forms), closed vs open Try at the ABI boundary, single-variant tag discriminant, record field-order ABI, nested Try, and `()` vs `{}` unit arg.",
+      "Writing/maintaining a Roc platform: platform header, `requires` forms, reserved `roc__` symbols, `main_for_host!`, hosted FFI (wrapper and host-direct forms) and its rules, and the host side. The ABI edge cases are in `platform_abi`.",
     keywords: [
       "platform",
       "host",
       "ffi",
-      "abi",
       "main_for_host",
       "host_",
       "requires",
@@ -212,11 +252,14 @@ const BUILTIN_TOPICS: Record<string, TopicMeta> = {
       "libhost",
       "roc_alloc",
       "linker",
-      "RocSingleTagWrapper",
-      "field order",
-      "segfault",
-      "nested Try",
     ],
+  },
+  platform_abi: {
+    file: "platform_abi.roc",
+    description:
+      "The host ABI of a platform: closed hosted results, the single-tag discriminant byte, record field order and `_ : {}`, three-state returns, `()` vs `{}` for the unit argument, the representations of `Path`, and a shared `IOErr`.",
+    keywords: ["abi", "RocSingleTagWrapper", "field order", "layout", "padding", "segfault", "nested Try",
+      "unit argument", "glue"],
   },
   builder_pattern: {
     file: "builder_pattern.roc",

@@ -18,7 +18,6 @@ const execFileAsync = promisify(execFile);
 const ROOT = path.join(import.meta.dirname, "..");
 const FULL_SYNTAX_FILE = path.join(ROOT, "corpus", "language", "examples", "all_roc_syntax.roc");
 const BUILTIN_FILE = path.join(ROOT, "corpus", "language", "Builtin.roc");
-const LANGREF_DIR = path.join(ROOT, "corpus", "language", "langref");
 // The version comes from package.json only, so a release changes one file.
 const VERSION: string = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf-8")).version;
 // The largest number of nested-module items that `get_roc_module` prints
@@ -60,7 +59,6 @@ import {
   servedReleaseNote,
   type Detection,
 } from "./detect.ts";
-import { type LangrefPage, loadLangref, renderLangref } from "./langref.ts";
 import { elsewhere as elsewhereIn, type Candidate, type Reach } from "./elsewhere.ts";
 import { loadOverview } from "./overview.ts";
 import { compareItems, type SigMatch, searchBySig, SUBSTRING_SCORE } from "./sig_search.ts";
@@ -879,29 +877,6 @@ export function createServer(config: ServerConfig): McpServer {
     return `${header}\n${sigBlock}${docs}`;
   }
 
-  // -----------------------------------------------------------------------------
-  // Language reference (corpus/language/langref)
-  // -----------------------------------------------------------------------------
-
-
-  let langrefCache: Map<string, LangrefPage> | null = null;
-
-  function getLangref(): Map<string, LangrefPage> {
-    if (!langrefCache) langrefCache = loadLangref(LANGREF_DIR);
-    return langrefCache;
-  }
-
-  /** Pages are keyed by filename, and `README.md` is the one that is not lowercase. */
-  function findLangrefPage(name: string): LangrefPage | undefined {
-    const pages = getLangref();
-    const exact = pages.get(name);
-    if (exact) return exact;
-    const lower = name.toLowerCase();
-    for (const page of pages.values()) {
-      if (page.name.toLowerCase() === lower) return page;
-    }
-    return undefined;
-  }
 
 
 
@@ -940,8 +915,8 @@ export function createServer(config: ServerConfig): McpServer {
         "Do this even when you believe you know Roc: the syntax changed with this compiler, so " +
         "recalled Roc is unreliable (`Try` replaced `Result`, `value.method()` static dispatch is " +
         "the normal style, and every builtin lives in one `Builtin.roc`). " +
-        "For details, use `get_roc_langref` for upstream's own prose, `get_roc_module` for one " +
-        "module, `get_roc_syntax(topic:)` for a worked example of one construct, and `roc_check` / " +
+        "For details, use `get_roc_syntax(topic:)` for a worked example and the rules of one construct, " +
+        "`get_roc_module` for one module, and `roc_check` / " +
         "`roc_fmt` to verify what you wrote. " +
         // Measured in docs/evals/agentic.md: on a local platform, agents searched the
         // source with Grep, often with one regex for several questions.
@@ -1042,10 +1017,12 @@ export function createServer(config: ServerConfig): McpServer {
     const addressed = scope ? null : (TOPICS[query.trim().toLowerCase()] ? query.trim().toLowerCase() : null);
     const matched = matchTopic(query, wanted, TOPICS) ?? addressed;
     if (!matched) {
+      // Names only. With a description each, a miss costs more than most topics,
+      // and list_roc_index(kind='topics') gives the descriptions.
       const list = Object.entries(TOPICS)
         .filter(([, m]) => wanted.includes(m.scope ?? "language"))
-        .map(([n, m]) => `- ${n}: ${m.description}`)
-        .join("\n");
+        .map(([n]) => n)
+        .join(", ");
       const others = elsewhere(
         SYNTAX_SCOPES,
         wanted,
@@ -1060,7 +1037,9 @@ export function createServer(config: ServerConfig): McpServer {
             type: "text" as const,
             text:
               `No topic matched "${query}" in scope=${wanted.join("+")}. ` +
-              (list ? `Available topics:\n\n${list}` : "This corpus has no topics.") +
+              (list
+                ? `Topics: ${list}. list_roc_index(kind='topics') describes each one.`
+                : "This corpus has no topics.") +
               trailingNotes({ read: wanted, found: { shown: 0, others } }),
           },
         ],
@@ -1110,7 +1089,7 @@ export function createServer(config: ServerConfig): McpServer {
       // topics of a platform. The pointer costs fewer tokens than the names.
       description:
         "Call with no arguments before reading, writing, or reasoning about any Roc code. It returns the whole language and its builtins: syntax, types, operator desugaring, modules, and where LLMs get Roc wrong. Call it even when you believe you know Roc: the Zig-based compiler changed the syntax. " +
-        `Pass \`topic\` for a worked example of one construct. Topics: ${SYNTAX_TOPICS.names.join(", ")}.` +
+        `Pass \`topic\` for one construct: a worked example, its rules, and the errors it gives. Topics: ${SYNTAX_TOPICS.names.join(", ")}.` +
         (SYNTAX_TOPICS.more > 0
           ? ` ${SYNTAX_TOPICS.more} more topics: list_roc_index(kind='topics').`
           : ADVERTISED_PLATFORMS.length > 0
@@ -1138,22 +1117,18 @@ export function createServer(config: ServerConfig): McpServer {
       annotations: READ_ONLY_FETCHES,
       title: "List What the Other Roc Tools Accept",
       description:
-        "What the other tools accept. `scopes`: the corpora `scope` takes, and documented packages. `topics`: the topics `get_roc_syntax` takes. `modules`: the module paths `get_roc_module` takes. `examples`: worked programs. `langref`: the upstream reference pages and their sections.",
+        "What the other tools accept. `scopes`: the corpora `scope` takes, and documented packages. `topics`: the topics `get_roc_syntax` takes. `modules`: the module paths `get_roc_module` takes. `examples`: worked programs.",
       inputSchema: z.object({
         kind: z
-          .enum(["scopes", "topics", "modules", "examples", "langref"])
+          .enum(["scopes", "topics", "modules", "examples"])
           .describe("Which index to list."),
         scope: scopeArg(
             SCOPES,
             "For kind='topics', 'modules', 'examples': one corpus only. Omit for the working set."
           ),
-        page: z
-          .string()
-          .optional()
-          .describe("For kind='langref' only: list just this page's sections."),
       }),
     },
-    async ({ kind, scope, page }) => {
+    async ({ kind, scope }) => {
       await ensureDetection();
       const wanted = resolveScopes(scope as ScopeName | undefined, SCOPES);
 
@@ -1247,54 +1222,18 @@ export function createServer(config: ServerConfig): McpServer {
         };
       }
 
-      if (kind === "examples") {
-        // Each entry is a complete program, so the listing names the programs and
-        // does not quote them. get_roc_syntax(topic:) reads one by its address.
-        const items = wanted.flatMap((sc) => filedExamples(sc).map(({ id, ex }) => ({ name: id, detail: ex.title })));
-        const others = elsewhere(SCOPES, wanted, "pinned", (sc) => filedExamples(sc).length);
-        const body =
-          items.length === 0
-            ? "No scope in the working set bundles worked programs."
-            : `${readExample(items[0].name)}\n\n${items.map((e) => `- ${e.name}\n  ${e.detail}`).join("\n")}`;
-        const notes = trailingNotes({ read: wanted, found: { shown: items.length, others } });
-        return {
-          content: [{ type: "text", text: `# Examples\n\n${body}${notes}` }],
-        };
-      }
-
-      const all = getLangref();
-      const selected = page ? [findLangrefPage(page)].filter((pg) => pg != null) : [...all.values()];
-      if (page && selected.length === 0) {
-        const names = [...all.keys()].join(", ");
-        return {
-          content: [{ type: "text", text: `Unknown langref page: ${page}. Available: ${names}` }],
-          isError: true,
-        };
-      }
-
-      const items = selected.map((pg) => ({
-        name: pg!.name,
-        detail: pg!.title,
-        written: !pg!.isTodo,
-        sections: pg!.sections.map((sec) => ({
-          slug: sec.slug,
-          detail: sec.title,
-          written: !sec.isTodo,
-        })),
-      }));
-
-      const TODO = "  (not yet written upstream)";
-      const text = items
-        .map((pg) => {
-          const secs = pg.sections.length
-            ? pg.sections.map((sec) => `    - ${sec.slug}${sec.written ? "" : TODO}`).join("\n")
-            : "    (no sections)";
-          return `- **${pg.name}** (${pg.detail})${pg.written ? "" : TODO}\n${secs}`;
-        })
-        .join("\n");
-
+      // The last kind, `examples`. Each entry is a complete program, so the listing
+      // names the programs and does not quote them. get_roc_syntax(topic:) reads
+      // one by its address.
+      const items = wanted.flatMap((sc) => filedExamples(sc).map(({ id, ex }) => ({ name: id, detail: ex.title })));
+      const others = elsewhere(SCOPES, wanted, "pinned", (sc) => filedExamples(sc).length);
+      const body =
+        items.length === 0
+          ? "No scope in the working set bundles worked programs."
+          : `${readExample(items[0].name)}\n\n${items.map((e) => `- ${e.name}\n  ${e.detail}`).join("\n")}`;
+      const notes = trailingNotes({ read: wanted, found: { shown: items.length, others } });
       return {
-        content: [{ type: "text", text: `# Roc Language Reference\n\n${text}` }],
+        content: [{ type: "text", text: `# Examples\n\n${body}${notes}` }],
       };
     }
   );
@@ -2290,59 +2229,6 @@ export function createServer(config: ServerConfig): McpServer {
   );
 
   // -----------------------------------------------------------------------------
-  // Language reference tools
-  // -----------------------------------------------------------------------------
-
-
-  server.registerTool(
-    "get_roc_langref",
-    {
-      annotations: READ_ONLY,
-      title: "Get Roc Language Reference",
-      description:
-        "Fetch a page of the upstream language reference, or one section of it. This is roc-lang/roc's own docs/langref, so it is the authoritative wording where it has coverage. Sections upstream left as TODO are written here and marked inline.",
-      inputSchema: z.object({
-        page: z.string().describe("Page name, e.g. 'static-dispatch', 'numbers', 'modules'."),
-        section: z
-          .string()
-          .optional()
-          .describe("Section slug within the page, e.g. 'ranges'. Omit for the whole page."),
-      }),
-    },
-    async ({ page, section }) => {
-      const pg = findLangrefPage(page);
-      if (!pg) {
-        const names = [...getLangref().keys()].join(", ");
-        return {
-          content: [{ type: "text", text: `Unknown langref page: ${page}. Available: ${names}` }],
-          isError: true,
-        };
-      }
-
-      const text = renderLangref(pg, section);
-      if (text === null) {
-        const slugs = pg.sections.map((sec) => sec.slug).join(", ");
-        return {
-          content: [
-            { type: "text", text: `Unknown section '${section}' in ${page}. Sections: ${slugs}` },
-          ],
-          isError: true,
-        };
-      }
-
-      // Without this note, a placeholder page reads as "Roc has no such feature".
-      const note =
-        !section && pg.isTodo
-          ? `\n\n(Upstream has not written this page yet. Use \`get_roc_syntax(topic:)\` or \`search\` for a working example.)`
-          : "";
-
-      return {
-        content: [{ type: "text", text: text + note }],
-      };
-    }
-  );
-
-  // -----------------------------------------------------------------------------
   // Unified search
   // -----------------------------------------------------------------------------
 
@@ -2387,10 +2273,7 @@ export function createServer(config: ServerConfig): McpServer {
     return `## ${corpus}/${ex.name}\n\n${ex.title}\n\n\`\`\`roc\n${fs.readFileSync(ex.path, "utf-8").trimEnd()}\n\`\`\``;
   }
 
-  /**
-   * Everything one scope can answer with. `langref` belongs to `language` alone:
-   * it is upstream's prose about the language, not about any platform.
-   */
+  /** Everything one scope can answer with. */
   function collectHits(q: string, scope: ScopeName, explicit?: ScopeName): SearchHit[] {
     const hits: SearchHit[] = [];
 
@@ -2426,45 +2309,13 @@ export function createServer(config: ServerConfig): McpServer {
       }
     }
 
-    if (scope === "language") {
-      for (const page of getLangref().values()) {
-        const pageScore = scoreLangref(q, page, null);
-        if (pageScore > 0) {
-          hits.push({
-            kind: "langref",
-            scope,
-            id: page.name,
-            title: page.title,
-            snippet: page.isTodo
-              ? "(not yet written upstream)"
-              : (page.intro.split("\n").find((l) => l.trim() !== "") ?? page.title),
-            score: pageScore,
-          });
-        }
-        for (const section of page.sections) {
-          const score = scoreLangref(q, page, section);
-          if (score > 0) {
-            const firstLine = section.body.split("\n").find((l) => l.trim() !== "") ?? "";
-            hits.push({
-              kind: "langref",
-              scope,
-              id: `${page.name}#${section.slug}`,
-              title: `${page.title}: ${section.title}`,
-              snippet: section.isTodo ? "(not yet written upstream)" : firstLine,
-              score,
-            });
-          }
-        }
-      }
-    }
-
     return hits;
   }
 
   interface SearchHit {
-    kind: "topic" | "api" | "langref" | "example";
+    kind: "topic" | "api" | "example";
     scope: ScopeName;
-    id: string;            // topic name, item fullName, langref page[#slug] or example address
+    id: string;            // topic name, item fullName or example address
     title: string;
     snippet: string;
     score: number;
@@ -2516,41 +2367,13 @@ export function createServer(config: ServerConfig): McpServer {
     return s;
   }
 
-  // Pages and sections that only say TODO must never outrank real documentation.
-  function scoreLangref(
-    query: string,
-    page: LangrefPage,
-    section: { slug: string; title: string; body: string; isTodo: boolean } | null
-  ): number {
-    const q = query.toLowerCase();
-    let s = 0;
-
-    if (section) {
-      const slug = section.slug.toLowerCase();
-      const title = section.title.toLowerCase().replace(/`/g, "");
-      if (slug === q || title === q) s += 90;
-      else if (slug.includes(q) || title.includes(q)) s += 35;
-      else if (q.includes(slug) && slug.length > 2) s += 15;
-      if (section.body.toLowerCase().includes(q)) s += 6;
-      if (s > 0 && section.isTodo) s = Math.min(s, 3);
-    } else {
-      const name = page.name.toLowerCase();
-      if (name === q) s += 70;
-      else if (name.includes(q) || q.includes(name)) s += 20;
-      if (page.intro.toLowerCase().includes(q)) s += 5;
-      if (s > 0 && page.isTodo) s = Math.min(s, 3);
-    }
-
-    return s;
-  }
-
   server.registerTool(
     "search",
     {
       annotations: READ_ONLY_FETCHES,
       title: "Search Roc syntax topics and builtins",
       description:
-        "Ranked free-text search across syntax topics, builtins, platform APIs, and the upstream language reference. Use when unsure where the answer lives.",
+        "Ranked free-text search across syntax topics, builtins, platform APIs, and worked programs. Use when unsure where the answer lives.",
       inputSchema: z.object({
         query: z.string().describe("Free-text query, e.g. 'parse integer', 'while loop', 'concat'."),
         scope: scopeArg(SCOPES, "Search one corpus only. Omit for the working set.", { hint: true }),
@@ -2797,7 +2620,7 @@ export function createServer(config: ServerConfig): McpServer {
       "",
       "- `get_roc_module`: every method in one module, with signatures and docs.",
       "- `search_symbols`: one method by name (`concat`, `Str.concat`), a Hoogle-style search by type (`-> Bool`), or both (`ceil : -> Dec`).",
-      "- `search`: free-text across builtins, topics, and the langref.",
+      "- `search`: free-text across builtins, topics, and worked programs.",
       "",
       "| Module | Methods |",
       "| --- | --- |",
@@ -3026,48 +2849,6 @@ export function createServer(config: ServerConfig): McpServer {
         contents: [
           { uri: uri.href, mimeType: "text/markdown", text: fs.readFileSync(doc.path, "utf-8") },
         ],
-      };
-    }
-  );
-
-  // Language reference pages exposed via a URI template.
-  server.registerResource(
-    "roc-langref",
-    new ResourceTemplate("roc-syntax://langref/{name}", {
-      list: async () => ({
-        resources: [...getLangref().values()].map((pg) => ({
-          uri: `roc-syntax://langref/${pg.name}`,
-          name: `roc-langref-${pg.name}`,
-          title: pg.title,
-          description:
-            pg.intro.split("\n").find((l) => l.trim() !== "") ??
-            `${pg.sections.length} sections`,
-          mimeType: "text/markdown",
-        })),
-      }),
-      complete: {
-        name: async (value) =>
-          [...getLangref().keys()].filter((n) =>
-            n.toLowerCase().startsWith(value.toLowerCase())
-          ),
-      },
-    }),
-    {
-      title: "Roc Language Reference Page",
-      description:
-        "A page of roc-lang/roc's own docs/langref, with the sections upstream left as TODO written here and marked inline. Use roc-syntax://langref/<name>, e.g. roc-syntax://langref/static-dispatch.",
-      mimeType: "text/markdown",
-    },
-    async (uri, { name }) => {
-      const pageName = Array.isArray(name) ? name[0] : name;
-      const pg = findLangrefPage(pageName);
-      if (!pg) {
-        throw new Error(
-          `Unknown langref page: ${pageName}. Call list_roc_index with kind='langref' to see available pages.`
-        );
-      }
-      return {
-        contents: [{ uri: uri.href, mimeType: "text/markdown", text: pg.raw }],
       };
     }
   );

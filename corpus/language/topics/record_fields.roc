@@ -40,6 +40,54 @@ full_config = ServerConfig.{ host: "example.com", port: 80, timeout_ms: 5000 }
 
 expect full_config.?timeout_ms == Ok(5000)
 
+# @rejects default not allowed in structural record
+# Opts : { retries : U8 ?? 3 }
+
+# `T.{}` omits every defaulted field. A default can be a block or a call of a
+# pure function. Each construction that omits the field evaluates it.
+kibibytes = |n| n * 1024
+
+CacheOptions := {
+	retries : U8 ?? 3,
+	capacity : U64 ?? {
+		pages = 8
+		kibibytes(pages)
+	},
+}
+
+expect CacheOptions.{}.capacity == 8192
+expect CacheOptions.{ retries: 9 }.retries == 9
+
+# A default cannot run an effect, cannot fix a type parameter of the nominal
+# type, and cannot need the default that it defines.
+#
+# @rejects effectful default value
+# now! : {} => U64
+# now! = |_| 1
+# Stamped := { at : U64 ?? now!({}) }
+#
+# @rejects default constrains a type parameter
+# Holder(a) := { item : a ?? 0 }
+#
+# @rejects default value cycle
+# Looped := { size : U64 ?? Looped.{}.size }
+
+# An optional field is also allowed on a structural record type. `??` gives a
+# fallback for the `Try` that `.?` returns. After an optional field, `.?`
+# continues through required fields, and the whole access is one `Try`.
+Attributes : { count : U64, label ?: Str }
+
+unlabeled : Attributes
+unlabeled = { count: 3 }
+
+expect (unlabeled.?label ?? "untitled") == "untitled"
+
+city : { address ?: { city : Str } } -> Try(Str, [MissingField])
+city = |person| person.?address.city
+
+expect city({ address: { city: "Oslo" } }) == Ok("Oslo")
+expect city({}) == Err(MissingField)
+
 # `..rest` in a record pattern binds every field you did not name as a new
 # record, so it is also a way to remove a field: `rest` is `person` without
 # `email`.

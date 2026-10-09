@@ -12,7 +12,7 @@ replaced `Result`, and `value.method()` static dispatch is the normal style.
 | `snake_case` | values, fields, type variables |
 | `UpperCamelCase` | types, tags, modules |
 | `name!` | effectful. Its type uses `=>` |
-| `$name` | a `var`, the only rebindable binding |
+| `$name` | a `var`, the only reassignable binding |
 | `_name` | deliberately unused |
 | `#` / `##` | comment / doc comment |
 | tabs | what `roc fmt` indents with |
@@ -77,7 +77,8 @@ aborts. `expect cond` is a test assertion, at top level or inside a body.
 | `== !=` | `is_eq` | `!=` is `is_eq` then `not` |
 | `< <= > >=` | `is_lt is_lte is_gt is_gte` | |
 | `and` `or` | short-circuiting | no `&&` or `\|\|`, since `\|` opens a lambda |
-| `!x` `-x` | `not` `negate` | `!` is prefix-not and suffix-effectful |
+| `-x` | `negate` | |
+| `!x` | `Bool.not` | only on a `Bool`, even when a type has `not`. A suffix `!` marks an effect |
 | `x?` | unwrap `Ok`, early-return the `Err` | `x ? Tag` or `x ? \|e\| ...` maps the err first |
 | `x ?? d` | `d` when `x` is an `Err` | |
 | `a..<b` `a..=b` | `range_exclusive_to` `range_inclusive_to` | exclusive, inclusive |
@@ -115,7 +116,7 @@ import "data.json" as data : Str  # embed a file's contents at compile time
 
 A capitalized file (`Url.roc`) is a type module. It must define `Url :=` or
 `Url ::` at the top level, and that one type is what it exposes. `package [...]
-{ ... }` and `platform [...]` head the other module kinds. A headerless file
+{ ... }` and `platform "name"` head the other module kinds. A headerless file
 runs directly under `roc file.roc`, where `echo!` is available without import.
 
 ## Where LLMs go wrong

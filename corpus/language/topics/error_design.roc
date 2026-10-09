@@ -147,10 +147,13 @@ map_err_chain = |strs|
 #   modules needs a `map_err` that only converts. Declare a type only to close
 #   the union at an FFI boundary, or to attach methods to it. See the `idioms`
 #   topic.
+#   If you do declare an error type, nest it in the type whose methods return
+#   it: `Url.ParseErr`, `CString.NulError`, not a top-level `ParseErr`. The
+#   qualified name tells the reader which operation failed. See `modules`.
 #   Do not write `..` in a return type: it is already open, and callers compose.
 #   Close the union at the FFI boundary (`host_*!` declarations). The Roc
 #   compiler extends open unions with caller context, which would change
-#   the memory layout the host writes to. See the `platforms` topic.
+#   the memory layout the host writes to. See the `platform_abi` topic.
 #   Use a record payload as soon as an error needs more than ~1 field.
 #   Wrap shared error types (`IOErr`) per subsystem so callers can match
 #   either specifically or generically.

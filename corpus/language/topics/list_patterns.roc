@@ -17,6 +17,15 @@ match_list_patterns = |lst| {
 	}
 }
 
+# `..` matches zero or more elements. A list pattern can contain it only once.
+#
+# @rejects invalid pattern
+# two_rests : List(U64) -> U64
+# two_rests = |lst| match lst {
+# 	[a, .., b, ..] => a + b
+# 	_ => 0
+# }
+
 # Nested list patterns:
 # match list_of_lists {
 #     [first_list, ["bird", ..], ..] => ...

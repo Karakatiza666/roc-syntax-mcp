@@ -61,7 +61,7 @@ expect load_config("localhost", "") == Err(Empty)
 #   A type alias (`:`) when one long union repeats across many signatures. An
 #   alias is structural, so it keeps every property above. It is a shorthand.
 #   A nominal type (`:=`) at an FFI boundary, where the union must be closed so
-#   that its memory layout is fixed. See the `platforms` topic.
+#   that its memory layout is fixed. See the `platform_abi` topic.
 #   A nominal type when the error carries methods, such as a custom `to_str`.
 #
 # An alias can stay open, so it still composes, but it must name the extension

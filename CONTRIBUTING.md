@@ -23,7 +23,7 @@ to each commit on your branch that does not have it.
 | Path | Is |
 |---|---|
 | `src/`, `bin/`, `scripts/`, `corpus/`, `docs/` | The server, the corpora it bundles, and its design notes. One npm package, the one the README is about |
-| `corpus/language/` | The language and builtin scopes: `Builtin.roc`, `langref/`, `topics/`, `overview/` |
+| `corpus/language/` | The language and builtin scopes: `Builtin.roc`, `topics/`, `overview/` and `langref/`. The server does not serve `langref/`. The topics carry its ideas, and `langref-map.txt` names the topics that carry each section |
 | `corpus/platforms/` | One directory per bundled platform: `plugin.json`, `UPSTREAM`, the release's examples, and `index.json` |
 | `corpus/packages/` | One directory per bundled package: `plugin.json`, `UPSTREAM`, `index.json`, and for roc-parser and roc-random an `overview.md`, `topics/` and `verify/`. roc-parser also has the release's `examples/` and the `patches/` that repin them |
 | `index.json` | The parsed signatures of the release a manifest names, written by `npm run build:index`. No release is vendored as source |
@@ -64,7 +64,10 @@ and installers do not run the hook by default.
 
 `check:roc` covers `corpus/language/examples/all_roc_syntax.roc` and the
 language topic files under `corpus/language/topics/`. Topic files are
-fragments, so the script appends a minimal `main!` to each one. This check
+fragments, so `scripts/check-topics.roc` appends a minimal `main!` to each one,
+and runs `roc check` and `roc test` on it. A topic states that some code is an
+error or a warning with a `# @rejects <title>` or `# @warns <title>` comment
+block, and the script compiles that block and checks the title. This check
 found three errors that hand review did not find. Two of them are examples
 from upstream's own langref that do not compile (see the notes in `numbers.roc`
 and `app_header.roc`).
@@ -111,10 +114,16 @@ ROC=https://raw.githubusercontent.com/roc-lang/roc/main
 curl -fsSL $ROC/test/echo/all_syntax_test.roc -o corpus/language/examples/all_roc_syntax.roc
 curl -fsSL $ROC/src/build/roc/Builtin.roc     -o corpus/language/Builtin.roc
 
-# The language reference is a directory; clone or sparse-checkout it.
+# The language reference is a directory, so clone it. Before the copy, list
+# the sections that changed since the pinned commit, and the topics that carry them.
 git clone --depth 1 https://github.com/roc-lang/roc /tmp/roc
+roc scripts/langref-diff.roc -- /tmp/roc > /tmp/langref-diff.md
 cp /tmp/roc/docs/langref/*.md corpus/language/langref/
 ```
+
+Work through `/tmp/langref-diff.md`. For each section, update the topics that it
+names, and add, remove or rename the line of the section in
+`corpus/language/langref-map.txt`.
 
 Then write the new commit into `corpus/language/UPSTREAM` and run `npm test`.
 The suite tests the `Builtin.roc` parser against known record-field leaks and
@@ -127,9 +136,9 @@ upstream rename fails the suite, and no hint disappears without a failure.
 
 | Tree | Is | Checked by |
 |---|---|---|
-| `corpus/language/topics/` | Hand-curated snippets, one file per topic | Hand review against `corpus/language/langref/` and the reference file when upstream syntax changes |
+| `corpus/language/topics/` | Hand-curated snippets, one file per topic. They carry every non-trivial idea of `corpus/language/langref/` | `check:roc` compiles and tests each topic and checks its `@rejects` and `@warns` claims |
+| `corpus/language/langref-map.txt` | One line per langref section: the topics that carry its ideas, or `skip: <reason>` | `npm test` and `check:roc` fail when a section has no line, or a line names no section or no language topic |
 | `corpus/language/overview/` | The first page that a client reads, so a stale page here does the most harm | `src/overview.test.ts`. It checks that the builtins page quotes no counts, that every builtin the pages name exists, and that both pages stay in a token budget |
-| `corpus/language/langref/local/` | Text for the sections that upstream ships as a bare `TODO`, under upstream's own headings. `src/langref.ts` inserts it into the page text at load. Empty when upstream ships no stub | `npm test` names each section that upstream has since written. Delete the local text for that section. The mirror stays byte-for-byte upstream, so the next refresh can diff it |
 | `src/builtin_hints.ts` | One-line hints for builtins whose name and signature mislead. Each hint comes from the docstring of that builtin or from `corpus/language/langref/` | `npm test` asserts that every key names a real builtin |
 
 The hints appear only in the `get_roc_module` signature list, so upstream's

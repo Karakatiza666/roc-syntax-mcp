@@ -55,7 +55,6 @@ const RUNTIME_READS = [
   "src/server.ts",
   "corpus/language/Builtin.roc",
   "corpus/language/examples/all_roc_syntax.roc",
-  "corpus/language/langref",
   "corpus/platforms/basic-cli/plugin.json",
   "scripts/check-platform-examples.sh",
   "scripts/check-roc-check.mjs",

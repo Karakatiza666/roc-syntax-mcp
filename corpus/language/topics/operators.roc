@@ -34,7 +34,11 @@ boolean_operators = |a, b| {
 }
 
 # `and` and `or` short-circuit. `a() or b()` is `if a() True else b()`, and
-# `a() and b()` is `if a() b() else False`.
+# `a() and b()` is `if a() b() else False`. They are keywords, not methods, so
+# no type can overload them, and both operands must be `Bool`.
+# @rejects type mismatch
+# both_set : I64, I64 -> Bool
+# both_set = |a, b| a and b
 #
 # Roc has no `&&` or `||`. `|` introduces a function, so `||` already means a
 # function that takes no arguments.
@@ -49,13 +53,34 @@ boolean_operators = |a, b| {
 #   //   div_trunc_by         >    is_gt
 #   %    rem_by               >=   is_gte
 #   ..<  range_exclusive_to   -x   negate
-#   ..=  range_inclusive_to   !x   not
+#   ..=  range_inclusive_to
 #
 # Arithmetic dispatches on the left operand and returns its type. The right
 # operand may differ if the method signature allows it. Comparison and range
 # operators require both operands to have the same type.
 # Defining these methods is how a custom type opts into the operators. See the
 # `static_dispatch` topic.
+#
+# `-x` calls `x.negate()`, and `negate` must return the operand's type.
+# @rejects type mismatch
+# Temp := { c : I64 }.{
+# 	negate : Temp -> I64
+# 	negate = |t| -t.c
+# }
+# neg_temp : Temp -> I64
+# neg_temp = |t| -t
+#
+# `!x` takes only a `Bool`. A custom `not` method does not make `!` work.
+# @rejects type mismatch
+# Switch := [On, Off].{
+# 	not : Switch -> Switch
+# 	not = |s| match s {
+# 		On => Off
+# 		Off => On
+# 	}
+# }
+# flip : Switch -> Switch
+# flip = |s| !s
 
 # `..<` and `..=` build a reusable `Range(num)`. `..<` excludes the upper bound,
 # `..=` includes it. `for` loops call the range's `iter` method automatically.
@@ -72,15 +97,8 @@ sum_to = |n| {
 
 # Range operators bind more loosely than the other binary operators, so
 # `1..<n + 1` parses as `1..<(n + 1)`. They cannot be chained: `1..<5..<10`
-# is an error.
-#
-# A range starts with a step of 1. `range.step_by(s)` replaces that absolute
-# step rather than composing with it, so calling it twice is not multiplicative.
-# `range.iter_rev()` walks the same members backwards, and is available for
-# integer and `Dec` ranges but deliberately not for `F32` or `F64`, because
-# repeated float addition is not exactly reversible.
-stepped : List(I64)
-stepped = (5.I64..=12).step_by(2).iter_rev().collect()
+# is a "chained range" error. See the `ranges` topic for `step_by`, `iter_rev`
+# and custom ranges.
 
 # `??` supplies a default when the left side evaluates to `Err`. It desugars to
 # a `match` returning the default on `Err(_)`.
@@ -92,8 +110,9 @@ parse_or_default = |text| I64.from_str(text) ?? 0
 # See the `try_operator` topic.
 
 # `list[i]` is planned (it will desugar to `list.subscript(i)`) but does not
-# parse yet. Call the `subscript` methods, which return a `Try` rather than
-# crashing (`Set.subscript` returns a `Bool`):
+# parse yet. Any type that defines `subscript` will get the syntax. Call the
+# `subscript` methods, which return a `Try` rather than crashing
+# (`Set.subscript` returns a `Bool`):
 #   List.subscript : List(item), U64 -> Try(item, [OutOfBounds])
 #   Dict.subscript : Dict(k, v), k -> Try(v, [KeyNotFound])
 third : List(I64) -> I64

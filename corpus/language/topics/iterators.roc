@@ -69,6 +69,25 @@ even_doubles = |items|
 largest : List(I64) -> I64
 largest = |items| items.iter().max() ?? 0
 
+expect (1..=100).iter().sum() == 5050
+
+# `collect` builds any type that has `from_iter`, such as `List`, `Set` or
+# `Dict`. Type inference picks the target. `List.from_iter(it)` names it.
+unique : Set(U64)
+unique = [3, 1, 3].iter().collect()
+
+expect unique == Set.from_list([1, 3])
+
+# An `Iter` is lazy. `map` runs only for the items that something pulls, each
+# item goes through the whole chain before the next one, and only `collect`
+# builds a collection. So an iterator can be infinite if its consumer stops.
+expect (0..<1_000_000).iter().map(|n| n * 2).take_first(2).collect() == [0, 2]
+
+powers_of_two : Iter(U64)
+powers_of_two = Iter.custom(1, Unknown, |n| Ok((n, n * 2)))
+
+expect powers_of_two.take_first(5).collect() == [1, 2, 4, 8, 16]
+
 # `size_hint` reports a length when one is known without walking the iterator.
 #   Iter.size_hint : Iter(item) -> [Known(U64), Unknown]
 
@@ -81,6 +100,20 @@ countdown : U64 -> Iter(U64)
 countdown = |from|
 	Iter.custom(from, Known(from), |n| if n == 0 Err(NoMore) else Ok((n, n - 1)))
 
+# An iterator is a value. `next` does not change it, and returns `rest` to
+# continue with.
+first_item : Iter(U64) -> U64
+first_item = |iterator| match iterator.next() {
+	One({ item, rest: _ }) => item
+	Skip(_) => 0
+	Done => 0
+}
+
+expect {
+	numbers = [7, 8].iter()
+	first_item(numbers) == 7 and first_item(numbers) == 7
+}
+
 # A user-defined collection opts into `for ... in` by returning an `Iter` built
 # from the APIs above.
 Rows := { items : List(I64) }.{
@@ -88,15 +121,41 @@ Rows := { items : List(I64) }.{
 	iter = |rows| rows.items.iter()
 }
 
+# The functions passed to `Iter` methods are pure.
+# @rejects type mismatch
+# loud! : List(Str) => List(Str)
+# loud! = |lines| lines.iter().map(|line| {
+# 	echo!(line)
+# 	line
+# }).collect()
+#
 # `Stream(item)` is the effectful counterpart. Its step is a `=>` function, so
 # advancing it can perform effects.
+#   Stream.custom    : state, [Known(U64), Unknown],
+#                      (state => Try((item, state), [NoMore])) -> Stream(item)
 #   Stream.from_iter : Iter(item) -> Stream(item)
 #   Stream.map       : Stream(a), (a => b) -> Stream(b)
 #   Stream.map!      : Stream(a), (a => b) => Stream(b)
 #   Stream.next!     : Stream(item) => [One({ item, rest }), Skip({ rest }), Done]
 #   Stream.collect!  : Stream(item) => List(item)
+#   Stream.fold!     : Stream(a), acc, (acc, a => acc) => acc
+#   Stream.for_each! : Stream(a), (a => {}) => {}
 #   Stream.size_hint : Stream(item) -> [Known(U64), Unknown]
 #
+# A stream is lazy too. `map`, `keep_if`, `drop_if`, `with_index`,
+# `take_first` and `drop_first` pull nothing. A consumer (`for!`, `fold!`,
+# `for_each!`, `collect!`) pulls the items and runs the effects, so it works
+# only in an effectful function. Building a stream is pure.
+ticks : U64 -> Stream(U64)
+ticks = |count|
+	Stream.custom(0, Known(count), |n| {
+		echo!("tick ${n.to_str()}\n")
+		if n < count Ok((n, n + 1)) else Err(NoMore)
+	})
+
+tick_total! : U64 => U64
+tick_total! = |count| ticks(count).map(|n| n * 10).fold!(0, |sum, n| sum + n)
+
 # `Iter.stream` lifts a pure iterator into a `Stream`. The lifted steps do no
 # effect themselves, but the stream can then be combined with effectful
 # operations, and it carries the source's length forward so `collect!` can
@@ -109,13 +168,30 @@ report_all! = |lines|
 		.map!(|line| echo!("${line}\n"))
 		.collect!()
 
-# `Stream(item)` is the effectful twin: each item comes from running an effect,
-# like reading a line. Loop over one with `for!`, which calls `stream` on the
-# value, so it also takes an `Iter`. A plain `for` over a `Stream` is a
-# "missing method" error. `for!` only works inside an effectful function.
+# Loop over a `Stream` with `for!`, which calls `stream` on the value, so it
+# also takes an `Iter`. A plain `for` takes only an `Iter`, but its body can
+# call effectful functions.
 print_all! : Stream(Str) => {}
 print_all! = |lines| {
 	for! line in lines {
 		echo!(line)
 	}
 }
+
+# @rejects missing method
+# print_plain! : Stream(Str) => {}
+# print_plain! = |lines| {
+# 	for line in lines {
+# 		echo!(line)
+# 	}
+# }
+#
+# `for!` works only inside an effectful function.
+# @rejects type mismatch
+# print_pure : Stream(Str) -> {}
+# print_pure = |lines| {
+# 	for! line in lines {
+# 		echo!(line)
+# 	}
+# }
+

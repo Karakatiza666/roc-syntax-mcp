@@ -5,6 +5,7 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import * as fs from "node:fs";
 import * as path from "node:path";
 import { CORE, ROOT, type ScopeName, type ScopeTopic } from "./scopes.ts";
 import { matchTopic, mergeTopics, topicPath, topicsFor, type TopicMeta } from "./topics.ts";
@@ -114,4 +115,38 @@ test("the topic accounting for more of the question wins, not the first declared
 test("a cli program question goes to basic-cli, not the webserver", () => {
   assert.equal(matchTopic("write a cli program", undefined, TOPICS), "cli_app");
   assert.equal(matchTopic("how do I write a cli tool", undefined, TOPICS), "cli_app");
+});
+
+// scripts/check-topics.roc checks the `@rejects` and `@warns` claims of the
+// language topics only. A marker in a platform or plugin topic would be served
+// as a checked claim that nothing checks.
+test("only language topics carry @rejects and @warns claims", () => {
+  const dirs = [
+    ...fs.readdirSync(path.join(ROOT, "corpus", "platforms")).map((d) => path.join(ROOT, "corpus", "platforms", d, "topics")),
+    ...fs.readdirSync(path.join(ROOT, "plugins")).map((d) => path.join(ROOT, "plugins", d, "topics")),
+  ].filter((dir) => fs.existsSync(dir));
+  const marked = dirs.flatMap((dir) =>
+    fs
+      .readdirSync(dir)
+      .filter((f) => f.endsWith(".roc") && /^# @(rejects|warns) /m.test(fs.readFileSync(path.join(dir, f), "utf-8")))
+      .map((f) => path.relative(ROOT, path.join(dir, f)))
+  );
+  assert.deepEqual(marked, []);
+});
+
+// `get_roc_syntax(topic:)` returns a topic whole, so every read pays for all of
+// it. `platforms` gets more room, because it shows the platform header field by
+// field, and `platform_abi` already holds what could move out of it.
+const TOPIC_TOKENS = 3500;
+const TOPIC_TOKENS_FOR: Record<string, number> = { platforms: 4000 };
+
+test("every language topic stays inside its token budget", () => {
+  const dir = path.join(ROOT, "corpus", "language", "topics");
+  const over = fs
+    .readdirSync(dir)
+    .filter((f) => f.endsWith(".roc"))
+    .map((f) => ({ name: f.replace(/\.roc$/, ""), tokens: Math.ceil(fs.readFileSync(path.join(dir, f), "utf-8").length / 3.5) }))
+    .filter((t) => t.tokens > (TOPIC_TOKENS_FOR[t.name] ?? TOPIC_TOKENS))
+    .map((t) => `${t.name}: ${t.tokens} tokens`);
+  assert.deepEqual(over, []);
 });

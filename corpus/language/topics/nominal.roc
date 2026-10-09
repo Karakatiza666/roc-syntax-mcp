@@ -7,6 +7,12 @@
 #   `:=`  nominal type, backing representation visible
 #   `::`  opaque nominal type, backing hidden outside the defining module
 #   `:`   type alias, transparent and interchangeable with its definition
+#
+# @rejects type mismatch
+# UserId := U64
+# OrderId := U64
+# to_order : UserId -> OrderId
+# to_order = |id| id
 
 # A nominal tag union with a custom `is_eq` method.
 # Defining `is_eq` lets the type be compared with `==`.
@@ -25,6 +31,52 @@ Animal := [Dog(Str), Cat(Str)].{
 #   cat : Animal
 #   cat = Cat("Whiskers")
 #   dog == cat   # calls Animal.is_eq(dog, cat)
+
+# Explicit construction names the type before the backing value:
+#   `Distance.(26)`         any backing value
+#   `Pair.(1, "two")`       tuple backing
+#   `Point.{ x: 1, y: 2 }`  record backing
+#   `Shape.Circle(2)`       tag backing, see the `tag_unions` topic
+# The same forms destructure a nominal value in a pattern.
+Distance := U64.{
+	is_eq : _
+}
+
+Pair := (U64, Str)
+
+# The methods block can also hold constants, such as `Point.origin`.
+Point := { x : F64, y : F64 }.{
+	origin : Point
+	origin = { x: 0, y: 0 }
+	is_eq : _
+}
+
+to_distance : U64 -> Distance
+to_distance = |n| Distance.(n)
+
+meters : Distance -> U64
+meters = |Distance.(m)| m
+
+pair_num : Pair -> U64
+pair_num = |Pair.((n, _))| n
+
+expect meters(to_distance(5)) == 5
+expect pair_num(Pair.(1, "two")) == 1
+expect Point.origin == Point.{ x: 0, y: 0 }
+
+# A record or tag literal becomes the nominal type where the code expects that
+# type, as `origin` above shows. A number or string literal does not, unless the
+# type defines `from_numeral` or `from_quote` (see `derived_methods`). A value
+# that already has a concrete type, such as the `U64` argument of
+# `to_distance`, also needs explicit construction.
+#
+# @rejects type mismatch
+# zero : Distance
+# zero = 0
+#
+# @rejects type mismatch
+# to_distance_bare : U64 -> Distance
+# to_distance_bare = |n| n
 
 # Bool itself is a nominal type defined in the builtins:
 # Bool := [False, True].{ ... }

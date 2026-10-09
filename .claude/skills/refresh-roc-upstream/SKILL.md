@@ -33,7 +33,7 @@ In this skill, a gate is one of the repo's named check scripts: `bun run check`
 | `corpus/language/Builtin.roc` | Too large to serve. The server never serves it whole, and parses it at startup. It has no `index.json` (see Step 6) |
 | `src/builtin_parser.ts` | A heuristic line parser, and the most fragile code here. See `reference/parser-traps.md` |
 | `src/builtin_hints.ts` | Ours, not upstream's. One-line hints for builtins whose names mislead |
-| `src/langref.ts` | Splits upstream `.md` pages into addressable sections |
+| `src/langref.ts` | Splits upstream `.md` pages into sections, for the test of `corpus/language/langref-map.txt`. `scripts/langref-diff.roc` splits them the same way |
 | `src/overview.ts` | The two-page overview that `get_roc_syntax()` serves, under a strict token budget |
 | `corpus/language/topics/*.roc` | Hand-written fragments. This is the derived content with the highest risk |
 | `scripts/check-roc.sh` | Type-checks every bundled `.roc` against a real compiler |
@@ -156,23 +156,35 @@ SCRATCH=$(mktemp -d)
 git clone --depth 1 https://github.com/roc-lang/roc "$SCRATCH/roc"
 git -C "$SCRATCH/roc" rev-parse HEAD      # this is the new pin
 
+# Before the copy: every langref section that changed since the pin, with the
+# topics that carry it. The script reads the pin from corpus/language/UPSTREAM.
+roc scripts/langref-diff.roc -- "$SCRATCH/roc" > "$SCRATCH/langref-diff.md"
+
 cp "$SCRATCH/roc/test/echo/all_syntax_test.roc" corpus/language/examples/all_roc_syntax.roc
 cp "$SCRATCH/roc/src/build/roc/Builtin.roc"     corpus/language/Builtin.roc
 cp "$SCRATCH/roc"/docs/langref/*.md             corpus/language/langref/
 git diff --stat
 ```
 
-Read the `git diff` on `all_roc_syntax.roc` and `corpus/language/langref/` line
-by line. It is the complete list of language changes that you must propagate,
-and it costs much less to read than to find again. Record each langref page that
-changed from a stub to real content, and each new `corpus/language/langref/*.md`
-file.
+Read the `git diff` on `all_roc_syntax.roc` line by line, and read
+`$SCRATCH/langref-diff.md` whole. Together they are the complete list of
+language changes that you must propagate, and they cost much less to read than
+to find again.
 
-The `cp` is safe on the full directory. The server answers the sections that
-upstream ships as `TODO` from `corpus/language/langref/local/`, and the copy does
-not touch that directory. Act only on a stub that upstream has written since the
-last refresh. `npm test` names that section as one to delete from the overlay.
-Upstream prose always wins.
+The server does not serve `corpus/language/langref/`. The topics carry every
+non-trivial idea of it, and `corpus/language/langref-map.txt` names the topics
+that carry each section. So a langref change reaches an agent only through a
+topic. For each section in the report:
+
+| Report says | Do |
+|---|---|
+| Changed | Read the prose diff, and update the topics that the report names. A new rule goes in as an `expect`, a definition, a comment, or a `# @rejects` / `# @warns` block |
+| Added | Write its ideas into a topic, or a new topic, and add its line to the map. A section with no rule for code gets `skip: <reason>` |
+| Removed | Remove what only that section said from the topics, and remove its line |
+| Renamed | Rename its key in the map |
+
+`npm test` and `check:roc` fail until the map has exactly one line for each
+section of the new pages.
 
 ## Step 3: settle the platform release
 

@@ -2,16 +2,25 @@
 #
 # `import` may appear only at the top level of a module, and it imports types:
 # each type module exposes exactly one type. It cannot be used with other
-# categories of module.
+# categories of module. See the `modules` topic for what a type module exposes.
+#
+# @rejects import must be top level
+# load_color = |x| {
+# 	import Color
+# 	x
+# }
 
-# Plain import.
+# Plain import. `import Color` brings in the type itself, so `Color.all`,
+# `Color.to_str(c)` and `Color -> Str` all name it. No `exposing [Color]` is
+# needed.
 # import Color
 # import pf.Stdout
 # import json.Parser
 
 # `exposing` brings specific items in without a qualifier or module prefix, so
 # `to_str(x)` works instead of `Json.to_str(x)`, and `Request` can be written in
-# an annotation without the `Http.` prefix.
+# an annotation without the `Http.` prefix. The qualified `Json.to_str(x)`
+# works too.
 # import pkg.Json exposing [to_str, decode]
 # import Http exposing [Request, Response]
 
@@ -42,11 +51,21 @@
 #   app [main!] { pf: platform "https://...", json: "https://..." }
 #
 # Directory traversal is private to the package that declares a public module,
-# so consumers use the public name rather than the internal source path.
+# so consumers use the public name rather than the internal source path. See
+# the `packages` topic for how a package exposes a module from a subdirectory.
 
 # Embed a file's contents as a constant at compile time. The path is relative to
-# the importing file.
+# the importing file. The type is `Str` or `List(U8)`. A `Str` import of a file
+# that is not UTF-8 fails with "file not utf-8". The build embeds the content,
+# so the binary runs without the file.
 # import "../../README.md" as readme : Str
+# import "logo.png" as logo : List(U8)
+#
+# @rejects file not found
+# import "missing.txt" as missing : Str
+#
+# @rejects invalid file import type
+# import "missing.txt" as size : U64
 #
 # Once imported, the embedded constant is used like any other Str:
 #   readme.contains("Roc")
@@ -55,15 +74,16 @@
 # type module exposes a single type. Wrap them in a void module instead:
 #
 #   # FooBar.roc
-#   FooBar :: {}.{
+#   FooBar :: [].{
 #       Foo := [BarVal(Bar), Nothing]
 #       Bar := [FooVal(Foo), Nothing]
 #   }
 #
+# `[]` makes FooBar a void module: a namespace with no values (see `modules`).
 # Then `import FooBar` and reference `FooBar.Foo` and `FooBar.Bar`, or
 # `import FooBar.Foo` and `import FooBar.Bar` to get them unqualified.
-# Separate alias modules would also work, but alias modules are not implemented
-# yet.
+# Alias modules (Foo.roc with `Foo : FooBar.Foo`) are planned, so a package
+# could expose Foo and Bar and hide FooBar.
 
 # `echo!` is provided by the built-in Echo platform and needs no import. See
 # the `app_header` topic.

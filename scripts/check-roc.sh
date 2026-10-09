@@ -28,43 +28,26 @@ else
   echo "FAIL  all_roc_syntax.roc"; sed 's/^/      /' <<<"$out"; fail=1
 fi
 
-# Topic files are fragments, so append a minimal `main!` to each one.
-for f in "$ROOT"/corpus/language/topics/*.roc; do
-  b=$(basename "$f" .roc)
-  { cat "$f"; printf '\nmain! = |_args| Ok({})\n'; } > "$WORK/$b.roc"
-  out=$("$ROC" check --no-color "$WORK/$b.roc" 2>&1)
-  if grep -qE '^No errors found' <<<"$out"; then
-    echo "ok    $b"
+# The repo's own Roc scripts must type-check and pass their `expect`s before
+# one of them checks the topics.
+for f in "$ROOT"/scripts/*.roc; do
+  b=$(basename "$f")
+  out=$("$ROC" test --no-color "$f" 2>&1)
+  if grep -qE '^All \([0-9]+\) tests passed' <<<"$out"; then
+    echo "ok    scripts/$b"
   else
-    echo "FAIL  $b"; sed 's/^/      /' <<<"$out"; fail=1
+    echo "FAIL  scripts/$b"; sed 's/^/      /' <<<"$out"; fail=1
   fi
 done
 
-# The langref overlay pages fill the sections that upstream left as TODO. This
-# repo wrote their snippets, so this repo keeps them compiling. The awk script
-# puts every ```roc block of a page into one module, as each platform's
-# verify/overview-snippets.roc does for its overview page.
-#
-# The awk script skips a block that starts with a module header. That block is
-# a full module, and its dependencies are not on disk here.
-for f in "$ROOT"/corpus/language/langref/local/*.md; do
-  [ -e "$f" ] || break
-  b=$(basename "$f" .md)
-  awk '
-    /^```roc$/ { inside=1; n=0; next }
-    /^```/     { if (inside && n > 0 && buf[1] !~ /^(app|package|platform|module|hosted) /)
-                   for (i = 1; i <= n; i++) print buf[i]
-                 inside=0; next }
-    inside     { buf[++n]=$0 }
-  ' "$f" > "$WORK/langref_$b.roc"
-  printf '\nmain! = |_args| Ok({})\n' >> "$WORK/langref_$b.roc"
-  out=$("$ROC" check --no-color "$WORK/langref_$b.roc" 2>&1)
-  if grep -qE '^No errors found' <<<"$out"; then
-    echo "ok    langref/local/$b.md"
-  else
-    echo "FAIL  langref/local/$b.md"; sed 's/^/      /' <<<"$out"; fail=1
-  fi
-done
+# check-topics.roc runs `roc check` and `roc test` on every language topic, and
+# checks the `@rejects` and `@warns` claims in its comments.
+mkdir -p "$WORK/topics"
+"$ROC" "$ROOT/scripts/check-topics.roc" -- "$ROC" "$ROOT/corpus/language/topics" "$WORK/topics" || fail=1
+
+# The section map must have one line for each langref section. src/langref.test.ts
+# checks the same map against the parser in src/langref.ts.
+"$ROC" "$ROOT/scripts/langref-diff.roc" -- --check-map || fail=1
 
 if [ "$fail" -eq 0 ]; then echo; echo "all bundled .roc files check clean"; fi
 exit "$fail"

@@ -25,11 +25,10 @@ Builtin.roc  2298 methods, 29 types, 49 modules, 0 duplicates
 # them again on a refresh: overview/ (the compact language and builtins
 # overview), topics/, and src/builtin_hints.ts at the repo root.
 
-# langref/local/ is also ours. It holds our text for the sections that upstream
-# ships as a bare TODO, and src/langref.ts splices them in at load. The pages
-# above stay byte-for-byte upstream. On a refresh, delete each overlay section
-# that upstream has written since. `npm test` names each one. langref/local/ is
-# empty at this commit, because upstream wrote every page it shipped as a stub.
+# langref-map.txt is also ours. The server does not serve langref/. The topics
+# carry its ideas, and the map names the topics that carry each section. On a
+# refresh, run scripts/langref-diff.roc against the new commit before you copy
+# langref/, then update each topic and map line that the report names.
 
 # Two platform corpora have their own upstreams and release cadences. Their
 # provenance is in corpus/platforms/<name>/UPSTREAM. Both re-export the

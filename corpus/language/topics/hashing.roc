@@ -23,7 +23,12 @@ Point := { x : I64, y : I64 }.{
 # `Dict` and `Set` keys must be both hashable and comparable, so a key type
 # needs `to_hash` and `is_eq`. If you define custom equality, keep the hash
 # consistent with it: values that compare equal must feed the same hash data,
-# or lookups will miss.
+# or lookups will miss. A function has neither method, so it cannot be a key.
+# See the `dict_set` topic.
+#
+# A `Dict` built at runtime hashes with a seed that the program chooses at
+# random each time it runs. This protects against hash flooding, an attack
+# that sends many keys with the same hash to slow the program down.
 
 # Most types can let the compiler derive both. See the `derived_methods` topic.
 Model := { value : Str }.{

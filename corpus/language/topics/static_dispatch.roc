@@ -73,5 +73,8 @@ example3 = Counter.new().increment()
 stringify : a -> Str where [a.to_str : a -> Str]
 stringify = |value| value.to_str()
 
+# The `types` topic has the `where` rules, `where` aliases, and `Thing : thing`
+# for a method that takes no value of the type.
+
 # `->fn(arg)` also parses and canonicalizes, but upstream does not document it
 # and does not use it anywhere in its own reference code. Prefer `|>`.

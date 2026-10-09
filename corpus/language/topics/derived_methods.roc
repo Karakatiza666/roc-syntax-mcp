@@ -78,6 +78,24 @@ Color := [Red, Green, Blue].{
 	}
 }
 
+# `Str.inspect` uses `to_inspect` only if its type is exactly `T -> Str`, with
+# each type parameter of `T` free and without a `where` clause. A `to_inspect`
+# of any other type is an ordinary method, and `Str.inspect` ignores it without
+# a warning. Inside `to_inspect`, `Str.inspect` renders a payload of any type.
+Wrap(a) := [W(a)].{
+	to_inspect : Wrap(a) -> Str
+	to_inspect = |Wrap.W(value)| "Wrap(${Str.inspect(value)})"
+}
+
+Fixed(a) := [F(a)].{
+	to_inspect : Fixed(I64) -> Str
+	to_inspect = |_| "custom"
+}
+
+expect Str.inspect(Wrap.W("x")) == "Wrap(\"x\")"
+expect Str.inspect(Fixed.F(1.I64)) == "F(1)"
+expect Fixed.F(1.I64).to_inspect() == "custom"
+
 # Literal conversion hooks. A number literal dispatches `from_numeral` when its
 # target type is a nominal type that defines it. `Numeral` carries the
 # literal's exact digits, so a type can accept the range its representation

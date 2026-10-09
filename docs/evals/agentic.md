@@ -21,6 +21,7 @@ miss. The host-tier footer appears on `search` and `get_roc_module`.
 | pre-merge | 6 | 2723 tok | 6/6 | 15% (4/26) | 6/6 | none shown | none shown | 20.7k ch | 1.8k | $0.27 |
 | merged-syntax | 12 | 2481 tok | 12/12 | 28% (15/54) | 12/12 | none shown | none shown | 20.3k ch | 2.1k | $0.27 |
 | roc-module | 12 | 2515 tok | 12/12 | 19% (10/52) | 12/12 | none shown | 0/1 followed | 22.5k ch | 2.0k | $0.28 |
+| langref-topics | 12 | 2380 tok | 12/12 | 17% (10/60) | 12/12 | 0% (0/1) | 2/2 followed | 24.4k ch | 2.0k | $0.30 |
 
 ## Per run
 
@@ -83,6 +84,18 @@ miss. The host-tier footer appears on `search` and `get_roc_module`.
 | roc-module | builtin-only | builtin | none | get_roc_syntax | 3 | pass | 15.7k ch | $0.21 |
 | roc-module | local-platform | project | none | get_roc_syntax | 2 | pass | 11.7k ch | $0.19 |
 | roc-module | roc-ray-local | project | none | get_roc_syntax | 3 | pass | 22.4k ch | $0.40 |
+| langref-topics | todos-sqlite | basic-webserver | basic-webserver | get_roc_syntax | 8 | pass | 43.8k ch | $0.49 |
+| langref-topics | sse-stream | basic-webserver | basic-webserver | get_roc_syntax | 5 | pass | 23.0k ch | $0.25 |
+| langref-topics | form-post | basic-webserver | basic-webserver | get_roc_syntax | 6 | pass | 22.1k ch | $0.28 |
+| langref-topics | builtin-only | builtin | none | get_roc_syntax | 4 | pass | 17.0k ch | $0.23 |
+| langref-topics | local-platform | project | none | get_roc_syntax | 2 | pass | 11.9k ch | $0.19 |
+| langref-topics | roc-ray-local | project | roc-ray | get_roc_syntax | 5 | pass | 25.8k ch | $0.36 |
+| langref-topics | todos-sqlite | basic-webserver | basic-webserver | get_roc_syntax | 6 | pass | 39.9k ch | $0.36 |
+| langref-topics | sse-stream | basic-webserver | basic-webserver | get_roc_syntax | 5 | pass | 22.8k ch | $0.26 |
+| langref-topics | form-post | basic-webserver | basic-webserver | get_roc_syntax | 6 | pass | 27.7k ch | $0.29 |
+| langref-topics | builtin-only | builtin | none | get_roc_syntax | 3 | pass | 15.9k ch | $0.22 |
+| langref-topics | local-platform | project | none | get_roc_syntax | 2 | pass | 11.9k ch | $0.19 |
+| langref-topics | roc-ray-local | project | roc-ray | get_roc_syntax | 8 | pass | 31.3k ch | $0.43 |
 
 ## Tool call order
 
@@ -143,3 +156,15 @@ miss. The host-tier footer appears on `search` and `get_roc_module`.
 - `roc-module/builtin-only`: get_roc_syntax -> search_symbols -> roc_check
 - `roc-module/local-platform`: get_roc_syntax -> roc_check
 - `roc-module/roc-ray-local`: get_roc_syntax -> search_project_symbols -> roc_check
+- `langref-topics/todos-sqlite`: get_roc_syntax -> get_roc_syntax(basic-webserver) -> get_roc_module -> get_roc_syntax -> search_symbols -> search(basic-webserver) -> get_roc_syntax -> roc_check
+- `langref-topics/sse-stream`: get_roc_syntax -> get_roc_syntax(basic-webserver) -> get_roc_module -> search_symbols -> roc_check
+- `langref-topics/form-post`: get_roc_syntax -> get_roc_syntax(basic-webserver) -> search_symbols -> get_roc_module -> get_roc_module -> roc_check
+- `langref-topics/builtin-only`: get_roc_syntax -> search_symbols -> roc_check -> roc_fmt
+- `langref-topics/local-platform`: get_roc_syntax -> roc_check
+- `langref-topics/roc-ray-local`: get_roc_syntax -> search_project_symbols -> get_roc_syntax(roc-ray) -> search_project_symbols -> roc_check
+- `langref-topics/todos-sqlite`: get_roc_syntax -> get_roc_syntax(basic-webserver) -> get_roc_module -> get_roc_syntax -> search_symbols -> roc_check
+- `langref-topics/sse-stream`: get_roc_syntax -> get_roc_syntax(basic-webserver) -> get_roc_module -> search_symbols -> roc_check
+- `langref-topics/form-post`: get_roc_syntax -> get_roc_syntax(basic-webserver) -> search_symbols -> search_symbols -> get_roc_syntax -> roc_check
+- `langref-topics/builtin-only`: get_roc_syntax -> search_symbols -> roc_check
+- `langref-topics/local-platform`: get_roc_syntax -> roc_check
+- `langref-topics/roc-ray-local`: get_roc_syntax -> get_roc_syntax(roc-ray) -> get_roc_syntax(roc-ray) -> search_project_symbols -> search_project_symbols -> search_symbols -> roc_check -> roc_fmt

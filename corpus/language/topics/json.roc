@@ -26,13 +26,26 @@
 
 Point : { x : I64, y : I64 }
 
-# Structural records, tag unions, lists, sets, dicts, and supported builtins get
-# derived codecs, so this needs no annotation on the type itself.
+# Structural records, tuples, tag unions, lists, sets, dicts, and supported
+# builtins get derived codecs, so this needs no annotation on the type itself.
 encode_point : Point -> Str
 encode_point = |point| Json.to_str(point)
 
 decode_point : Str -> Try(Point, _)
 decode_point = |json| Json.parse(json)
+
+# A record is an object with its fields in alphabetical order. A tag with no
+# payload is a string, and a tuple is an array.
+expect Json.to_str({ name: "Sam", age: 30.U64 }) == "{\"age\":30,\"name\":\"Sam\"}"
+expect Json.to_str((1.U64, "a")) == "[1,\"a\"]"
+
+Status : [Active, Banned(Str)]
+
+status_json : Status -> Str
+status_json = |status| Json.to_str(status)
+
+expect status_json(Active) == "\"Active\""
+expect status_json(Banned("spam")) == "{\"Banned\":\"spam\"}"
 
 # `JsonEncoding` selects the dialect: `[Default, CamelCase, TrailingCommas]`.
 #
@@ -78,12 +91,18 @@ expect round_tripped == Ok(origin)
 #   a.Showable : where [a.to_str : a -> Str]
 #   show : a -> Str where [a.Showable]
 
-# A nominal or opaque type opts into derived codecs the same way it opts into
-# any other derived method. See the `derived_methods` topic.
+# A nominal type has no codec by default, because parsing could break its
+# invariants and encoding could expose its internals. It opts into derived
+# codecs the same way it opts into any other derived method (see the
+# `derived_methods` topic). The derived codec uses the backing representation.
 Config := { host : Str, port : U16 }.{
 	parser_for : _
 	encoder_for : _
 }
+
+# @rejects missing method
+# UserId := { raw : U64 }
+# user_json = Json.to_str(UserId.{ raw: 1 })
 
 # Hand-write the methods instead when the type needs a custom representation, or
 # when its backing should stay hidden. The `where` clause names only the format
@@ -123,8 +142,14 @@ Token := { raw : Str }.{
 # `parse_dec`, `parse_f32`, `parse_f64`, the `parse_list_*` and `parse_record_*`
 # container steps, and the matching `encode_*` family.
 #
-# `Encoding.HttpHeader` is a second format on the same protocol. This is why it
-# is useful to define the codec methods once per type.
+# `Encoding.HttpHeader` is a second format on the same protocol. It parses
+# headers into a record, and an absent header fits a `Try(_, [Missing])` field.
+# This is why it is useful to define the codec methods once per type. A package
+# can also ship a format, with no change to the types it parses.
+parse_headers : Str -> Try({ content_length : U64, x_auth_token : Try(Str, [Missing]) }, _)
+parse_headers = Encoding.HttpHeader.parser_for()
+
+expect parse_headers("Content-Length: 12\r\n") == Ok({ content_length: 12, x_auth_token: Err(Missing) })
 
 # A field missing from the input is an error unless the target says it may be
 # missing: `?: T` (optional field) or `Try(T, [Missing])`. Any other missing

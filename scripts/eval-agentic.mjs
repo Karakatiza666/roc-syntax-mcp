@@ -129,7 +129,7 @@ function cachedRelease(hash) {
 
 const MCP_TOOLS = [
   "get_roc_syntax", "list_roc_index", "search_symbols", "get_roc_module", "roc_check", "roc_fmt",
-  "get_roc_langref", "search", "search_project_symbols",
+  "search", "search_project_symbols",
 ];
 const PREFIX = "mcp__roc-syntax__";
 const ALLOWED = [...MCP_TOOLS.map((t) => PREFIX + t), "Read", "Write", "Edit"];

@@ -108,29 +108,6 @@ test("a documented package's page is a resource", async () => {
   assert.match(text, /^Topics: random_generators\.$/m);
 });
 
-// `corpus/language/langref/README.md` is the only page whose filename is not
-// lowercase. A lookup that lowercases the name would make the page unreachable
-// through both the tool and the resource.
-test("a langref page with uppercase in its name is reachable", async () => {
-  const replies = await rpc([
-    INIT,
-    INITIALIZED,
-    { jsonrpc: "2.0", id: 1, method: "resources/read", params: { uri: "roc-syntax://langref/README" } },
-    { jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "get_roc_langref", arguments: { page: "README" } } },
-    { jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: "get_roc_langref", arguments: { page: "readme" } } },
-  ]);
-
-  const resource = replies.get(1);
-  assert.ok(!resource?.error, `resource read failed: ${resource?.error?.message}`);
-  assert.match(resource.result.contents[0].text, /Language Reference/);
-
-  for (const id of [2, 3]) {
-    const call = replies.get(id);
-    assert.ok(!call.result.isError, `get_roc_langref failed for id ${id}`);
-    assert.match(call.result.content[0].text, /Language Reference/);
-  }
-});
-
 // `List` has 94 methods whose docstrings and `expect` blocks are about 6x the
 // size of the signatures. Thus "what methods exist" must not cost a full read of
 // all of them.
@@ -243,17 +220,17 @@ test("the overview names only tools the server actually registers", async () => 
 // run `roc check` / `roc fmt` on a scratch copy. Clients read `readOnlyHint` to
 // decide if a call needs an approval prompt. A new tool without it costs the user
 // a confirmation, and nothing reports the cause. A tool that can make the
-// compiler download a release says so with `openWorldHint`. Only the two tools
-// that never download are closed-world.
+// compiler download a release says so with `openWorldHint`. Only `roc_fmt`
+// never downloads, so it alone is closed-world.
 test("every tool advertises itself as read-only, and as open-world when it can download", async () => {
   const replies = await rpc([INIT, INITIALIZED, { jsonrpc: "2.0", id: 1, method: "tools/list", params: {} }]);
   const tools = replies.get(1).result.tools as { name: string; annotations?: Record<string, unknown> }[];
-  assert.ok(tools.length > 8, `only ${tools.length} tools listed`);
+  assert.ok(tools.length >= 8, `only ${tools.length} tools listed`);
 
   for (const t of tools) {
     assert.deepEqual(
       t.annotations,
-      { readOnlyHint: true, openWorldHint: !["roc_fmt", "get_roc_langref"].includes(t.name) },
+      { readOnlyHint: true, openWorldHint: t.name !== "roc_fmt" },
       `${t.name} does not advertise the read-only annotations`
     );
   }
@@ -294,7 +271,7 @@ test("the server serves the latest protocol revision, not just the legacy era", 
   ]);
 
   assert.strictEqual(replies.get(0).result.protocolVersion, LATEST_PROTOCOL_VERSION);
-  assert.strictEqual((replies.get(1).result.tools as unknown[]).length, 9);
+  assert.strictEqual((replies.get(1).result.tools as unknown[]).length, 8);
   assert.match(replies.get(2).result.content[0].text, /Roc/);
   assert.ok(!replies.get(2).result.isError);
   assert.match(replies.get(3).result.contents[0].text, /Roc/);
@@ -488,11 +465,11 @@ test("roc_check offers only the scopes it can scaffold", async () => {
   assert.ok(replies.get(2).result.isError, "a scope with no scaffold was accepted");
 });
 
-// list_roc_index serves three indexes, and the tools list_roc_topics,
-// list_builtin_modules and list_roc_langref must not be registered. The three
-// indexes share an item shape, so a `kind` that returned the wrong index would
-// type-check and look plausible to a reader.
-test("list_roc_index serves all three indexes and rejects an unknown page", async () => {
+// list_roc_index serves the indexes, and the tools list_roc_topics,
+// list_builtin_modules, list_roc_langref and get_roc_langref must not be
+// registered. The indexes share an item shape, so a `kind` that returned the
+// wrong index would type-check and look plausible to a reader.
+test("list_roc_index serves the topic and module indexes", async () => {
   const call = (args: Record<string, string>, id: number) => ({
     jsonrpc: "2.0", id, method: "tools/call", params: { name: "list_roc_index", arguments: args },
   });
@@ -501,14 +478,11 @@ test("list_roc_index serves all three indexes and rejects an unknown page", asyn
     { jsonrpc: "2.0", id: 1, method: "tools/list", params: {} },
     call({ kind: "topics" }, 2),
     call({ kind: "modules" }, 3),
-    call({ kind: "langref" }, 4),
-    call({ kind: "langref", page: "numbers" }, 5),
-    call({ kind: "langref", page: "no-such-page" }, 6),
   ]);
 
   const names = (replies.get(1).result.tools as { name: string }[]).map((t) => t.name);
   assert.ok(names.includes("list_roc_index"));
-  for (const gone of ["list_roc_topics", "list_builtin_modules", "list_roc_langref"]) {
+  for (const gone of ["list_roc_topics", "list_builtin_modules", "list_roc_langref", "get_roc_langref"]) {
     assert.ok(!names.includes(gone), `${gone} is still registered`);
   }
 
@@ -519,7 +493,6 @@ test("list_roc_index serves all three indexes and rejects an unknown page", asyn
   // `kind` that would otherwise return a plausible wrong list.
   assert.match(body(2), /^# Roc Syntax Topics$/m);
   assert.match(body(3), /^# Modules$/m);
-  assert.match(body(4), /^# Roc Language Reference$/m);
 
   // Derived from the bundled files, not from the server's own map, so the test
   // finds a topic that is missing from the map.
@@ -538,22 +511,12 @@ test("list_roc_index serves all three indexes and rejects an unknown page", asyn
     "scripting.roc",
     ...packageTopics,
   ];
-  const langrefPages = fs.readdirSync(path.join(ROOT, "corpus", "language", "langref")).filter((f) => f.endsWith(".md"));
   assert.strictEqual(entries(body(2)).length, topicFiles.length);
-  // Topics have a detail after the name. Modules have no detail. Langref pages nest.
+  // Topics have a detail after the name. Modules have no detail.
   assert.ok(entries(body(2)).every((n) => new RegExp(`\\*\\*${n}\\*\\*: \\S`).test(body(2))));
 
   assert.strictEqual(entries(body(3)).length, 49, "the builtin module count changed");
   assert.ok(!/^ /m.test(body(3)), "the module index grew nested lines");
-
-  assert.strictEqual(entries(body(4)).length, langrefPages.length);
-  assert.match(body(4), /^\s+- outline$/m);
-  assert.strictEqual(entries(body(5)).length, 1, "page filter did not narrow the list");
-  assert.strictEqual(entries(body(5))[0], "numbers");
-  assert.match(body(5), /^\s+- number-literals$/m);
-
-  assert.ok(replies.get(6).result.isError, "an unknown langref page was accepted");
-  assert.match(body(6), /Unknown langref page: no-such-page/);
 });
 
 // One tool answers the overview and the topics. `overview` is an address,
@@ -609,27 +572,3 @@ test("roc_fmt takes the same either/or as roc_check", async () => {
   assert.match(text(4), /Could not read \/no\/such\/file\.roc/);
 });
 
-// The langref overlay tells an agent which tool to call next, written as a real
-// call. A wrong parameter name there gives a call that fails at once, and no
-// other check in the repo compares that prose with the wire schema.
-test("every tool call the langref overlay spells out is callable", async () => {
-  const replies = await rpc([INIT, INITIALIZED, { jsonrpc: "2.0", id: 1, method: "tools/list", params: {} }]);
-  const tools = new Map(
-    (replies.get(1).result.tools as { name: string; inputSchema: any }[]).map((t) => [t.name, t])
-  );
-
-  const dir = path.join(ROOT, "corpus", "language", "langref", "local");
-  // Empty since upstream 130536d wrote every stub page.
-  const files = fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => f.endsWith(".md")) : [];
-  let calls = 0;
-  for (const file of files) {
-    const text = fs.readFileSync(path.join(dir, file), "utf-8");
-    for (const [, name, param] of text.matchAll(/\b([a-z_]+)\((\w+):/g)) {
-      const tool = tools.get(name);
-      assert.ok(tool, `${file}: no tool named ${name}`);
-      assert.ok(param in tool!.inputSchema.properties, `${file}: ${name} takes no ${param}`);
-      calls += 1;
-    }
-  }
-  if (files.length > 0) assert.ok(calls > 3, `only ${calls} tool calls found in the overlay`);
-});

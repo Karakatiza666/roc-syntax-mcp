@@ -9,8 +9,8 @@ The most costly failure is a topic file that teaches the opposite of the truth.
 An agent that reads it writes code that does not compile, with confidence, and
 trusts the bundled reference over the compiler error.
 
-Read `git diff` on `corpus/language/langref/` first. Upstream's own prose names
-what changed, and each change maps to a claim in `corpus/language/topics/`.
+Read the report of `scripts/langref-diff.roc` first. Upstream's own prose names
+what changed, and the report names the topics that carry each changed section.
 
 Then search for the patterns that go out of date:
 
@@ -100,26 +100,8 @@ again on a refresh. Do not copy upstream over them without a check.
 
 Keep the copied `corpus/language/langref/` byte-for-byte identical to upstream
 anyway. A fix there would break the diff against the next refresh, and that diff
-is the main value of the pin.
-
-The sections that upstream ships as a bare `TODO` are the exception. The server
-answers them from outside the mirror. `corpus/language/langref/local/<page>.md`
-holds our text under upstream's own headings. `src/langref.ts` inserts that text
-into the page at load, and marks it as ours.
-
-| Rule | Enforced by |
-|---|---|
-| Upstream prose always wins. When upstream has written a section, delete it from the overlay | `overlayProblems`, named by `langref.test.ts` |
-| An overlay can add a heading that upstream does not have only on a page that upstream ships as a bare stub | The same |
-| The merge inserts the marker line. Never type it into an overlay file | `mergeLangref` |
-| Every link that an overlay writes names a real page and section | `langref.test.ts` |
-| A section stays under 350 tokens, the overlay of a page under 1,600, and the full overlay under 12,000 | `langref.test.ts`, at 3.5 chars per token |
-| Every fenced `roc` block on an overlay page compiles, except a block that starts with a module header, which is a separate module | The `langref/local` stage of `check:roc` |
-| Every tool call that an overlay page spells out names a real tool and a real parameter | `resources.test.ts`, against the wire schema |
-
-Each ceiling comes from the distribution of upstream's own 38,000-token mirror.
-The median section is 165 tokens and the p90 section is 524 tokens. The median
-page is 757 tokens and the p75 page is 1,566 tokens.
+is the main value of the pin. The server does not serve it, so a wrong upstream
+example reaches no agent.
 
 ## 5. What each test suite asserts
 
@@ -129,7 +111,7 @@ Read a failure as a statement about the content, not about the test.
 |---|---|
 | `builtin_parser.test.ts` | No empty module paths, no duplicate names, wrapped signatures intact, deleted builtins gone, current ones present |
 | `builtin_hints.test.ts` | Every hint key names a real builtin. Hints stay one line and a small fraction of the signature list. The hinted set matches what the three layers declare |
-| `langref.test.ts` | Every bundled page parses. TODO-only sections are flagged, so that ranking can demote them. Slugs are unique per page. The five pages that upstream ships as bare stubs are still stubs. Every overlay page merges cleanly, links only to sections that exist, and stays inside its token budget |
+| `langref.test.ts` | Every bundled page parses, and slugs are unique per page. `langref-map.txt` has one line for each section, and each line names language topics or a reason to skip |
 | `overview.test.ts` | Token budgets. Every builtin and module named exists. The builtins page quotes no counts. Every tool named is real. No placeholder text |
 | `resources.test.ts` | Runs a real JSON-RPC session. Resource sizes, `readOnlyHint` on every tool, the packaged version, the protocol revision, input schemas that survive the wire |
 | `sig_search.test.ts` | The score ladder of signature search, and its tie-breaks |

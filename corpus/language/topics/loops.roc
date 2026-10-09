@@ -1,8 +1,9 @@
 # For loops, while loops, break, and reassignable `var`s.
 #
 # A `var` is a reassignable binding. Its name must start with `$`,
-# so every `$name` is a binding that can change.
-# Constants (without `$`) can never be reassigned.
+# so every `$name` is a binding that can change. A second `name = ...` in the
+# same scope is a new constant that shadows the first, with a "duplicate
+# definition" warning. See the `naming` topic.
 
 # A `for` loop runs over an iterator. Anything with an `iter` method works,
 # including lists, dicts, sets, and ranges. The loop body contains only
@@ -70,11 +71,18 @@ count_items = |items| {
 # The `for` pattern must be exhaustive, exactly like a destructuring
 # assignment. `for Ok(n) in results { ... }` is not allowed, because the body
 # would have no value for `n` if an item were `Err`. Name the whole item and
-# `match` inside the body instead.
+# `match` inside the body instead. For a tag pattern, this compiler crashes
+# with "instantiation widened a closed tag union" and reports no error.
 #
-# The compiler rejects such a pattern with "non exhaustive destructure", naming
-# the cases the pattern leaves out. A literal pattern such as `for 1 in ...` is
-# caught the same way, at compile time.
+# @rejects non exhaustive destructure
+# count_ones = |items| {
+# 	var $count = 0
+# 	for 1 in items {
+# 		$count = $count + 1
+# 	}
+# 	$count
+# }
+# ones = count_ones([1.I64])
 
 # `break` exits a `for` or `while` loop early.
 break_in_for_loop = |bool_list| {
@@ -108,6 +116,38 @@ while_loop = |limit| {
 # `break` exits only the innermost loop. In a nested loop, breaking out of the
 # inner one leaves the outer one running.
 
-# Only the function that declares a var can reassign it.
-# So `for_each!(|x| { $count = $count + 1 })` is a compile error.
-# Use a `for` loop when you need to mutate a var.
+# Roc has no `loop` keyword. Use `while True` when the exit check sits in the
+# middle of the body, and leave with `break` or `return`. A loop that never
+# ends during compile-time evaluation hangs the compiler.
+first_power_over : U64 -> U64
+first_power_over = |limit| {
+	var $n = 1
+
+	while True {
+		$n = $n * 2
+		if $n > limit {
+			break
+		}
+	}
+
+	$n
+}
+
+expect first_power_over(100) == 128
+
+# `for!` loops over a `Stream` (see the `iterators` topic). Its pattern must be
+# exhaustive too, and `break` and `return` work as in `for`.
+first_over! : List(U64), U64 => Try(U64, [NotFound])
+first_over! = |items, limit| {
+	for! n in items.iter() {
+		if n > limit {
+			return Ok(n)
+		}
+	}
+
+	Err(NotFound)
+}
+
+# Only the function that declares a var can reassign it, so a lambda passed to
+# `for_each!` cannot change it. Use a `for` loop when you need to change a var
+# for each item. The `naming` topic has the other `var` rules.

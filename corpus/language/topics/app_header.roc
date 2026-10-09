@@ -72,4 +72,5 @@
 #   - A `package [...]` header may name a platform the same way, and then the
 #     package can call that platform's API. Every platform declaration in the
 #     dependency graph has to be the identical URL, version and content hash,
-#     and the app is still the only module that satisfies `requires`.
+#     or a path to the same root file ("platform dependency mismatch"). The
+#     app is still the only module that satisfies `requires`. See `packages`.

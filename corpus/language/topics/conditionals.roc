@@ -2,9 +2,15 @@
 # `if foo { bar() } else { baz() }` is `match foo { True => bar(), False => baz() }`.
 #
 # Roc has no truthiness. `if` accepts only `Bool` values.
+# @rejects type mismatch
+# any_items : List(U64) -> U64
+# any_items = |items| if items.len() 1 else 0
 #
 # `else` is required whenever the `if` produces a value, and optional when the
 # body evaluates to `{}`. See `log_if_empty!` below.
+# @rejects type mismatch
+# size_label : U64 -> Str
+# size_label = |n| if n > 9 "big"
 
 if_demo : U64 -> Str
 if_demo = |num| {

@@ -46,7 +46,7 @@ path = [
   "bugs/**",
   "corpus/language/UPSTREAM",
   "corpus/language/plugin.json",
-  "corpus/language/langref/local/**",
+  "corpus/language/langref-map.txt",
   "corpus/language/overview/**",
   "corpus/language/topics/**",
   "corpus/*/*/UPSTREAM",

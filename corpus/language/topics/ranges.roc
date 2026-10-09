@@ -33,6 +33,8 @@ every_third = (0..<30).step_by(3)
 #   Range.size_hint : Range(num) -> [Known(U64), Unknown]
 hint = (0..<30).size_hint()
 
+expect every_third.size_hint() == Known(10)
+
 # `iter` walks forwards. `iter_rev` walks the same lower-anchored members
 # backwards, so `(5.I64..=12).step_by(2).iter_rev()` yields 11, 9, 7, 5.
 #   Range.iter     : Range(num) -> Iter(num)
@@ -40,19 +42,32 @@ hint = (0..<30).size_hint()
 descending : List(I64)
 descending = (5.I64..=12).step_by(2).iter_rev().collect()
 
+expect descending == [11, 9, 7, 5]
+expect (0.I64..<10).step_by(2).step_by(3).iter().collect() == [0, 3, 6, 9]
+
 # Integer and `Dec` ranges support `iter_rev`. `F32` and `F64` support forward
 # ranges but deliberately do not support `iter_rev`, because repeated
 # floating-point addition is not exactly reversible. Forward iteration over a
 # float range ends when adding the step cannot produce a larger float. The
 # range yields the current value once and then ends.
+expect (0.5.F64..<2).iter().collect() == [0.5, 1.5]
+
+# @rejects missing method
+# float_rev = (0.5.F64..<2).iter_rev()
 
 # A range is empty when its lower bound is not below (`..<`) or at (`..=`) its
-# upper bound, or when its step is not positive. So `5..<5` yields nothing,
-# but `5..=5` yields 5.
+# upper bound, or when its step is not positive.
+expect (5.I64..<5).iter().collect() == []
+expect (5.I64..=5).iter().collect() == [5]
+expect (0.I64..<10).step_by(0).iter().collect() == []
 
 # Range operators bind more loosely than the other binary operators, so
-# `1..<n + 1` parses as `1..<(n + 1)`. They cannot be chained: `1..<5..<10`
-# is an error.
+# `1..<n + 1` parses as `1..<(n + 1)`.
+expect (1.I64..<3 + 1).iter().collect() == [1, 2, 3]
+
+# Range operators cannot be chained.
+# @rejects chained range
+# chained = 1..<5..<10
 
 # Ranges use static dispatch like every other operator: `..<` calls
 # `range_exclusive_to` on the bounds' type and `..=` calls
