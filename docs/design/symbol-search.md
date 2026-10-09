@@ -11,8 +11,9 @@ it. This page collects all the rules in one place.
 |---|---|
 | Parse the query | `readName`, `typeError`, `parseSymbolQuery`, `namePattern` in `src/symbol_query.ts:55,74,89,123` |
 | Match a name | `nameQuality`, `nameRank` in `src/symbol_query.ts:152,172` |
-| Match and score a type | `normalizeTypeSig`, `scoreItem`, `searchBySig` in `src/sig_search.ts:34,211,258` |
-| Break ties | `compareMatches`, `compareItems` in `src/sig_search.ts:152,162` |
+| Qualify the type names of a signature | `qualifyTypeNames`, `qualifySignatures` in `src/sig_search.ts:87,101` |
+| Match and score a type | `normalizeTypeSig`, `sameToken`, `scoreItem`, `searchBySig` in `src/sig_search.ts:36,122,278,325` |
+| Break ties | `compareMatches`, `compareItems` in `src/sig_search.ts:219,229` |
 | Answer a list of queries | `QUERY_LIST`, `joinReplies` in `src/server.ts:1722,1728` |
 | Build a list, for both tools | `nameList`, `nameAndType` in `src/server.ts:1382,1501` |
 | Count line, miss replies | `countLine`, `shapeHint` in `src/server.ts:1426,1456` |
@@ -217,24 +218,41 @@ row that matches sets the type score.
 |---|---|---|---|
 | `A -> B` | the whole signature | 100 `exact` | 95 `exact_unified` |
 | `-> B` | the return type | 90 `return_type` | 85 `return_type_unified` |
-| `-> B` | the text of the signature | 10 `substring` | |
+| `-> B` | any part of the signature | 10 `substring` | |
 | `A ->` | the argument list | 70 `exact_args` | 65 `exact_args_unified` |
 | `A ->` | the start of the argument list | 50 `args_prefix` | |
 | `B`, no arrow | the return type | 80 `return_type` | 75 `return_type_unified` |
 | `B` | the argument list | 60 `args` | 55 `args_unified` |
 | `B` | the start of the argument list | 50 `args_prefix` | |
-| `B` | the text of the signature | 20 `substring` | |
+| `B` | any part of the signature | 20 `substring` | |
 
 `=>` has the same effect as `->`. A type score of 0 is no match.
 
-A signature names a type as its own module writes it: `Frame` inside the `Draw`
-module, and `Draw.Frame` in other modules. The match compares the text of the
-names. So on roc-ray, `Frame ->` matches 23 signatures, and `Draw.Frame ->`
-matches 1. Until the match reads `Draw.Frame` as `Frame` in the `Draw` module,
-replies that suggest a type query use the bare name.
+A module writes its own types without the module: `Draw.text!` takes a
+`Frame`, and `Text.draw_prepared!` takes a `Draw.Frame`. So when a corpus
+loads, `qualifySignatures` writes each type name in a signature as the full
+name of the type that it refers to. These rules apply:
+
+1. The innermost module that declares the name wins. In
+   `Crypto.SHA256.Hasher`, `Hasher` is that type. In `Str`, `Hasher` is the
+   top-level type.
+2. A name that no module of the corpus declares stays as written, for example
+   a type from a package, or a type that an `import` exposes.
+3. A tag stays as written, because a tag and a type can have the same name.
+4. The reply shows the signature as the source writes it.
+
+A project is one corpus, so the rules read the types of all its files.
+
+The match compares the type part and the signature token by token. A type
+name in the query matches the same name, or a full name that ends with a `.`
+and the query name. So `Frame ->` and `Draw.Frame ->` both find the 24
+functions that take a `Draw.Frame`. `Str.Utf8Problem ->` finds
+`Str.Utf8Problem.is_eq`, which writes `Utf8Problem`. A partial token does not
+match: `Str ->` does not match `Stream.map`, and `U64` does not match
+`U64x2`.
 
 `SUBSTRING_SCORE` (20) is the highest score of a `substring` match. Such a
-match only contains the type part as text. For example, `-> F32` matches
+match only contains the type part somewhere in the signature. For example, `-> F32` matches
 `ceiling_to_i32_try : F32 -> Try(I32, [OutOfRange])` at 10, but that function
 does not return `F32`.
 
@@ -300,7 +318,7 @@ first line of the docs. The entry shows the complete signature because a
 An exact match on a type ends with the count of its type reading:
 
 ```
-23 functions take a `Frame` (`Frame ->`). 2 return one (`-> Frame`).
+24 functions take a `Frame` (`Frame ->`).
 ```
 
 Each half shows only when its count is not zero, and the line shows only when
@@ -330,7 +348,7 @@ No symbol similar to `ceil` matches `-> F32`. 52 symbols have a different type. 
 The order of the list:
 
 1. The symbols with a type score from 1 to 20. Their signatures contain the
-   type part only as text. They are in the Both mode order of section 5.
+   type part, but not as the return type or the arguments. They are in the Both mode order of section 5.
 2. The other symbols with a matching name, in name level order, then in the
    last three keys of section 5.
 

@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { parseBuiltin } from "./builtin_parser.ts";
-import { type SigMatch, searchBySig } from "./sig_search.ts";
+import { type SigMatch, qualifySignatures, qualifyTypeNames, searchBySig } from "./sig_search.ts";
 
 const ROOT = path.join(import.meta.dirname, "..");
 const items = parseBuiltin(fs.readFileSync(path.join(ROOT, "corpus", "language", "Builtin.roc"), "utf-8")).items;
@@ -207,4 +207,32 @@ test("a variable in the signature is not widened to the query's concrete type", 
   for (const hit of results) {
     assert.match(hit.item.signature.replace(/\s+/g, " "), /Try\(U64/, `${hit.item.fullName} widened`);
   }
+});
+
+// A module writes its own types without the module. The innermost module that
+// declares the name wins, and a tag keeps its name.
+test("a signature names each declared type by its full name", () => {
+  const types = new Set(["Hasher", "Crypto.SHA256.Hasher", "Draw.Frame"]);
+  assert.equal(qualifyTypeNames("Hasher -> Hasher", "Crypto.SHA256.Hasher", types), "Crypto.SHA256.Hasher -> Crypto.SHA256.Hasher");
+  assert.equal(qualifyTypeNames("Hasher -> Hasher", "Str", types), "Hasher -> Hasher");
+  assert.equal(qualifyTypeNames("[Frame, Ok(Frame)]", "Draw", types), "[Frame, Ok(Draw.Frame)]");
+});
+
+// `Str.Utf8Problem.is_eq` writes `Utf8Problem`, and `Digest.to_hash` writes
+// `Digest` and `Builtin.Hasher`. A query with the full names finds both.
+test("a full type name in a query matches the name a module writes", () => {
+  const qualified = items.map((it) => ({ ...it }));
+  qualifySignatures(qualified);
+  assert.ok(find(searchBySig(qualified, "Str.Utf8Problem ->", ALL), "Str.Utf8Problem.is_eq"));
+  const toHash = find(searchBySig(qualified, "Crypto.SHA256.Digest, Hasher -> Hasher", ALL), "Crypto.SHA256.Digest.to_hash");
+  assert.strictEqual(toHash?.score, 100);
+});
+
+// The name must end at a dot, and the module before it must match.
+test("a type name in a query matches a full name that ends with it", () => {
+  const qualified = items.map((it) => ({ ...it }));
+  qualifySignatures(qualified);
+  assert.ok(find(searchBySig(qualified, "Utf8Problem ->", ALL), "Str.Utf8Problem.is_eq"));
+  assert.equal(find(searchBySig(qualified, "Problem ->", ALL), "Str.Utf8Problem.is_eq"), undefined);
+  assert.equal(find(searchBySig(qualified, "List.Utf8Problem ->", ALL), "Str.Utf8Problem.is_eq"), undefined);
 });

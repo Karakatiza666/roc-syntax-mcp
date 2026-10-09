@@ -25,12 +25,15 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { type RocFileItem, discoverRocFiles, parseRocFile } from "./roc_parser.ts";
+import { qualifySignatures } from "./sig_search.ts";
 
 /** `annotated` is what the source says. `inferred` is what a compiler worked out. */
 export type SignatureOrigin = "annotated" | "inferred";
 
 export interface ProjectSignature extends RocFileItem {
   origin: SignatureOrigin;
+  /** Set by `qualifySignatures` over the whole project. */
+  qualifiedSignature?: string;
 }
 
 /** One way to read the signatures of a project's `.roc` files. */
@@ -152,6 +155,8 @@ export class ProjectIndex {
         }
       })
     );
-    return { root, files: files.length, items: mergeSignatures(lists), notes };
+    const items = mergeSignatures(lists);
+    qualifySignatures(items);
+    return { root, files: files.length, items, notes };
   }
 }

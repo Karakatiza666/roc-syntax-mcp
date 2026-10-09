@@ -29,6 +29,8 @@ export interface BuiltinItem {
    * definition and kept out of signature search.
    */
   unannotated?: true;
+  /** Values only: `signature` with full type names, set by `qualifySignatures` when it differs. */
+  qualifiedSignature?: string;
 }
 
 export interface BuiltinIndex {

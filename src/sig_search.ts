@@ -8,6 +8,8 @@ export interface SigSearchItem {
   fullName: string;
   signature: string;
   docs: string;
+  /** The signature with full type names, from `qualifySignatures`. The search reads it when it is set. */
+  qualifiedSignature?: string;
 }
 
 export interface SigMatch<T extends SigSearchItem = SigSearchItem> {
@@ -62,6 +64,51 @@ export function normalizeTypeSig(expr: string): string {
   return out.join("");
 }
 
+/**
+ * The full name of the declared type that `name` refers to in `modulePath`, or
+ * null. The innermost module wins: in `Crypto.SHA256.Hasher`, `Hasher` is that
+ * type, and in `Str`, `Hasher` is the top-level type.
+ */
+function resolveType(name: string, modulePath: string, types: ReadonlySet<string>): string | null {
+  for (let scope = modulePath; ; scope = scope.slice(0, Math.max(scope.lastIndexOf("."), 0))) {
+    const full = scope ? `${scope}.${name}` : name;
+    if (types.has(full)) return full;
+    if (!scope) return null;
+  }
+}
+
+/**
+ * `signature` with each name of a declared type written as its full name. A
+ * module writes its own types without the module, so `Draw.text!` takes a
+ * `Frame` and `Text.draw_prepared!` takes a `Draw.Frame`. Both become
+ * `Draw.Frame`. A tag stays as written, because a tag and a type can have the
+ * same name.
+ */
+export function qualifyTypeNames(signature: string, modulePath: string, types: ReadonlySet<string>): string {
+  const open: string[] = [];
+  let prev = "";
+  return signature.replace(TOKEN, (tok) => {
+    const isTag = open.at(-1) === "[" && (prev === "[" || prev === ",");
+    if (tok === "(" || tok === "[" || tok === "{") open.push(tok);
+    else if (tok === ")" || tok === "]" || tok === "}") open.pop();
+    prev = tok;
+    if (isTag || !/^[A-Z]/.test(tok)) return tok;
+    return resolveType(tok, modulePath, types) ?? tok;
+  });
+}
+
+/** Sets `qualifiedSignature` on each value of one corpus whose signature names a type of that corpus by a shorter name. */
+export function qualifySignatures(
+  items: { kind: string; fullName: string; modulePath: string; signature: string; qualifiedSignature?: string }[]
+): void {
+  const types = new Set(items.filter((it) => it.kind === "type").map((it) => it.fullName));
+  for (const it of items) {
+    if (it.kind !== "value") continue;
+    const qualified = qualifyTypeNames(it.signature, it.modulePath, types);
+    if (qualified !== it.signature) it.qualifiedSignature = qualified;
+  }
+}
+
 /** A normalized type variable. Normalization renames every variable to a single letter. */
 function isVar(token: string): boolean {
   return /^[a-z]$/.test(token);
@@ -69,6 +116,26 @@ function isVar(token: string): boolean {
 
 function tokenize(norm: string): string[] {
   return norm.match(TOKEN) ?? [];
+}
+
+/** A type name in the query matches the same name, or a full name that ends with it: `Frame` matches `Draw.Frame`. */
+function sameToken(q: string, s: string): boolean {
+  return q === s || (/^[A-Z]/.test(q) && s.endsWith("." + q));
+}
+
+/** Whether the tokens of `q` match the tokens of `s` from index `at`, one by one. */
+function matchesAt(q: string[], s: string[], at: number): boolean {
+  if (at + q.length > s.length) return false;
+  return q.every((t, i) => sameToken(t, s[at + i]));
+}
+
+function equalTokens(q: string[], s: string[]): boolean {
+  return q.length === s.length && matchesAt(q, s, 0);
+}
+
+function containsTokens(s: string[], q: string[]): boolean {
+  for (let at = 0; at + q.length <= s.length; at++) if (matchesAt(q, s, at)) return true;
+  return false;
 }
 
 /**
@@ -106,7 +173,7 @@ function walk(
   if (qi === q.length) return si === s.length;
   const token = q[qi];
   if (!isVar(token)) {
-    return s[si] === token && walk(q, qi + 1, s, si + 1, bound, budget);
+    return si < s.length && sameToken(token, s[si]) && walk(q, qi + 1, s, si + 1, bound, budget);
   }
   const already = bound.get(token);
   for (const end of spans(s, si)) {
@@ -120,8 +187,8 @@ function walk(
 }
 
 /**
- * Whether `normSig` matches `normQuery` when the query's type variables act as
- * wildcards. For example, `F32 -> Try(U64, err)` finds
+ * Whether the signature tokens `s` match the query tokens `q` when the query's
+ * type variables act as wildcards. For example, `F32 -> Try(U64, err)` finds
  * `F32 -> Try(U64, [OutOfRange])`. Plain isomorphism matching misses this match,
  * because a variable and a concrete union are different strings however they
  * are renamed.
@@ -130,17 +197,17 @@ function walk(
  * widened, so a query for `-> Try(U64, [NotFound])` does not match every
  * `-> Try(a, b)`.
  */
-function unifies(normQuery: string, normSig: string): boolean {
-  const q = tokenize(normQuery);
+function unifies(q: string[], s: string[]): boolean {
   // No variable to widen, or a bare variable that matches every signature.
   if (q.length < 2 || !q.some(isVar)) return false;
-  return walk(q, 0, tokenize(normSig), 0, new Map(), { left: UNIFY_STEPS });
+  return walk(q, 0, s, 0, new Map(), { left: UNIFY_STEPS });
 }
 
 /** Equal after normalization, or equal once the query's variables are wildcards. */
-function relate(normQuery: string, norm: string): "" | "_unified" | null {
-  if (norm === normQuery) return "";
-  return unifies(normQuery, norm) ? "_unified" : null;
+function relate(q: string[], norm: string): "" | "_unified" | null {
+  const s = tokenize(norm);
+  if (equalTokens(q, s)) return "";
+  return unifies(q, s) ? "_unified" : null;
 }
 
 /**
@@ -186,7 +253,7 @@ function lastTopLevelArrow(sig: string): number {
 
 /**
  * The highest score of a `substring` match. Such a match only contains the
- * query as text. For example, `-> F32` matches `F32 -> Try(I32, [OutOfRange])`
+ * tokens of the query somewhere in the signature. For example, `-> F32` matches `F32 -> Try(I32, [OutOfRange])`
  * at 10.
  */
 export const SUBSTRING_SCORE = 20;
@@ -209,13 +276,13 @@ export const SUBSTRING_SCORE = 20;
  * signature that answers the question literally still ranks first.
  */
 function scoreItem(
-  normQuery: string,
+  q: string[],
   normSig: string,
   returnOnly: boolean,
   trailingArrow: boolean,
 ): { score: number; matchKind: string } {
   if (!returnOnly && !trailingArrow) {
-    const full = relate(normQuery, normSig);
+    const full = relate(q, normSig);
     if (full !== null) return { score: full ? 95 : 100, matchKind: `exact${full}` };
   }
 
@@ -225,23 +292,23 @@ function scoreItem(
     const normRet = normalizeTypeSig(normSig.slice(arrowIdx + 2).trim());
     const normArgs = normalizeTypeSig(normSig.slice(0, arrowIdx).trim());
     if (returnOnly) {
-      const ret = relate(normQuery, normRet);
+      const ret = relate(q, normRet);
       if (ret !== null) return { score: ret ? 85 : 90, matchKind: `return_type${ret}` };
-      if (normSig.includes(normQuery)) return { score: 10, matchKind: "substring" };
+      if (containsTokens(tokenize(normSig), q)) return { score: 10, matchKind: "substring" };
     } else if (trailingArrow) {
-      const args = relate(normQuery, normArgs);
+      const args = relate(q, normArgs);
       if (args !== null) return { score: args ? 65 : 70, matchKind: `exact_args${args}` };
-      if (normArgs.startsWith(normQuery)) return { score: 50, matchKind: "args_prefix" };
+      if (matchesAt(q, tokenize(normArgs), 0)) return { score: 50, matchKind: "args_prefix" };
     } else {
-      const ret = relate(normQuery, normRet);
+      const ret = relate(q, normRet);
       if (ret !== null) return { score: ret ? 75 : 80, matchKind: `return_type${ret}` };
-      const args = relate(normQuery, normArgs);
+      const args = relate(q, normArgs);
       if (args !== null) return { score: args ? 55 : 60, matchKind: `args${args}` };
       // Elevated prefix match: query is a prefix of the args (not just anywhere in the sig).
-      if (normArgs.startsWith(normQuery)) return { score: 50, matchKind: "args_prefix" };
-      if (normSig.includes(normQuery)) return { score: 20, matchKind: "substring" };
+      if (matchesAt(q, tokenize(normArgs), 0)) return { score: 50, matchKind: "args_prefix" };
+      if (containsTokens(tokenize(normSig), q)) return { score: 20, matchKind: "substring" };
     }
-  } else if (!returnOnly && !trailingArrow && normSig.includes(normQuery)) {
+  } else if (!returnOnly && !trailingArrow && containsTokens(tokenize(normSig), q)) {
     return { score: 20, matchKind: "substring" };
   }
 
@@ -269,12 +336,12 @@ export function searchBySig<T extends SigSearchItem>(
   const queryExpr = returnOnly ? raw.slice(2).trim()
     : trailingArrow ? raw.slice(0, -2).trim()
     : raw;
-  const normQuery = normalizeTypeSig(queryExpr);
+  const q = tokenize(normalizeTypeSig(queryExpr));
 
   const hits: SigMatch<T>[] = [];
   for (const item of items) {
-    const normSig = normalizeTypeSig(item.signature);
-    const { score, matchKind } = scoreItem(normQuery, normSig, returnOnly, trailingArrow);
+    const normSig = normalizeTypeSig(item.qualifiedSignature ?? item.signature);
+    const { score, matchKind } = scoreItem(q, normSig, returnOnly, trailingArrow);
     if (score > 0) hits.push({ item, score, matchKind });
   }
 

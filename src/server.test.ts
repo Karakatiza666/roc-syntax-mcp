@@ -204,6 +204,8 @@ test("a project search finds names, types, and both", async () => {
     assert.match(await s.call("search_project_symbols", { query: ["Point"], root }), /^## Geo\.Point at `Geo\.roc:7`\n```roc\nPoint : \{ x : F64, y : F64 \}/);
     assert.match(await s.call("search_project_symbols", { query: ["sca"], root }), /^Nothing is named `sca`\. 1 name contains `sca`:\n\n\*\*Geo\.scale\*\* at `Geo\.roc:4`/);
     assert.match(await s.call("search_project_symbols", { query: ["-> F64"], root }), /^\*\*Geo\.norm\*\* \(return_type, score 90\) at `Geo\.roc:9`/);
+    // `norm` writes `Point`, which is `Geo.Point` in this file.
+    assert.match(await s.call("search_project_symbols", { query: ["Geo.Point ->"], root }), /^\*\*Geo\.norm\*\* \(exact_args, score 70\)/);
     const both = await s.call("search_project_symbols", { query: ["nor : -> Bool"], root });
     assert.match(both, /^No symbol similar to `nor` matches `-> Bool`\. 1 symbol has a different type\./);
   } finally {
@@ -306,6 +308,19 @@ test("an exact type counts the functions that take it and return it", async () =
       /\n\n\d+ functions take a `Dict` \(`Dict\(k, v\) ->`\)\. \d+ return one \(`-> Dict\(k, v\)`\)\./
     );
     assert.doesNotMatch(await s.call("search_symbols", { query: ["Str.concat"] }), /functions? take/);
+  } finally {
+    await s.close();
+  }
+});
+
+// `Str.Utf8Problem.is_eq` writes `Utf8Problem` and `Str.from_utf8` writes
+// `Str.Utf8Problem`. Each query form finds both, as roc-ray's `Frame` and `Draw.Frame`.
+test("a type query reads a type that its own module writes without the module", async () => {
+  const s = await inProcess([]);
+  try {
+    assert.match(await s.call("search_symbols", { query: ["Str.Utf8Problem ->"] }), /^\*\*Str\.Utf8Problem\.is_eq\*\* \(args_prefix, score 50\)/);
+    const from = "-> Try(Str, [BadUtf8({ problem : Utf8Problem, index : U64 })])";
+    assert.match(await s.call("search_symbols", { query: [from] }), /^\*\*Str\.from_utf8\*\* \(return_type, score 90\)/);
   } finally {
     await s.close();
   }

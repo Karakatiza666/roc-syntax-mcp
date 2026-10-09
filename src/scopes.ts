@@ -8,6 +8,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { type BuiltinItem, parseBuiltin } from "./builtin_parser.ts";
+import { qualifySignatures } from "./sig_search.ts";
 import {
   declarations,
   forcedNamespaces,
@@ -1230,6 +1231,8 @@ function indexTree(
       });
     }
   }
+  // After the renames above, so the full name of a file-level type includes its module.
+  qualifySignatures(out);
   return out;
 }
 
