@@ -133,5 +133,6 @@ runs directly under `roc file.roc`, where `echo!` is available without import.
 - For a worked example, call `get_roc_syntax` with a `topic`: a construct name,
   `idioms` to choose a construct, or `scripting` for a complete standalone `.roc`
   utility.
-- Type-check with the `roc_check` tool before claiming any of this compiles.
+- Type-check with the `roc_check` tool before claiming any of this compiles. For
+  an error in a `roc/packages/` file, see the `version_mismatch` topic.
 - Old `roc` CLI flags are wrong. See the `compiler` topic or `roc <cmd> --help`.

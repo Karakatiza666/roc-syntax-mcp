@@ -7,6 +7,8 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { parseBuiltin } from "./builtin_parser.ts";
 import { loadOverview } from "./overview.ts";
+import { CORE } from "./scopes.ts";
+import { loadTopic, topicsFor } from "./topics.ts";
 
 const ROOT = path.join(import.meta.dirname, "..");
 const OVERVIEW_DIR = path.join(ROOT, "corpus", "language", "overview");
@@ -89,6 +91,14 @@ test("the language page points at the server's own verification tools", () => {
   assert.match(language, /roc_check/);
   assert.match(builtins, /get_roc_module/);
   assert.match(builtins, /search_symbols/);
+});
+
+// The language page sends a reader to topics by name, and a renamed topic makes
+// that pointer a miss.
+test("every topic the language page names exists", () => {
+  const named = [...language.matchAll(/the `(\w+)` topic/g)].map((m) => m[1]);
+  assert.ok(named.includes("version_mismatch"), named.join(", "));
+  for (const name of named) assert.ok(loadTopic(name, topicsFor(CORE).topics), `no topic ${name}`);
 });
 
 test("neither page is a placeholder", () => {

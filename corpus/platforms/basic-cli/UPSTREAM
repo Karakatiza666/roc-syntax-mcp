@@ -12,11 +12,13 @@ tarball  CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA.tar.zst
 # pins. Its index is at corpus/packages/http/, with its
 # provenance in corpus/packages/http/UPSTREAM.
 
-# Must match the `compiler` line in corpus/language/UPSTREAM. Every app below
-# pins its platform by tarball URL, so `check:platforms` gives the compiler the
-# released platform. The gate tests this nightly and this tag as a pair, never
-# one alone.
-compiler nightly-2026-10-09-258ab27  (the nightly bundled in this repo)
+# The nightly of this release: the `nightly-tag:` of upstream's workflows at the
+# tag, because the tag has no .roc-version. Every app below pins its platform by
+# tarball URL, and the gates check each program that pins this release with
+# this nightly. A program with a `roc:` line of its own uses that nightly. So
+# this line moves only when the platform is repinned, and not when the bundled
+# nightly moves.
+compiler nightly-2026-10-09-258ab27
 
 index.json <- platform/   parsed by `npm run build:index` from the compiler's
                          package cache. Signatures and docstrings only; no

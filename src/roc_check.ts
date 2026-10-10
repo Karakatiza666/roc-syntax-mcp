@@ -357,7 +357,9 @@ export function formatReport(
         ...[...tally].map(([label, n]) => `  ${label}: ${n}`),
         "",
         "That source is under the package cache and no edit here changes it. " +
-          "The package does not build with this compiler. Remove it, or pin a release that builds.",
+          (report.dependency.some((d) => d.severity === "error")
+            ? 'The release does not build with this compiler. get_roc_syntax(topic: "version_mismatch") gives the steps to fix that.'
+            : "A warning there does not stop the build."),
       ].join("\n")
     );
   }

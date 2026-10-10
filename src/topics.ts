@@ -226,6 +226,15 @@ const BUILTIN_TOPICS: Record<string, TopicMeta> = {
       "release", "target", "--target", "cross compile", "musl", "exit code", "format", "deps",
       "--replace-dep", "bundle", "publish", "bump", "semver", "docs", "install", "repl", "watch"],
   },
+  version_mismatch: {
+    file: "version_mismatch.roc",
+    description: "A released platform or package does not compile: find the file of the error, read the nightly of the release from its repo, switch the compiler, choose one nightly for the build, and when to stop.",
+    keywords: ["version mismatch", "roc version mismatch", "does not compile", "does not build", "fail to compile",
+      "fail to build", "compile error", "build error", "error in a platform", "error in a package",
+      "which nightly", "pinned nightly", "nightly pin", "older nightly", "newer nightly",
+      "latest nightly", "roc nightly", "switch nightly", "switch compiler", "downgrade", "incompatible",
+      "compatibility", "roc/packages", "package cache", "roc install"],
+  },
   app_header: {
     file: "app_header.roc",
     description: "Headerless apps and `app [main!] { pf: platform \"...\" }` declarations.",

@@ -28,6 +28,7 @@ import {
   type Diagnostic,
 } from "./roc_check.ts";
 import { CORE } from "./scopes.ts";
+import { loadTopic, topicsFor } from "./topics.ts";
 
 const HANDLER = `respond! : Server.Request, Context => Try(Server.Outcome, [ServerErr(Str), ..])
 respond! = |_request, _context| Ok(Server.respond(Response.from_status(200)))
@@ -228,6 +229,17 @@ test("the caller's errors are shown in full and the package's are counted", () =
     text.indexOf("This methodd method") < text.indexOf("gregorian/Date.roc"),
     "the package tally came before the caller's error"
   );
+});
+
+// An error in a release needs another compiler, not an edit, and the topic has
+// the steps. A warning there needs nothing, so it gets no pointer.
+test("an error in a release points at the version_mismatch topic, and a warning does not", () => {
+  const opts = { source: "", supplied: [], wrappedIn: null, ok: false };
+  const topic = formatReport(parseReport(REPORT), opts).match(/topic: "(\w+)"/)?.[1];
+  assert.equal(topic, "version_mismatch");
+  assert.ok(loadTopic(topic, topicsFor(CORE).topics), `no topic ${topic}`);
+  const warning = REPORT.split("\n").filter((l) => !l.includes("✗")).join("\n");
+  assert.doesNotMatch(formatReport(parseReport(warning), opts), /version_mismatch/);
 });
 
 test("a clean check says so, and a wrap says what it added", () => {
