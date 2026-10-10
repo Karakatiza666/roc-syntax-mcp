@@ -321,6 +321,15 @@ No code in a plugin runs, and `add` runs no install scripts. `add` installs the
 plugin into the server's own folder, which `plugin list` shows. The server then
 serves the plugin in every workspace.
 
+`add` also takes a git source that npm accepts:
+
+```bash
+roc-syntax-mcp plugin add github:<owner>/<repo>#<tag>
+```
+
+The repository root must hold `plugin.json`. `plugin update` does not update a
+git install. To update it, `plugin add` the new tag.
+
 `roc-syntax-mcp upgrade` updates the server, then runs `plugin update` in the
 new server, because the new server decides which plugins it serves. The command
 updates a global install made by npm, pnpm, Yarn 1 or Bun. It updates an

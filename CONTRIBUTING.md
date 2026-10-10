@@ -246,6 +246,13 @@ place where a reader meets it. `list_roc_index(kind: "scopes")` names the
 maintainer of every scope, or says "not named". This design lets anyone publish
 a plugin, and the maintainer name tells the reader who is responsible for it.
 
+A plugin in its own repository installs with no npm publish, as
+`plugin add github:<owner>/<repo>#<tag>`. Put `plugin.json` and `package.json`
+at the repository root, and commit `index.json`, because the install runs no
+script. npm packs the clone, so the `files` list applies. A plugin under
+`plugins/` in this repository cannot install from git: for a `#path:` spec,
+npm installs the root of the repository, which is the server.
+
 [`plugins/README.md`](plugins/README.md) lists the rules for a child package.
 [`docs/design/plugins.md`](docs/design/plugins.md) describes the full behavior.
 
