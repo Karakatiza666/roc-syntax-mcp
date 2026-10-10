@@ -5,7 +5,7 @@ repo     https://github.com/kili-ilo/roc-random
 tag      0.9.2
 commit   6d16260
 tarball  2ZXLX8WRqrosGu1V3VL5aXqgtfTRvJmjFPx8a26ecVmc.tar.zst
-compiler nightly-2026-10-06-c34079d
+compiler nightly-2026-10-09-258ab27
 
 # This file stays at the release that roc-ray 0.10.0 pins. roc-ray's exposed
 # Random module uses this package's State, Generator and Generation types, so

@@ -69,7 +69,7 @@ nothing reads those fields. `reference/package-plugin.md` covers packages.
 |---|---|---|---|
 | `schema` | positive integer | Yes | The manifest's schema version, `1`. The host reports it when it is older than the host's version, and never refuses it |
 | `maintainer` | string | By `validate` | The person who answers for every corpus here. The scope listing prints it unchanged. If it is absent, the listing says that no maintainer is named |
-| `compiler` | string | No | The nightly that the corpora were built against. The host reports it when it differs from the host's nightly, and never refuses it |
+| `compiler` | string | No | The nightly that the corpora were built against. The host reports it when it differs from the host's nightly, and never refuses it. `validate` checks the programs that pin these releases with it |
 | `corpora` | array, not empty | Yes | See below |
 
 ## Corpus fields

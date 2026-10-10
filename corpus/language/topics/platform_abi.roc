@@ -1,6 +1,6 @@
 # The ABI between a platform's Roc code and its host: the cases that compile
 # and then fail at run time. The `platforms` topic covers the header, the
-# hosted functions and the host side. These sections follow basic-cli 0.24.0.
+# hosted functions and the host side. These sections follow basic-cli 0.25.0.
 #
 #
 # 1. A hosted result is a closed union
@@ -19,15 +19,15 @@
 # the caller gets an open one.
 #
 #
-# 2. A single-variant tag union
+# 2. The tag union discriminant
 #
 #
-# A single-variant tag union like `[PathErr(IOErr)]` carries a one-byte
-# discriminant in the Roc ABI (always 0), although it has only one tag.
-# Host code that constructs or destructures these values must allocate that
-# byte. In basic-cli's Rust host, the `RocSingleTagWrapper<T>` type does this.
-# If you write your own host bindings, do not assume that a single-variant
-# union has the same layout as its payload.
+# A tag union stores its largest payload, then a discriminant that tells which
+# tag it holds. A union with one tag has no discriminant, so `[PathErr(IOErr)]`
+# has the same layout as `IOErr`. A union with 2 to 256 tags has a one-byte
+# discriminant. The discriminant numbers the tags in alphabetical order from 0,
+# so in `[Red, Green, Blue]` the number of `Blue` is 0. Generate these numbers
+# with `roc glue`.
 #
 #
 # 3. Record field order is part of the ABI
@@ -44,8 +44,8 @@
 # change, or the values go into the wrong slots: a segfault or silent corruption.
 #
 # A nominal record with a `_ : {}` field keeps the declared order. A field such
-# as `_ : U32` reserves that many bytes of padding. A structural record cannot
-# have a `_` field.
+# as `_ : U32` or `_reserved : U32` reserves that many bytes of padding, with
+# alignment 1. No code can read it. A structural record cannot have a `_` field.
 Header := { tag : U8, _ : {}, value : U32 }
 
 # @rejects unnamed field not allowed in structural record

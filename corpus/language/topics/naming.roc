@@ -73,6 +73,7 @@ ignore_quantity = |price, _quantity| price * 2
 #      read it.
 #   4. A lambda reads the value that the `var` had when the lambda was defined.
 #   5. Each value that you assign to it must have the same type.
+#   6. Reassigning a `var` copies nothing, because a `var` is only a name.
 captured = || {
 	var $n = 1
 	read_n = || $n

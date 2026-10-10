@@ -70,8 +70,10 @@ expect 0x1e3 == 483
 
 # `Dec` uses 16 bytes and has exactly 18 digits after the point. Its range is
 # about -1.7e20 to 1.7e20. It stores base-10 digits, so decimal fractions are
-# exact: use it for money. `F32` and `F64` are IEEE 754 binary floats. They are
-# faster and have a much wider range: use them for graphics and simulation.
+# exact: use it for money. `F32` and `F64` are IEEE 754 binary floats. They
+# have a much wider range: use them for graphics and simulation. `Dec` adds as
+# fast as `I128`, but it multiplies and divides in software, which is much
+# slower than a float.
 expect 0.1.Dec + 0.2 == 0.3
 expect 0.1.F64 + 0.2 != 0.3 # the sum is 0.30000000000000004
 
@@ -79,6 +81,20 @@ expect 0.1.F64 + 0.2 != 0.3 # the sum is 0.30000000000000004
 # and some operations give NaN.
 expect (1.F64 / 0).is_infinite()
 expect (0.F64 / 0).is_nan()
+
+# Integer overflow crashes, and so does integer division by zero. The methods
+# below give other behavior. `minus` and `times` have the same set. A `_wrap`
+# method wraps around without a check, as in C, for example in a hash function.
+expect 250.U8.plus_try(10) == Err(Overflow)
+expect 250.U8.plus_wrap(10) == 4
+expect 250.U8.plus_saturated(10) == 255
+expect 250.U8.plus_overflows(10)
+expect 7.U8.div_try(0) == Err(DivByZero)
+
+# When the compiler evaluates a top-level value, an overflow is a compile-time
+# error.
+# @rejects compile time crash
+# too_big = 250.U8 + 10
 
 # Range operators build a `Range(num)` over any numeric type. See the `ranges`
 # topic.

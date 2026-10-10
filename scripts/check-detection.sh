@@ -25,7 +25,7 @@ fi
 PLATFORM_URL_BASE="https://github.com/roc-lang/basic-webserver/releases/download"
 TARBALL="AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst"
 CLI_URL_BASE="https://github.com/roc-lang/basic-cli/releases/download"
-CLI_TARBALL="AEjfyaMFFbh8FJrkkHJy68riVNPr3Qp6c6PawWQjBwMH.tar.zst"
+CLI_TARBALL="CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA.tar.zst"
 
 # The wrapper writes the stderr of the server to $ROC_MCP_LOG. Without the
 # wrapper, the claude CLI writes that stderr into its own debug log.
@@ -98,8 +98,8 @@ run_case plain "$WORK/plain" "No platform detected"
 # 4. A second platform. Detection selects the corpus as well as the version, so
 # this case checks that it selects basic-cli and not basic-webserver.
 mkdir -p "$WORK/cli/.git"
-cli_app_header 0.24.0 > "$WORK/cli/main.roc"
-run_case cli "$WORK/cli" "Detected basic-cli 0\.24\.0 from main\.roc"
+cli_app_header 0.25.0 > "$WORK/cli/main.roc"
+run_case cli "$WORK/cli" "Detected basic-cli 0\.25\.0 from main\.roc"
 
 # 5. A package that the app pins and the active platform does not declare. The
 # app header decides the namespaces, so the server must report the extra

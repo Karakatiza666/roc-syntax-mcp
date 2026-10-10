@@ -82,6 +82,35 @@ boolean_operators = |a, b| {
 # flip : Switch -> Switch
 # flip = |s| !s
 
+# Precedence, from tightest to loosest. Each row groups left to right.
+#
+#   calls, `.method()`, `.field`, `|>`, postfix `?`, then prefix `-` and `!`
+#   `*` `/` `//` `%`
+#   `+` `-`
+#   `??`
+#   `?` with spaces around it, followed by a handler
+#   `==` `!=` `<` `<=` `>` `>=`   (no chaining)
+#   `and`
+#   `or`
+#   `..<` `..=`                   (no chaining)
+double : I64 -> I64
+double = |n| n * 2
+
+expect (1 + 2 |> double) == 5 # 1 + double(2)
+expect (Ok(5) ?? 0 + 1) == 5 # Ok(5) ?? (0 + 1)
+
+# A method call binds tighter than prefix `-`, so `-x.abs()` is `-(x.abs())`.
+expect {
+	x = 3.I64
+	-x.abs() == -3
+}
+
+# A comparison returns a `Bool`, so `a < b < c` compares a `Bool` with `c`.
+# Write `a < b and b < c`.
+# @rejects type mismatch
+# in_order : I64, I64, I64 -> Bool
+# in_order = |a, b, c| a < b < c
+
 # `..<` and `..=` build a reusable `Range(num)`. `..<` excludes the upper bound,
 # `..=` includes it. `for` loops call the range's `iter` method automatically.
 sum_to : U64 -> U64
@@ -101,7 +130,8 @@ sum_to = |n| {
 # and custom ranges.
 
 # `??` supplies a default when the left side evaluates to `Err`. It desugars to
-# a `match` returning the default on `Err(_)`.
+# a `match` returning the default on `Err(_)`. Like `and` and `or`, it
+# short-circuits, so it evaluates the default only on `Err`.
 parse_or_default : Str -> I64
 parse_or_default = |text| I64.from_str(text) ?? 0
 
@@ -119,5 +149,6 @@ third : List(I64) -> I64
 third = |items| items.subscript(2) ?? 0
 
 # `|>` (the pizza operator) passes a value as the first argument to any function
-# in scope. See the `static_dispatch` topic for how it pairs with `.method()`.
+# in scope. A function name follows it. See the `static_dispatch` topic for how
+# it pairs with `.method()`.
 piped = "Three" |> Str.concat(" Four")

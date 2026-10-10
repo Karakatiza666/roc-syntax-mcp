@@ -1,6 +1,6 @@
 ---
 name: refresh-roc-upstream
-description: Refresh roc-syntax-mcp's bundled Roc content (all_roc_syntax.roc, Builtin.roc, corpus/language/langref/, and the basic-webserver and basic-cli platform corpora) to a newer upstream and reconcile everything derived from it - the builtin parser, hints, topic examples, overview, README, and tests. Use when the bundled Roc nightly moves, when any UPSTREAM file under corpus/ is stale, or when the bundled reference contradicts the current compiler. The nightly, the language snapshot, and every platform release are refreshed in lockstep, because the gates check them as a set.
+description: Refresh roc-syntax-mcp's bundled Roc content (all_roc_syntax.roc, Builtin.roc, corpus/language/langref/, and the basic-webserver and basic-cli platform corpora) to a newer upstream and reconcile everything derived from it - the builtin parser, hints, topic examples, overview, README, and tests. Use when the bundled Roc nightly moves, when any UPSTREAM file under corpus/ is stale, or when the bundled reference contradicts the current compiler. Each platform stays on the nightly of its release until it is repinned, because the gates check every program with the nightly it was written for.
 ---
 
 # Refreshing roc-syntax-mcp from upstream
@@ -37,7 +37,7 @@ In this skill, a gate is one of the repo's named check scripts: `bun run check`
 | `src/overview.ts` | The two-page overview that `get_roc_syntax()` serves, under a strict token budget |
 | `corpus/language/topics/*.roc` | Hand-written fragments. This is the derived content with the highest risk |
 | `scripts/check-roc.sh` | Type-checks every bundled `.roc` against a real compiler |
-| `corpus/platforms/<name>/UPSTREAM` | One file per platform corpus. Each platform is a separate upstream with its own release schedule, and all of them are refreshed under the same nightly. See `reference/basic-webserver.md` and `reference/basic-cli.md` |
+| `corpus/platforms/<name>/UPSTREAM` | One file per platform corpus. Each platform is a separate upstream with its own release schedule and the nightly of its release. See `reference/basic-webserver.md` and `reference/basic-cli.md` |
 | `corpus/packages/http/UPSTREAM` | One package that both platforms re-export. It is indexed once at `corpus/packages/http/` and listed under each platform |
 | `corpus/*/*/index.json`, `plugins/*/index.json` | The parsed signatures of the release that the `release` URL of each manifest names. `npm run build:index` generates them for both trees. Never edit them. The repository contains no release source |
 | `corpus/packages/roc-random/UPSTREAM` | No bundled platform pins it. It stays at the release that the roc-ray plugin pins, because the API of roc-ray uses its types |
@@ -57,23 +57,33 @@ Two traps from past refreshes:
   `check-platform-examples.sh` gives each file `ROC_CHECK_TIMEOUT` seconds
   (default 300) and reports a signal. Bisect the file that it names.
 
-## Kinds of pin, one of them shared
+## Kinds of pin
 
 | Pin | Recorded in | Changes when |
 |---|---|---|
-| Compiler nightly | The `compiler` line in each `UPSTREAM` file under `corpus/` that has one | You unpack a newer `roc_nightly-*` |
+| Bundled nightly | The `compiler` line in `corpus/language/UPSTREAM` | You unpack a newer `roc_nightly-*` |
+| Platform nightly | The `compiler` line in `corpus/platforms/<name>/UPSTREAM`: the nightly of that release, from upstream's `.roc-version` at the tag | That platform is repinned |
 | Language snapshot | `corpus/language/UPSTREAM`: one roc-lang/roc commit | You copy `Builtin.roc`, `all_roc_syntax.roc` and `corpus/language/langref/` again |
 | Platform release | `corpus/platforms/<name>/UPSTREAM`: a tag and tarball hash, one file per platform | That platform makes a release |
 | Shared package | `corpus/packages/http/UPSTREAM`: a tag and tarball hash for `roc-lang/http` | roc-lang/http makes a release. Both platforms pin it, so it changes for both at the same time |
 | Plugin's package | `corpus/packages/roc-random/UPSTREAM`: a tag and tarball hash | roc-ray changes to a new roc-random release. A new roc-random release alone is not a reason |
 
-All corpora share the nightly, so the refresh of all corpora is one job. Every
-bundled app pins its platform by tarball URL. Thus `check:platforms` gives the
-compiler the released platform and type-checks every program against it. The
-gate checks the full set. You cannot validate one pin in the set while another
-pin can change. Thus refresh all pins together (in lockstep). Make one change
-and one commit, and update every `UPSTREAM` file under `corpus/`, even when only
-one corpus changed.
+Each program is checked with the nightly that it was written for. The gates
+(`scripts/nightlies.mjs`) take that nightly from the first of these:
+
+1. The `roc:` line in the program's header. Upstream examples carry one, and
+   the examples here keep upstream's line.
+2. The `compiler` line in the `UPSTREAM` file of the platform release that the
+   program pins by tarball URL. This covers the topics, `verify/` and the
+   scaffold. A plugin names the nightly in the `compiler` field of its
+   `plugin.json`.
+3. The bundled nightly.
+
+Unpack each nightly that the gates need at the repo root. A gate that lacks one
+fails and names it. So a platform with no release for a new nightly stays on
+the nightly of its release, and the refresh of the other corpora does not fail
+on it. The agent that copies one of its examples gets the `roc:` line, and the
+compiler warns and names that nightly when the agent runs another one.
 
 A track is the set of steps for one kind of change: the language track or a
 platform track. This file covers every track. The checklist for each platform
@@ -82,7 +92,8 @@ in `reference/` has its own repin table.
 You cannot fix a nightly that breaks a platform in this repo. The `index.json`
 files are generated from the released tarballs, and nothing compiles against
 them. The gates compile apps that pin each release by URL. When a pair does not
-build, there are two options: a newer platform release or an older nightly. For
+build, there are two options: a newer platform release, or the nightly of the
+current release, which the platform's `compiler` line already names. For
 example, patch `0002-restore-parked-gregorian-examples.patch` is in the
 basic-webserver track only because `gregorian` fails under every nightly from
 `db56022` to `130536d`. The platform did not change. The compiler did.
@@ -99,7 +110,7 @@ For this reason, Step 1 comes before any edit:
 
 | Baseline under the new nightly | Meaning | Track |
 |---|---|---|
-| All green | The nightly changed nothing that this repo relies on | Neither. Change `compiler` in every `UPSTREAM` file under `corpus/`, and say in the commit that the set was checked again |
+| All green | The nightly changed nothing that this repo relies on | Neither. Change the `compiler` line in `corpus/language/UPSTREAM`, and say in the commit that the set was checked again |
 | `check:roc` fails | The language changed | Language: Steps 2, 4, 5 |
 | `check:platforms` or `check:roc-check` fails | This nightly does not build with a pinned release | Platform: Step 3, then the `reference/` page of the platform that fails. The gate names the file, so find which platform the file belongs to before you assume that both changed |
 | Both fail | The usual result of a nightly that adds a syntax change | Both, in one commit |
@@ -112,10 +123,13 @@ in the repo root. `.gitignore` already excludes `roc_nightly-*/` and its
 tarball.
 
 ```bash
-ROC=$(echo "$PWD"/roc_nightly-*/roc)   # a glob does not expand in an assignment
+ROC=$(echo "$PWD"/roc_nightly-*-<date>-<commit>/roc)   # a glob does not expand in an assignment
 export ROC
 "$ROC" version
 ```
+
+Name the new nightly in the glob, because the repo root also holds the nightlies
+of the platform releases.
 
 Export `ROC` once, here, so that every later command inherits it. The prefix
 form `ROC=$PWD/roc_nightly-*/roc npm run check:roc` does not work. Bash does not
@@ -125,8 +139,7 @@ reports that it skipped, because it has no compiler. In this case `check` prints
 
 The bundled content must match the language of that binary. Thus select a
 nightly built at or near the commit that you pin. At the end, write the nightly
-that you selected on the `compiler` line of every `UPSTREAM` file under
-`corpus/`.
+that you selected on the `compiler` line of `corpus/language/UPSTREAM`.
 
 ## Step 1: baseline before you change anything
 
@@ -198,16 +211,14 @@ gh release list --repo roc-lang/basic-cli --limit 5
 gh release list --repo roc-lang/http --limit 5
 ```
 
-Run the query once for each upstream. There are two possible outcomes. Both end
-when the platform's `corpus/platforms/<name>/UPSTREAM` names the new nightly on
-its `compiler` line:
+Run the query once for each upstream. There are two possible outcomes:
 
-- The platform gates passed, and no newer release exists. Index nothing again.
-  Update `compiler`, and record in the commit that the set was checked again. A
-  pin that was measured and did not change is a result to state, because in a
-  diff it looks the same as a pin that nobody checked.
-- The platform gates failed, or a newer release exists. Work through that
-  platform's `reference/` page from start to end:
+- No newer release exists. Index nothing again, and leave its `compiler` line
+  on the nightly of its release. Record in the commit that the platform was
+  checked again. A pin that was measured and did not change is a result to
+  state, because in a diff it looks the same as a pin that nobody checked.
+- A newer release exists. Work through that platform's `reference/` page from
+  start to end, and set its `compiler` line to the nightly of the new release:
   1. Move the `release` URL in its `plugin.json`.
   2. Run `npm run build:index`.
   3. Copy `examples/` and `docs/` again, where the platform has them.
@@ -223,12 +234,13 @@ cache.
 
 `kili-ilo/roc-random` follows the roc-ray pin in
 `plugins/roc-ray/platform/main.roc`, with the same rule. `check:platforms`
-compiles its `verify/` app. If the release does not change, change only its
-`compiler` line.
+compiles its `verify/` app. A package is checked with the nightly of the
+platform that its programs pin, so its own `compiler` line only records that
+nightly.
 
-If the gates fail and no newer release exists, the pair is invalid. Keep the
-last nightly that worked, and do not ship a corpus that does not compile. Do not
-change any `compiler` line.
+If a program on the bundled nightly fails and no newer release fixes it, do not
+ship a corpus that does not compile. Keep the last nightly that worked, or use
+`scripts/gate-overrides.json` for a fix that upstream has not released.
 
 ## Step 4: repair the parser before you trust the index
 
@@ -271,7 +283,7 @@ Work through `reference/derived-content.md`. In summary:
 | `README.md` refresh section | The pinned commit and its link |
 | `package.json` version | Increase it. The server reads its version from this field |
 | `corpus/language/UPSTREAM` | The `compiler` line, always. When the language changed, also the commit, the date, the counts and any new path mapping |
-| `corpus/platforms/<name>/UPSTREAM` | The `compiler` line, always, in every one of these files. For the platform that changed, also the tag, commit, hashes and module counts |
+| `corpus/platforms/<name>/UPSTREAM` | Only for the platform that changed: the tag, commit, hashes, module counts, and the `compiler` line of the new release |
 | `corpus/packages/http/UPSTREAM` | Tag and hash, only when both platforms changed to the same new `roc-lang/http` release |
 | `corpus/*/*/plugin.json` `release` | The tarball URL. It must match the repo, tag and tarball in `UPSTREAM`. `src/upstream.test.ts` asserts that they match |
 | `corpus/*/*/index.json`, `plugins/*/index.json` | Run `npm run build:index` after any `release` changes. `check:index` fails until you run it. A plugin outside this repo runs `roc-syntax-mcp plugin index <dir>` |
@@ -345,10 +357,8 @@ source:
 
 Make two commits, or one squashed commit with two sections. The copied half and
 the derived half are separate jobs, and a reader wants to know which job changed
-a file. The lockstep rule applies to the pins, not to the number of commits. You
-can split copied from derived if that is clearer. But keep every `UPSTREAM` file
-under `corpus/` in the commit that changes the nightly, so that no commit in the
-series names two different compilers.
+a file. You can split copied from derived if that is clearer. Keep
+`corpus/language/UPSTREAM` in the commit that changes the bundled nightly.
 
 State the pinned commit in the subject. Quote the measurements, because they are
 the reason to trust the refresh: item count, module count and tool-list token
@@ -377,8 +387,9 @@ content, not the test.
 - Doc comments in bundled `.roc` are `##`, never `# #`.
 - `tools/list` stays under 2,800 tokens at 3.5 characters per token.
 - Only `@modelcontextprotocol/server` and `zod` are runtime dependencies.
-- Every `UPSTREAM` file under `corpus/` with a `compiler` line names the same
-  nightly. Each `corpus/platforms/<name>/UPSTREAM` tag is the version that
+- `corpus/language/UPSTREAM` and every `corpus/platforms/<name>/UPSTREAM` name
+  a nightly on a `compiler` line. Each `corpus/platforms/<name>/UPSTREAM` tag is
+  the version that
   `src/scopes.ts` serves. Each platform's scaffold pins the tarball that its
   provenance file records.
 - An address space holds at most one platform, because an app pins one platform.

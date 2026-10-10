@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "maintainer": "roc-syntax-mcp, from the lukewilliamboswell/weaver releases",
-  "compiler": "nightly-2026-10-06-c34079d",
+  "compiler": "nightly-2026-10-09-258ab27",
   "corpora": [
     {
       "release": "https://github.com/lukewilliamboswell/weaver/releases/download/0.9.0/7j6KBFBEZ8pNMLQHkx9xiwyZ2PmwQPgKNDPUih6gKe77.tar.zst",

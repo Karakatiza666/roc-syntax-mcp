@@ -117,7 +117,7 @@ function packagePlugin(dir: string): string {
 const WEAVE_PIN =
   "https://github.com/someone/weave/releases/download/0.8.0/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.tar.zst";
 const CLI_PIN =
-  "https://github.com/roc-lang/basic-cli/releases/download/0.24.0/AEjfyaMFFbh8FJrkkHJy68riVNPr3Qp6c6PawWQjBwMH.tar.zst";
+  "https://github.com/roc-lang/basic-cli/releases/download/0.25.0/CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA.tar.zst";
 
 /** A one-platform manifest. Its name, version and detection come from the release. */
 const ray = (corpus: Record<string, unknown> = {}, top: Record<string, unknown> = {}) => ({
@@ -462,7 +462,7 @@ test("a package plugin claiming a documented package's name loses it", async () 
 // -----------------------------------------------------------------------------
 
 /** An app that pins a platform that this server bundles, so that detection finds a platform. */
-const CLI_APP = `app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.24.0/AEjfyaMFFbh8FJrkkHJy68riVNPr3Qp6c6PawWQjBwMH.tar.zst" }
+const CLI_APP = `app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.25.0/CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA.tar.zst" }
 
 import pf.Stdout
 `;
@@ -792,7 +792,7 @@ test("a name two namespaces declare is answered with both, and says so", async (
   });
   for (const text of texts.slice(0, 2)) {
     assert.match(text, /`Random\.seed_u64!` is declared by 2 modules/);
-    assert.match(text, /^## Random\.seed_u64! \(basic-cli 0\.24\.0\)/m);
+    assert.match(text, /^## Random\.seed_u64! \(basic-cli 0\.25\.0\)/m);
     assert.match(text, /^## Random\.seed_u64! \(roc-random 0\.9\.2\)/m);
   }
   // One declaration, no note.

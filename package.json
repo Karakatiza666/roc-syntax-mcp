@@ -14,6 +14,7 @@
     "corpus",
     "scripts/check-platform-examples.sh",
     "scripts/check-roc-check.mjs",
+    "scripts/nightlies.mjs",
     "scripts/tree.mjs",
     "LICENSES",
     "THIRD-PARTY-NOTICES.md",

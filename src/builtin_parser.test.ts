@@ -90,14 +90,14 @@ test("signatures of wrapped methods stay intact", () => {
 const INT_WIDTHS = ["I8", "I16", "I32", "I64", "I128", "U8", "U16", "U32", "U64", "U128"];
 
 test("upstream-deleted builtins do not resolve", () => {
-  const gone = ["List.encode", "List.join_with", "Num.Dec.to_i128_try", "Num.Dec.to_i128_wrap"];
+  const gone = ["List.encode", "List.join_with", "Num.Dec.to_i128_try", "Num.Dec.to_i128_wrap", "Try.from_interpolation"];
   for (const t of INT_WIDTHS) {
     gone.push(`Num.${t}.shift_left_by`, `Num.${t}.shift_right_by`, `Num.${t}.shift_right_zf_by`);
   }
   // `compare` became `order_relative_to` at commit 2d69988, on every numeric
   // type that had it. `Num.F32`/`F64` never had one.
   for (const t of [...INT_WIDTHS, "Dec"]) gone.push(`Num.${t}.compare`);
-  assert.equal(gone.length, 45);
+  assert.equal(gone.length, 46);
   assert.deepEqual(gone.filter((n) => index.byFullName.has(n)), []);
 });
 
@@ -151,8 +151,8 @@ test("the JSON codec entry points carry named where clauses", () => {
 const values = index.items.filter((i) => i.kind === "value");
 const types = index.items.filter((i) => i.kind === "type");
 
-test("Builtin.roc yields 2298 methods and 29 types", () => {
-  assert.equal(values.length, 2298);
+test("Builtin.roc yields 2297 methods and 29 types", () => {
+  assert.equal(values.length, 2297);
   assert.equal(types.length, 29);
 });
 

@@ -59,7 +59,7 @@ test("every scope in the registry has the content it declares", () => {
 
 test("the corpora are the sizes the plan was written against", () => {
   const builtin = registry.index("builtin");
-  assert.equal(builtin.items.filter((i) => i.kind === "value").length, 2298);
+  assert.equal(builtin.items.filter((i) => i.kind === "value").length, 2297);
   assert.equal(builtin.items.filter((i) => i.kind === "type").length, 29);
 
   const bws = registry.index("basic-webserver");
@@ -306,7 +306,7 @@ test("a namespace no provider can serve is left empty and says so", () => {
       "Install a package plugin at 1.0.0, or run this server with --force=roc-lang/http to read 1.2.0 anyway."
   );
   // No note when every namespace has a provider, as in the shipped corpora.
-  assert.equal(formatPackageNote("basic-cli", "0.24.0", registry.packages("basic-cli")), null);
+  assert.equal(formatPackageNote("basic-cli", "0.25.0", registry.packages("basic-cli")), null);
 });
 
 // -----------------------------------------------------------------------------
@@ -711,14 +711,14 @@ test("every checked-in scope is built from a manifest on disk", () => {
   assert.deepEqual(cli.modules, [
     {
       release:
-        "https://github.com/roc-lang/basic-cli/releases/download/0.24.0/AEjfyaMFFbh8FJrkkHJy68riVNPr3Qp6c6PawWQjBwMH.tar.zst",
+        "https://github.com/roc-lang/basic-cli/releases/download/0.25.0/CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA.tar.zst",
       ns: "platform:basic-cli",
-      origin: "basic-cli 0.24.0",
+      origin: "basic-cli 0.25.0",
       moduleFromFilename: true,
       exposesFrom: "main.roc",
     },
   ]);
-  assert.equal(cli.version, "0.24.0");
+  assert.equal(cli.version, "0.25.0");
   assert.equal(cli.scaffold, "corpus/platforms/basic-cli/scaffold.roc");
   assert.equal(cli.examples, "corpus/platforms/basic-cli/examples");
   assert.equal(SCOPE_DEFS["basic-webserver"].docs, "corpus/platforms/basic-webserver/docs");

@@ -15,9 +15,14 @@ Model := { value : Str }.{
 }
 
 # `_` asks the compiler to infer the method's type and synthesize the body. It
-# is recognized only for those six names. Any other declaration without a body
-# is an error, except host-provided platform declarations. The opt-in behaves
-# the same in application, package, and platform modules.
+# is recognized only for those six names, and any other name gives a warning.
+# In a platform module, a declaration without a body declares a host-provided
+# function. The opt-in behaves the same in application, package, and platform
+# modules.
+# @warns unsupported generated method
+# Label := [Label(Str)].{
+# 	to_str : _
+# }
 
 # A declaration with a body is an ordinary custom implementation and requests
 # no derivation, so a type can derive some methods and hand-write others.
@@ -38,12 +43,24 @@ Maybe(a) := [Just(a), Nothing].{
 	map! : _
 }
 
+# A derived method covers every tag that an open union can hold. So `==` on
+# `[Nope, ..others]` needs a `where` clause that gives `others` an `is_eq`.
+# Without an annotation, the compiler infers the clause.
+is_nope : [Nope, ..others] -> Bool where [others.is_eq : others, others -> Bool]
+is_nope = |value| value == Nope
+
+expect is_nope(Nope)
+
+# @rejects missing method
+# is_nope_bare : [Nope, ..others] -> Bool
+# is_nope_bare = |value| value == Nope
+
 # The full set of well-known methods. The checker resolves each use to one
 # concrete implementation, and codegen emits a direct call, so no dispatch
 # happens at runtime. The table does not limit method names, because a package
 # can define and require its own with a `where` clause.
 #
-#   to_inspect          Str.inspect(value)
+#   to_inspect          Str.inspect(value) and `dbg`
 #   is_eq               `==` and `!=` (`!=` calls is_eq then Bool.not)
 #   to_hash             Dict, Set, and other hash-based APIs
 #   plus minus times    `+` `-` `*`
@@ -67,8 +84,9 @@ Maybe(a) := [Just(a), Nothing].{
 #   encoder_for         generic encoders, such as JSON
 #   map map!            mapping a selected payload in an eligible tag union
 
-# `to_inspect` customizes how `Str.inspect` renders a value. Without it,
-# `Str.inspect` uses Roc's built-in structural representation.
+# `to_inspect` customizes how `Str.inspect` renders a value. `dbg` and test
+# failure reports use `Str.inspect`. Without `to_inspect`, `Str.inspect` shows
+# the structure of the value.
 Color := [Red, Green, Blue].{
 	to_inspect : Color -> Str
 	to_inspect = |color| match color {
@@ -99,7 +117,8 @@ expect Fixed.F(1.I64).to_inspect() == "custom"
 # Literal conversion hooks. A number literal dispatches `from_numeral` when its
 # target type is a nominal type that defines it. `Numeral` carries the
 # literal's exact digits, so a type can accept the range its representation
-# supports and reject the rest.
+# supports. When the method returns `Err(InvalidNumeral(message))`, the
+# compiler reports an error with that message.
 Celsius := { degrees : I64 }.{
 	from_numeral : Numeral -> Try(Celsius, [InvalidNumeral(Str)])
 	from_numeral = |n| match I64.from_numeral(n) {
@@ -131,13 +150,38 @@ HttpMethod := [Get, Post, Put, Delete].{
 method : HttpMethod
 method = "POST" # calls HttpMethod.from_quote
 
-# An interpolated string literal dispatches `from_interpolation`. The first
-# argument is the literal segment before the first interpolation. The iterator
-# yields each interpolated value paired with the literal segment that follows
-# it. Plain quoted segments are always `Str`. The interpolated values have the
-# `item` type in `Iter((item, Str))`.
-#
-#   from_interpolation : Str, Iter((item, Str)) -> T
+# An interpolated string literal dispatches `from_interpolation` in two stages.
+# At compile time, the method gets the segments, which are the text around the
+# interpolations. A literal with n interpolations has n + 1 segments. The method
+# returns the function that builds the value at runtime from the interpolated
+# values. That function cannot fail. When the method returns
+# `Err(InvalidInterpolation(message))`, the compiler reports an error with that
+# message.
+Html := [Html(Str)].{
+	from_interpolation : List(Str) -> Try((List(Str) -> Html), [InvalidInterpolation(Str)])
+	from_interpolation = |segments|
+		if segments.any(|segment| segment.contains("<script")) {
+			Err(InvalidInterpolation("Html literals cannot contain script tags"))
+		} else {
+			# `Str.from_interpolation` gives the function that joins the parts.
+			Str.from_interpolation(segments).map_ok(|assemble|
+				|values| Html(assemble(values.map(|value| value.replace_each("<", "&lt;")))))
+		}
+
+	to_str : Html -> Str
+	to_str = |Html.Html(text)| text
+}
+
+greeting : Str -> Html
+greeting = |name| "<p>Hi, ${name}!</p>"
+
+expect greeting("<b>").to_str() == "<p>Hi, &lt;b>!</p>"
+
+# The segments are always `Str`. The values can have any type that the returned
+# function takes, for example `List(I64) -> Sql`.
+# @rejects invalid string interpolation
+# script_page : Html
+# script_page = "<script>${"x"}</script>"
 
 # Arithmetic operators dispatch on the left operand and return its type, but the
 # right operand can differ if the signature allows it.

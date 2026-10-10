@@ -10,7 +10,8 @@ question_postfix = |strings| {
 	Ok(first_num)
 }
 
-# `?` with a right-hand side maps the err payload before early returning.
+# `?` with spaces around it and a handler after it maps the err payload before
+# early returning. Postfix `?` has no space before it.
 # The RHS can be a bare tag (used as a constructor) or any function-like
 # expression (e.g. a lambda). The err payload is passed as its argument.
 question_with_err_map : List(Str) -> Try(Str, _)

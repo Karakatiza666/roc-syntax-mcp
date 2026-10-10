@@ -2,7 +2,7 @@
   "schema": 1,
   "corpora": [
     {
-      "release": "https://github.com/roc-lang/basic-cli/releases/download/0.24.0/AEjfyaMFFbh8FJrkkHJy68riVNPr3Qp6c6PawWQjBwMH.tar.zst",
+      "release": "https://github.com/roc-lang/basic-cli/releases/download/0.25.0/CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA.tar.zst",
       "description": "The basic-cli platform: stdio, files, paths, commands, HTTP client, SQLite, TCP, TTY, env, locale, random, and time.",
       "purpose": "command-line programs and scripts",
       "overview": "overview.md",

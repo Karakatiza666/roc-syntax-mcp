@@ -1,11 +1,12 @@
 # A nominal type is a distinct type with its own identity, so it is not
-# interchangeable with its backing representation: `UserId := U64` makes
-# `UserId` and `U64` different types even though they share a layout. Two
-# nominal types with the same shape are likewise distinct.
+# interchangeable with its backing type: `UserId := U64` makes `UserId` and
+# `U64` different types even though they share a layout. Two nominal types with
+# the same shape are likewise distinct. The layout is the same, so to wrap or
+# unwrap a nominal value costs nothing at run time.
 #
 # Declared with `:=`, often with a `.{ }` methods block. Contrast:
-#   `:=`  nominal type, backing representation visible
-#   `::`  opaque nominal type, backing hidden outside the defining module
+#   `:=`  nominal type, backing type visible
+#   `::`  opaque nominal type, backing type hidden outside the defining module
 #   `:`   type alias, transparent and interchangeable with its definition
 #
 # @rejects type mismatch
@@ -59,6 +60,10 @@ meters = |Distance.(m)| m
 
 pair_num : Pair -> U64
 pair_num = |Pair.((n, _))| n
+
+# A record pattern lists every field, or ends with `..` to ignore the others.
+point_x : Point -> F64
+point_x = |Point.{ x, .. }| x
 
 expect meters(to_distance(5)) == 5
 expect pair_num(Pair.(1, "two")) == 1

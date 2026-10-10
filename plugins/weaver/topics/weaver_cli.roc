@@ -7,7 +7,7 @@
 ## converter. `topics/weaver_raw_args.roc` covers what changes on a platform
 ## that gives `main!` a `List(Str)`.
 app [main!] {
-	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.24.0/AEjfyaMFFbh8FJrkkHJy68riVNPr3Qp6c6PawWQjBwMH.tar.zst",
+	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.25.0/CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA.tar.zst",
 	weaver: "https://github.com/lukewilliamboswell/weaver/releases/download/0.9.0/7j6KBFBEZ8pNMLQHkx9xiwyZ2PmwQPgKNDPUih6gKe77.tar.zst",
 }
 
@@ -30,9 +30,8 @@ Config : {
 
 main! : List(OsStr) => Try({}, _)
 main! = |args|
-# Weaver never drops an argument of its own. basic-cli 0.24.0 already leaves
-# the program name out of `args` (it is `Env.program_name!`), so pass `args`
-# whole. A leftover `args.drop_first(1)` from an older basic-cli compiles and
+# Weaver never drops an argument of its own. basic-cli 0.25.0 does not put the
+# program name in `args` (it is `Env.program_name!`), so pass `args` whole. A leftover `args.drop_first(1)` from an older basic-cli compiles and
 # then silently loses the first real argument.
 #
 # `match`, not `?`. `?` type-checks, but it would send Help and Version out

@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "maintainer": "roc-syntax-mcp, from the niclas-ahden/joy and niclas-ahden/joy-html releases",
-  "compiler": "nightly-2026-10-06-c34079d",
+  "compiler": "nightly-2026-10-09-258ab27",
   "corpora": [
     {
       "release": "https://github.com/niclas-ahden/joy/releases/download/0.34.0/2B3sC6U2dWkVUK2VY2gJS5Wej9YCDo3ZYq2e7tMWUCNp.tar.zst",

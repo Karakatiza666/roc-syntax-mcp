@@ -131,7 +131,7 @@ map_err_chain = |strs|
 #
 # basic-cli platforms typically include `Exit(I32)` in `main!`'s error union:
 #
-#   requires {} { main! : List(Str) => Try({}, [Exit(I32), ..]) }
+#   requires { main! : List(Str) => Try({}, [Exit(I32), ..]) }
 #
 # An app that needs a specific non-zero exit code can return `Err(Exit(2))`
 # and not crash. `main_for_host!` maps every other error through its generic

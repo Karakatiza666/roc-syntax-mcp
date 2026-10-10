@@ -119,9 +119,36 @@ done
 # platforms, so the deadline is minutes, not seconds.
 deadline=${ROC_CHECK_TIMEOUT:-300}
 
+# Each program is checked with the nightly it was written for, so a platform
+# with no release for the bundled nightly does not fail the gate. The nightly is
+# the `roc:` pin of the program, else the `compiler` line in the UPSTREAM file
+# of the platform release it pins, else the running compiler. Unpack each such
+# nightly at the repo root, as roc_nightly-<target>-<date>-<commit>/.
+RUNNING="$("$ROC" version 2>/dev/null)"
+NIGHTLIES="$(node "$ROOT/scripts/nightlies.mjs" "$@")" || { echo "FAIL  the UPSTREAM nightlies do not load" >&2; exit 1; }
+
+# Prints the compiler for file $1. Prints the reason and fails when the nightly
+# is not at the repo root.
+compiler_for() {
+  local pin release nightly dir
+  pin=$(grep -m1 -oE '^\s*roc:\s*"nightly-[^"]+"' "$1" | grep -oE 'nightly-[^"]+')
+  if [ -z "$pin" ]; then
+    while IFS='|' read -r release nightly; do
+      [ -n "$release" ] && grep -qF "\"$release\"" "$1" && { pin="$nightly"; break; }
+    done <<<"$NIGHTLIES"
+  fi
+  if [ -z "$pin" ] || [[ "$RUNNING" == *"$pin"* ]]; then printf '%s' "$ROC"; return; fi
+  for dir in "$ROOT"/roc_nightly-*-"${pin#nightly-}"/; do
+    [ -x "${dir}roc" ] && { printf '%s' "${dir}roc"; return; }
+  done
+  printf 'needs %s. Unpack that nightly at the repo root' "$pin"
+  return 1
+}
+
 check() {
-  local out code
-  out=$(timeout "$deadline" "$ROC" check --no-color "$1" 2>&1)
+  local out code roc
+  roc=$(compiler_for "$1") || { printf '%s' "$roc"; return; }
+  out=$(timeout "$deadline" "$roc" check --no-color "$1" 2>&1)
   code=$?
   [ "$code" -eq 124 ] && out="roc check did not finish in ${deadline}s (set ROC_CHECK_TIMEOUT)"
   [ "$code" -ge 128 ] && [ "$code" -ne 124 ] && out="roc check died with signal $((code - 128))"$'\n'"$out"
@@ -159,11 +186,19 @@ for (const o of JSON.parse(fs.readFileSync(overrides, "utf-8"))) {
     fs.cpSync(cached, pkg, { recursive: true });
     execFileSync("patch", ["-p1", "--forward", "--silent", "-d", pkg, "-i", path.resolve(o.patch)]);
   }
-  text = text.replaceAll(`"${o.release}"`, JSON.stringify(path.join(pkg, "main.roc")));
+  // Roc rejects an absolute path for a platform, so the pin is relative to the copy.
+  text = text.replaceAll(`"${o.release}"`, JSON.stringify(path.relative(path.dirname(copy), path.join(pkg, "main.roc"))));
   used.push(path.basename(o.patch));
 }
 if (used.length > 0) {
+  // Copy the files next to the app too, because an app can import a sibling
+  // file such as `todos.html`. Do not copy directories. The scaffolded apps are
+  // in the work tree that holds the copy, so a recursive copy copies the tree
+  // into itself.
   fs.mkdirSync(path.dirname(copy), { recursive: true });
+  for (const e of fs.readdirSync(path.dirname(file), { withFileTypes: true })) {
+    if (e.isFile()) fs.copyFileSync(path.join(path.dirname(file), e.name), path.join(path.dirname(copy), e.name));
+  }
   fs.writeFileSync(copy, text);
   console.log(used.join(", "));
 }

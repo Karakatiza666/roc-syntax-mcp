@@ -1,8 +1,8 @@
 {
  "format": 1,
  "releases": {
-  "AEjfyaMFFbh8FJrkkHJy68riVNPr3Qp6c6PawWQjBwMH": {
-   "url": "https://github.com/roc-lang/basic-cli/releases/download/0.24.0/AEjfyaMFFbh8FJrkkHJy68riVNPr3Qp6c6PawWQjBwMH.tar.zst",
+  "CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA": {
+   "url": "https://github.com/roc-lang/basic-cli/releases/download/0.25.0/CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA.tar.zst",
    "snapshot": {
     "kind": "platform",
     "exposes": [
@@ -2357,7 +2357,7 @@
         "name": "from_interpolation",
         "modulePath": "OsStr",
         "fullName": "OsStr.from_interpolation",
-        "signature": "Str, Iter((Str, Str)) -> OsStr",
+        "signature": "List(Str) -> Try((List(Str) -> OsStr), [InvalidInterpolation(Str)])",
         "docs": "Build a UTF-8 OS string from an interpolated string literal.",
         "line": 42
        },
@@ -2805,7 +2805,7 @@
         "name": "from_interpolation",
         "modulePath": "Path",
         "fullName": "Path.from_interpolation",
-        "signature": "Str, Iter((Str, Str)) -> Path",
+        "signature": "List(Str) -> Try((List(Str) -> Path), [InvalidInterpolation(Str)])",
         "docs": "Create a UTF-8 path from an interpolated string literal.\nThis performs textual concatenation; use [join] for path-component joining.",
         "line": 240
        },

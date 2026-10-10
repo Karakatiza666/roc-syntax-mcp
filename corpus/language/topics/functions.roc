@@ -7,6 +7,21 @@ identity = |x| x
 
 add = |a, b| a + b
 
+# A call gives all the arguments at once. Roc has no currying and no partial
+# application.
+# @rejects too few args
+# add_one = add(1)
+
+# To supply some arguments early, write a closure. A closure uses names from
+# the scope where it is defined, and keeps their values. Values are immutable,
+# so `add_five` always adds 5.
+make_adder : U64 -> (U64 -> U64)
+make_adder = |amount| |n| n + amount
+
+add_five = make_adder(5)
+
+expect add_five(1) == 6
+
 # `|| body` takes no arguments.
 answer = || 42
 
@@ -42,14 +57,16 @@ same_len = List.len
 expect same_len(["a"]) == 1 and same_len([1, 2]) == 2
 
 # Recursion needs no keyword. Top-level definitions can be in any order, so two
-# top-level functions can call each other.
+# top-level functions can call each other. A tail call reuses the stack frame of
+# the caller, also when the callee is a different function or a function value.
+# So `is_even(10_000_000)` does not overflow the stack.
 is_even : U64 -> Bool
 is_even = |n| if n == 0 True else is_odd(n - 1)
 
 is_odd : U64 -> Bool
 is_odd = |n| if n == 0 False else is_even(n - 1)
 
-expect is_even(10) and is_odd(7)
+expect is_even(10_000_000) and is_odd(7)
 
 # A top-level cycle is allowed only when every value in it is a function.
 #

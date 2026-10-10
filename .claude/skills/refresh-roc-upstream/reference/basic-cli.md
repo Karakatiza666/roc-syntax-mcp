@@ -1,20 +1,19 @@
 # Refreshing the basic-cli corpus
 
 basic-cli is one of two platform upstreams. Each one has its own release
-schedule, and both are refreshed under the same compiler nightly as the language
-corpus. `reference/basic-webserver.md` covers the other platform and everything
-that the two share. This page covers only the differences. There are two reasons
-to refresh this corpus, and each one needs different work:
+schedule, and the gates check each one with the nightly of its release.
+`reference/basic-webserver.md` covers the other platform and everything that
+the two share. This page covers only the differences. There are two reasons to
+refresh this corpus, and each one needs different work:
 
 | Trigger | What has to happen |
 |---|---|
-| A new basic-cli release | Move the `release` URL, run `npm run build:index`, regenerate the patch, and repin every site below |
-| A compiler nightly bump | Run the gates again first. If they pass, index nothing again and update the `compiler` line. If they fail, find a release that builds with the nightly, or keep the old nightly |
+| A new basic-cli release | Move the `release` URL, run `npm run build:index`, regenerate the patch, set the `compiler` line to the nightly of the release, and repin every site below |
+| A compiler nightly bump | Nothing here. The corpus stays on the nightly of its release. Run the gates again, and record in the commit that the platform was checked again |
 
-Both triggers go in the same commit as the language refresh, for the reason that
-`SKILL.md` gives. Every app here pins its platform by tarball URL. Thus
-`check:platforms` gives the compiler the released platform, and checks the
-nightly and the tag as a pair.
+Every app here pins its platform by tarball URL. Thus `check:platforms` gives
+the compiler the released platform, and checks the release with its own
+nightly, by the rule in `SKILL.md`.
 
 `corpus/platforms/basic-cli/UPSTREAM` records the pinned tag, the tarball hash,
 the compiler nightly, the path mapping, and what was intentionally left out.
@@ -73,7 +72,6 @@ together.
 | `scripts/check-detection.sh`, `scripts/check-roc-check.mjs` | Fixture headers |
 | `src/detect.test.ts`, `src/detect_server.test.ts` | The basic-cli URL helpers, and the version that each assertion names |
 | `corpus/platforms/basic-cli/UPSTREAM` | Tag, commit, tarball hash, and the `compiler` line |
-| `corpus/language/UPSTREAM`, `corpus/platforms/basic-webserver/UPSTREAM` | Their `compiler` lines, which must name the same nightly |
 
 `src/upstream.test.ts` finds the most important missed sites. It asserts the tag
 against `src/scopes.ts` and the tarball against the scaffold. Thus an incomplete

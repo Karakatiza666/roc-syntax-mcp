@@ -7,7 +7,7 @@
 ## converter as its third argument so the platform decides how its own argument
 ## type becomes those raw bytes.
 app [main!] {
-	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.24.0/AEjfyaMFFbh8FJrkkHJy68riVNPr3Qp6c6PawWQjBwMH.tar.zst",
+	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.25.0/CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA.tar.zst",
 	weaver: "https://github.com/lukewilliamboswell/weaver/releases/download/0.9.0/7j6KBFBEZ8pNMLQHkx9xiwyZ2PmwQPgKNDPUih6gKe77.tar.zst",
 	# Naming a `Path` in an annotation means pinning the package it comes from,
 	# at the release weaver itself pins: `roc-lang/path` 4.0.0. Package identity
@@ -46,8 +46,8 @@ Config : {
 ##     str_to_raw_arg : Str -> [Utf8(Str), UnixBytes(List(U8)), WindowsU16s(List(U16))]
 ##     str_to_raw_arg = |arg| UnixBytes(Str.to_utf8(arg))
 ##
-## Weaver never drops an argument. basic-cli 0.24.0 leaves the program name out
-## of `args`, so pass them whole. A platform that puts the executable path in
+## Weaver never drops an argument. basic-cli 0.25.0 does not put the program
+## name in `args`, so pass them whole. A platform that puts the executable path in
 ## `args[0]`, as that template does, needs `args.drop_first(1)`. Without it, the
 ## app compiles and then consumes the executable path as the first parameter.
 ## At runtime, the parser then reports the first real argument as unexpected.

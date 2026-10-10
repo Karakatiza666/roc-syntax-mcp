@@ -37,6 +37,13 @@
 #     checks it after the download and refuses a mismatch ("package download
 #     failed"). So one URL always gives the same files.
 #   - Roc caches each download.
+#   - Roc follows up to three redirects. Each target must also be https or
+#     localhost.
+#   - After decompression, one package can be 10 MB at most. A dependency and
+#     all of its own dependencies can be 100 MB, or 512 MB for a platform.
+#     `--max-package-mb=<N>` and `--max-transitive-mb=<N>` change these limits
+#     for `run`, `build`, `check`, `test`, `docs` and `deps`. `0` removes a
+#     limit.
 #   - `roc bundle main.roc Parser.roc ...` writes the bundle, named by its hash,
 #     for any static https host. See the `compiler` topic.
 #

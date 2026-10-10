@@ -34,12 +34,12 @@
 # 1. The platform header (platform/main.roc)
 #
 # platform "my-platform"
-#     requires {} { main! : List(Str) => Try({}, [Exit(I32), ..]) }
+#     requires { main! : List(Str) => Try({}, [Exit(I32), ..]) }
 #     exposes [Cmd, Dir, Env, File, IOErr, Path, Stdin, Stdout, Stderr]
 #     packages {}
 #     provides { "roc_main": main_for_host! }
 #     hosted { "roc_read_file": File.read_bytes! }
-#     targets : {
+#     targets: {
 #         inputs_dir: "targets/",
 #         x64linux:  { inputs: ["crt1.o", "libhost.a", app] },
 #         arm64mac:  { inputs: ["libhost.a", app] },
@@ -47,10 +47,10 @@
 #     }
 #
 # Field by field:
-#   `requires {} { main! : ... }` is the shape an application must provide.
-#     `requires { main! : ... }`, with one record, also compiles, and basic-cli
-#     uses it. The Try's error type is left open (`..`) so apps can return any
-#     platform-defined error and still satisfy the constraint.
+#   `requires { main! : ... }` is the shape an application must provide.
+#     `requires {} { main! : ... }` also compiles, and `roc fmt` rewrites it
+#     to one record. The Try's error type is left open (`..`) so apps can
+#     return any platform-defined error and still satisfy the constraint.
 #   `exposes [...]` lists the Roc modules the app can `import pf.X`.
 #   `packages { json: "../json/main.roc" }` declares package dependencies and
 #     their qualifiers.
@@ -68,10 +68,12 @@
 #         pointer ("hosted type variable must be boxed").
 #     `hosted` and `provides` functions are identified by their symbol
 #     strings, not by module content (see `packages`).
-#   `targets : { ... }` lists link inputs per target. `app` is a placeholder
+#   `targets: { ... }` lists link inputs per target. `app` is a placeholder
 #     for the compiled Roc application object. The other inputs are host
-#     artifacts that the linker combines with it. `inputs_dir` names the directory holding those
-#     files inside the package bundle.
+#     artifacts that the linker combines with it. `inputs_dir` names the
+#     directory holding those files inside the package bundle. These paths
+#     must stay inside the platform directory. `roc check` reports an absolute
+#     path or a `..` component as "invalid target path".
 #
 # A target's `output` field declares the artifact kind:
 #   `Exe` (the default) links an executable. On wasm32, a command module with
@@ -134,7 +136,7 @@
 #   Inspect any unhandled error for diagnostics, then return a non-zero code.
 #
 #
-# 3. Anatomy of a platform module (basic-cli 0.24.0)
+# 3. Anatomy of a platform module (basic-cli 0.25.0)
 #
 #
 # basic-cli declares every hosted effect in one module, Host.roc, and each
@@ -214,8 +216,8 @@
 #     arena, a tracked allocator, or a no-op for WASM).
 #   One symbol per hosted function declared on the Roc side (each entry in
 #     `hosted { ... }`), with a name matching the lowered Roc symbol.
-#   Tag union layouts must follow the Roc ABI, including the single-variant
-#     discriminant byte that the `platform_abi` topic describes.
+#   Tag union layouts must follow the Roc ABI that the `platform_abi` topic
+#     describes. A union with one tag has no discriminant.
 #
 #
 # 6. App-side usage (what an app author sees)
@@ -287,7 +289,7 @@
 #   [ ] Wrap each in a public method inside `<Name> :: [].{ ... }` that
 #       rebuilds the union (a `widen_*` match or `.map_err`), so that callers
 #       get an open union. Never return a hosted result unchanged.
-#   [ ] Implement the matching symbol(s) in the host language. Mind the
-#       single-variant tag union discriminant byte.
+#   [ ] Implement the matching symbol(s) in the host language. Generate the
+#       tag union layouts with `roc glue`.
 #   [ ] Rebuild the host (`build.sh` / `cargo build`) so libhost.a includes
 #       the new symbol. The build picks up the Roc app side automatically.

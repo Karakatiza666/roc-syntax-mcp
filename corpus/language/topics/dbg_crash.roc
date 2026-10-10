@@ -22,6 +22,8 @@ dbg_keyword = || {
 # next: it can recover, or end the process.
 # Use it only for unreachable branches or unrecoverable conditions like OOM.
 # For a recoverable error, return a `Try`.
+# Integer overflow and integer division by zero also crash. Their `_try`
+# methods, such as `plus_try`, return an `Err`. See the `numbers` topic.
 unreachable_branch = |n| {
 	if n < 0 {
 		crash "n was supposed to be non-negative"

@@ -20,6 +20,23 @@ for_loop = |num_list| {
 	$sum
 }
 
+# A `for` over a list, a range, or a chain such as `list.iter().map(f)`
+# compiles to one plain loop. It allocates no iterator and no intermediate
+# list. A `var` is only a name, so a reassignment copies nothing. When nothing
+# else refers to the list, `append` adds to it in place.
+squares : U64 -> List(U64)
+squares = |count| {
+	var $list = List.with_capacity(count)
+
+	for n in 0..<count {
+		$list = $list.append(n * n)
+	}
+
+	$list
+}
+
+expect squares(4) == [0, 1, 4, 9]
+
 # Ranges work directly: `1..<5` is exclusive, `1..=5` inclusive. See the
 # `ranges` topic.
 sum_range = |n| {

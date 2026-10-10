@@ -1,19 +1,18 @@
 # Refreshing the basic-webserver corpus
 
 basic-webserver is one of two platform upstreams. Each one has its own release
-schedule, and both are refreshed under the same compiler nightly as the language
-corpus. `reference/basic-cli.md` covers the other platform. There are two
-reasons to refresh this corpus, and each one needs different work:
+schedule, and the gates check each one with the nightly of its release.
+`reference/basic-cli.md` covers the other platform. There are two reasons to
+refresh this corpus, and each one needs different work:
 
 | Trigger | What has to happen |
 |---|---|
-| A new basic-webserver release | Move the `release` URL, run `npm run build:index`, regenerate the patches, and repin every site below |
-| A compiler nightly bump | Regenerate patch `0003`, then run the gates again. If they pass, index nothing again and update the `compiler` line. If they fail, find a release that builds with the nightly, or keep the old nightly |
+| A new basic-webserver release | Move the `release` URL, run `npm run build:index`, regenerate the patches, set the `compiler` line to the release's `.roc-version`, and repin every site below |
+| A compiler nightly bump | Nothing here. The corpus stays on the nightly of its release. Run the gates again, and record in the commit that the platform was checked again |
 
-Both triggers go in the same commit as the language refresh. `SKILL.md` gives
-the reason. Every app here pins its platform by tarball URL, so
-`check:platforms` gives the compiler the released platform, and the gate checks
-the nightly and the tag as a pair. You cannot validate one of them alone.
+Every app here pins its platform by tarball URL, so `check:platforms` gives the
+compiler the released platform, and the gate checks the release with its own
+nightly. `SKILL.md` gives the rule.
 
 `corpus/platforms/basic-webserver/UPSTREAM` records the pinned tag, the tarball
 hashes, the compiler nightly, the path mapping, and what was intentionally left
@@ -40,7 +39,6 @@ Regenerate it from a fresh checkout of the tag. Do not edit it in place:
 ```bash
 patch -p1 < corpus/platforms/basic-webserver/patches/0001-repin-examples-*.patch
 patch -p1 < corpus/platforms/basic-webserver/patches/0002-restore-parked-gregorian-examples.patch
-patch -p1 < corpus/platforms/basic-webserver/patches/0003-repin-roc-nightly.patch
 ```
 
 `0001` is necessary, because every example at a tag pins the previous platform
@@ -54,12 +52,10 @@ adds.
 
 Regenerate the patches against the new tag. Do not try to rebase the old ones.
 
-`0003` sets the `roc: "nightly-..."` line of every example to the bundled
-nightly. Upstream pins a nightly in each header, and a pin that is one day off
-gives a warning. The gate counts that warning as a failure, so without `0003`
-every example fails after a bump. Thus regenerate `0003` on every nightly bump,
-even when nothing else changes. `0003` changes only that line, so `0002` leaves
-the pin of the parked files unchanged.
+Do not change the `roc: "nightly-..."` line of an example. Upstream pins the
+nightly that the example was written for, and the gate checks the example with
+that nightly. At 0.17.0, that is 130536d, and c507926 in the parked examples.
+Unpack each one at the repo root.
 
 Keep `0002` small. It exists because a third-party package broke. When gregorian
 builds again, delete `0002`. Do not keep it.
@@ -81,7 +77,6 @@ together.
 | `scripts/check-detection.sh`, `scripts/check-roc-check.mjs` | Fixture headers |
 | `src/detect.test.ts`, `src/detect_server.test.ts` | `BUNDLED`, and the mismatch fixtures, which need a version on each side of the bundled one |
 | `corpus/platforms/basic-webserver/UPSTREAM` | Tag, commit, tarball hash, and the `compiler` line |
-| `corpus/language/UPSTREAM`, `corpus/platforms/basic-cli/UPSTREAM` | Their `compiler` lines, which must name the same nightly |
 | `corpus/packages/http/UPSTREAM` | Only if `corpus/packages/http/` changed, which needs basic-cli to pin the same release |
 
 Not every missed site causes a failure. Tests cover the most important sites:

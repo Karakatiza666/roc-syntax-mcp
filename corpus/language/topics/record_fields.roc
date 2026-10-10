@@ -8,6 +8,9 @@
 #   field ?: Type             optional. May be absent, so read it with
 #                             `.?field`, which gives a `Try(Type, [MissingField])`.
 #
+# Use an optional field only when the program must know if the field was
+# given. An optional field also takes one more byte, plus padding.
+#
 # A default belongs to one named type, so it is only allowed on the backing
 # record of a nominal (`:=`) declaration. A structural record type (an alias,
 # an inline annotation or a nested record) cannot carry one, and every

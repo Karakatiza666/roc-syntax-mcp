@@ -9,8 +9,13 @@
 # There is no runtime lookup and no vtable.
 example1 = "One".concat(" Two")
 
+# So `value.method(a)` is `Type.method(value, a)`, where `Type` is the type of
+# `value`. A method that the type does not have is a compile-time error.
+expect "One".concat(" Two") == Str.concat("One", " Two")
+
 # `|>` (the pizza operator) is for functions that are not methods of the
-# receiver's type. `x |> f(y)` calls `f(x, y)`.
+# receiver's type. `x |> f(y)` calls `f(x, y)`, and `x |> f` calls `f(x)`.
+# Write a function name after `|>`, such as `parse` or `List.map`.
 my_concat = Str.concat
 
 example2 = "Three" |> my_concat(" Four")
@@ -20,14 +25,15 @@ example2 = "Three" |> my_concat(" Four")
 #   Str.join_with : List(Str), Str -> Str
 # Its receiver is the `List(Str)`, yet it is a `Str` method, so `.join_with()`
 # on a `List` receiver would not resolve. `|>` connects the two parts.
+label_names : Str -> Str
+label_names = |joined| if joined.is_empty() "No names provided" else "Names: ${joined}"
+
 format_names : List(Str) -> Str
 format_names = |names|
 	names
 		.map(|name| name.trim())
 		|> Str.join_with(", ")
-		|> (|joined| {
-			if joined.is_empty() "No names provided" else "Names: ${joined}"
-		})
+		|> label_names
 
 # Methods are declared in the `.{ }` block after a nominal or opaque type
 # declaration, then dispatched with `.method()` once a value has that type.
@@ -42,11 +48,14 @@ Counter := { value : I64 }.{
 example3 : Counter
 example3 = Counter.new().increment()
 
+# @rejects missing method
+# example4 = Counter.new().decrement()
+
 # Well-known methods opt a type into language syntax through ordinary static
 # dispatch. Each use resolves to one concrete implementation at compile time,
 # so no dispatch happens at runtime.
 #
-#   to_inspect         Str.inspect(value)
+#   to_inspect         Str.inspect(value) and `dbg`
 #   is_eq              `==` and `!=`
 #   to_hash            Dict, Set, and other hash-based APIs
 #   plus minus times   `+` `-` `*`

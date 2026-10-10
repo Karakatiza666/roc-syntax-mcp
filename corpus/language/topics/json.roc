@@ -94,7 +94,7 @@ expect round_tripped == Ok(origin)
 # A nominal type has no codec by default, because parsing could break its
 # invariants and encoding could expose its internals. It opts into derived
 # codecs the same way it opts into any other derived method (see the
-# `derived_methods` topic). The derived codec uses the backing representation.
+# `derived_methods` topic). The derived codec uses the backing type.
 Config := { host : Str, port : U16 }.{
 	parser_for : _
 	encoder_for : _

@@ -29,7 +29,7 @@
 # The Echo platform's `main!` receives command-line arguments as a `List(Str)`
 # and returns `Try(_, [Exit(I8), ..])`:
 #
-#   requires {} { main! : List(Str) => Try(_, [Exit(I8), ..]) }
+#   requires { main! : List(Str) => Try(_, [Exit(I8), ..]) }
 #
 # So `Err(Exit(2))` sets the process exit code to 2. The platform prints any
 # other `Err` with `Str.inspect` and exits with code 1. The Echo platform has
@@ -64,7 +64,8 @@
 # Notes:
 #   - `app [main!]` lists the entrypoint(s) the platform expects, usually `main!`.
 #   - `{ pf: platform "<url>" }` gives the platform URL. Other packages can be
-#     listed alongside: `{ pf: platform "...", json: "..." }`.
+#     listed alongside: `{ pf: platform "...", json: "..." }`. A header can
+#     name only one platform. A second one is a "multiple platforms" error.
 #   - The platform provides every effectful function. The standard library
 #     (Builtin.roc) is pure.
 #   - The entrypoint's exact signature is set by the platform's `requires`

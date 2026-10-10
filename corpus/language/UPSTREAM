@@ -4,14 +4,14 @@
 # Builtin.roc or langref/, so that the next refresh can diff against it.
 
 repo     https://github.com/roc-lang/roc
-commit   c34079d4cde82f475df7c1994c714ba25b29b951
-date     2026-10-06
+commit   258ab27f79bef726d501e3b79ce2e47e54e83f9d
+date     2026-10-09
 
 # The nightly that every gate ran under. It must match the `compiler` line in
 # every other corpus/*/*/UPSTREAM file, because the gates check the corpora as a
 # set. If one corpus records an older nightly, its last check used a compiler
 # that nobody has, so the corpus is in effect unchecked.
-compiler nightly-2026-10-06-c34079d
+compiler nightly-2026-10-09-258ab27
 
 examples/all_roc_syntax.roc  <- test/echo/all_syntax_test.roc
 Builtin.roc                  <- src/build/roc/Builtin.roc
@@ -19,7 +19,7 @@ langref/                     <- docs/langref/
 
 # Parsed counts at this commit, for the next refresh to diff against. See
 # .claude/skills/refresh-roc-upstream/reference/parser-traps.md.
-Builtin.roc  2298 methods, 29 types, 49 modules, 0 duplicates
+Builtin.roc  2297 methods, 29 types, 49 modules, 0 duplicates
 
 # These files are ours, not upstream, but they come from the files above. Read
 # them again on a refresh: overview/ (the compact language and builtins

@@ -90,6 +90,8 @@ expect powers_of_two.take_first(5).collect() == [1, 2, 4, 8, 16]
 
 # `size_hint` reports a length when one is known without walking the iterator.
 #   Iter.size_hint : Iter(item) -> [Known(U64), Unknown]
+# `collect` allocates a list of the `Known` length once, so give `Known(n)` only
+# when the iterator yields exactly n items.
 
 # `Iter.custom` is the general unfold. It takes a seed, a length hint, and a
 # step function mapping the seed to the next item plus the next seed, or

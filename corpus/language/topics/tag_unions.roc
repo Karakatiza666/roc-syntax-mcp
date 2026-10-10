@@ -25,7 +25,8 @@ match_tag_union_advanced = |try|
 # two_payloads = Ok(1, 2)
 
 # Tags can carry multiple payloads. `Foo(I64, Str)` and `Foo((I64, Str))` are
-# different types, but after optimization they compile to the same thing.
+# different types, but a payload has the layout of a tuple, so both compile to
+# the same thing.
 multi_payload_tag : [Foo(I64, Str), Bar] -> Str
 multi_payload_tag = |tag| match tag {
 	Foo(num, name) => "Foo with ${num.to_str()} and ${name}"
@@ -146,8 +147,8 @@ destructure_ok = || {
 
 expect unwrap_ok(always_ok(3)) + destructure_ok() == 8
 
-# A tag union with exactly one selected direct payload can derive `map` and
-# `map!`, so the payload transforms without a `match`. See the
+# A tag union with one type parameter that is directly a payload can derive
+# `map` and `map!`, so the payload transforms without a `match`. See the
 # `derived_methods` topic.
 Maybe(a) := [Just(a), Nothing].{
 	map : _

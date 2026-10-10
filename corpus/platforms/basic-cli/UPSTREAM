@@ -4,9 +4,9 @@
 # refresh can diff tag-to-tag and apply the patch series again.
 
 repo     https://github.com/roc-lang/basic-cli
-tag      0.24.0
-commit   1a4e6f4
-tarball  AEjfyaMFFbh8FJrkkHJy68riVNPr3Qp6c6PawWQjBwMH.tar.zst
+tag      0.25.0
+commit   6e787d2
+tarball  CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA.tar.zst
 
 # This platform re-exports the same roc-lang/http release that basic-webserver
 # pins. Its index is at corpus/packages/http/, with its
@@ -16,7 +16,7 @@ tarball  AEjfyaMFFbh8FJrkkHJy68riVNPr3Qp6c6PawWQjBwMH.tar.zst
 # pins its platform by tarball URL, so `check:platforms` gives the compiler the
 # released platform. The gate tests this nightly and this tag as a pair, never
 # one alone.
-compiler nightly-2026-10-06-c34079d  (the nightly bundled in this repo)
+compiler nightly-2026-10-09-258ab27  (the nightly bundled in this repo)
 
 index.json <- platform/   parsed by `npm run build:index` from the compiler's
                          package cache. Signatures and docstrings only; no
@@ -38,9 +38,9 @@ examples/  <- examples/*.roc
 #
 #   patch -p1 < patches/0001-repin-examples-*.patch
 #
-# 0001 is necessary, because every example at the tag pins the platform by the
-# relative path `../platform/main.roc`, which resolves only inside a checkout.
-# The patch replaces that one path with the tarball URL above.
+# 0001 is necessary, because every example at tag 0.25.0 pins platform 0.24.0,
+# which does not build on the nightly above. The patch replaces that one URL
+# with the tarball URL above.
 # There is no second patch. Nothing in this corpus depends on a third-party
 # package, so the gregorian failure that basic-webserver patches does not occur
 # here. Every example passes `roc check` with 0001 applied.

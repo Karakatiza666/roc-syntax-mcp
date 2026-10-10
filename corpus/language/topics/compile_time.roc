@@ -52,6 +52,11 @@ roman = Dict.from_list([("I", 1), ("V", 5), ("X", 10)])
 
 expect squares.get(3) == Ok(9) and roman.get("V") == Ok(5)
 
+# The program shares one copy of each compile-time value and never frees it.
+# Such a value is never unique, so its first update at runtime copies it. The
+# first `insert` into a compile-time `Dict` also rehashes every key, because
+# the dict changes from a fixed hash seed to a random seed.
+
 # With an embedded file, the compiler also parses the file. The program neither
 # reads nor parses `config.json` at runtime, and the file need not exist then:
 #   import "config.json" as config_text : Str

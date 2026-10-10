@@ -80,7 +80,9 @@ keep_point = |value| match value {
 expect keep_point((1, 2)).point == (1, 2)
 
 # `Type.{ fields }` destructures a nominal type's backing record, in a `match`
-# branch or directly in a function parameter.
+# branch or directly in a function parameter. Other backing types use
+# `Type.(pattern)` (see `nominal`). Match a nominal tag union's tags directly,
+# as `Red` or `Color.Red`.
 NominalTypeRecord := { x : U64 }
 
 destructure_nominal_type : NominalTypeRecord -> U64

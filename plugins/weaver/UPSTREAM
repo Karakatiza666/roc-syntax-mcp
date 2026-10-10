@@ -14,8 +14,8 @@ tarball  7j6KBFBEZ8pNMLQHkx9xiwyZ2PmwQPgKNDPUih6gKe77.tar.zst
 # 0.9.0 changes only upstream's CI and docs tooling. package/ and examples/ are
 # byte-identical to 0.8.0, and the release tarball keeps the same content hash,
 # so the repin changes the URL's tag and nothing else. The topics pin
-# basic-cli 0.24.0, which does not pass the program name in `args`.
-compiler nightly-2026-10-06-c34079d
+# basic-cli 0.25.0, which does not pass the program name in `args`.
+compiler nightly-2026-10-09-258ab27
 
 index.json  <- package/, parsed by `roc-syntax-mcp plugin index`. Public and
                private modules; `package [...]` in main.roc is what separates
@@ -30,17 +30,17 @@ examples/   <- examples/, repinned in two steps. First, two edits per file. Upst
                reads one flat `<dir>/*.roc`: default-values.roc and
                single-arg.roc. Second, patches/0001 moves every example off
                upstream's platform, lukewilliamboswell/roc-platform-template-zig
-               1.0.0, onto basic-cli 0.24.0. That template's Stdout, Stdin and
+               1.0.0, onto basic-cli 0.25.0. That template's Stdout, Stdin and
                Stderr warn "redundant open tag union" under the nightly above,
                as does its 1.1.0, and the gate reads a warning as a failure.
                Per file: the `pf` URL, `import pf.OsStr`, `main!` takes
-               `List(OsStr)`, `args` is passed whole (basic-cli 0.24.0 already
+               `List(OsStr)`, `args` is passed whole (basic-cli 0.25.0 already
                drops the program name) with `OsStr.to_raw` as the converter, and
                the now-unused `str_to_raw_arg` adapter is deleted. Drop the patch
                once a template release builds clean.
 topics/     <- this package's own, not upstream's: programs written against
                this pin and declared in plugin.json so they answer by name. They
-               pin basic-cli 0.24.0, as the patched examples do, because
+               pin basic-cli 0.25.0, as the patched examples do, because
                that is the platform this server ships and the one a reader is
                most likely writing against.
 overview.md <- this package's own. Every API claim on it was compiled, and every

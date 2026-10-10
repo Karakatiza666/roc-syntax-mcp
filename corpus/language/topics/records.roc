@@ -24,6 +24,14 @@ PersonB : { age : U64, name : Str }
 to_b : PersonA -> PersonB
 to_b = |p| p
 
+# `==` on two records compares every field, in any order. A nominal record has
+# no `==` until it defines `is_eq` or derives it with `is_eq : _`.
+expect { a: 1, b: "x" } == { b: "x", a: 1 }
+
+# @rejects missing method
+# Plain := { x : U64 }
+# same = Plain.{ x: 1 } == Plain.{ x: 1 }
+
 # Destructuring brings fields into scope as constants.
 destructuring = || {
 	rec = { x: 1, y: "two" }
@@ -34,7 +42,7 @@ destructuring = || {
 
 # In a record pattern, `field: pattern` renames a field or matches its value.
 # A pattern without `..` lists every field. `..` ignores the other fields. A
-# one-field pattern is `{ name, }`, as in the literal.
+# one-field pattern is `{ name }`. Only the literal needs the comma.
 User : { active : Bool, name : Str, age : U64 }
 
 user_label : User -> Str
@@ -44,6 +52,9 @@ user_label = |user| match user {
 }
 
 expect user_label({ active: False, name: "Ari", age: 9 }) == "inactive Ari"
+
+only_name : { name : Str } -> Str
+only_name = |{ name }| name
 
 # @rejects type mismatch
 # name_only : User -> Str

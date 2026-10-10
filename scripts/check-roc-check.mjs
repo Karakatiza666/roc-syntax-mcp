@@ -17,6 +17,7 @@ import { spawn, execFileSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import { nightlyBinary, nightlyFor, releaseNightlies } from "./nightlies.mjs";
 import { load, nodeArgs } from "./tree.mjs";
 
 const ROOT = path.join(import.meta.dirname, "..");
@@ -35,9 +36,24 @@ const PLATFORM =
 const HTTP =
   "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst";
 const CLI_PLATFORM =
-  "https://github.com/roc-lang/basic-cli/releases/download/0.24.0/AEjfyaMFFbh8FJrkkHJy68riVNPr3Qp6c6PawWQjBwMH.tar.zst";
+  "https://github.com/roc-lang/basic-cli/releases/download/0.25.0/CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA.tar.zst";
 const GREGORIAN =
   "https://cdn.jasperwoudenberg.com/roc-gregorian-v1.0.0-rc.2/Ce3xuHN92F5oGRuzjUTmm65jULAEj8pvvrTBmZJzE1M4.tar.zst";
+
+// The server runs one compiler, so a session that checks code on a platform
+// runs the nightly of that platform's release, as check:platforms does. With
+// no nightly of its own, the session runs ROC.
+const RUNNING = execFileSync(ROC, ["version"], { encoding: "utf-8" });
+function rocFor(release, dirs = []) {
+  const nightly = nightlyFor(`"${release}"`, releaseNightlies(dirs));
+  if (!nightly || RUNNING.includes(nightly)) return [];
+  const binary = nightlyBinary(nightly);
+  if (!binary) {
+    console.error(`${release} needs ${nightly}. Unpack that nightly at the repo root`);
+    process.exit(2);
+  }
+  return [`--roc=${binary}`];
+}
 
 // The prefix is not `roc-*`, because each roc run deletes the temporary
 // `roc-*` directories, and it would delete this fixture tree too.
@@ -161,7 +177,8 @@ if (pluginArg) {
     // supplies every `@default`, and the reply must name the platform that wraps
     // the code. The sample cannot test this. If the sample declares what the
     // scaffold supplies, the server wraps it without a message.
-    const [reply, bare] = await session(root, [{ code: sample }, { code: "probe = 1\n" }], [`--plugin=${dir}`]);
+    const roc = rocFor(release, [dir]);
+    const [reply, bare] = await session(root, [{ code: sample }, { code: "probe = 1\n" }], [`--plugin=${dir}`, ...roc]);
     const wrapped = new RegExp(`Wrapped in the ${def.name} ${def.version.replace(/\./g, "\\.")} app`);
     check(`the ${def.name} sample round-trips through roc_check`, /`roc check` passed\./.test(reply), reply);
     check(`detection wraps bare code in ${def.name}'s own app`, wrapped.test(bare), bare);
@@ -173,7 +190,7 @@ if (pluginArg) {
     const [unasked] = await session(
       workspace(`plugin-${def.name}-no-header`, {}),
       [{ code: "probe = 1\n" }],
-      [`--plugin=${dir}`]
+      [`--plugin=${dir}`, ...roc]
     );
     check(`an installed ${def.name} does not wrap code nobody scoped`, !wrapped.test(unasked), unasked);
   }
@@ -214,11 +231,11 @@ const app = `app [Context, program] {\n\tpf: platform "${PLATFORM}",\n}\n\nimpor
 
 // A workspace that pins the platform. Nothing below passes `scope`.
 const detected = workspace("detected", { "main.roc": app });
-const [clean, typo, gregorian] = await session(detected, [
-  { code: CLEAN },
-  { code: TYPO },
-  { code: WITH_GREGORIAN },
-]);
+const [clean, typo, gregorian] = await session(
+  detected,
+  [{ code: CLEAN }, { code: TYPO }, { code: WITH_GREGORIAN }],
+  rocFor(PLATFORM)
+);
 
 check("detection scaffolds a bare handler nobody scoped", /Wrapped in the basic-webserver 0\.17\.0 app/.test(clean), clean);
 check("a scaffolded handler that is correct passes", /`roc check` passed\./.test(clean), clean);
@@ -236,19 +253,20 @@ uptime! = || Ok(Utc.now!())
 `;
 const cliApp = `app [main!] { pf: platform "${CLI_PLATFORM}" }\n\nimport pf.Stdout\n`;
 const cliWorkspace = workspace("detected-cli", { "main.roc": cliApp });
-const [cliClean] = await session(cliWorkspace, [{ code: CLI_CLEAN }]);
-check("detection scaffolds against the platform the workspace pins", /Wrapped in the basic-cli 0\.24\.0 app/.test(cliClean), cliClean);
+const [cliClean] = await session(cliWorkspace, [{ code: CLI_CLEAN }], rocFor(CLI_PLATFORM));
+check("detection scaffolds against the platform the workspace pins", /Wrapped in the basic-cli 0\.25\.0 app/.test(cliClean), cliClean);
 check("a scaffolded basic-cli program that is correct passes", /`roc check` passed\./.test(cliClean), cliClean);
 
 // No app header here, so only the argument can name the platform.
 const plain = workspace("plain", { "lib.roc": "module [x]\n\nx = 1\n" });
-const [scoped, cliScoped, unscoped] = await session(plain, [
-  { code: CLEAN, scope: "basic-webserver" },
-  { code: CLI_CLEAN, scope: "basic-cli" },
-  { code: CLEAN },
-]);
+const [scoped] = await session(plain, [{ code: CLEAN, scope: "basic-webserver" }], rocFor(PLATFORM));
+const [cliScoped, unscoped] = await session(
+  plain,
+  [{ code: CLI_CLEAN, scope: "basic-cli" }, { code: CLEAN }],
+  rocFor(CLI_PLATFORM)
+);
 check("an explicit scope scaffolds where detection found nothing", /`roc check` passed\./.test(scoped), scoped);
-check("the explicit scope selects between the platforms", /Wrapped in the basic-cli 0\.24\.0 app/.test(cliScoped) && /`roc check` passed\./.test(cliScoped), cliScoped);
+check("the explicit scope selects between the platforms", /Wrapped in the basic-cli 0\.25\.0 app/.test(cliScoped) && /`roc check` passed\./.test(cliScoped), cliScoped);
 check("without a scope or a detection, bare code is not wrapped", /failed/.test(unscoped) && !/Wrapped in the/.test(unscoped), unscoped);
 
 // `roc_fmt` reads a path as `roc_check` does. A unit test cannot run a real

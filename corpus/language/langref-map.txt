@@ -34,6 +34,10 @@ dictionaries-and-sets#looking-up-values                     dict_set, operators
 dictionaries-and-sets#iteration-order                       dict_set, iterators
 dictionaries-and-sets#sets                                  dict_set
 dictionaries-and-sets#keys-and-hashing                      dict_set, hashing, derived_methods
+dictionaries-and-sets#performance                           skip: heading only, no text of its own
+dictionaries-and-sets#memory-layout                         skip: layout of the entries list and the buckets, no rule for code
+dictionaries-and-sets#growing                               dict_set
+dictionaries-and-sets#dictionaries-built-at-compile-time    compile_time
 
 expressions                                                 skip: definition of an expression and the parenthesization rule, no rule for code
 expressions#types-of-expressions                            functions
@@ -54,6 +58,7 @@ functions#side-effects                                      skip: list of exampl
 functions#function-type-annotations                         effects, types
 functions#and-in-function-type-annotations                  effects
 functions#suffix-in-function-names                          effects
+functions#closures                                          functions, compile_time
 functions#purity-inference                                  effects, compile_time
 functions#recursive-functions                               functions
 functions#self-recursive-functions                          functions
@@ -61,20 +66,27 @@ functions#tail-calls                                        functions
 functions#self-tail-calls                                   functions
 functions#tail-call-optimization                            functions
 functions#mutually-recursive-functions                      functions
+functions#performance                                       skip: heading only, no text of its own
+functions#calls                                             skip: direct calls and inlining, no rule for code
+functions#arguments-and-reference-counts                    skip: the compiler infers which arguments it only reads, no rule for code
+functions#function-values                                   skip: storage of function values as a tag union, no rule for code
 
 if-else                                                     conditionals
 if-else#if-and-else                                         conditionals
+if-else#bool                                                conditionals, pattern_matching
 if-else#else-if                                             conditionals
 if-else#if-without-else                                     conditionals
 if-else#and-or                                              conditionals, operators
 
 iterators                                                   iterators, ranges
 iterators#transforming-iterators                            iterators
-iterators#collecting                                        iterators
+iterators#transforming-iterators-collecting                 iterators
 iterators#laziness                                          iterators
 iterators#custom-iterators                                  iterators
 iterators#how-iteration-works                               iterators
 iterators#effectful-iteration                               iterators, effects
+iterators#performance                                       skip: the compiler fuses iterator chains, no rule for code
+iterators#performance-collecting                            iterators
 
 loops                                                       skip: intro, no rule for code
 loops#for-loops                                             loops, ranges
@@ -85,6 +97,7 @@ loops#looping-over-streams-with-for                         loops, iterators
 loops#while-loops                                           loops
 loops#break-statement                                       loops
 loops#infinite-loops                                        loops
+loops#performance                                           loops
 
 modules                                                     modules
 modules#type-modules                                        modules
@@ -137,15 +150,22 @@ numbers#type-suffixes                                       numbers
 numbers#defaulting-to-dec                                   numbers
 numbers#builtin-number-types                                numbers
 numbers#integers                                            numbers
+numbers#overflow-and-division-by-zero                       numbers
 numbers#fractions                                           numbers
 numbers#ranges                                              ranges
 numbers#custom-number-types                                 numbers, derived_methods
 numbers#inferred-custom-number-types                        numbers
 numbers#custom-number-types-and-operators                   numbers, operators
 numbers#creating-a-from-numeral-implementation              numbers
+numbers#performance                                         skip: heading only, no text of its own
+numbers#memory                                              numbers
+numbers#overflow-checks                                     numbers
+numbers#dec-vs-floats                                       numbers
+numbers#literals                                            numbers
 
 operators                                                   operators
 operators#desugaring                                        operators, static_dispatch
+operators#precedence                                        operators
 operators#binary-infix-operations                           operators
 operators#and                                               operators, conditionals
 operators#or                                                operators, conditionals
@@ -153,6 +173,8 @@ operators#arithmetic-operators                              operators, static_di
 operators#comparison-operators                              operators
 operators#range-operators                                   operators, ranges
 operators#default-value-on-err                              operators, try_operator
+operators#with-a-handler                                    try_operator, error_design
+operators#pipe                                              operators, static_dispatch
 operators#unary-prefix-operators                            operators
 operators#negate                                            operators
 operators#not                                               operators
@@ -178,24 +200,27 @@ parsers#nominal-types                                       json, derived_method
 parsers#parsers-at-compile-time                             json
 parsers#writing-generic-parsing-functions                   json
 parsers#other-formats                                       json
+parsers#performance                                         skip: a parser decodes into the target type with no intermediate tree, no rule for code
 
 pattern-matching                                            pattern_matching
 pattern-matching#match                                      pattern_matching
 pattern-matching#branch-alternatives                        pattern_matching
 pattern-matching#if-guards-on-branches                      pattern_matching, list_patterns
-pattern-matching#pattern-forms                              skip: heading with no text of its own
-pattern-matching#bindings-and-wildcards                     pattern_matching
-pattern-matching#literal-patterns                           pattern_matching
-pattern-matching#tag-patterns                               pattern_matching
-pattern-matching#record-patterns                            records, record_fields
-pattern-matching#tuple-patterns                             tuples
+pattern-matching#pattern-forms                              skip: heading only, no text of its own
+pattern-matching#names-and                                  pattern_matching, naming
+pattern-matching#literals                                   pattern_matching
+pattern-matching#string-patterns-with-captures              pattern_matching
+pattern-matching#tags                                       pattern_matching
+pattern-matching#records                                    records, record_fields
+pattern-matching#tuples                                     tuples, pattern_matching
 pattern-matching#list-patterns                              list_patterns
 pattern-matching#nested-patterns-and-as                     pattern_matching, list_patterns, records, naming
-pattern-matching#nominal-patterns                           pattern_matching, nominal
+pattern-matching#nominal-types                              pattern_matching, nominal
 pattern-matching#exhaustiveness                             pattern_matching
 pattern-matching#underscore                                 pattern_matching
 pattern-matching#destructuring                              pattern_matching
 pattern-matching#destructuring-assignments-with             pattern_matching, loops, tag_unions
+pattern-matching#performance                                skip: compiled cost of a match, no rule for code
 
 platforms                                                   platforms
 platforms#applications                                      app_header
@@ -215,18 +240,26 @@ records#fields                                              records
 records#record-literals                                     records
 records#accessing-fields                                    records
 records#record-types                                        records
+records#record-equality                                     records
 records#updating-records                                    records
 records#compared-to-dictionaries                            records
 records#structural-records                                  records
 records#open-record-types                                   records, types
 records#optional-fields                                     record_fields
 records#nominal-records                                     nominal, opaque
+records#opaque-nominal-records                              opaque
 records#defaulted-fields                                    record_fields
-records#runtime-layout                                      records, compiler, platform_abi, memory
 records#empty-record                                        records, imports, platform_abi
+records#performance                                         skip: heading only, no text of its own
+records#memory-layout                                       records, memory
+records#field-order-and-padding                             platform_abi
+records#optional-fields-take-up-more-space                  record_fields
+records#copying-and-updating                                memory
+records#records-at-the-host-boundary                        platform_abi
 
 statements                                                  skip: statements run when reached and have no value, no rule for code
 statements#assignment                                       naming
+statements#type-annotations                                 types
 statements#assignment-patterns                              pattern_matching
 statements#assignment-order                                 functions, naming
 statements#assignment-cycles                                functions
@@ -248,6 +281,7 @@ statements#block-statements                                 functions
 
 static-dispatch                                             static_dispatch
 static-dispatch#methods                                     static_dispatch
+static-dispatch#calling-methods                             static_dispatch
 static-dispatch#well-known-methods                          derived_methods, static_dispatch
 static-dispatch#compiler-derived-methods                    derived_methods, tag_unions
 static-dispatch#to-inspect                                  derived_methods
@@ -260,21 +294,30 @@ static-dispatch#number-literal-defaulting                   numbers
 static-dispatch#where-clauses                               types, static_dispatch
 static-dispatch#calling-methods-on-type-variables           types, json
 static-dispatch#aliases                                     types, json
+static-dispatch#performance                                 static_dispatch
 
 strings                                                     skip: intro, no rule for code
+strings#string-literals                                     strings
+strings#interpolation                                       strings
+strings#multiline-strings                                   strings
 strings#unicode                                             skip: glossary pointer, no rule for code
 strings#graphemes                                           strings
 strings#code-points                                         strings
 strings#combining-code-points                               skip: emoji joiner walk-through, no rule for code
 strings#single-quote-syntax                                 strings, pattern_matching
-strings#string-literal-conversion-and-interpolation         strings, derived_methods
+strings#string-literals-for-other-types                     strings, derived_methods
 strings#string-equality-and-normalization                   strings
 strings#string-normalization                                strings
 strings#why-not-normalize-automatically                     strings
 strings#utf-8                                               strings
 strings#when-to-use-each-of-these                           strings
-strings#low-level                                           strings
+strings#surrogates                                          strings
 strings#bidirectional-controls                              strings
+strings#performance                                         skip: heading only, no text of its own
+strings#memory-layout                                       skip: Str size and the small string optimization, no rule for code
+strings#substrings                                          strings
+strings#building-strings                                    strings
+strings#equality                                            strings
 
 tag-unions                                                  tag_unions
 tag-unions#tags                                             tag_unions
@@ -289,13 +332,19 @@ tag-unions#opaque-tag-unions                                opaque
 tag-unions#structural-nominal-compatibility                 tag_unions, opaque
 tag-unions#nominal-tag-unions-limitations                   tag_unions, types
 tag-unions#void                                             tag_unions
+tag-unions#performance                                      skip: heading only, no text of its own
+tag-unions#memory-layout                                    memory, platform_abi
+tag-unions#recursive-tag-unions                             memory, types
+tag-unions#matching                                         skip: a match jumps on the discriminant, no rule for code
+tag-unions#at-the-host-boundary                             platform_abi
 
-tuples                                                      tuples, memory
+tuples                                                      tuples
 tuples#tuple-literals                                       tuples
 tuples#accessing-tuple-elements                             tuples
 tuples#tuple-types                                          skip: tuple type syntax only, shown in tuples and types
 tuples#destructuring-tuples                                 tuples
 tuples#tuples-vs-records                                    tuples, memory
+tuples#performance                                          tuples, memory
 
 types                                                       types
 types#roc-s-type-system                                     types
@@ -311,3 +360,37 @@ types#nested-nominal-types                                  imports
 types#type-aliases                                          types, nominal
 types#recursive                                             types
 types#mutually-recursive                                    types, imports
+types#performance                                           nominal
+
+boxes                                                       memory
+boxes#memory-layout                                         memory
+boxes#when-to-use-a-box                                     skip: heading only, no text of its own
+boxes#shrinking-a-tag-union                                 memory
+boxes#recursive-types                                       memory
+boxes#passing-values-to-the-platform                        platforms
+boxes#equality                                              memory
+
+errors                                                      error_design, dbg_crash
+errors#try                                                  error_design, try_operator
+errors#error-types-are-tag-unions                           error_design, try_operator
+errors#handling-errors                                      skip: one-sentence intro to the next sections, no rule for code
+errors#returning-errors-early                               try_operator
+errors#using-a-default-value                                operators, try_operator
+errors#transforming-errors                                  try_operator, error_design
+errors#crashing                                             dbg_crash, numbers
+errors#when-to-crash                                        dbg_crash
+errors#performance                                          skip: a Try costs no more than a crash, no rule for code
+
+lists                                                       list_patterns
+lists#list-literals                                         list_patterns
+lists#using-lists                                           list_patterns
+lists#indexes                                               list_patterns
+lists#iterating                                             loops, iterators
+lists#pattern-matching                                      list_patterns
+lists#performance                                           skip: heading only, no text of its own
+lists#memory-layout                                         skip: memory layout prose, no rule for code
+lists#updating-in-place                                     memory, loops, list_patterns
+lists#growing                                               list_patterns
+lists#slices                                                list_patterns
+lists#lists-of-lists                                        list_patterns
+lists#lists-built-at-compile-time                           compile_time, memory

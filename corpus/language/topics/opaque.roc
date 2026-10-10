@@ -1,9 +1,9 @@
-# An opaque type is a nominal type whose backing representation is hidden
-# outside its defining module, so it can only be created and inspected through
-# the methods that module exposes.
+# An opaque type is a nominal type whose backing type is hidden outside its
+# defining module, so it can only be created and inspected through the methods
+# that module exposes.
 #
-# Declared with `::` rather than `:=`. Inside the defining module the
-# representation is still accessible, so the methods block is the public API.
+# Declared with `::` rather than `:=`. Inside the defining module the backing
+# type is still accessible, so the methods block is the public API.
 
 # Opaque type with methods.
 # Useful when you want to hide fields so callers can't depend on internals.

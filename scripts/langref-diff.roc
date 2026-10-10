@@ -16,7 +16,7 @@
 # corpus/language/langref/. It exits 1 if not. src/langref.test.ts checks the
 # same map against the parser in src/langref.ts, so this check also proves that
 # the two parsers split the pages into the same sections.
-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.24.0/AEjfyaMFFbh8FJrkkHJy68riVNPr3Qp6c6PawWQjBwMH.tar.zst" }
+app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.25.0/CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA.tar.zst" }
 
 import pf.Cmd
 import pf.Env

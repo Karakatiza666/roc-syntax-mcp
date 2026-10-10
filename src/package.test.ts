@@ -58,6 +58,7 @@ const RUNTIME_READS = [
   "corpus/platforms/basic-cli/plugin.json",
   "scripts/check-platform-examples.sh",
   "scripts/check-roc-check.mjs",
+  "scripts/nightlies.mjs",
   "scripts/tree.mjs",
   "corpus/language/UPSTREAM",
 ];

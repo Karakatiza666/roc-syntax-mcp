@@ -5,7 +5,7 @@ repo     https://github.com/lukewilliamboswell/roc-parser
 tag      2.0.0
 commit   0c67c54
 tarball  7CLzCK6qUz7zmj6nvBxMEFu11HPwQTnCovKiyWzDSLTW.tar.zst
-compiler nightly-2026-10-06-c34079d
+compiler nightly-2026-10-09-258ab27
 depends  roc-lang/unicode 4.2.0 (4W8SHzvwet9hH9qZewJ1J1CVQoH7YKA6zyijWFTB3y1w), used by Markdown
 
 index.json <- the tarball root, parsed by `npm run build:index` from the

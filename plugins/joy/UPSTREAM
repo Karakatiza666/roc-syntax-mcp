@@ -21,7 +21,7 @@ package  AcmwFzyfbsf5RALWNdX6cXw1cuuDXt96YfcysNqgFqoG.tar.zst
 # plugin if the two pins are different, because an app's `render` returns this
 # package's Html type, and a different release has a different Html type.
 
-compiler nightly-2026-10-06-c34079d
+compiler nightly-2026-10-09-258ab27
 
 index.json <- both releases' own .roc modules, parsed by
               `roc-syntax-mcp plugin index`. No source is vendored

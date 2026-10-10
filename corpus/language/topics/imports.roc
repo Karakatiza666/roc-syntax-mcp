@@ -34,9 +34,9 @@
 #   import Url.ParseErr    loads Url.roc and imports the nested ParseErr
 #   import Url/ParseErr    loads Url/ParseErr.roc
 #
-# A bare target or one starting with `./` is relative to the importing file.
-# `../` moves toward the package root, and a leading `/` starts at the package
-# root.
+# A bare target or one starting with `./` is relative to the directory of the
+# importing file. `../` goes up one directory, and a leading `/` starts at the
+# package root.
 # import Helper
 # import ./Internal/Parser
 # import ../Shared/Codec

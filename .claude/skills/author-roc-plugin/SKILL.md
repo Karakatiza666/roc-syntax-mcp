@@ -118,6 +118,8 @@ cannot fix it from inside a plugin. Write the nightly that you select on the
 manifest's `compiler` line. This host reports the value when it differs from
 the nightly that the host bundles. The host never refuses a plugin because of
 it, because a host update must not invalidate a plugin that a user installed.
+`validate` checks each program that pins your release with that nightly. Unpack
+it as `roc_nightly-*` at the root of the roc-syntax-mcp checkout.
 
 Then get the release that you document, at a tag, and record its tarball URL.
 Every app that you write pins that URL, so the compiler fetches the real

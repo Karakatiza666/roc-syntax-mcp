@@ -19,8 +19,23 @@ multiline_str = |number|
 	\\Line 2
 	\\Line ${number.to_str()}
 
-# Unicode escape sequences use \u(HEX).
+# Roc joins the lines with a newline and adds no newline at the end. The spaces
+# after `\\` are part of the line.
+two_lines =
+	\\  indented
+	\\last
+
+expect two_lines == "  indented\nlast"
+
+# The escapes are `\n`, `\r`, `\t`, `\"`, `\'`, `\\`, `\$` and `\u(HEX)`. `\$`
+# writes a `$`, so `"\${x}"` is the text `${x}` and not an interpolation.
 nbsp = "Unicode escape sequence: \u(00A0)"
+
+expect "a\tb\${x}".count_utf8_bytes() == 7
+
+# Any other character after a backslash is an error.
+# @rejects invalid escape sequence
+# windows_path = "C:\dir"
 
 # Single quotes are not strings. `'a'` is syntax for one code point, so it is a
 # number literal, and with nothing to pin it the literal is a `Dec`. ASCII-range
@@ -62,7 +77,12 @@ byte_total = |text| text.iter_utf8().map(U8.to_u64).sum()
 # `from_quote`, or from an interpolated literal by defining
 # `from_interpolation`. `Str` itself provides both:
 #   Str.from_quote         : Str -> Try(Str, [BadQuotedBytes(Str)])
-#   Str.from_interpolation : Str, Iter((Str, Str)) -> Str
+#   Str.from_interpolation : List(Str) -> Try((List(Str) -> Str), [InvalidInterpolation(Str)])
+# `from_interpolation` runs at compile time with the segments, the text around
+# each `${...}`. A literal with `n` interpolations has `n + 1` segments, and
+# some can be empty. It returns the function that joins the values at runtime.
+expect Str.from_interpolation(["a", "c"]).map_ok(|join| join(["b"])) == Ok("abc")
+
 # See the `derived_methods` topic for how a custom type opts in.
 
 # Every `Str` is valid UTF-8. So `to_utf8` cannot fail, but `from_utf8` returns
@@ -72,7 +92,7 @@ expect Str.from_utf8([99, 255]) == Err(BadUtf8({ index: 1, problem: InvalidStart
 expect Str.from_utf8_lossy([99, 255]) == "c\u(FFFD)"
 
 # Surrogate halves are not valid UTF-8, so they are invalid syntax, also in
-# single quotes.
+# single quotes and in `\u(...)` escapes.
 # @rejects invalid unicode escape sequence
 # lone_surrogate = "\u(D800)"
 
@@ -84,7 +104,7 @@ expect "café".count_utf8_bytes() == 5
 
 # @rejects type mismatch
 # length : U64
-# length = "abc".len()
+# length = Str.len("abc")
 
 # `Str` has no grapheme functions. They are in the roc-lang/unicode package.
 # Use the `Str` methods for most text. A parser works best on UTF-8 bytes
@@ -99,6 +119,14 @@ expect "café".count_utf8_bytes() == 5
 # than `==`. `Str` does not normalize.
 expect "caf\u(e9)" == "café"
 expect "caf\u(e9)" != "cafe\u(301)"
+
+# `split_on`, `drop_prefix`, `trim` and the other functions that return part of
+# a string do not copy. The part points into the original allocation and keeps
+# all of it alive. To keep a small part of a big string, copy it with
+# `"".concat(part)`.
+#
+# `concat` on a unique string appends in place. Before a loop of `concat` calls,
+# use `Str.with_capacity` or `Str.reserve` to allocate the space once.
 
 # Literal bidirectional control characters (U+061C, U+200E-U+200F,
 # U+202A-U+202E, U+2066-U+2069) are rejected anywhere in source, also in

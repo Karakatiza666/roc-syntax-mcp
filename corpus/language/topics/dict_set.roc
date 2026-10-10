@@ -12,7 +12,8 @@ ages = Dict.from_list([("Sam", 30), ("Alex", 25)])
 
 # A dict is immutable: `insert` and `remove` return a new dict. When nothing
 # else refers to the old dict, Roc updates it in place, so this is fast.
-# `insert` on a key that is already there replaces its value.
+# `insert` on a key that is already there replaces its value. When you know the
+# number of keys, `Dict.with_capacity(n)` allocates the space once.
 expect ages.insert("Jo", 41).len() == 3
 expect ages.insert("Sam", 31).get("Sam") == Ok(31)
 

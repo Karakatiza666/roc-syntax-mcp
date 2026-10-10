@@ -34,9 +34,10 @@ count_any = |lst| lst.len()
 number_op : I64, I64 -> _
 number_op = |a, b| { sum: a + b, diff: a - b }
 
-# The type system is Hindley-Milner with these limits:
-#   1. Rank-1 only. A function argument has one type inside the call, so the
-#      body cannot apply an `(a -> a)` argument to a `U8` and then to a `Str`.
+# The type system is Hindley-Milner, so inference needs no annotations. It has
+# these limits:
+#   1. No higher-rank types. A function argument has one type inside the call,
+#      so the body cannot apply an `(a -> a)` argument to a `U8` and a `Str`.
 #   2. No higher-kinded types. A type variable stands for a type such as
 #      `List(U64)`, never for `List` itself, so `m(a)` does not parse.
 #   3. No subtyping. Types unify. An open record or tag union (`..`) gives the
@@ -51,34 +52,33 @@ number_op = |a, b| { sum: a + b, diff: a - b }
 # Generalization: the compiler makes a definition reusable at many types only
 # in these cases:
 #   1. A function. Each call site gets its own types.
-#   2. A value whose annotation has a type variable.
-#   3. A name that only refers to a generalized definition (`shorthand = f`),
+#   2. A name that only refers to a generalized function (`shorthand = f`),
 #      because the copy does no work.
 # Every other value has one type, so a value, its `dbg` or its `expect` never
-# runs again for each type. A number literal takes a default type instead.
-empty : List(a)
-empty = []
-
-expect (empty.append(1.U8), empty.append("a")) == ([1], ["a"])
-
+# runs again for each type. A number literal with no other type is a `Dec`.
 same_type = type_var
 
 expect (same_type([1.U8]), same_type(["a"])) == ([1], ["a"])
 
-# Without the annotation, `xs` gets one type from its first use.
+# An annotation can make a type more specific, but never more general. So a
+# type variable in the annotation of a value is an error. Write one type, or
+# `List(_)`. To use the value at many types, make it a function that takes `{}`.
+#
+# @rejects value is not polymorphic
+# top_empty : List(a)
+# top_empty = []
+empty : {} -> List(a)
+empty = |{}| []
+
+expect (empty({}).append(1.U8), empty({}).append("a")) == ([1], ["a"])
+
+# A value with no annotation also gets one type, from its first use.
 #
 # @rejects type mismatch
 # one_type = || {
 # 	xs = []
 # 	(xs.append(1.U8), xs.append("a"))
 # }
-#
-# A top-level value cannot keep a `where` constraint in its type. Give it a
-# concrete type, or define it inside a block.
-#
-# @rejects polymorphic value
-# top_labels : List(a) where [a.to_str : a -> Str]
-# top_labels = []
 
 # `where` clauses constrain a type variable to types that have specific methods.
 # This function accepts any type with a `.to_str()` method. The compiler checks
@@ -102,10 +102,12 @@ stringify = |value| value.to_str()
 convert_all : List(a) -> List(b) where [a.to_b : a -> b, b.is_valid : b -> Bool]
 convert_all = |items| items.map(|item| item.to_b()).keep_if(|b| b.is_valid())
 
-# A `where` clause can also go on the annotation of a value in a block.
-where_on_value = || {
-	labels : List(a) where [a.to_str : a -> Str]
-	labels = []
+# Inside a function, the annotation of a value can use a type variable of the
+# function's own annotation, because the function is what is generalized.
+where_on_value : List(a) -> List(Str) where [a.to_str : a -> Str]
+where_on_value = |items| {
+	labels : List(a)
+	labels = items
 	labels.map(|label| label.to_str())
 }
 
