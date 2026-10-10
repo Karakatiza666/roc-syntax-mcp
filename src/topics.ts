@@ -207,6 +207,20 @@ const BUILTIN_TOPICS: Record<string, TopicMeta> = {
     description: "Package headers and dependencies: `package [...] { ... }`, URL (`.tar.zst`, hash) and path packages, version resolution, shorthands, platform-specific packages, and nominal type identity across packages.",
     keywords: ["package", "dependency", "dependencies", "version", "semver", "shorthand", "tar.zst"],
   },
+  write_package: {
+    file: "write_package.md",
+    description: "Set up or revise a Roc package repo: a checklist, the `src/` layout, and every file of a small package as a snippet: `src/main.roc`, a documented type module with `expect`s, a hidden module, an example, `scripts/all_tests.sh`, `.gitignore`.",
+    keywords: ["package authoring", "write a package", "new package", "create a package", "package template",
+      "repo layout", "project structure", "src", "examples", "hidden module", "internal module", "all_tests",
+      "best practice", "convention", "checklist", "revise", "migrate"],
+  },
+  release_package: {
+    file: "release_package.md",
+    description: "Ship a Roc package: a checklist, then `.roc-version` and setup-roc, `scripts/bundle.sh`, a bundle test over localhost with `--replace-dep`, `tests.yaml` on 5 runners, version rules and `roc bump`, `release.yml` with roc-lang/release-package, docs on GitHub Pages, compiler-update PRs, and repo settings.",
+    keywords: ["publish", "release", "publish a package", "release a package", "bundle", "tar.zst", "roc-version",
+      ".roc-version", "setup-roc", "release-package", "github actions", "workflow", "ci", "bump", "github pages",
+      "docs", "nightly", "update roc", "release url"],
+  },
   comments: {
     file: "comments.roc",
     description: "Comments: `#`, `##` doc comments in Markdown, code blocks and `[Name]` autolinks in docs, `roc docs`, shebang lines, and the ban on bidirectional controls.",
@@ -533,6 +547,18 @@ export function topicsFor(catalog: Catalog): TopicTable {
  */
 export function topicPath(meta: TopicMeta): string {
   return meta.dir ? path.resolve(ROOT, meta.dir, meta.file) : path.join(TOPICS_DIR, meta.file);
+}
+
+/**
+ * A `.md` topic is prose with fenced snippets, served as it is. A `.roc` topic
+ * is one program, served inside a roc fence.
+ */
+export function isMarkdownTopic(meta: TopicMeta): boolean {
+  return meta.file.endsWith(".md");
+}
+
+export function topicMimeType(meta: TopicMeta): string {
+  return isMarkdownTopic(meta) ? "text/markdown" : "text/x-roc";
 }
 
 export function loadTopic(topic: string, topics: Record<string, TopicMeta>): string | null {

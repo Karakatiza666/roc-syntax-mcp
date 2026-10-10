@@ -483,6 +483,20 @@ test("a topic found by the words of a question names the next ranked topics", as
   }
 });
 
+// A `.md` topic has its own fences. Inside a roc fence, its first fence would
+// close the roc fence.
+test("a markdown topic is served as it is, and a roc topic inside a roc fence", async () => {
+  const s = await inProcess([]);
+  try {
+    const md = await s.call("get_roc_syntax", { topic: "write_package" });
+    assert.match(md, /^## write_package\n\n[^\n]+\n\nSet up a Roc package repo/);
+    assert.match(md, /^`src\/main\.roc`\n```roc\npackage$/m);
+    assert.match(await s.call("get_roc_syntax", { topic: "nominal" }), /^## nominal\n\n[^\n]+\n\n```roc\n/);
+  } finally {
+    await s.close();
+  }
+});
+
 // "urlencoded" is in no name, and agents ask for it. The docs of
 // `parse_form_url_encoded` contain it.
 test("a word in no name finds the symbols whose docs contain it", async () => {

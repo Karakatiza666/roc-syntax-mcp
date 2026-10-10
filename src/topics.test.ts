@@ -177,8 +177,8 @@ test("every language topic stays inside its token budget", () => {
   const dir = path.join(ROOT, "corpus", "language", "topics");
   const over = fs
     .readdirSync(dir)
-    .filter((f) => f.endsWith(".roc"))
-    .map((f) => ({ name: f.replace(/\.roc$/, ""), tokens: Math.ceil(fs.readFileSync(path.join(dir, f), "utf-8").length / 3.5) }))
+    .filter((f) => /\.(roc|md)$/.test(f))
+    .map((f) => ({ name: f.replace(/\.(roc|md)$/, ""), tokens: Math.ceil(fs.readFileSync(path.join(dir, f), "utf-8").length / 3.5) }))
     .filter((t) => t.tokens > (TOPIC_TOKENS_FOR[t.name] ?? TOPIC_TOKENS))
     .map((t) => `${t.name}: ${t.tokens} tokens`);
   assert.deepEqual(over, []);

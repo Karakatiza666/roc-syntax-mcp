@@ -26,7 +26,7 @@ const VERSION: string = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json
 const NESTED_CAP = 100;
 
 import { type BuiltinItem } from "./builtin_parser.ts";
-import { loadTopic, matchTopic, topicsFor, type TopicMatch, type TopicMeta, type TopicRank } from "./topics.ts";
+import { isMarkdownTopic, loadTopic, matchTopic, topicMimeType, topicsFor, type TopicMatch, type TopicMeta, type TopicRank } from "./topics.ts";
 import { nameCoverage, question, type Question, symbolScore } from "./words.ts";
 import { hintFor } from "./builtin_hints.ts";
 import {
@@ -1145,7 +1145,7 @@ export function createServer(config: ServerConfig): McpServer {
         {
           type: "text" as const,
           text:
-            `## ${matched}\n\n${meta.description}\n\n\`\`\`roc\n${examples}\n\`\`\`${aside}${alsoLine(match)}` +
+            `## ${matched}\n\n${meta.description}\n\n${isMarkdownTopic(meta) ? examples.trimEnd() : `\`\`\`roc\n${examples}\n\`\`\``}${aside}${alsoLine(match)}` +
             trailingNotes({ read: wanted.includes(from) ? wanted : [from], detection: true }),
         },
       ],
@@ -2585,7 +2585,7 @@ export function createServer(config: ServerConfig): McpServer {
           name: `roc-topic-${name}`,
           title: name,
           description: meta.description,
-          mimeType: "text/x-roc",
+          mimeType: topicMimeType(meta),
         })),
       }),
       complete: {
@@ -2606,7 +2606,7 @@ export function createServer(config: ServerConfig): McpServer {
         throw new Error(`Unknown topic: ${topic}. Call list_roc_index with kind='topics' to see available topics.`);
       }
       return {
-        contents: [{ uri: uri.href, mimeType: "text/x-roc", text }],
+        contents: [{ uri: uri.href, mimeType: topicMimeType(TOPICS[topic]), text }],
       };
     }
   );

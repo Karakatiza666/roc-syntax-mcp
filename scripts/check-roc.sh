@@ -45,6 +45,35 @@ done
 mkdir -p "$WORK/topics"
 "$ROC" "$ROOT/scripts/check-topics.roc" -- "$ROC" "$ROOT/corpus/language/topics" "$WORK/topics" || fail=1
 
+# A `.md` topic shows the files of a package repo as snippets. Each snippet is
+# a line with the path in backticks, then a fenced block. This step writes the
+# snippets of all `.md` topics into one repo and runs its scripts. bundle.sh
+# runs before test_bundle.sh, because test_bundle.sh reads dist/*.tar.zst.
+materialize() { # $1 = topic file, $2 = repo dir
+  local path="" file="" line
+  while IFS= read -r line; do
+    if [ -n "$file" ]; then
+      if [ "$line" = '```' ]; then file=""; else printf '%s\n' "$line" >>"$file"; fi
+    elif [[ $line =~ ^\`([^\`]+)\`$ ]]; then
+      path="${BASH_REMATCH[1]}"
+    elif [ -n "$path" ] && [[ $line == '```'* ]]; then
+      file="$2/$path"; mkdir -p "$(dirname "$file")"; : >"$file"; path=""
+    else
+      path=""
+    fi
+  done <"$1"
+}
+mkdir -p "$WORK/repo"
+for f in "$ROOT"/corpus/language/topics/*.md; do materialize "$f" "$WORK/repo"; done
+for s in all_tests.sh bundle.sh test_bundle.sh; do
+  [ -f "$WORK/repo/scripts/$s" ] || continue
+  if out=$(cd "$WORK/repo" && ROC="$ROC" bash "scripts/$s" 2>&1); then
+    echo "ok    topic repo scripts/$s"
+  else
+    echo "FAIL  topic repo scripts/$s"; sed 's/^/      /' <<<"$out"; fail=1
+  fi
+done
+
 # The section map must have one line for each langref section. src/langref.test.ts
 # checks the same map against the parser in src/langref.ts.
 "$ROC" "$ROOT/scripts/langref-diff.roc" -- --check-map || fail=1

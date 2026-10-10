@@ -507,7 +507,7 @@ test("list_roc_index serves the topic and module indexes", async () => {
       return fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => f.endsWith(".roc")) : [];
     });
   const topicFiles = [
-    ...fs.readdirSync(path.join(ROOT, "corpus", "language", "topics")).filter((f) => f.endsWith(".roc")),
+    ...fs.readdirSync(path.join(ROOT, "corpus", "language", "topics")).filter((f) => /\.(roc|md)$/.test(f)),
     "scripting.roc",
     ...packageTopics,
   ];
