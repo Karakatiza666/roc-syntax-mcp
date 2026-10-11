@@ -1,6 +1,6 @@
 {
   "name": "roc-syntax-mcp",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "MCP server for Roc Lang: language, builtins, and platforms reference, and function signature search",
   "type": "module",
   "main": "dist/server.js",
