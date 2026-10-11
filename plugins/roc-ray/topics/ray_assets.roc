@@ -1,4 +1,4 @@
-## Assets: a store, host-owned textures, sprites, and sound.
+## Assets: a store, host-owned textures, sprites, and sound, loaded or generated.
 ##
 ## Nothing here is loaded by naming a path in a drawing call. A store is opened
 ## once on a `Files.ReadDir` handle, textures and sounds are loaded through it, and what
@@ -25,6 +25,8 @@ Model : {
 	swatch : Assets.Texture,
 	walker : Sprite.Animation,
 	blip : Audio.Sound,
+	zap : Audio.Sound,
+	crunch : Audio.Sound,
 	facing : F32,
 }
 
@@ -60,7 +62,7 @@ open_assets! = |io|
 
 ## The error set is `_`. It is a type argument, so a written-out list is
 ## closed and has to name every tag each `?` can raise: opening a store, loading
-## a texture and a sound, and generating one, is a set 23 tags wide.
+## textures and sounds, and generating them, is a set 24 tags wide.
 ## Upstream's examples spell it out. Inference writes the same set.
 init! : App.Init(Model, _)
 init! = App.init_for_args(
@@ -83,6 +85,37 @@ init! = App.init_for_args(
 			walker: Sprite.animation({ frame_count: 8, fps: 12 }),
 			# Sounds, music, fonts and shaders load through the same store.
 			blip: Audio.load_sound!(store, "blip.wav")?,
+			# A generated sound needs no store and no file. It is a `Sound` like a
+			# loaded one, and both kinds share one host table of 128 sounds, so
+			# make each effect once and keep it. `gen_sound!` is legal in
+			# `init!`, `update!` and tasks. In `render!` it stops the app.
+			# All nine fields are required. `ms` must be from 1 to
+			# `Audio.max_generated_ms` (5000). Any other length stops the app
+			# with exit code 1, and it is never an `Err`. The other fields clamp:
+			# frequency to at least 1 Hz, `sustain` and `volume` to 0..1, and
+			# a negative envelope time to 0.
+			zap: Audio.gen_sound!({
+				waveform: Square,
+				freq_start: 880,
+				freq_end: 220,
+				ms: 150,
+				attack_ms: 2,
+				decay_ms: 30,
+				sustain: 0.5,
+				release_ms: 40,
+				volume: 0.5,
+			})?,
+			crunch: Audio.gen_sound!({
+				waveform: Noise,
+				freq_start: 100,
+				freq_end: 100,
+				ms: 80,
+				attack_ms: 0,
+				decay_ms: 20,
+				sustain: 0.6,
+				release_ms: 50,
+				volume: 0.4,
+			})?,
 			facing: 1,
 		})
 	},
@@ -102,8 +135,23 @@ update! = |model, input, _io| {
 		model.blip.play!()
 	}
 
+	# `playback()` sets volume, pitch and pan for one play only, so a varied
+	# pitch does not stay on the sound. Under `--host-headless` the sound is
+	# silent and `is_playing!` is always `Bool.False`.
+	if input.devices.key_pressed(KeyZ) {
+		model.zap.playback().with_pitch(pitch_for(input.time.cycle_count)).play!()
+	}
+	if input.devices.key_pressed(KeyX) {
+		model.crunch.playback().with_volume(0.6).play!()
+	}
+
 	Ok({ ..model, walker, facing: if input.devices.key_down(KeyLeft) -1 else 1 })
 }
+
+## A small pitch change on each play keeps a repeated effect from sounding
+## the same every time. The result is from 0.9 to 1.1.
+pitch_for : U64 -> F32
+pitch_for = |cycle| 0.9 + U64.to_f32(cycle % 5) * 0.05
 
 render! : Model, Draw.Frame => Try({}, [Exit(I64)])
 render! = |model, frame| {

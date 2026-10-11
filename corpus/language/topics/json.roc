@@ -39,6 +39,14 @@ decode_point = |json| Json.parse(json)
 expect Json.to_str({ name: "Sam", age: 30.U64 }) == "{\"age\":30,\"name\":\"Sam\"}"
 expect Json.to_str((1.U64, "a")) == "[1,\"a\"]"
 
+# A record field cannot have a reserved name such as `module` or `with` (see
+# `naming`), so no record reads the key "module". An object whose values all
+# have one type parses into a `Dict(Str, _)`, which takes any key.
+parse_names : Str -> Try(Dict(Str, Str), _)
+parse_names = |text| Json.parse(text)
+
+expect parse_names("{\"module\":\"Json\"}").map_ok(|names| names.get("module")) == Ok(Ok("Json"))
+
 Status : [Active, Banned(Str)]
 
 status_json : Status -> Str

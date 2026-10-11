@@ -144,7 +144,7 @@ const BUILTIN_TOPICS: Record<string, TopicMeta> = {
     file: "compile_time.roc",
     description: "Compile-time evaluation of top-level constants and pure calls, compile-time crashes as compile errors, no effects at build time, empty collections, binary size, and code with errors.",
     keywords: ["compile time", "comptime", "constant", "top-level", "build time", "lookup table",
-      "with_capacity", "binary size"],
+      "with_capacity", "binary size", "slow check", "slow build", "check slow", "build slow"],
   },
   dict_set: {
     file: "dict_set.roc",
@@ -160,9 +160,10 @@ const BUILTIN_TOPICS: Record<string, TopicMeta> = {
   },
   naming: {
     file: "naming.roc",
-    description: "Naming rules for values, types and `var`s, definition order, unused-name warnings, shadowing and duplicate definitions, and the rules for capturing a `var`.",
+    description: "Naming rules for values, types and `var`s, reserved words, definition order, unused-name warnings, shadowing and duplicate definitions, and the rules for capturing a `var`.",
     keywords: ["name", "naming", "identifier", "shadow", "shadowing", "duplicate definition", "redefine",
-      "unused", "_name", "underscore", "capture", "closure", "before definition"],
+      "unused", "_name", "underscore", "capture", "closure", "before definition",
+      "reserved", "reserved word", "keyword", "reserved name"],
   },
   numbers: {
     file: "numbers.roc",
@@ -188,8 +189,10 @@ const BUILTIN_TOPICS: Record<string, TopicMeta> = {
   },
   static_dispatch: {
     file: "static_dispatch.roc",
-    description: "`.method()` static dispatch, the `|>` pipe operator, and well-known methods.",
-    keywords: ["pipe", "|>", "pizza", "static dispatch", ".method", "pipeline", "where", "well-known method"],
+    description: "`.method()` static dispatch, calling a function stored in a record field, the `|>` pipe operator, and well-known methods.",
+    keywords: ["pipe", "|>", "pizza", "static dispatch", ".method", "pipeline", "where", "well-known method",
+      "missing method", "function in record", "function stored", "stored function", "function field",
+      "field function"],
   },
   imports: {
     file: "imports.roc",
@@ -229,16 +232,17 @@ const BUILTIN_TOPICS: Record<string, TopicMeta> = {
   testing: {
     file: "testing.roc",
     description: "Testing with `expect`, multi-line `expect { ... }` blocks, inline assertions, `?` inside `expect`, and the control flow rules inside `expect`.",
-    keywords: ["test", "expect", "assert", "roc test"],
+    keywords: ["test", "expect", "assert", "roc test", "test file", "cached"],
   },
   compiler: {
     file: "compiler.roc",
     description: "The `roc` command line: check, test, run and build, exit codes, `--opt` levels and their per-command defaults, `--target`, `fmt`, `deps` with `--replace-dep`, `docs`, `bundle`, `bump`, and `roc glue`.",
     keywords: ["compiler", "toolchain", "roc command", "roc check", "roc build", "roc run", "roc fmt", "roc glue",
-      "glue", "build", "run", "compile", "optimize", "optimized", "optimized binary", "executable",
+      "glue", "glue spec", "build", "run", "compile", "optimize", "optimized", "optimized binary", "executable",
       "optimization", "--opt", "speed", "size",
       "release", "target", "--target", "cross compile", "musl", "exit code", "format", "deps",
-      "--replace-dep", "bundle", "publish", "bump", "semver", "docs", "install", "repl", "watch"],
+      "--replace-dep", "bundle", "publish", "bump", "semver", "docs", "install", "repl", "watch",
+      "cache", "ROC_CACHE_DIR", "--main", "macOS", "Windows"],
   },
   version_mismatch: {
     file: "version_mismatch.roc",
@@ -262,7 +266,7 @@ const BUILTIN_TOPICS: Record<string, TopicMeta> = {
   platforms: {
     file: "platforms.roc",
     description:
-      "Writing/maintaining a Roc platform: platform header, `requires` forms, reserved `roc__` symbols, `main_for_host!`, hosted FFI (wrapper and host-direct forms) and its rules, and the host side. The ABI edge cases are in `platform_abi`.",
+      "Writing/maintaining a Roc platform: platform header, `requires` forms, reserved `roc__` symbols, `main_for_host!`, hosted FFI (wrapper and host-direct forms) and its rules, `output: Archive`, a platform with no effects, and the host side with its runtime hooks. The ABI edge cases are in `platform_abi`.",
     keywords: [
       "platform",
       "host",
@@ -276,15 +280,20 @@ const BUILTIN_TOPICS: Record<string, TopicMeta> = {
       "basic-cli",
       "libhost",
       "roc_alloc",
+      "roc_dealloc",
+      "roc_crashed",
       "linker",
+      "archive",
+      "static library",
+      "no effects",
     ],
   },
   platform_abi: {
     file: "platform_abi.roc",
     description:
-      "The host ABI of a platform: closed hosted results, the single-tag discriminant byte, record field order and `_ : {}`, three-state returns, `()` vs `{}` for the unit argument, the representations of `Path`, and a shared `IOErr`.",
-    keywords: ["abi", "RocSingleTagWrapper", "field order", "layout", "padding", "segfault", "nested Try",
-      "unit argument", "glue"],
+      "The host ABI of a platform: closed hosted results, the single-tag discriminant byte, record field order and `_ : {}`, three-state returns, `()` vs `{}` for the unit argument, the representations of `Path`, a shared `IOErr`, and who frees a hosted argument.",
+    keywords: ["abi", "RocSingleTagWrapper", "field order", "record field order", "layout", "padding",
+      "segfault", "nested Try", "unit argument", "ownership", "owned", "leak", "RocList", "free"],
   },
   builder_pattern: {
     file: "builder_pattern.roc",

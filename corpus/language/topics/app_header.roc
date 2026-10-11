@@ -31,6 +31,9 @@
 #
 #   requires { main! : List(Str) => Try(_, [Exit(I8), ..]) }
 #
+# The list holds only the arguments after the program name.
+# `roc main.roc -- a b` and a built `./main a b` both give `["a", "b"]`.
+#
 # So `Err(Exit(2))` sets the process exit code to 2. The platform prints any
 # other `Err` with `Str.inspect` and exits with code 1. The Echo platform has
 # only one effect by design, because it is for teaching and not for production.

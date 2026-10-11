@@ -7,7 +7,8 @@ signature, `search scope="roc-ray"` when you do not know the name,
 `list_roc_index kind="examples"` for complete programs that all compile, and
 `get_roc_syntax(topic: "ray_game")` for a worked program on one subject:
 `ray_project`, `ray_game`, `ray_app`, `ray_draw`, `ray_input`, `ray_tasks`,
-`ray_text`, `ray_assets`.
+`ray_text`, `ray_assets`, `release_multiplatform_ray`, `ray_headless`,
+`wasm_bridge_ray`, `pixel_canvas_ray`, `ray_capture`.
 
 ## Starting a project
 
@@ -22,6 +23,11 @@ roc main.roc -- --dev                 # build and run; args after -- go to the a
 mkdir -p dist && cp -r assets dist/   # the folder must exist, and assets go beside the game
 roc build main.roc --output=dist/game # the executable a finished game ships
 ```
+
+`release_multiplatform_ray` covers `--target` for other systems and packaging,
+and `ray_headless` covers the `--host-` switches that run a build in CI. There
+is no web target. `wasm_bridge_ray` runs one game core in roc-ray and in a
+browser.
 
 `App.Config` is opaque. `App.default` is the only way to start one, and every
 change is a receiver.

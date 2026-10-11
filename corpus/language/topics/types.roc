@@ -60,6 +60,19 @@ same_type = type_var
 
 expect (same_type([1.U8]), same_type(["a"])) == ([1], ["a"])
 
+# A record of functions is a value, so it has one type. The uses in its own
+# module decide that type. If that module does not use it, its number literals
+# are `Dec`, and another module's `(Ops.math.inc)(2.U64)` is a type mismatch.
+# Annotate a record of functions that other modules use.
+math : { inc : U64 -> U64 }
+math = { inc: |n| n + 1 }
+
+expect (math.inc)(2) == 3
+
+# @rejects type mismatch
+# math_any = { inc: |n| n + 1 }
+# both = ((math_any.inc)(2.U64), (math_any.inc)(2.I8))
+
 # An annotation can make a type more specific, but never more general. So a
 # type variable in the annotation of a value is an error. Write one type, or
 # `List(_)`. To use the value at many types, make it a function that takes `{}`.

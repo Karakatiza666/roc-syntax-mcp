@@ -13,6 +13,16 @@ example1 = "One".concat(" Two")
 # `value`. A method that the type does not have is a compile-time error.
 expect "One".concat(" Two") == Str.concat("One", " Two")
 
+# So `ops.inc(1)` looks for a method `inc` on the type of `ops`, also when
+# `ops` is a record with a function in its field `inc`. To call that
+# function, put the field access in parentheses.
+ops = { inc: |n| n + 1 }
+
+expect (ops.inc)(1) == 2
+
+# @rejects missing method
+# two = ops.inc(1)
+
 # `|>` (the pizza operator) is for functions that are not methods of the
 # receiver's type. `x |> f(y)` calls `f(x, y)`, and `x |> f` calls `f(x)`.
 # Write a function name after `|>`, such as `parse` or `List.map`.

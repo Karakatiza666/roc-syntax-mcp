@@ -3,7 +3,7 @@
 # you recall from the old compiler (`--optimize`, `--linker`, `roc dev`) do not
 # exist here.
 #
-# Measured on nightly-2026-10-04-130536d.
+# Measured on nightly-2026-10-09-258ab27.
 
 # ---------------------------------------------------------------------------
 # The loop: check, test, run, build
@@ -22,6 +22,15 @@
 # compile. Use `roc check` when you only want the errors.
 #
 # Each command defaults to `main.roc` when you give no file.
+#
+# The compiler keeps a cache in ~/.cache/roc/<nightly>/. Set ROC_CACHE_DIR to
+# put it in another folder, e.g. a folder that CI keeps between runs.
+#
+# `roc check Lib.roc` on a module that imports from the platform (`pf.`)
+# reads the app header from `main.roc` in the same folder, or from
+# `--main=app.roc`. It then checks the whole app and lists the app's errors
+# under the name `Lib.roc`. Without an app, the platform names in `Lib.roc`
+# are "does not exist".
 
 expect [1, 2, 3].len() == 3
 
@@ -72,7 +81,14 @@ expect [1, 2, 3].len() == 3
 # Default: the native architecture, with musl for static linking. The platform
 # header's `targets` section lists what a platform supports, and without
 # `--target` the build uses its first compatible entry. See the `platforms`
-# topic.
+# topic. The target name must be the same as a key in `targets`:
+# `--target=x64linux` does not select an `x64glibc` entry.
+#
+# From Linux, these targets link with no other tools: the x64 and arm64
+# Linux targets, x64mingw, arm64mingw, x64freebsd, x64netbsd and wasm32.
+# x64win and arm64win fail with "WindowsSDKNotFound". x64mac and arm64mac
+# fail with "library not found for -lSystem", unless the platform ships the
+# macOS libraries.
 
 # ---------------------------------------------------------------------------
 # Formatting
@@ -83,6 +99,9 @@ expect [1, 2, 3].len() == 3
 #   roc fmt --check app.roc    exit 1 if a file needs formatting. Writes nothing
 #   roc fmt --stdin            formats stdin to stdout
 #
+# `roc fmt` and `roc fmt --check` also take a folder. They then act on every
+# .roc file in that folder and in its subfolders.
+
 # ---------------------------------------------------------------------------
 # Version pin
 # ---------------------------------------------------------------------------

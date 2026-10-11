@@ -101,6 +101,22 @@ render! = |model, frame| {
 		Ok({})
 	})?
 
+	# `convex_polygon!` fills a convex shape only. The fill is a fan of
+	# triangles from the first point, so a concave shape also fills its notch.
+	# The outline follows any ordered path.
+	frame.convex_polygon!({
+		points: [{ x: 640, y: 320 }, { x: 700, y: 320 }, { x: 730, y: 380 }, { x: 700, y: 440 }, { x: 640, y: 440 }, { x: 610, y: 380 }],
+		style: Draw.filled_and_outlined(Color.from_hex_rgb(0x27ae60), Color.ray_white, 2),
+	})
+
+	# Split a concave shape into `triangle!` calls. List each triangle's corners
+	# counter-clockwise as seen on screen, because a clockwise triangle fills
+	# nothing. These three make a square with a V cut into its top edge.
+	notched = Draw.filled(Color.from_hex_rgb(0x56ccf2))
+	frame.triangle!({ a: { x: 760, y: 300 }, b: { x: 760, y: 460 }, c: { x: 810, y: 360 }, style: notched })
+	frame.triangle!({ a: { x: 810, y: 360 }, b: { x: 760, y: 460 }, c: { x: 860, y: 460 }, style: notched })
+	frame.triangle!({ a: { x: 810, y: 360 }, b: { x: 860, y: 460 }, c: { x: 860, y: 300 }, style: notched })
+
 	# The debug FPS counter is styled like everything else rather than being a
 	# bare corner: `{ pos, size, color }`, and `pos` is the record, not the call.
 	frame.fps!({ pos: { x: 24, y: size.height - 32 }, size: 16, color: Color.with_alpha(Color.ray_white, 160) })

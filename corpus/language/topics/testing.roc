@@ -6,6 +6,16 @@
 # failure report shows the failing expression and the values of the top-level
 # names that it uses. If a test reaches code with a compile error, `roc test`
 # counts it as a compiler error, not as a pass or a fail.
+#
+# A test file needs no header and no `main!`. `roc test test_geo.roc` runs its
+# `expect`s and those of `Geo.roc`:
+#
+#   import Geo
+#
+#   expect Geo.area(4, 5) == 20
+#
+# `roc test` caches results and prints "(cached)" when no file changed.
+# `--no-cache` runs every test again, and `--verbose` lists each one.
 
 # Top-level `expect` (single expression).
 expect Bool.True != Bool.False

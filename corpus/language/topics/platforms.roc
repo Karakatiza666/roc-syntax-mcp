@@ -82,6 +82,8 @@
 #     reactor module with no entry point, exporting the `provides` entrypoints.
 #   `Archive` builds a static archive (`.a`, `.lib`) holding the host inputs,
 #     the compiled app, and the builtins, for linking into another build.
+#     It has no `main`. A C program with its own `main` links it and calls
+#     the `provides` keys.
 # A linked wasm32 target must list its host-visible functions in `exports`.
 # `exports: []` exports none explicitly. Without the field, `roc build` fails
 # with "missing wasm exports".
@@ -208,14 +210,15 @@
 #
 # The host is not Roc code, but you need to know what it exposes:
 #
-#   `main()` (the OS entry point), sets up locale (e.g. UTF-8 code page
-#     on Windows), then calls the Roc `main_for_host!` symbol.
-#   Memory: `roc_alloc`, `roc_realloc`, `roc_dealloc`, `roc_panic` and
-#     `roc_dbg` are the Roc runtime's hook names. The host can implement them
-#     as a libc allocator or as anything domain-specific (e.g. a per-request
-#     arena, a tracked allocator, or a no-op for WASM).
-#   One symbol per hosted function declared on the Roc side (each entry in
-#     `hosted { ... }`), with a name matching the lowered Roc symbol.
+#   `main()` (the OS entry point) sets up locale (e.g. UTF-8 code page
+#     on Windows), then calls the `provides` key (`roc_main` above). The Roc
+#     name `main_for_host!` is not a link symbol.
+#   Six runtime hooks: `roc_alloc`, `roc_realloc`, `roc_dealloc`, `roc_dbg`,
+#     `roc_expect_failed` and `roc_crashed`. With a per-request arena,
+#     `roc_dealloc` can be a no-op. `roc_alloc` and `roc_realloc` never
+#     return NULL, because Roc does not check the result. A host that cannot
+#     allocate stops the program.
+#   One symbol per hosted function, named by its `hosted` key.
 #   Tag union layouts must follow the Roc ABI that the `platform_abi` topic
 #     describes. A union with one tag has no discriminant.
 #
@@ -250,11 +253,27 @@
 # an open error union that the app can extend.
 #
 #
+# 6b. A platform with no effects
+#
+#
+# A host that does all I/O can require a record of pure functions,
+# with `exposes []` and `hosted {}`. The app writes `app [Model, main]` and
+# `main = { init: |seed| ..., update: |model, input| ... }`, with no `!`:
+#
+#     requires { [Model : model] for main : { init : U64 -> model, update : model, U64 -> model } }
+#     provides { "game_init": init_for_host, "game_update": update_for_host }
+#
+# update_for_host : Box(Model), U64 -> Box(Model)
+# update_for_host = |boxed, input| Box.box((main.update)(Box.unbox(boxed), input))
+#
+# `init_for_host` boxes `(main.init)(seed)` the same way. Without the
+# parentheses, `main.update(...)` is a method call.
+#
+#
 # 7. Reading a real platform end to end
 #
 #
-# The basic-cli fragments above are quotes. This server bundles basic-webserver
-# 0.17.0 in full, so you can read all of it:
+# This server bundles basic-webserver 0.17.0 in full, so you can read all of it:
 #
 #   get_roc_syntax(scope: "basic-webserver")   the app-facing API in one page
 #   get_roc_module("Server")                   one module's methods and types
@@ -270,7 +289,7 @@
 #     when both re-export the same package's types.
 #   The `to_host` / `from_host` glue in full. `Server.Config.to_host` flattens
 #     a config record into the shape that the Zig host reads.
-#     `Server.Request.from_host` does the reverse. There are 138 such items.
+#     `Server.Request.from_host` does the reverse.
 #     This server hides them from app-facing search because they are the ABI,
 #     which the `platform_abi` topic describes.
 #   The `hosted { ... }` direction, where the platform declares what the host

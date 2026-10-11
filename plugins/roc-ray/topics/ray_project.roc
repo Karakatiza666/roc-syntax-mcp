@@ -8,11 +8,9 @@
 ## other nightly every `roc check` reports a "roc version mismatch" warning on
 ## the platform's `main.roc`. That warning is not in the app's code.
 ##
-## `roc main.roc` builds and runs. Use it while you write code.
-## `roc build main.roc --output=dist/game` leaves an executable behind, which is
-## what a finished game ships. The build fails if `dist/` does not exist, and
-## the game reads `dist/assets/`, so copy `assets/` there. Arguments after `--`
-## go to the app: `roc main.roc -- --dev`.
+## `roc main.roc` builds and runs. Use it while you write code. Arguments after
+## `--` go to the app: `roc main.roc -- --dev`. To build an executable to ship,
+## see `release_multiplatform_ray`.
 ##
 ## Nothing reads the disk by ambient path. A file is read through a directory
 ## handle from `io.files()`, and every directory beyond the app's own is
@@ -22,7 +20,6 @@ app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-r
 
 import rr.App
 import rr.Assets
-import rr.Capture
 import rr.Color
 import rr.Draw
 import rr.Files
@@ -37,7 +34,6 @@ Model : {
 	## replays from its seed. Nothing else in the platform makes one run differ
 	## from the last.
 	rng : Random.State,
-	headless : Bool,
 }
 
 Msg : []
@@ -78,23 +74,15 @@ config = |args| {
 	## executable `roc main.roc` builds in its cache. Reading them needs the
 	## directory declared. A target no declaration covers answers
 	## `PermissionDenied`. A facility that is never declared stops the app.
-	dev =
-		if List.contains(args, dev_flag) {
-			base.with_permission(Directory("assets", ReadOnly))
-		} else {
-			base
-		}
-
-	## A recording mode is possible only because this code reads argv here and
-	## not in `init!`. The window does not exist yet, so this is the last point
-	## at which an app can ask for a hidden one.
-	if List.contains(args, "--record") {
-		dev
-			.with_visible(Bool.False)
-			.with_output_dir("out")
-			.with_recording(Capture.default.with_path("demo.gif").with_format(Gif).with_fps(25).with_max_frames(150))
+	##
+	## The window does not exist yet, so a flag read here is also the last point
+	## at which a run can ask for a hidden window with `with_visible`. The
+	## recording mode in `ray_capture` does this. For CI with no
+	## display, use `--host-headless`, see `ray_headless`.
+	if List.contains(args, dev_flag) {
+		base.with_permission(Directory("assets", ReadOnly))
 	} else {
-		dev
+		base
 	}
 }
 
@@ -104,6 +92,7 @@ config = |args| {
 ## contain `..`. A path that breaks the rule answers `PathInvalid`.
 open_assets! : App.Io => Try(Files.ReadDir, _)
 open_assets! = |io|
+	## `args!` includes `argv[0]`, so an app's own flags start at index 1.
 	if List.contains(io.args!(), dev_flag) {
 		io.files().open_dir_read!("assets")
 	} else {
@@ -128,8 +117,6 @@ init! = App.init_for_args(
 			## app that must reproduce a run writes a constant seed instead.
 			## Legal only in `init!`, like `args!`.
 			rng: Random.seed(U64.to_u32_wrap(io.entropy!())),
-			## `args!` includes `argv[0]`, so an app's own flags start at 1.
-			headless: List.contains(io.args!(), "--record"),
 		})
 	},
 )
@@ -146,7 +133,7 @@ update! = |model, program_input, _io| {
 }
 
 render! : Model, Draw.Frame => Try({}, [Exit(I64)])
-render! = |model, frame| {
+render! = |_model, frame| {
 	frame.clear!(Color.from_hex_rgb(0x141b24))
 
 	## `frame.size!()` is the surface being drawn to, in `F32`, and is legal
@@ -156,7 +143,7 @@ render! = |model, frame| {
 
 	frame.text_at!({
 		pos: { x: 24, y: 24 },
-		text: if model.headless "recording" else "windowed",
+		text: "Space advances the generator",
 		size: 20,
 		color: Color.ray_white,
 	})

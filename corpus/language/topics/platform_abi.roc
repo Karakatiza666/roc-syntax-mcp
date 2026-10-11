@@ -152,3 +152,20 @@ Header := { tag : U8, _ : {}, value : U32 }
 # wrappers (`StdoutErr(IOErr)`, `FileErr(IOErr)`, `PathErr(IOErr)`, …) so
 # callers can both write generic handlers (`Err(_)`) and specific ones
 # (`Err(FileErr(NotFound))`).
+#
+#
+# 8. A hosted function owns its arguments
+#
+#
+# Roc gives each refcounted argument (`List`, `Str`, `Box`) to the hosted
+# function and does not decrement its reference count after the call. A host
+# that only reads the argument and returns something else leaks it. The C
+# glue (`CGlue.roc`) has no helper to free or make a `RocList`, so let Roc
+# allocate and free the lists:
+#   - A hosted function that only reads a list returns that list, and Roc
+#     frees it:  present! : List(U8) => List(U8)
+#   - A host that must return new bytes gets a list from a `provides` entry,
+#     and fills it in place:
+#       provides { "my_fresh_bytes": fresh_bytes }
+#       fresh_bytes : U64 -> List(U8)
+#       fresh_bytes = |count| List.repeat(0, count)

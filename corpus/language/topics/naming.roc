@@ -13,6 +13,20 @@
 # same : $a -> $a
 # same = |x| x
 
+# These words are reserved, so they cannot name a value, an argument or a
+# record field ("That word is reserved by Roc"):
+#   header words:  app platform package packages requires provides exposes
+#                  targets hosted import as exposing module interface
+#                  generates with has implements where
+#   code words:    if else match var for while return break crash dbg expect
+#                  in and or
+# `to`, `exports`, `inputs`, `output`, `effects`, `when`, `is`, `type`, `then`,
+# `not` and `continue` are ordinary names. Rename a field such as `module` to
+# `module_name`.
+#
+# @rejects unexpected expression syntax
+# dependency = { module: "Json", version: 1 }
+
 # Top-level definitions can come in any order. Inside a block, define a name
 # before the code that uses it.
 later = earlier + 1

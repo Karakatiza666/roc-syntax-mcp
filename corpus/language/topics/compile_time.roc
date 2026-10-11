@@ -21,6 +21,9 @@ expect add_one(area) == 13
 # arguments are top-level constants, e.g. `area.to_str()` in
 # `echo!("area is ${area.to_str()}")`. `echo!` itself runs at runtime.
 #
+# Literal arguments count as constants. In `main!`, `simulate(300_000_000)`
+# runs inside `roc check` and `roc build`, and a slow call makes them slow.
+#
 # Effects never run at compile time. The result of an effectful call and a
 # value that the platform provides are known only at runtime. The compiler does
 # not run platform code, so `roc check` and `roc build` cannot do I/O, also for
