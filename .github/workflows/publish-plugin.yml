@@ -5,7 +5,8 @@
 #
 # One workflow file serves every plugin, so the npm trusted publisher of each
 # package names this file. To add a plugin, add one line under `options`. A
-# publish tags its commit <plugin>-v<version>, for example roc-ray-v0.0.1.
+# publish tags its commit <plugin>-v<version>, for example roc-ray-v0.0.1,
+# and makes a GitHub release for the tag.
 #
 # The gate is `plugin validate` under the nightly that the manifest of the
 # plugin names. That nightly can differ from the one in
@@ -51,6 +52,8 @@ jobs:
       DIR: plugins/${{ inputs.plugin }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # the release notes read the history and tags of the plugin
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "24"
@@ -121,3 +124,28 @@ jobs:
         run: |
           gh api "repos/$GITHUB_REPOSITORY/git/refs" -f ref="refs/tags/$GITTAG" -f sha="$GITHUB_SHA" \
             || { echo "::error::Published, but the tag failed. Run: git tag $GITTAG $GITHUB_SHA && git push origin $GITTAG"; exit 1; }
+
+      # The notes list only the commits that changed this plugin since its last
+      # tag. A plugin release never takes the "Latest" badge from the server.
+      - name: Make a GitHub release for the tag
+        if: ${{ !inputs.dry-run }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITTAG: ${{ steps.version.outputs.gittag }}
+          PLUGIN: ${{ inputs.plugin }}
+        run: |
+          version="${GITTAG#"$PLUGIN-v"}"
+          prev="$(git tag --list "$PLUGIN-v*" --sort=-v:refname | grep -vxF "$GITTAG" | head -n 1)"
+          notes="$RUNNER_TEMP/notes.md"
+          {
+            echo "Changes to \`$DIR\`:"
+            echo
+            git log --format='- %s (%h)' ${prev:+"$prev.."}"$GITHUB_SHA" -- "$DIR"
+            if [ -n "$prev" ]; then
+              echo
+              echo "Full diff: https://github.com/$GITHUB_REPOSITORY/compare/$prev...$GITTAG"
+            fi
+          } > "$notes"
+          case "$version" in *-*) pre=--prerelease ;; *) pre= ;; esac
+          gh release create "$GITTAG" --verify-tag --latest=false $pre --title "$PLUGIN $version" --notes-file "$notes" \
+            || { echo "::error::Published and tagged, but the release failed. Run: gh release create $GITTAG --verify-tag --latest=false --title '$PLUGIN $version'"; exit 1; }

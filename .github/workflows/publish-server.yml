@@ -106,12 +106,15 @@ jobs:
           gh api "repos/$GITHUB_REPOSITORY/git/refs" -f ref="refs/tags/$GITTAG" -f sha="$GITHUB_SHA" \
             || { echo "::error::Published, but the tag failed. Run: git tag $GITTAG $GITHUB_SHA && git push origin $GITTAG"; exit 1; }
 
-      # The notes list the commits since the last tag. Edit the release by hand to add a summary.
+      # The notes list the commits since the last server tag. Without
+      # --notes-start-tag, GitHub can start from a plugin tag. Edit the release
+      # by hand to add a summary.
       - name: Make a GitHub release for the tag
         if: ${{ !inputs.dry-run }}
         env:
           GH_TOKEN: ${{ github.token }}
           GITTAG: ${{ steps.version.outputs.gittag }}
         run: |
-          gh release create "$GITTAG" --verify-tag --generate-notes \
-            || { echo "::error::Published and tagged, but the release failed. Run: gh release create $GITTAG --verify-tag --generate-notes"; exit 1; }
+          prev="$(git ls-remote --tags --refs origin 'refs/tags/v*' | sed 's|.*refs/tags/||' | grep -vxF "$GITTAG" | sort -V | tail -n 1)"
+          gh release create "$GITTAG" --verify-tag --generate-notes ${prev:+--notes-start-tag "$prev"} \
+            || { echo "::error::Published and tagged, but the release failed. Run: gh release create $GITTAG --verify-tag --generate-notes --notes-start-tag $prev"; exit 1; }
