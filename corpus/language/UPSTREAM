@@ -4,14 +4,14 @@
 # Builtin.roc or langref/, so that the next refresh can diff against it.
 
 repo     https://github.com/roc-lang/roc
-commit   258ab27f79bef726d501e3b79ce2e47e54e83f9d
-date     2026-10-09
+commit   7d256b954603e1170ee0d6df229c795aba6dc70d
+date     2026-10-11
 
 # The nightly that every gate ran under. It must match the `compiler` line in
 # every other corpus/*/*/UPSTREAM file, because the gates check the corpora as a
 # set. If one corpus records an older nightly, its last check used a compiler
 # that nobody has, so the corpus is in effect unchecked.
-compiler nightly-2026-10-09-258ab27
+compiler nightly-2026-10-11-7d256b9
 
 examples/all_roc_syntax.roc  <- test/echo/all_syntax_test.roc
 Builtin.roc                  <- src/build/roc/Builtin.roc

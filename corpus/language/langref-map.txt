@@ -121,7 +121,7 @@ modules#requires                                            platforms
 modules#exposes                                             platforms
 modules#packages                                            platforms
 modules#provides                                            platforms
-modules#targets                                             platforms
+modules#targets                                             platforms, compiler
 modules#hosted-type-modules                                 platforms
 modules#application-modules                                 app_header
 modules#pinning-a-roc-version                               compiler

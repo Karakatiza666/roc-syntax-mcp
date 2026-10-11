@@ -3,7 +3,7 @@
 # A Roc program is split between an application (pure Roc the user writes)
 # and a platform (the I/O primitives, memory allocator, and entry point).
 # Every app picks exactly one platform. This topic covers what the platform
-# author writes. See https://www.roc-lang.org/platforms for background.
+# author writes.
 #
 # A platform has two parts:
 #   1. The host (Zig, Rust, C, and so on) implements `main()`, `malloc`/`free`,
@@ -26,9 +26,6 @@
 # depends on addresses is the choice of the platform author. The optimizer
 # assumes that allocation has no observable effect, so effects in a host
 # allocator may run differently between compiler releases.
-#
-# The sections below show the patterns that the basic-cli platform uses, taken
-# from https://github.com/roc-lang/basic-cli (new-compiler branch).
 #
 #
 # 1. The platform header (platform/main.roc)
@@ -91,6 +88,21 @@
 # The platform decides what to build. App authors never pass artifact-kind
 # flags to `roc build`. Without `--target`, `roc build` uses the first
 # compatible entry in `targets`. Input order matters for linking.
+#
+# The link takes nothing from a toolchain on the build machine: no system C
+# runtime, SDK or default library. It links only the target's `inputs` and
+# Roc's own objects. A macOS target also links `libSystem` and the frameworks
+# from a `macos-sysroot` directory in the platform. So the `inputs` of a
+# Windows target (x64win, arm64win, x64mingw, arm64mingw) must hold:
+#   - a startup object with `mainCRTStartup` (`_DllMainCRTStartup` for `Shared`),
+#   - the C runtime that the host calls,
+#   - import libraries for `kernel32` and `ntdll`, which Roc's runtime calls,
+#     and for each other DLL that the host uses.
+#
+#   x64win: { inputs: ["host.lib", app, "startup.lib", "ucrtbase.lib", "kernel32.lib", "ntdll.lib"] },
+#
+# `zig dlltool -m i386:x86-64 -d kernel32.def -l kernel32.lib` makes an import
+# library from a module-definition (`.def`) file.
 #
 # An app can also provide a type to the platform, using a `for` clause. The
 # `[Context : context]` syntax maps an uppercase alias the app defines to a
@@ -223,34 +235,13 @@
 #     describes. A union with one tag has no discriminant.
 #
 #
-# 6. App-side usage (what an app author sees)
+# 6. App-side usage
 #
 #
-# app [main!] { pf: platform "../platform/main.roc" }
-#
-# import pf.Stdout
-# import pf.File
-#
-# main! = |_args| {
-#     file_result = {
-#         File.write_utf8!("greeting.txt", "Hi!")?
-#         content = File.read_utf8!("greeting.txt")?
-#         _ = Stdout.line!("greeting.txt contains: ${content}")
-#         File.delete!("greeting.txt")?
-#         Ok({})
-#     }
-#
-#     match file_result {
-#         Ok({}) => Ok({})
-#         Err(_) => {
-#             _ = Stdout.line!("File operations failed")
-#             Err(Exit(1))                # surfaces a non-zero exit through main_for_host!
-#         }
-#     }
-# }
-#
-# The `?` operator composes because every platform call returns a `Try` with
-# an open error union that the app can extend.
+# An app imports the exposed modules (`import pf.File`). It can chain their
+# calls with `?`, because each call returns a `Try` with an open error union.
+# `Err(Exit(1))` from `main!` reaches the host as exit code 1 through
+# `main_for_host!`. See the `error_design` topic.
 #
 #
 # 6b. A platform with no effects
@@ -280,21 +271,19 @@
 #   search_symbols("Server.Config.to_host")    one glue method, by name
 #   list_roc_index(kind: "examples")           27 programs that all pass roc check
 #
-# Read it for four things that this topic covers only abstractly:
+# Read it for four things that this topic only sketches:
 #
-#   The `for` clause above, in production use and not as a sketch.
+#   The `for` clause above, in real use.
 #   A `packages { http: "..." }` dependency: `Request`, `Response`, `Method`,
 #     and `Header` come from roc-lang/http, so app authors import them from
 #     `http.` and everything else from `pf.`. Two platforms stay compatible
 #     when both re-export the same package's types.
 #   The `to_host` / `from_host` glue in full. `Server.Config.to_host` flattens
-#     a config record into the shape that the Zig host reads.
-#     `Server.Request.from_host` does the reverse.
-#     This server hides them from app-facing search because they are the ABI,
-#     which the `platform_abi` topic describes.
-#   The `hosted { ... }` direction, where the platform declares what the host
-#     implements, spread across Host.roc and the Internal* modules that
-#     `exposes` deliberately leaves out.
+#     a config record into the shape that the Zig host reads, and
+#     `Server.Request.from_host` does the reverse. App-facing search hides
+#     them, because they are the ABI (see `platform_abi`).
+#   The `hosted { ... }` functions in Host.roc and in the Internal* modules,
+#     which `exposes` leaves out.
 #
 #
 # Checklist when adding a new module to your platform

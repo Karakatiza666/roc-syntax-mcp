@@ -3,7 +3,7 @@
 # you recall from the old compiler (`--optimize`, `--linker`, `roc dev`) do not
 # exist here.
 #
-# Measured on nightly-2026-10-09-258ab27.
+# Measured on nightly-2026-10-11-7d256b9.
 
 # ---------------------------------------------------------------------------
 # The loop: check, test, run, build
@@ -23,8 +23,10 @@
 #
 # Each command defaults to `main.roc` when you give no file.
 #
-# The compiler keeps a cache in ~/.cache/roc/<nightly>/. Set ROC_CACHE_DIR to
-# put it in another folder, e.g. a folder that CI keeps between runs.
+# The compiler keeps its cache in ~/.cache/roc/. Build results go in
+# compat-<hash>/, where the hash identifies the compiler build. Downloaded
+# packages go in packages/. Set ROC_CACHE_DIR to use another folder in place
+# of ~/.cache/roc/, e.g. a folder that CI keeps between runs.
 #
 # `roc check Lib.roc` on a module that imports from the platform (`pf.`)
 # reads the app header from `main.roc` in the same folder, or from
@@ -84,11 +86,12 @@ expect [1, 2, 3].len() == 3
 # topic. The target name must be the same as a key in `targets`:
 # `--target=x64linux` does not select an `x64glibc` entry.
 #
-# From Linux, these targets link with no other tools: the x64 and arm64
-# Linux targets, x64mingw, arm64mingw, x64freebsd, x64netbsd and wasm32.
-# x64win and arm64win fail with "WindowsSDKNotFound". x64mac and arm64mac
-# fail with "library not found for -lSystem", unless the platform ships the
-# macOS libraries.
+# The link uses no toolchain on the build machine. The `platforms` topic says
+# which files a target must list. From Linux, the x64 and arm64 Linux targets, x64freebsd, x64netbsd and wasm32 link
+# with no other tools. x64win on basic-cli 0.25.0 fails with "undefined symbol:
+# mainCRTStartup", because the platform lists no startup object. x64mac and
+# arm64mac fail with "library not found for -lSystem", unless the platform
+# ships the macOS libraries.
 
 # ---------------------------------------------------------------------------
 # Formatting

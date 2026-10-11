@@ -222,7 +222,7 @@ const USAGE = `usage: roc-syntax-mcp roc [install [nightly] | use <path>]
 
   roc                 show which compiler the server runs, and where that choice came from
   install [nightly]   download a nightly from ${NIGHTLIES} and use it. Defaults to the one
-                      this server was checked against, such as nightly-2026-10-09-258ab27
+                      this server was checked against, such as nightly-2026-10-11-7d256b9
   use <path>          use a compiler you already have
 
 The server looks again on every call, so neither needs a restart. --roc=<path> and
