@@ -9,6 +9,8 @@
 //
 // Usage: node scripts/nightlies.mjs [plugin-dir ...]
 //   prints `release|nightly` for each platform release, one per line.
+// Usage: node scripts/nightlies.mjs --all
+//   prints each nightly that the gates of this repo use, one per line, for CI.
 
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -44,12 +46,32 @@ export function nightlyBinary(nightly) {
   return binary && fs.existsSync(binary) ? binary : null;
 }
 
+const PIN = /^\s*roc:\s*"(nightly-[^"]+)"/m;
+
 /** The nightly for a program: its own `roc:` pin, else the nightly of the platform release it pins, else null. */
 export function nightlyFor(source, nightlies = releaseNightlies()) {
-  const pin = source.match(/^\s*roc:\s*"(nightly-[^"]+)"/m)?.[1];
+  const pin = source.match(PIN)?.[1];
   return pin ?? nightlies.find((n) => source.includes(`"${n.release}"`))?.nightly ?? null;
 }
 
+/**
+ * Every nightly that the gates use with no plugin arguments: the bundled one,
+ * the one of each platform release, and each `roc:` pin of a program that the
+ * gates check (under corpus/ and eval/).
+ */
+export function allNightlies() {
+  const upstream = fs.readFileSync(path.join(ROOT, "corpus", "language", "UPSTREAM"), "utf-8");
+  const pins = ["corpus", "eval"].flatMap((top) =>
+    fs
+      .readdirSync(path.join(ROOT, top), { recursive: true })
+      .filter((f) => f.endsWith(".roc"))
+      .map((f) => fs.readFileSync(path.join(ROOT, top, f), "utf-8").match(PIN)?.[1]),
+  );
+  const all = [field(upstream, "compiler"), ...releaseNightlies().map((n) => n.nightly), ...pins];
+  return [...new Set(all.filter(Boolean))].sort();
+}
+
 if (process.argv[1] === import.meta.filename) {
-  for (const n of releaseNightlies(process.argv.slice(2))) console.log(`${n.release}|${n.nightly}`);
+  if (process.argv[2] === "--all") console.log(allNightlies().join("\n"));
+  else for (const n of releaseNightlies(process.argv.slice(2))) console.log(`${n.release}|${n.nightly}`);
 }

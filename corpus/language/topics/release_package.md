@@ -106,11 +106,14 @@ if [[ $target == https://* ]]; then
 	url="$target"
 else
 	port="${PORT:-8765}"
-	url="http://localhost:$port/$(basename "$target")"
+	url="http://127.0.0.1:$port/$(basename "$target")"
 	python3 -m http.server "$port" --bind 127.0.0.1 --directory "$(dirname "$target")" >/dev/null 2>&1 &
 	server=$!
 	trap 'kill "$server"' EXIT
-	sleep 1
+	for _ in $(seq 50); do
+		(: >"/dev/tcp/127.0.0.1/$port") 2>/dev/null && break
+		sleep 0.1
+	done
 fi
 for f in examples/*.roc; do
 	"$ROC" check "$f" --replace-dep ./src/main.roc "$url"
@@ -119,7 +122,8 @@ done
 ```
 
 - A path dependency does not test the bundle. Plain http is allowed only for
-  localhost.
+  localhost. Write `127.0.0.1` in the URL, because `localhost` can resolve to
+  `::1` on a CI runner, and the server listens on IPv4 only.
 - `--replace-dep OLD NEW` changes no file. OLD is the path from the current
   directory, with `./`. Do not copy or rewrite the examples.
 - `roc test` does not run the `expect`s of a URL package. `all_tests.sh` runs

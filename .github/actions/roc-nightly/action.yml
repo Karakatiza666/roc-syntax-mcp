@@ -1,59 +1,78 @@
 # SPDX-FileCopyrightText: 2026 Heorhii Bulakh and subsequent roc-syntax-mcp authors
 # SPDX-License-Identifier: MPL-2.0
 
-# Puts one roc nightly on PATH, from the cache when it can.
+# Puts one roc nightly on PATH, and links each nightly at the repo root, where
+# the gates look for the nightly of a program (scripts/nightlies.mjs). It reads
+# the nightlies from the cache when it can.
 #
-# GitHub evicts a cache entry that no run read for 7 days, and this period is
-# not configurable. A nightly stays in the cache while a file pins it and CI
-# runs at least once a week. GitHub evicts a nightly that a file no longer pins
-# 7 days after the last run that used it.
+# One cache entry holds the whole set, so a change to the set downloads every
+# nightly again. GitHub evicts a cache entry that no run read for 7 days, and
+# this period is not configurable.
 
 name: Roc nightly
-description: Download a roc-lang/nightlies release and put roc on PATH.
+description: Download roc-lang/nightlies releases and put one roc on PATH.
 
 inputs:
   tag:
-    description: The release tag, for example nightly-2026-10-04-130536d.
+    description: The release tag to put on PATH, for example nightly-2026-10-04-130536d.
     required: true
+  more:
+    description: Other release tags, one per line, that only the repo root gets.
+    required: false
+    default: ""
 
 runs:
   using: composite
   steps:
-    - name: Name the nightly
+    - name: Name the nightlies
       id: nightly
       shell: bash
       env:
         TAG: ${{ inputs.tag }}
+        MORE: ${{ inputs.more }}
       run: |
-        name="roc_nightly-linux_arm64-${TAG#nightly-}"
-        echo "name=$name" >> "$GITHUB_OUTPUT"
-        echo "dir=$RUNNER_TOOL_CACHE/roc/$name" >> "$GITHUB_OUTPUT"
-    - name: Restore the nightly
+        names="$(printf '%s\n' "$TAG" $MORE | sed 's/^nightly-/roc_nightly-linux_arm64-/' | sort -u)"
+        echo "$names"
+        {
+          echo "key=roc-nightlies-$(sha256sum <<<"$names" | cut -c1-16)"
+          echo "names=$(tr '\n' ' ' <<<"$names")"
+          echo "paths<<EOF"
+          sed "s|^|$RUNNER_TOOL_CACHE/roc/|" <<<"$names"
+          echo "EOF"
+          echo "dir=$RUNNER_TOOL_CACHE/roc/roc_nightly-linux_arm64-${TAG#nightly-}"
+        } >> "$GITHUB_OUTPUT"
+    - name: Restore the nightlies
       id: restore
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
-        path: ${{ steps.nightly.outputs.dir }}
-        key: ${{ steps.nightly.outputs.name }}
-    - name: Download the nightly
+        path: ${{ steps.nightly.outputs.paths }}
+        key: ${{ steps.nightly.outputs.key }}
+    - name: Download the nightlies
       if: steps.restore.outputs.cache-hit != 'true'
       shell: bash
       env:
-        TAG: ${{ inputs.tag }}
-        NAME: ${{ steps.nightly.outputs.name }}
-        DIR: ${{ steps.nightly.outputs.dir }}
+        NAMES: ${{ steps.nightly.outputs.names }}
       run: |
-        mkdir -p "$(dirname "$DIR")"
-        curl -fsSL "https://github.com/roc-lang/nightlies/releases/download/$TAG/$NAME.tar.gz" \
-          | tar xz -C "$(dirname "$DIR")"
-        test -x "$DIR/roc"
-    # Save the nightly before any gate runs, so that the cache keeps the
-    # download even if a gate fails.
-    - name: Save the nightly
+        mkdir -p "$RUNNER_TOOL_CACHE/roc"
+        for name in $NAMES; do
+          tag="nightly-${name#roc_nightly-linux_arm64-}"
+          curl -fsSL "https://github.com/roc-lang/nightlies/releases/download/$tag/$name.tar.gz" \
+            | tar xz -C "$RUNNER_TOOL_CACHE/roc"
+          test -x "$RUNNER_TOOL_CACHE/roc/$name/roc"
+        done
+    # Save the nightlies before any gate runs, so that the cache keeps the
+    # downloads even if a gate fails.
+    - name: Save the nightlies
       if: steps.restore.outputs.cache-hit != 'true'
       uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
-        path: ${{ steps.nightly.outputs.dir }}
-        key: ${{ steps.nightly.outputs.name }}
+        path: ${{ steps.nightly.outputs.paths }}
+        key: ${{ steps.nightly.outputs.key }}
+    - name: Link the nightlies at the repo root
+      shell: bash
+      env:
+        NAMES: ${{ steps.nightly.outputs.names }}
+      run: for name in $NAMES; do ln -sfn "$RUNNER_TOOL_CACHE/roc/$name" "$GITHUB_WORKSPACE/$name"; done
     - name: Put roc on PATH
       shell: bash
       env:

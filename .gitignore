@@ -4,8 +4,7 @@ dist/
 .DS_Store
 tmp/
 # Local Roc toolchain (large, install it on each machine)
-roc_nightly-*/
-roc_nightly-*.tar.gz
+roc_nightly-*
 .zig-toolchain/
 
 # Upstream forks cloned for local fixes (not submodules, not tracked)

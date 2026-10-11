@@ -90,13 +90,18 @@ jobs:
           cache: npm
       - run: npm ci
 
-      # corpus/language/UPSTREAM pins the nightly that every gate runs under.
-      - name: Read the pinned nightly
+      # corpus/language/UPSTREAM pins the nightly on PATH. A program that pins
+      # another nightly, directly or through its platform release, is checked
+      # with that nightly.
+      - name: Read the pinned nightlies
         id: nightly
-        run: echo "tag=$(awk '$1 == "compiler" { print $2 }' corpus/language/UPSTREAM)" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "tag=$(awk '$1 == "compiler" { print $2 }' corpus/language/UPSTREAM)" >> "$GITHUB_OUTPUT"
+          { echo "more<<EOF"; node scripts/nightlies.mjs --all; echo "EOF"; } >> "$GITHUB_OUTPUT"
       - uses: ./.github/actions/roc-nightly
         with:
           tag: ${{ steps.nightly.outputs.tag }}
+          more: ${{ steps.nightly.outputs.more }}
 
       # The platform releases that the examples pin, about 50 MB. Roc stores
       # packages by content hash, so an older cache is a safe start for a new key.
