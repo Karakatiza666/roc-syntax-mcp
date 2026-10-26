@@ -29,6 +29,7 @@ on:
           - roc-ray
           - weaver
           - joy
+          - cloudflare-workers
       dry-run:
         description: Validate and pack, publish nothing
         type: boolean

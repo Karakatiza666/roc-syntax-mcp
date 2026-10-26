@@ -1,0 +1,52 @@
+# Provenance of this corpus.
+#
+# Update this file each time you repin the plugin, so that the next repin can
+# diff tag to tag.
+
+repo     https://github.com/Karakatiza666/roc-cloudflare-workers
+tag      0.0.1
+commit   14d216f of the platform repo (talon/cloudflare-workers submodule)
+platform GcDNxAwPR5tSzqU8T2Kdj35CK3sQMRQDB8ywwfZKdrm.tar.zst
+url      https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.1/GcDNxAwPR5tSzqU8T2Kdj35CK3sQMRQDB8ywwfZKdrm.tar.zst
+# The release asset is public. `roc check` downloads it into the Roc package
+# cache (~/.cache/roc/packages/GcDNxAwP.../). The bundle has the Roc modules,
+# the production host.wasm and the shim js/.
+#
+
+# The nightly every app here was checked under, and the manifest's `compiler`
+# line. It is compat/last-stack-first-nightly of the platform repo. `plugin
+# validate` needs it unpacked at the repo root as
+# roc_nightly-linux_x86_64-2026-10-19-601b54c/.
+compiler nightly-2026-10-19-601b54c
+
+index.json <- the bundle's own .roc modules, parsed by
+              `roc-syntax-mcp plugin index`. No source is vendored
+examples/  <- examples/hello/main.roc and with_cbor.roc of the platform repo,
+              flattened to hello.roc and hello_with_cbor.roc. The one change:
+              the platform line `"../../platform/main.roc"` is the URL above.
+              The doc comment of hello.roc still says that the line is a path:
+              it is upstream's text, kept as it is
+topics/    <- this package's own: programs written against this pin and
+              declared in plugin.json. The probes that found their comments are
+              in research/plugin-probes/ (v2/ for this pin) of the platform repo
+overview.md <- this package's own. Each snippet is in verify/overview-snippets.roc
+
+# What examples/ leaves out, and why:
+#   auction   examples/auction is a project of two Workers. web.roc imports the
+#             sibling modules Gavel.roc and LotRoom.roc, and the gate compiles
+#             one file at a time (`examples/*.roc`, each one an app). A sibling
+#             module has no app header, so it cannot sit beside the apps. The
+#             skill allows no multi-file example. topics/ has the same
+#             patterns in single files (Durable Object, RPC, WebSockets, R2)
+# The other files of examples/hello (worker.js, wrangler.toml, README.md,
+# .gitignore) are not Roc. topics/cfw_worker.roc and the overview give their
+# content. The root talon.toml of the platform repo holds the scripts of the
+# examples. A user project has its own talon.toml (overview, "Starting a project").
+
+# What else the repo has and this package does not ship:
+#   API.md, MODULES.md, PLAN.md  design and build records of the platform. The
+#                topics and the overview give the rules an app author needs
+#   conformance/ the test app of the platform. Its routes use each module,
+#                but they test the platform, so they are not examples
+#   js/          the shim. It is Node code, in the bundle, copied by the user to
+#                .roc-cfw/. The plugin ships no code

@@ -1,0 +1,37 @@
+{
+  "name": "@roc-syntax/cloudflare-workers",
+  "version": "0.0.1",
+  "description": "The cloudflare-workers platform: Cloudflare Workers apps in Roc, with typed modules for fetch, D1, KV, R2, Cache, Queues, Durable Objects, WebSockets, RPC and WebCrypto.",
+  "license": "UPL-1.0",
+  "files": [
+    "LICENSE",
+    "README.md",
+    "UPSTREAM",
+    "examples",
+    "index.json",
+    "overview.md",
+    "plugin.json",
+    "sample.roc",
+    "scaffold.roc",
+    "topics",
+    "verify"
+  ],
+  "keywords": [
+    "roc",
+    "roc-syntax-mcp",
+    "roc-syntax-mcp-plugin",
+    "cloudflare-workers",
+    "cloudflare",
+    "workers",
+    "wasm"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "author": "Heorhii Bulakh",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Karakatiza666/roc-syntax-mcp.git",
+    "directory": "plugins/cloudflare-workers"
+  }
+}

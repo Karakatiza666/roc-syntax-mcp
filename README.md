@@ -371,6 +371,7 @@ plugin:
 |---|---|---|
 | `@roc-syntax/roc-ray` | Platform | RocRay, for games, graphics and sound. A platform plugin brings its own app scaffold, so `roc_check` wraps a bare snippet in a RocRay app. The plugin also pins its own compiler nightly, older than the server's, because the release requires that nightly |
 | `@roc-syntax/weaver` | Package | Weaver, a command-line argument parser. A package plugin has no scaffold. In any app that pins the package, on any platform, its functions are searched with the builtins. Upstream states no license yet, so the plugin's `LICENSE` tells which files are upstream's |
+| `@roc-syntax/cloudflare-workers` | Platform | cloudflare-workers, for Cloudflare Workers in Roc: HTTP, D1, KV, R2, Queues, Durable Objects and RPC. The release is a bundle with a host and a JS shim. The plugin gives the project files (`talon.toml`, `worker.js`, `wrangler.toml`) that the platform needs, and it pins its own compiler nightly |
 | `@roc-syntax/joy` | Platform and package | Joy, for browser apps in WebAssembly, and joy-html, the package that Joy views are written in. One plugin holds both. The server refuses the plugin unless its joy-html is the release that the Joy platform pins. `render` returns joy-html's `Html` type, and the `Html` of another release is a different type |
 
 To write your own plugin, read [`plugins/README.md`](plugins/README.md) and

@@ -97,6 +97,7 @@ fails a plugin that goes over the limit when it is the only installed plugin.
 | `joy/` | `@roc-syntax/joy` | The Joy platform and the joy-html package its views are written in, two corpora in one plugin |
 | `roc-ray/` | `@roc-syntax/roc-ray` | The RocRay platform |
 | `weaver/` | `@roc-syntax/weaver` | The Weaver argument parser, as a page and as the `lukewilliamboswell/weaver` namespace |
+| `cloudflare-workers/` | `@roc-syntax/cloudflare-workers` | The cloudflare-workers platform, for Cloudflare Workers in Roc (HTTP, D1, KV, R2, Queues, Durable Objects, RPC) |
 
 ## Starting one
 
