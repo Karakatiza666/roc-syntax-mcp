@@ -251,7 +251,7 @@ test("a clean check says so, and a wrap says what it added", () => {
     wrappedIn: scaffold(HANDLER, "basic-webserver", CORE).wrappedIn,
     ok: true,
   });
-  assert.match(wrapped, /basic-webserver 0\.17\.0 app\. Scaffolded: init!/);
+  assert.match(wrapped, /basic-webserver 0\.19\.0 app\. Scaffolded: init!/);
 });
 
 // A compiler that cannot run prints nothing and exits non-zero. If no output

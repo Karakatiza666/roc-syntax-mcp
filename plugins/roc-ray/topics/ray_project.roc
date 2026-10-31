@@ -3,10 +3,11 @@
 ##
 ## Nothing is installed to build a RocRay app. The platform line in the header
 ## is a release URL, and the first build downloads and caches it, so an author
-## supplies only a Roc nightly. The release and the nightly are a pair: the
-## 0.10.0 bundle's own header pins `nightly-2026-09-27-a3ce7f1`, and under any
-## other nightly every `roc check` reports a "roc version mismatch" warning on
-## the platform's `main.roc`. That warning is not in the app's code.
+## supplies only a Roc nightly. Since 0.11.0 the platform and its examples
+## name no compiler: use a recent nightly. This release was built and tested
+## with `nightly-2026-10-23-18478ff`. A `roc:` entry in an app header from
+## 0.10.0 has to be deleted, since it pins that old nightly and every other
+## one then warns.
 ##
 ## `roc main.roc` builds and runs. Use it while you write code. Arguments after
 ## `--` go to the app: `roc main.roc -- --dev`. To build an executable to ship,
@@ -16,7 +17,7 @@
 ## handle from `io.files()`, and every directory beyond the app's own is
 ## declared in the config with `with_permission`. Each declaration grants that
 ## access.
-app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.10.0/5xecDmRJroKT9fnSiYsGdCKEzNWLnRKGtHJ5CxuCnpb9.tar.zst" }
+app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
 
 import rr.App
 import rr.Assets
@@ -30,6 +31,7 @@ Model : {
 	font : Text.Font,
 	store : Assets.Store,
 	saves : Files.Dir,
+
 	## Seeded once at startup and advanced in `update!`, so the whole run
 	## replays from its seed. Nothing else in the platform makes one run differ
 	## from the last.
@@ -60,10 +62,12 @@ config : List(Str) -> App.Config
 config = |args| {
 	base = App.default
 		.with_title("Topic: starting a project")
+
 		## Names the private data, config and cache directories that
 		## `io.files().app_data!()` and its siblings open. No declaration needed.
 		.with_app_id("dev.example.topic")
 		.with_size({ width: 960, height: 600 })
+
 		## A minimum size applies only to a window that the user can resize, so
 		## set the two together. Without the second, the first does nothing.
 		.with_resizable(Bool.True)
@@ -92,6 +96,7 @@ config = |args| {
 ## contain `..`. A path that breaks the rule answers `PathInvalid`.
 open_assets! : App.Io => Try(Files.ReadDir, _)
 open_assets! = |io|
+
 	## `args!` includes `argv[0]`, so an app's own flags start at index 1.
 	if List.contains(io.args!(), dev_flag) {
 		io.files().open_dir_read!("assets")
@@ -113,6 +118,7 @@ init! = App.init_for_args(
 			font: Draw.default_font!(),
 			store: Assets.open!(open_assets!(io)?, IgnoreManifest)?,
 			saves: io.files().app_data!()?,
+
 			## `entropy!` is the one call that reads the operating system. An
 			## app that must reproduce a run writes a constant seed instead.
 			## Legal only in `init!`, like `args!`.

@@ -8,7 +8,7 @@
 ##
 ## With this structure, `expect` can test the game's rules without a window,
 ## an audio device, or a frame.
-app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.10.0/5xecDmRJroKT9fnSiYsGdCKEzNWLnRKGtHJ5CxuCnpb9.tar.zst" }
+app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
 
 import rr.App
 import rr.Audio
@@ -94,23 +94,23 @@ advance = |world, dir, dt| {
 			player,
 			coins,
 			score,
+
 			## A decaying number rather than a timer that has to be started and
 			## stopped: it is one subtraction, and it cannot get stuck on.
-			shake: Math.clamp(world.shake - shake_decay * dt, 0, 1) + (if taken > 0 1 else 0),
-			state: if won Won else Playing,
+			shake: Math.clamp(world.shake - shake_decay * dt, 0, 1) + (if (taken > 0) 1 else 0),
+			state: if (won) Won else Playing,
 		},
 		cues: List.concat(
 			List.repeat(Collected, taken),
-			if won and !(List.is_empty(world.coins)) [Finished] else [],
+			if (won and !(List.is_empty(world.coins))) [Finished] else [],
 		),
 	}
 }
 
-## 1 while either key of a pair is held. Top-level rather than a closure inside
-## `direction`: under nightly-2026-09-27-a3ce7f1 a local closure capturing
-## `keys` makes the `if` below an "unconditional condition" warning.
+## 1 while either key of a pair is held. Top-level, so `direction` stays short
+## and this part is testable on its own.
 axis : Devices.Snapshot, Keys.Key, Keys.Key -> F32
-axis = |keys, a, b| if keys.key_down(a) or keys.key_down(b) 1 else 0
+axis = |keys, a, b| if (keys.key_down(a) or keys.key_down(b)) 1 else 0
 
 ## The direction the keys ask for, normalized so a diagonal is not faster than
 ## an axis. A `Devices.Snapshot` is a plain value, so this is pure, and
@@ -121,7 +121,7 @@ direction = |keys| {
 		x: axis(keys, KeyRight, KeyD) - axis(keys, KeyLeft, KeyA),
 		y: axis(keys, KeyDown, KeyS) - axis(keys, KeyUp, KeyW),
 	}
-	if raw.x == 0 and raw.y == 0 raw else Math.normalize(raw)
+	if (raw.x == 0 and raw.y == 0) raw else Math.normalize(raw)
 }
 
 init! : App.Init(Model, _)
@@ -156,6 +156,7 @@ update! = |model, program_input, _io| {
 				advance(
 					model.world,
 					direction(input),
+
 					## The seconds the last cycle took. `simulation_nanos` on the
 					## same record is `U64` nanoseconds. Use it to measure time,
 					## not to move things.
@@ -164,7 +165,11 @@ update! = |model, program_input, _io| {
 
 			## A finished game still runs `update!` every cycle. A restart
 			## rebuilds the world, so nothing loaded is in the world.
-			Won => if input.key_pressed(KeySpace) { { world: new_world, cues: [] } } else { { world: model.world, cues: [] } }
+			Won => if input.key_pressed(KeySpace) {
+				{ world: new_world, cues: [] }
+			} else {
+				{ world: model.world, cues: [] }
+			}
 		}
 
 	for cue in next.cues {

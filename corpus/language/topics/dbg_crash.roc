@@ -44,6 +44,13 @@ implement_me_later = |str| {
 
 # Without a message, write `...`. It desugars to `crash "not implemented"`.
 # A `crash` that runs at compile time is a compile error (see `compile_time`).
+# Code after a `crash` in the same block never runs, and the compiler warns.
+#
+# @warns unreachable code
+# after_crash = |n| {
+# 	crash "stop"
+# 	n + 1
+# }
 
 # `continue` is planned. It will skip to the next iteration of a `for` or
 # `while` loop. The compiler reads `continue` as a name that is not defined:

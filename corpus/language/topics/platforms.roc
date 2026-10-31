@@ -83,7 +83,10 @@
 #     the `provides` keys.
 # A linked wasm32 target must list its host-visible functions in `exports`.
 # `exports: []` exports none explicitly. Without the field, `roc build` fails
-# with "missing wasm exports".
+# with "missing wasm exports". A wasm32 target also takes `import_memory`,
+# `minimum_memory`, `maximum_memory`, `initial_stack_size` and `global_base`
+# (the first address Roc may use). Any other field, or one of these on another
+# target, is "Invalid Target Configuration".
 #
 # The platform decides what to build. App authors never pass artifact-kind
 # flags to `roc build`. Without `--target`, `roc build` uses the first
@@ -144,13 +147,12 @@
 #     }
 #
 # Key points:
-#   Effectful → `=>` arrow, name ends in `!`.
 #   The host-facing signature must be representable in the host's ABI:
 #     primitive `I32` here. No tag unions, no open types.
 #   Inspect any unhandled error for diagnostics, then return a non-zero code.
 #
 #
-# 3. Anatomy of a platform module (basic-cli 0.25.0)
+# 3. Anatomy of a platform module (basic-cli 0.26.0)
 #
 #
 # basic-cli declares every hosted effect in one module, Host.roc, and each
@@ -158,8 +160,8 @@
 #
 #   ## Host.roc: the raw FFI surface, linked by `hosted { ... }` in main.roc.
 #   Host :: [].{
-#       stdout_line!  : Str => Try({}, [StdoutErr(IOErr)])
-#       stdout_write! : Str => Try({}, [StdoutErr(IOErr)])
+#       stdout_line!  : Str => Try({}, [Interrupted, StdoutErr(IOErr)])
+#       stdout_write! : Str => Try({}, [Interrupted, StdoutErr(IOErr)])
 #   }
 #
 #   ## Stdout.roc: the public API.
@@ -167,15 +169,16 @@
 #   import Host
 #
 #   Stdout :: [].{
-#       line! : Str => Try({}, [StdoutErr(IOErr)])
+#       line! : Str => Try({}, [Interrupted, StdoutErr(IOErr)])
 #       line! = |message| widen_stdout_err(Host.stdout_line!(message))
 #   }
 #
 #   ## Rebuild the error union so it is open at call sites.
-#   widen_stdout_err : Try(v, [StdoutErr(IOErr)]) -> Try(v, [StdoutErr(IOErr)])
+#   widen_stdout_err : Try(v, [Interrupted, StdoutErr(IOErr)]) -> Try(v, [Interrupted, StdoutErr(IOErr)])
 #   widen_stdout_err = |result|
 #       match result {
 #           Ok(value) => Ok(value)
+#           Err(Interrupted) => Err(Interrupted)
 #           Err(StdoutErr(err)) => Err(StdoutErr(err))
 #       }
 #
@@ -185,24 +188,15 @@
 #   The shared `IOErr` type lives in its own module so every I/O module can
 #     reuse it. Errors are wrapped per subsystem (`StdoutErr(IOErr)`) so a
 #     match can tell which subsystem failed.
-#   The type signature looks the same on both sides. Only the body is
-#     different. See edge case #4.
 #
 #
 # 3b. Wrapping without a helper
 #
 #
-# A module whose methods take or return platform data can rewrap the error
-# inline, with no named `widen_*` helper. basic-cli's File.roc:
+# A method can rewrap the error inline, with no named `widen_*` helper.
+# basic-cli's `File.Reader.position!`:
 #
-#   File :: [].{
-#       Reader :: { host : Host.FileReader }.{
-#           read_line! : Reader => Try(List(U8), _)
-#           read_line! = |reader|
-#               Host.file_read_line!(reader.host)
-#                   .map_err(|FileErr(err)| FileErr(err))
-#       }
-#   }
+#   Host.file_reader_position!(reader.host).map_err(|FileErr(err)| FileErr(err))
 #
 # `.map_err` with a lambda that looks like the identity still does work. It
 # builds a new union, and that new union is open.
@@ -264,7 +258,7 @@
 # 7. Reading a real platform end to end
 #
 #
-# This server bundles basic-webserver 0.17.0 in full, so you can read all of it:
+# This server bundles basic-webserver 0.19.0 in full, so you can read all of it:
 #
 #   get_roc_syntax(scope: "basic-webserver")   the app-facing API in one page
 #   get_roc_module("Server")                   one module's methods and types

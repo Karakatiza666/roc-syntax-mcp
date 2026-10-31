@@ -44,8 +44,9 @@
 ## A headless run loads files, assets, fonts and sounds as a windowed run
 ## does. Thus an executable whose `assets/` was not copied beside it fails in
 ## `init!`, and a headless run is a correct smoke test of a cross-built game.
-## The x64win link needs the Windows SDK, so a Linux machine cannot make it.
-## Build on a Windows runner and run the result there, in the same job.
+## An x64win executable builds on Linux, but only Windows runs it. Build on the
+## Windows runner and run the result there, in the same job, or cross-build and
+## copy it to a Windows runner.
 ## `release_multiplatform_ray` lists the targets and the build options.
 ##
 ##   mkdir -p dist
@@ -57,7 +58,7 @@
 ## write real pixels. They need a display server. With no display the host
 ## stops with a GLFW assertion. On a Linux runner without a display, use
 ## `--host-headless`.
-app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.10.0/5xecDmRJroKT9fnSiYsGdCKEzNWLnRKGtHJ5CxuCnpb9.tar.zst" }
+app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
 
 import rr.App
 import rr.Capture
@@ -85,6 +86,7 @@ smoke_deadline = 30
 
 ## Exit codes of this app's own checks, so a CI log tells them apart.
 missed_tap = 3
+
 out_of_bounds = 4
 
 init! : App.Init(Model, _)
@@ -114,7 +116,7 @@ update! = |model, input, io| {
 
 	## A scripted key arrives through the same path as a real one. `3:SPACE~`
 	## is one `key_pressed` edge on cycle 3, with no `key_down`.
-	jumps = if input.devices.key_pressed(KeySpace) model.jumps + 1 else model.jumps
+	jumps = if (input.devices.key_pressed(KeySpace)) model.jumps + 1 else model.jumps
 	x = model.x + 120 * dt
 
 	## Headless has no framebuffer. `screenshot!` answers `Ok({})` and writes

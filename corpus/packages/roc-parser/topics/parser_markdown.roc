@@ -1,8 +1,9 @@
-## Markdown to your own output with lukewilliamboswell/roc-parser 2.0:
+## Markdown to your own output with lukewilliamboswell/roc-parser 3.0:
 ## `Markdown.parse_str` gives a list of blocks, and two functions that call each
 ## other (one for `Markdown` blocks, one for `Markdown.Inline`) walk the tree to
 ## HTML, a table of contents or plain text. A leading `---` block is frontmatter,
-## and `Yaml.parse_str` reads it.
+## and `Yaml.parse_str` reads it. A `Markdown.Document` literal is checked at build
+## time, with `unclosed_fences` as an opt-out lint (parser_compile_time).
 ##
 ## The tree is CommonMark 0.31.2 plus the GFM tables, task lists, strikethrough
 ## and autolinks. It is a syntax tree, not HTML: your renderer decides the HTML.
@@ -10,12 +11,12 @@
 ## Full manual:
 ##
 ## - Blocks, inline content, reference links, frontmatter, walking the tree to
-##   produce output, and conformance limits: https://github.com/lukewilliamboswell/roc-parser/blob/2.0.0/docs/markdown.adoc
+##   produce output, and conformance limits: https://github.com/lukewilliamboswell/roc-parser/blob/3.0.0/docs/markdown.adoc
 ## - The YAML that frontmatter holds, decoded into a record or read as a tree:
-##   https://github.com/lukewilliamboswell/roc-parser/blob/2.0.0/docs/yaml.adoc
+##   https://github.com/lukewilliamboswell/roc-parser/blob/3.0.0/docs/yaml.adoc
 app [main!] {
-	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.25.0/CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA.tar.zst",
-	parser: "https://github.com/lukewilliamboswell/roc-parser/releases/download/2.0.0/7CLzCK6qUz7zmj6nvBxMEFu11HPwQTnCovKiyWzDSLTW.tar.zst",
+	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst",
+	parser: "https://github.com/lukewilliamboswell/roc-parser/releases/download/3.0.0/6xsRdRqenJrAb4wG7HaST4Xh349vD5sHAJDsKTK6E3dr.tar.zst",
 }
 
 import pf.Stdout

@@ -159,7 +159,7 @@ a.Comparable : where [a.is_lt : a, a -> Bool]
 a.Sortable : where [a.Showable, a.Comparable]
 
 smaller_str : a, a -> Str where [a.Sortable]
-smaller_str = |x, y| if x < y x.to_str() else y.to_str()
+smaller_str = |x, y| if (x < y) x.to_str() else y.to_str()
 
 expect smaller_str(3.U8, 2) == "2"
 

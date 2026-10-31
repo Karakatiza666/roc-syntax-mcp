@@ -5,7 +5,7 @@
 ## the app holds afterwards is a reference-counted host handle it keeps in the
 ## model. Dropping the last reference unloads the texture, so there is no
 ## unload call to forget.
-app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.10.0/5xecDmRJroKT9fnSiYsGdCKEzNWLnRKGtHJ5CxuCnpb9.tar.zst" }
+app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
 
 import rr.App
 import rr.Assets
@@ -20,6 +20,7 @@ Model : {
 	## Kept because a later load needs it, not because drawing does.
 	store : Assets.Store,
 	sheet : Assets.Texture,
+
 	## Generated rather than read, which is why it is legal in `update!` as
 	## well: only the calls that read the disk wait.
 	swatch : Assets.Texture,
@@ -145,7 +146,7 @@ update! = |model, input, _io| {
 		model.crunch.playback().with_volume(0.6).play!()
 	}
 
-	Ok({ ..model, walker, facing: if input.devices.key_down(KeyLeft) -1 else 1 })
+	Ok({ ..model, walker, facing: if (input.devices.key_down(KeyLeft)) -1 else 1 })
 }
 
 ## A small pitch change on each play keeps a repeated effect from sounding

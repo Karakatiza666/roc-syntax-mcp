@@ -1,6 +1,6 @@
 ## The basic-cli application contract: `main!`, arguments, exit codes, and where
 ## to turn error tags into messages.
-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.25.0/CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA.tar.zst" }
+app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst" }
 
 import pf.OsStr
 import pf.IOErr
@@ -11,7 +11,10 @@ import pf.Stderr
 # An app provides exactly one function. The header names it, and the platform's
 # `requires` clause fixes its type. It takes a list of native arguments and
 # returns `Try({}, ...)`. Annotate the error as `_` so that the union stays
-# open, because every effect you call adds its own tag to it.
+# open, because every effect you call adds its own tag to it. The platform's
+# type already lists `Exit(I32)` and `Interrupted`: if `Interrupted` reaches
+# `main!`, the platform restores the terminal and exits 130 for Ctrl-C or 143
+# for a termination request.
 main! : List(OsStr) => Try({}, _)
 main! = |args| {
 	# From 0.24.0, `args` holds only the real arguments, and `Env.program_name!`
@@ -74,3 +77,13 @@ show = |arg| arg.display()
 
 strict : OsStr -> Try(Str, [InvalidStr(U64)])
 strict = |arg| OsStr.to_str_try(arg)
+
+# `OsStr` and `Path` compare by content, so a literal equals the same text from
+# the platform. `args.contains("--verbose")` and `Env.var!("EDITOR")? == "vim"`
+# work without converting anything. They compare the content, whichever form
+# holds it, and a path is not normalised: `a/b` and `./a/b` stay different.
+is_verbose : List(OsStr) -> Bool
+is_verbose = |args| args.contains("--verbose")
+
+expect is_verbose([OsStr.utf8("--verbose")])
+expect !is_verbose([OsStr.utf8("-v")])

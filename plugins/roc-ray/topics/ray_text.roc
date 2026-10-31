@@ -6,7 +6,7 @@
 ## needs a `Draw.Frame` and is legal only in `render!`. Neither rule is in the
 ## type of `prepare!`, so the obvious code, which builds the label where it is
 ## drawn, compiles and then stops the app.
-app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.10.0/5xecDmRJroKT9fnSiYsGdCKEzNWLnRKGtHJ5CxuCnpb9.tar.zst" }
+app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
 
 import rr.App
 import rr.Color
@@ -17,6 +17,7 @@ Model : {
 	## Prepared once, drawn every frame. The host measured it and holds the
 	## laid-out glyphs, so redrawing costs nothing per frame.
 	title : Text.Prepared,
+
 	## Kept so that a label that changes can be prepared again in `update!`, the
 	## phase that allows it.
 	font : Text.Font,
@@ -55,7 +56,7 @@ init! = App.init(
 update! : Model, App.Input(Msg), App.Io => Try(Model, [Exit(I64), ResourceLimit])
 update! = |model, input, _io| {
 	scored = input.devices.key_pressed(KeySpace)
-	score = model.score + if scored 1 else 0
+	score = model.score + if (scored) 1 else 0
 
 	# Re-prepared here, not in `render!`, and only when the text changed:
 	# preparation allocates in the host's text table, and it returns

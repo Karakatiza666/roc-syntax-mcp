@@ -1,10 +1,10 @@
 {
   "schema": 1,
   "maintainer": "roc-syntax-mcp, from the lukewilliamboswell/roc-ray releases",
-  "compiler": "nightly-2026-09-27-a3ce7f1",
+  "compiler": "nightly-2026-10-23-18478ff",
   "corpora": [
     {
-      "release": "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.10.0/5xecDmRJroKT9fnSiYsGdCKEzNWLnRKGtHJ5CxuCnpb9.tar.zst",
+      "release": "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst",
       "description": "The RocRay platform: a frame loop over raylib, with drawing, input devices, audio, assets, tilemaps, physics, tasks, declared permissions, files, HTTP, UDP, SQLite, commands, and capture.",
       "purpose": "games, graphics and sound",
       "overview": "overview.md",
@@ -66,7 +66,8 @@
             "with_app_id",
             "beside_executable",
             "asset path",
-            "version mismatch"
+            "nightly",
+            "compiler"
           ]
         },
         {
@@ -175,6 +176,52 @@
             "scissor",
             "render",
             "canvas"
+          ]
+        },
+        {
+          "name": "ray_shader",
+          "file": "topics/ray_shader.roc",
+          "description": "Shaders and 3D: a `Shader(uniforms)` whose uniforms are a Roc record checked against the GLSL when it loads, `with_uniforms` and `with_shader!` per frame, and a `Camera.perspective` with `with_camera_3d!` and `textured_triangles_3d!`.",
+          "keywords": [
+            "shader",
+            "shaders",
+            "Shader",
+            "GLSL",
+            "fragment",
+            "fragment shader",
+            "vertex",
+            "uniform",
+            "uniforms",
+            "with_uniforms",
+            "with_shader",
+            "with_shader!",
+            "from_source!",
+            "from_store!",
+            "Shader.from_source!",
+            "Shader.from_store!",
+            "uniform_f32",
+            "uniform_f32!",
+            "set!",
+            "post-processing",
+            "post process",
+            "UniformNotFound",
+            "UniformTypeMismatch",
+            "UnsupportedUniformType",
+            "UniformReflectionUnavailable",
+            "3D",
+            "3d",
+            "perspective",
+            "Camera.perspective",
+            "Camera3D",
+            "with_camera_3d",
+            "with_camera_3d!",
+            "textured_triangles_3d",
+            "textured_triangles_3d!",
+            "TexturedVertex3D",
+            "Vec3",
+            "Vec4",
+            "fovy",
+            "depth"
           ]
         },
         {
@@ -345,7 +392,6 @@
             "--output",
             "--opt",
             "roc build",
-            "WindowsSDKNotFound",
             "unsupported target",
             "Gatekeeper",
             "SmartScreen",

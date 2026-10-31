@@ -94,8 +94,8 @@ export const failed = (checks: readonly Check[]): boolean => checks.some((c) => 
  * `--platform=`, or replaces this URL in each app header of the skeleton.
  */
 export const SKELETON_PLATFORM =
-  "https://github.com/roc-lang/basic-cli/releases/download/0.25.0/" +
-  "CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA.tar.zst";
+  "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/" +
+  "GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst";
 
 /**
  * The files that `init` writes for a package: the namespace that the package

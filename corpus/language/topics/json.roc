@@ -119,6 +119,11 @@ Config := { host : Str, port : U16 }.{
 #
 #   parser_for  : encoding -> (state -> Try({ value : T, rest : state }, err))
 #   encoder_for : encoding -> (T, state -> Try(state, err))
+#
+# The two sides call the format differently. `parse_str` takes the encoding
+# value, so the parser passes it on. `encode_str` does not, so its `where`
+# clause and its call leave the encoding out, and `encoder_for` ignores its
+# argument.
 Token := { raw : Str }.{
 	parser_for : encoding -> (state -> Try({ value : Token, rest : state }, err))
 		where [
@@ -135,14 +140,31 @@ Token := { raw : Str }.{
 
 	encoder_for : encoding -> (Token, state -> Try(state, err))
 		where [
-			encoding.encode_str : encoding, Str, state -> Try(state, err),
+			encoding.encode_str : Str, state -> Try(state, err),
 		]
-	encoder_for = |encoding| {
+	encoder_for = |_encoding| {
 		Encoding : encoding
 
-		|token, state| Encoding.encode_str(encoding, token.raw, state)
+		|token, state| Encoding.encode_str(token.raw, state)
 	}
 }
+
+parse_token : Str -> Try(Token, _)
+parse_token = |text| Json.parse(text)
+
+expect parse_token("\"abc\"").map_ok(|token| token.raw) == Ok("abc")
+expect Json.to_str(Token.{ raw: "abc" }) == "\"abc\""
+
+# @rejects type mismatch
+# Bad := { raw : Str }.{
+# 	encoder_for : encoding -> (Bad, state -> Try(state, err))
+# 		where [encoding.encode_str : encoding, Str, state -> Try(state, err)]
+# 	encoder_for = |encoding| {
+# 		Encoding : encoding
+# 		|bad, state| Encoding.encode_str(encoding, bad.raw, state)
+# 	}
+# }
+# bad_json = Json.to_str(Bad.{ raw: "abc" })
 
 # `Encoding.Json` also exposes the per-type primitives that the derived codecs
 # use, for hand-written parsers that must call the format directly:

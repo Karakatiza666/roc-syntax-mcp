@@ -7,28 +7,33 @@
 ## scripts/check-platform-examples.sh compiles the whole file, so the scaffold
 ## always matches the pinned platform.
 app [main!] {
-	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.25.0/CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA.tar.zst",
+	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst",
 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
 }
 
 # The compiler does not warn about an unused import. The scaffold imports every
 # exposed module, so a snippet that uses Sqlite or Tty compiles as submitted.
 import pf.Cmd
+import pf.Duration
 import pf.Env
 import pf.File
 import pf.Http
 import pf.IOErr
 import pf.Locale
+import pf.Monotonic
 import pf.OsStr
 import pf.Path
 import pf.Random
+import pf.Signal
 import pf.Sleep
 import pf.Sqlite
 import pf.Stderr
 import pf.Stdin
 import pf.Stdout
+import pf.System
 import pf.Tcp
 import pf.Tty
+import pf.UnixSocket
 import pf.Url
 import pf.Utc
 import http.Header

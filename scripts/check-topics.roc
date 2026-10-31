@@ -19,9 +19,10 @@
 # warning with that title and no error.
 #
 # The script writes its files to <work dir>, and exits 1 if any check fails.
-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.25.0/CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA.tar.zst" }
+app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst" }
 
 import pf.Cmd
+import pf.Duration
 import pf.OsStr
 import pf.Path
 import pf.Stderr
@@ -31,9 +32,21 @@ Kind : [Rejects, Warns]
 
 Claim : { kind : Kind, title : Str, block : Str }
 
+## The arguments after the script path. Nightlies from 2026-10-31 on pass every
+## argument to the app as written, so a `--` before them arrives as the first
+## argument. Older nightlies drop it. This accepts both.
+app_args : List(OsStr) -> List(Str)
+app_args = |args| {
+	shown = args.map(OsStr.display)
+	match shown {
+		["--", .. as rest] => rest
+		_ => shown
+	}
+}
+
 main! : List(OsStr) => Try({}, _)
 main! = |args| {
-	match args.map(OsStr.display) {
+	match app_args(args) {
 		[roc, topics, work, .. as only] => {
 			failed = check_all!(roc, Path.utf8(topics), Path.utf8(work), only)?
 			if failed > 0 Err(Exit(1)) else Ok({})
@@ -100,7 +113,7 @@ check_topic! = |roc, work, name, text| {
 ## a result here, because a rejected block exits non-zero.
 compile! : Str, List(Str) => Try(Str, _)
 compile! = |roc, args| {
-	out = Cmd.new_str(roc).args_str(args).merge_stderr(True).timeout_ms(300_000).run!()?
+	out = Cmd.new(OsStr.from_str(roc)).args(args.map(OsStr.from_str)).stderr(MergeWithStdout).timeout(Duration.seconds(300)).run!()?
 	Ok(Str.from_utf8_lossy(out.stdout_bytes))
 }
 

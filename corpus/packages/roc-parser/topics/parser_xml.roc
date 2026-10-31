@@ -1,15 +1,16 @@
-## Read an XML document with lukewilliamboswell/roc-parser 2.0: `Xml.parse_str`
+## Read an XML document with lukewilliamboswell/roc-parser 3.0: `Xml.parse_str`
 ## gives a tree, the `Xml.Node` helpers `children_named`, `attribute` and
 ## `text` find data in it, and a `match` on `Element` and `Text` does the rest.
 ##
 ## The parser checks that the document is well-formed XML 1.0. It does not
-## validate against a schema or a DTD.
+## validate against a schema or a DTD. An `Xml` literal is checked at build time
+## (parser_compile_time).
 ##
 ## Full manual: parsing and finding elements, what the tree contains, error
-## reports, and what is not supported: https://github.com/lukewilliamboswell/roc-parser/blob/2.0.0/docs/xml.adoc
+## reports, and what is not supported: https://github.com/lukewilliamboswell/roc-parser/blob/3.0.0/docs/xml.adoc
 app [main!] {
-	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.25.0/CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA.tar.zst",
-	parser: "https://github.com/lukewilliamboswell/roc-parser/releases/download/2.0.0/7CLzCK6qUz7zmj6nvBxMEFu11HPwQTnCovKiyWzDSLTW.tar.zst",
+	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst",
+	parser: "https://github.com/lukewilliamboswell/roc-parser/releases/download/3.0.0/6xsRdRqenJrAb4wG7HaST4Xh349vD5sHAJDsKTK6E3dr.tar.zst",
 }
 
 import pf.Stdout

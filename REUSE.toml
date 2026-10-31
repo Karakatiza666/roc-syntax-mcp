@@ -161,16 +161,13 @@ precedence = "aggregate"
 SPDX-FileCopyrightText = "2024 Luke Boswell and subsequent authors"
 SPDX-License-Identifier = "UPL-1.0"
 
-# Weaver ships no LICENSE at tag 0.9.0, and neither does the repository that it
-# forks (smores56/weaver). No license means no grant, so this entry marks these
-# files as having no license and does not guess one. This repo publishes
-# plugins/weaver in the expectation that upstream adopts UPL-1.0.
-# plugins/weaver/LICENSE says which files belong to which author.
+# Weaver is UPL-1.0 from 0.9.1. It forks smores56/weaver (MIT, Sam Mohr), and
+# plugins/weaver/LICENSE retains that notice.
 [[annotations]]
 path = ["plugins/weaver/index.json", "plugins/weaver/examples/**"]
 precedence = "aggregate"
-SPDX-FileCopyrightText = "Luke Boswell, Sam Mohr and subsequent weaver authors"
-SPDX-License-Identifier = "LicenseRef-weaver-no-license"
+SPDX-FileCopyrightText = "2026 Luke Boswell and subsequent authors"
+SPDX-License-Identifier = "UPL-1.0"
 
 # Joy and joy-html are Apache-2.0, so the files of this repo in plugins/joy are
 # Apache-2.0 too, and the package has one license. `precedence = "override"`

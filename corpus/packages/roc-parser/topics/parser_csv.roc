@@ -1,4 +1,4 @@
-## CSV text into your own Roc types with lukewilliamboswell/roc-parser 2.0:
+## CSV text into your own Roc types with lukewilliamboswell/roc-parser 3.0:
 ## `CSV.parse` into records chosen by the annotation, `parse_normalized` for
 ## loose header spelling, `parse_headerless` into tuples, `parse_records` and
 ## `split_header` for raw bytes, and `parse_with` for a hand-built row parser.
@@ -7,14 +7,16 @@
 ## `{ record, field, line, column, message }`, all one-based.
 ##
 ## `CSV.Format.*` and `CSV.State` are the decoding protocol that `CSV.parse`
-## uses through static dispatch. Never call them. 2.0 has no `CSV.parse_str`.
+## uses through static dispatch. Never call them. There is no `CSV.parse_str`.
+## A CSV literal can be checked at build time with `CSV.Decoded` or `CSV.validate`
+## (the parser_compile_time topic).
 ##
 ## Full manual: rows into records, optional columns, files without a header,
 ## raw fields, hand-built row parsers, error reports, and which files are
-## accepted: https://github.com/lukewilliamboswell/roc-parser/blob/2.0.0/docs/csv.adoc
+## accepted: https://github.com/lukewilliamboswell/roc-parser/blob/3.0.0/docs/csv.adoc
 app [main!] {
-	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.25.0/CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA.tar.zst",
-	parser: "https://github.com/lukewilliamboswell/roc-parser/releases/download/2.0.0/7CLzCK6qUz7zmj6nvBxMEFu11HPwQTnCovKiyWzDSLTW.tar.zst",
+	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst",
+	parser: "https://github.com/lukewilliamboswell/roc-parser/releases/download/3.0.0/6xsRdRqenJrAb4wG7HaST4Xh349vD5sHAJDsKTK6E3dr.tar.zst",
 }
 
 import pf.Stdout

@@ -8,7 +8,7 @@
 ## type becomes those raw bytes.
 app [main!] {
 	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.25.0/CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA.tar.zst",
-	weaver: "https://github.com/lukewilliamboswell/weaver/releases/download/0.9.0/7j6KBFBEZ8pNMLQHkx9xiwyZ2PmwQPgKNDPUih6gKe77.tar.zst",
+	weaver: "https://github.com/lukewilliamboswell/weaver/releases/download/0.10.0/7CdYzjBAJmprmnK45oTpmH6BXt76ZASN2Ck5uZQEoWsK.tar.zst",
 	# Naming a `Path` in an annotation means pinning the package it comes from,
 	# at the release weaver itself pins: `roc-lang/path` 4.0.0. Package identity
 	# here is content, not a version string, so a different release produces a

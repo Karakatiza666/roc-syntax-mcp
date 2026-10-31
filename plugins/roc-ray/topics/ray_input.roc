@@ -4,7 +4,7 @@
 ## `input.devices`. The `Keys`, `Mouse` and `Gamepad` modules hold the same
 ## queries as plain functions over that snapshot, so `input.devices.key_down(k)`
 ## and `Keys.key_down(input.devices, k)` are one call written two ways.
-app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.10.0/5xecDmRJroKT9fnSiYsGdCKEzNWLnRKGtHJ5CxuCnpb9.tar.zst" }
+app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
 
 import rr.App
 import rr.Color
@@ -29,6 +29,7 @@ program = { init!, update!, render! }
 init! : App.Init(Model, [])
 init! = App.init(
 	App.default.with_title("Topic: input").with_permission(ClipboardRead),
+
 	## `Devices.none` is the empty snapshot: the seed for a model that needs one
 	## before the first cycle, and the base `expect` builds on with
 	## `with_key_down`. Nothing here needs it, because the model keeps only what
@@ -45,8 +46,8 @@ update! = |model, program_input, io| {
 	# button events as they arrive, so a tap released between two cycles still
 	# reads as both pressed and released. `input.events` lists them in order.
 	# Movement reads the level. A shortcut reads the edge.
-	dx = (if Keys.key_down(input, KeyRight) 1.F32 else 0) - (if input.key_down(KeyLeft) 1.F32 else 0)
-	dy = (if input.key_down(KeyDown) 1.F32 else 0) - (if input.key_down(KeyUp) 1.F32 else 0)
+	dx = (if (Keys.key_down(input, KeyRight)) 1.F32 else 0) - (if (input.key_down(KeyLeft)) 1.F32 else 0)
+	dy = (if (input.key_down(KeyDown)) 1.F32 else 0) - (if (input.key_down(KeyUp)) 1.F32 else 0)
 	speed = 240 * program_input.time.elapsed_seconds
 
 	# Typed text is not key state: it arrives as Unicode codepoints in event
@@ -67,7 +68,7 @@ update! = |model, program_input, io| {
 	# and keep the answer, rather than keeping the `View` in the model.
 	pad =
 		match input.gamepad(One) {
-			Connected(view) => if view.button_down(FaceDown) "pad: A held" else "pad: connected"
+			Connected(view) => if (view.button_down(FaceDown)) "pad: A held" else "pad: connected"
 			Disconnected => "no pad"
 		}
 

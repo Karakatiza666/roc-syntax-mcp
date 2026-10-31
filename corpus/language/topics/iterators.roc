@@ -100,7 +100,7 @@ expect powers_of_two.take_first(5).collect() == [1, 2, 4, 8, 16]
 #                 (state -> Try((item, state), [NoMore])) -> Iter(item)
 countdown : U64 -> Iter(U64)
 countdown = |from|
-	Iter.custom(from, Known(from), |n| if n == 0 Err(NoMore) else Ok((n, n - 1)))
+	Iter.custom(from, Known(from), |n| if (n == 0) Err(NoMore) else Ok((n, n - 1)))
 
 # An iterator is a value. `next` does not change it, and returns `rest` to
 # continue with.

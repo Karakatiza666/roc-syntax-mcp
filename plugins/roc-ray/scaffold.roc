@@ -7,8 +7,8 @@
 ## scripts/check-platform-examples.sh compiles the whole file, so the scaffold
 ## always matches the pinned platform.
 app [Model, program] {
-	rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.10.0/5xecDmRJroKT9fnSiYsGdCKEzNWLnRKGtHJ5CxuCnpb9.tar.zst",
 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+	rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst",
 }
 
 # The compiler does not warn about an unused import. The scaffold imports every
@@ -68,7 +68,7 @@ program = { init!, update!, render! }
 # submitted code declares. `roc check` stops at types, so nothing here runs.
 # There is no annotation, because it would have to name every error tag that
 # the `?` operators in the submitted code can raise.
-init! = App.init(App.default, |_io| Ok(crash("scaffolded init!: define your own to build a Model")))
+init! = App.init(App.default, |_io| Ok(crash ("scaffolded init!: define your own to build a Model")))
 
 # @default update!
 # Three arguments. The third is the same `App.Io` that `init!` receives.

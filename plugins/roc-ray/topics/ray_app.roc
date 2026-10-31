@@ -4,7 +4,7 @@
 ## model, `update!` folds one `App.Input` into the next one, and `render!` draws
 ## it. Nothing here is optional. The platform's `requires` block names all
 ## three, plus two types that the app must declare.
-app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.10.0/5xecDmRJroKT9fnSiYsGdCKEzNWLnRKGtHJ5CxuCnpb9.tar.zst" }
+app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
 
 import rr.App
 import rr.Color
@@ -65,7 +65,7 @@ init! = App.init(
 			pointer: { x: 0, y: 0 },
 			clicks: 0,
 			seconds: 0,
-			label: if List.len(args) > 1 "argv carried flags" else "no flags",
+			label: if (List.len(args) > 1) "argv carried flags" else "no flags",
 		})
 	},
 )
@@ -91,7 +91,7 @@ update! = |model, input, _io|
 			..model,
 			seconds: model.seconds + input.time.elapsed_seconds,
 			pointer: input.devices.mouse.position(),
-			clicks: model.clicks + if input.devices.mouse.button_pressed(Left) 1 else 0,
+			clicks: model.clicks + if (input.devices.mouse.button_pressed(Left)) 1 else 0,
 		})
 	}
 

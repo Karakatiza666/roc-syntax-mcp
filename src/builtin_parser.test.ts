@@ -104,7 +104,7 @@ test("upstream-deleted builtins do not resolve", () => {
 test("current builtins resolve", () => {
   for (const n of ["Str.join_with", "List.subscript", "Iter.next", "Crypto.SHA256.hash",
                    "Hasher.write_str", "Stream.next!", "Try.catch", "Num.Range.iter",
-                   "List.capacity", "List.sort", "List.sort_by_reversed"]) {
+                   "List.capacity", "List.sort", "List.sort_by_reversed", "Num.RawOrder"]) {
     assert.ok(index.byFullName.has(n), `${n} missing`);
   }
 
@@ -151,9 +151,9 @@ test("the JSON codec entry points carry named where clauses", () => {
 const values = index.items.filter((i) => i.kind === "value");
 const types = index.items.filter((i) => i.kind === "type");
 
-test("Builtin.roc yields 2297 methods and 29 types", () => {
+test("Builtin.roc yields 2297 methods and 30 types", () => {
   assert.equal(values.length, 2297);
-  assert.equal(types.length, 29);
+  assert.equal(types.length, 30);
 });
 
 test("a nominal type carries its variants and its own operator", () => {
@@ -212,7 +212,7 @@ test("types do not collide with methods", () => {
 // Upstream files with layouts that a simple parser gets wrong. They are kept as
 // fixtures because no release source is vendored beside the corpus. They are
 // byte-identical to the tagged releases.
-const PLATFORM_DIR = path.join(ROOT, "src", "testdata", "upstream", "basic-webserver-0.17.0");
+const PLATFORM_DIR = path.join(ROOT, "src", "testdata", "upstream", "basic-webserver-0.19.0");
 const CLI_DIR = path.join(ROOT, "src", "testdata", "upstream", "basic-cli-0.24.0");
 
 function parseFile(dir: string, file: string) {

@@ -1,15 +1,20 @@
 ## Standard streams, raw mode, and the small effects around them: environment,
 ## clock, sleep, random seeds, locale.
-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.25.0/CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA.tar.zst" }
+app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst" }
 
+import pf.Duration
 import pf.Env
+import pf.IOErr
 import pf.Locale
 import pf.OsStr
+import pf.Monotonic
 import pf.Random
+import pf.Signal
 import pf.Sleep
 import pf.Stderr
 import pf.Stdin
 import pf.Stdout
+import pf.System
 import pf.Tty
 import pf.Utc
 
@@ -20,11 +25,15 @@ main! = |_args| {
 	Stdout.write!("name: ")?
 	Stderr.line!("(prompting)")?
 
-	# `Stdin.line!` strips the trailing newline and returns Err(EndOfFile) when
-	# there is no more input. That is an ordinary end, not a failure, so match it.
+	# `Stdin.line!` strips the trailing newline and returns Err(EndOfInput) when
+	# there is no more input. That is an ordinary end, not a failure, so match
+	# it. An empty line is a real answer, `Ok("")`. A line that is not valid
+	# UTF-8 is `Err(BadUtf8(_))`. Caught signals add a bare `Interrupted`.
 	name = match Stdin.line!() {
 		Ok(line) => line
-		Err(EndOfFile) => "world"
+		Err(EndOfInput) => "world"
+		Err(BadUtf8(_)) => "world"
+		Err(Interrupted) => return Err(Interrupted)
 		Err(StdinErr(err)) => return Err(ReadFailed(err))
 	}
 	Stdout.line!("hello, ${name}")?
@@ -34,17 +43,21 @@ main! = |_args| {
 	Ok({})
 }
 
-## `Utc.now!` is U128 nanoseconds since the epoch. The deltas take the later
-## instant first, and they never go negative because the result is unsigned.
+## Time has types. `Utc` is a signed instant, for showing to people. `Monotonic`
+## is an opaque clock reading, for measuring: `elapsed!` and `since` return a
+## `Duration`, a non-negative length of time with nanosecond resolution. It adds,
+## subtracts and compares, and clamps instead of going negative. Sleeping can
+## fail, because a caught stop request returns `Err(Interrupted)`.
 timing! : () => Try({}, _)
 timing! = || {
-	start = Utc.now!()
-	Sleep.millis!(50)
-	finish = Utc.now!()
+	started = Utc.now!()
+	start = Monotonic.now!()
+	Sleep.millis!(50)?
+	Duration.millis(50).sleep!()?
 
-	Stdout.line!("started ${Utc.to_iso_8601(start)}")?
-	Stdout.line!("took ${Utc.delta_as_millis(finish, start).to_str()} ms")?
-	Stdout.line!("     ${Utc.delta_as_nanos(finish, start).to_str()} ns")?
+	Stdout.line!("started ${Utc.to_iso_8601(started)}")?
+	Stdout.line!("took ${start.elapsed!().to_str()}")?
+	Stdout.line!("since the start: ${Utc.now!().since(started).to_str()}")?
 	Ok({})
 }
 
@@ -70,21 +83,43 @@ environment! = || {
 	# The full environment, as pairs.
 	Stdout.line!("${Env.dict!().len().to_str()} variables set")?
 
-	# Build target, at run time.
-	host = Env.platform!()
-	Stdout.line!(Str.inspect(host.os))?
+	# Build target, at run time. `.arch()` is `X64` or `Arm64`. `.os()` is
+	# `Linux(os)`, `MacOS(os)` or `Windows(_)`, and the witness that a Unix match
+	# yields enables Unix-only operations such as `Signal.catch!`.
+	target = System.target!()
+	Stdout.line!(Str.inspect(target.arch()))?
+	match target.os() {
+		Linux(os) => Signal.catch!([Interrupt, Terminate(os.unix())])?
+		MacOS(os) => Signal.catch!([Interrupt, Terminate(os.unix())])?
+		Windows(_) => Signal.catch!([Interrupt])?
+	}
 	Ok({})
 }
+
+## Catching a stop request lets cleanup run. Registered requests stay pending
+## until `Signal.poll!()` acknowledges them. If `Interrupted` reaches `main!`, the
+## platform restores the terminal and exits 130 for Interrupt or 143 for
+## Terminate, without running your cleanup.
+finish! : Try({}, [Interrupted, StdoutErr(IOErr)]) => Try({}, [Interrupted, StdoutErr(IOErr)])
+finish! = |result|
+	match result {
+		Err(Interrupted) => {
+			_pending = Signal.poll!()
+			Stdout.line!("cleaning up")?
+			Ok({})
+		}
+		other => other
+	}
 
 ## Raw mode turns off line buffering and echo, so `Stdin.bytes!` returns the
 ## keystroke rather than waiting for Enter. Turn it back off before you exit, or
 ## you leave the user's terminal in that state.
 read_one_key! : () => Try(List(U8), _)
 read_one_key! = || {
-	Tty.enable_raw_mode!()
-	key = Stdin.bytes!()
-	Tty.disable_raw_mode!()
-	key
+	Tty.enable_raw_mode!()?
+	key = Stdin.bytes!()?
+	Tty.disable_raw_mode!()?
+	Ok(key)
 }
 
 ## `Random` gives seeds, not numbers. Give a seed to a generator. The platform

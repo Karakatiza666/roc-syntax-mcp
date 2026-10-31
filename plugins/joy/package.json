@@ -1,6 +1,6 @@
 {
   "name": "@roc-syntax/joy",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "The Joy platform for browser apps in WebAssembly, and the joy-html package its views are written in: the Elm architecture, effects as data, subscriptions, typed HTML and server rendering.",
   "author": "Heorhii Bulakh",
   "license": "Apache-2.0",

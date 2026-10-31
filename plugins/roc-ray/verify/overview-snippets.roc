@@ -2,7 +2,7 @@
 ## matches code that compiles. `plugin validate` fails the page when a fenced Roc block
 ## on it has no line-for-line home here.
 app [Model, program] {
-	rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.10.0/5xecDmRJroKT9fnSiYsGdCKEzNWLnRKGtHJ5CxuCnpb9.tar.zst",
+	rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst",
 }
 
 import rr.App
@@ -67,10 +67,13 @@ update! = |model, input, _io| {
 render! : Model, Draw.Frame => Try({}, [Exit(I64), ScopeLimit])
 render! = |model, frame| {
 	frame.clear!(Color.from_hex_rgb(0x0d1425))
-	frame.with_camera!(model.camera, |world| {
-		world.circle!({ center: model.pointer, radius: 12, style: Draw.filled(Color.ray_white) })
-		Ok({})
-	})?
+	frame.with_camera!(
+		model.camera,
+		|world| {
+			world.circle!({ center: model.pointer, radius: 12, style: Draw.filled(Color.ray_white) })
+			Ok({})
+		},
+	)?
 	model.label.draw!(frame, { pos: { x: 400, y: 24 }, color: Color.white, align: (Top, Center) })
 	Ok({})
 }

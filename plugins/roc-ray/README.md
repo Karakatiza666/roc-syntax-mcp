@@ -42,10 +42,10 @@ nightly is the release's supported compiler, and every app here was checked
 under it. `UPSTREAM` records the tarball hashes and the upstream files that
 this package does not include.
 
-The platform bundle's own header pins that nightly with a `roc:` entry, so any
-other compiler reports a "roc version mismatch" warning on every app that pins
-this release. Nothing in an app can silence it. Upstream's example headers pin
-the same nightly, and this package removes that entry from every app it bundles.
+Since 0.11.0 the platform bundle and upstream's examples name no compiler, so
+the nightly in `compiler` is the one the release says it was built and tested
+with, not a pin. An app header from 0.10.0 may still carry a `roc:` entry,
+which has to be deleted.
 
 ## What it does not ship, by choice
 

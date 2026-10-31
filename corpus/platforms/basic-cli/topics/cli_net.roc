@@ -1,7 +1,9 @@
-## TCP streams and URL parsing: the two places basic-cli makes you name a
+## TCP connections and URL parsing: the two places basic-cli makes you name a
 ## timeout, and the one place it parses text for you.
-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.25.0/CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA.tar.zst" }
+app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst" }
 
+import pf.Duration
+import pf.IOErr
 import pf.OsStr
 import pf.Stdout
 import pf.Tcp
@@ -9,42 +11,61 @@ import pf.Url
 
 main! : List(OsStr) => Try({}, _)
 main! = |_args| {
-	# Connecting takes a timeout in milliseconds that covers DNS resolution and
-	# every address it resolves to. Zero fails immediately rather than blocking.
-	stream : Tcp.Stream
-	stream = Tcp.connect!("127.0.0.1", 8085, 1_000) ? |err| ConnectFailed(err)
+	# Connecting takes two timeouts. `connect_timeout` covers DNS resolution and
+	# every address it resolves to. `io_timeout` is held by the connection and
+	# bounds each of its reads and writes. `Duration.zero` expires immediately.
+	conn : Tcp.Connection
+	conn = Tcp.connect!("127.0.0.1", 8085, { connect_timeout: Duration.seconds(1), io_timeout: Duration.seconds(5) })?
 
-	# Every read and write takes its own timeout too. There is no deadline to
-	# set once for the whole stream. The calls look verbose, but without a
-	# timeout a call could hang forever.
-	stream.write_utf8!("PING\n", 5_000)?
-	reply = stream.read_line!(1_048_576, 5_000)?
+	# Calls take no timeout argument. `conn.with_timeout(d)` and
+	# `conn.with_line_limit(n)` return the same connection with another setting.
+	conn.write_utf8!("PING\n")?
+	reply = conn.read_line!()?
 	Stdout.line!("got ${reply}")?
 
-	# The four reads differ in where they stop, not in how they fail.
-	stream.write!([1, 2, 3], 1_000)?
-	exact = stream.read_exactly!(3, 1_000)?          # exactly n bytes
-	upto = stream.read_up_to!(8, 1_000)?             # at most n, whatever arrived
-	until = stream.read_until!('|', 64, 1_000)?      # through a delimiter byte
+	# The four reads differ in where they stop, not in how they fail. The end of
+	# input is `Err(EndOfInput)`, never an empty `Ok`.
+	conn.write_bytes!([1, 2, 3])?
+	exact = conn.read_exactly!(3)?          # exactly n bytes
+	upto = conn.read_up_to!(8)?             # at most n, whatever arrived
+	until = conn.read_until!('|')?          # through a delimiter byte
 	Stdout.line!("${exact.len().to_str()} ${upto.len().to_str()} ${until.len().to_str()}")?
 
 	urls!()?
 	Ok({})
 }
 
-## `read_line!` is the only read that returns `Str`. The others return bytes,
-## because a stream is not always text.
-lines! : Tcp.Stream => Try(List(Str), _)
-lines! = |stream| {
-	first = stream.read_line!(4096, 1_000)?
-	second = stream.read_line!(4096, 1_000)?
+## `read_line!` is the only read that returns `Str`, without the `\n`. The others
+## return bytes, because a connection is not always text.
+two_lines! : Tcp.Connection => Try(List(Str), _)
+two_lines! = |conn| {
+	first = conn.read_line!()?
+	second = conn.read_line!()?
 	Ok([first, second])
 }
 
-## Connect failures and stream failures are separate closed unions, so a caller
-## can match either exhaustively.
-explain_connect : Tcp.ConnectErr -> Str
-explain_connect = |err|
+## Anything you can read, you can loop over. A line that is not valid UTF-8, or
+## longer than the limit, is one `Err` item and the loop carries on. A failure of
+## the connection is the last item.
+echo_lines! : Tcp.Connection => Try({}, _)
+echo_lines! = |conn| {
+	for! item in conn.lines() {
+		match item {
+			Ok(line) => Stdout.line!(line)?
+			Err(BadUtf8(_)) => {}
+			Err(ReadLimitExceeded(_)) => {}
+			Err(TcpErr(err)) => { return Err(TcpErr(err)) }
+			Err(Interrupted) => { return Err(Interrupted) }
+		}
+	}
+	Ok({})
+}
+
+## Every failure of the network arrives as `TcpErr(IOErr)`, so a result can be
+## compared directly: `result == Err(TcpErr(TimedOut))`. Conditions such as
+## `EndOfInput`, `BadUtf8` and `Interrupted` stay bare tags.
+explain : IOErr -> Str
+explain = |err|
 	match err {
 		ConnectionRefused => "nothing is listening"
 		TimedOut => "the connection attempt ran out of time"
@@ -52,7 +73,7 @@ explain_connect = |err|
 		other => Str.inspect(other)
 	}
 
-expect explain_connect(TimedOut) == "the connection attempt ran out of time"
+expect explain(TimedOut) == "the connection attempt ran out of time"
 
 ## `Url` parses and normalizes. It never fetches. Only http and https parse.
 urls! : () => Try({}, _)

@@ -27,8 +27,8 @@ for a complete program, `search_symbols Opt.flag` for one signature.
 | `overview.md` | What `get_roc_syntax(topic: "weaver")` returns |
 | `UPSTREAM` | What was vendored, from where, and what was changed |
 
-Weaver ships no license file at this tag. [`LICENSE`](LICENSE) says which files
-here are upstream's, and which are UPL-1.0.
+Weaver is UPL-1.0 from 0.9.1, and so is this package. [`LICENSE`](LICENSE) says
+whose copyright each file carries.
 
 Checked with `roc-syntax-mcp plugin validate .` against the nightly the
 `compiler` line in `plugin.json` names.

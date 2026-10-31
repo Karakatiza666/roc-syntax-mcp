@@ -293,8 +293,8 @@ export function createServer(config: ServerConfig): McpServer {
 
   /**
    * The version-mismatch note, at most once per root per TTL. A pin that differs
-   * from the bundled release is common: every example in the upstream 0.17.0 tag
-   * pins 0.16.0.
+   * from the bundled release is common: every example in the upstream 0.19.0 tag
+   * pins 0.17.0.
    *
    * The note appears only when the call read the corpus that the note is about.
    */

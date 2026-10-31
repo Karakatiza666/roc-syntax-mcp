@@ -1,6 +1,6 @@
 ## Files and directories: `Path` is the whole API, and every failure returns
 ## the failing path with the error.
-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.25.0/CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA.tar.zst" }
+app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst" }
 
 import pf.Env
 import pf.File
@@ -8,6 +8,7 @@ import pf.IOErr
 import pf.OsStr
 import pf.Path
 import pf.Stdout
+import pf.Utc
 
 main! : List(OsStr) => Try({}, _)
 main! = |_args| {
@@ -29,10 +30,11 @@ main! = |_args| {
 	# In-place substitution, without reading the file into Roc.
 	config.replace_utf8!("demo", "example")?
 
-	# Metadata. Times are U128 nanoseconds since the epoch, the same unit Utc uses.
+	# Metadata. File times are `Utc` values, and `since` gives a `Duration`.
 	size = config.size_in_bytes!()?
 	modified = config.time_modified!()?
-	Stdout.line!("${size.to_str()} bytes, modified ${modified.to_str()}")?
+	age = Utc.now!().since(modified)
+	Stdout.line!("${size.to_str()} bytes, modified ${age.to_str()} ago")?
 
 	# Existence and kind. `type!` gives all four cases in one call. Three
 	# separate calls can disagree with each other.
@@ -86,17 +88,42 @@ read_or_default! = |path, fallback|
 		Err(err) => Err(err)
 	}
 
-## `File` has one use: to read a large file one line at a time, without loading
-## all of it into memory. `read_line!` returns an empty list at the end.
+## `File` is for incremental work. To read a large file one line at a time,
+## without loading all of it into memory, loop over `lines()`. A line that is not
+## valid UTF-8 is one `Err(BadUtf8(_))` item, and the loop carries on. A failure
+## of the file itself is the last item.
 count_lines! : Path => Try(U64, _)
 count_lines! = |path| {
 	# `open_reader!` carries no annotation upstream, so its result needs one here
-	# before `read_line!` can dispatch on it.
+	# before `lines` can dispatch on it.
 	reader : File.Reader
 	reader = File.open_reader!(path)?
-	helper! = |n| {
-		line = reader.read_line!()?
-		if line.len() == 0 Ok(n) else helper!(n + 1)
+	var $count = 0.U64
+	for! item in reader.lines() {
+		match item {
+			Ok(_) => { $count = $count + 1 }
+			Err(BadUtf8(_)) => { $count = $count + 1 }
+			Err(FileErr(err)) => { return Err(FileErr(err)) }
+		}
 	}
-	helper!(0)
+	Ok($count)
 }
+
+## To write a file piece by piece, open a writer. `with_writer!` flushes when
+## the callback returns, and reports a failed flush. The mode is `Truncate`,
+## `Append` or `RequireNew`, and the third argument holds the options: `{}`
+## keeps the operating system's default permissions.
+write_report! : Path, List({ name : Str, total : U64 }) => Try({}, [PathErr(IOErr, Path), FileErr(IOErr)])
+write_report! = |path, rows|
+	File.with_writer!(
+		path,
+		Truncate,
+		{},
+		|writer| {
+			writer.write_utf8!("name,total\n")?
+			for row in rows {
+				writer.write_utf8!("${row.name},${row.total.to_str()}\n")?
+			}
+			Ok({})
+		},
+	)

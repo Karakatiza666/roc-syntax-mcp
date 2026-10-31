@@ -4,45 +4,42 @@
 # diff tag to tag.
 
 repo     https://github.com/lukewilliamboswell/weaver
-tag      0.9.0
-commit   5dd83ca9cbed478da66cc6132284bf9a499e0de1
-tarball  7j6KBFBEZ8pNMLQHkx9xiwyZ2PmwQPgKNDPUih6gKe77.tar.zst
+tag      0.10.0
+commit   23a61441a1afd9f913bbc43b55bfc66041d8d522
+tarball  7CdYzjBAJmprmnK45oTpmH6BXt76ZASN2Ck5uZQEoWsK.tar.zst
 
 # The nightly every app here was checked under, and the manifest's `compiler`
-# line. Upstream's own `.roc-version` at this tag is nightly-2026-09-01-db83307.
+# line. Upstream's release notes say "Package and examples built and tested
+# with roc nightly-2026-10-23-18478ff". Since 0.9.1 upstream floats the package
+# compiler and no longer commits a .roc-version.
 #
-# 0.9.0 changes only upstream's CI and docs tooling. package/ and examples/ are
-# byte-identical to 0.8.0, and the release tarball keeps the same content hash,
-# so the repin changes the URL's tag and nothing else. The topics pin
-# basic-cli 0.25.0, which does not pass the program name in `args`.
-compiler nightly-2026-10-09-258ab27
+# 0.10.0 over 0.9.0: no package API changes ("roc bump" reports none for 0.9.1,
+# and 0.10.0 says so too). 0.9.1 fixed four parsing bugs and quotes echoed
+# argument text in diagnostics. 0.10.0 changes behaviour: everything after a
+# subcommand's name is parsed by that subcommand alone, so `work build -q` is
+# "The argument \"-q\" was not recognized." when -q is the parent's option.
+# The overview and topics/weaver_subcommands.roc say so, and the second was run
+# to confirm it. Upstream's own examples moved to basic-cli 0.25.0 and
+# `List(OsStr)` at 0.10.0, so the old patch is gone and the plugin pins
+# basic-cli 0.25.0 as upstream does. 0.25.0 does not pass the program name in
+# `args`. basic-cli 0.26.0 is not used by upstream yet.
+compiler nightly-2026-10-23-18478ff
 
 index.json  <- package/, parsed by `roc-syntax-mcp plugin index`. Public and
                private modules; `package [...]` in main.roc is what separates
                them. No source is vendored
-examples/   <- examples/, repinned in two steps. First, two edits per file. Upstream
-               pins weaver as `../package/main.roc`, a path that resolves only
-               inside a checkout, so each header's weaver entry is replaced with
-               the 0.9.0 tarball above; and each file gains one `##` line above
+examples/   <- examples/, repinned with two edits per file. Upstream pins weaver
+               as `../package/main.roc`, a path that resolves only inside a
+               checkout, so each header's weaver entry is replaced with the
+               0.10.0 tarball above; and each file gains one `##` line above
                its header, because that line is the title
                `list_roc_index(kind: "examples")` prints and upstream's examples
                carry none. Two filenames gain an underscore, because the gate
                reads one flat `<dir>/*.roc`: default-values.roc and
-               single-arg.roc. Second, patches/0001 moves every example off
-               upstream's platform, lukewilliamboswell/roc-platform-template-zig
-               1.0.0, onto basic-cli 0.25.0. That template's Stdout, Stdin and
-               Stderr warn "redundant open tag union" under the nightly above,
-               as does its 1.1.0, and the gate reads a warning as a failure.
-               Per file: the `pf` URL, `import pf.OsStr`, `main!` takes
-               `List(OsStr)`, `args` is passed whole (basic-cli 0.25.0 already
-               drops the program name) with `OsStr.to_raw` as the converter, and
-               the now-unused `str_to_raw_arg` adapter is deleted. Drop the patch
-               once a template release builds clean.
+               single-arg.roc. Nothing else differs from upstream.
 topics/     <- this package's own, not upstream's: programs written against
                this pin and declared in plugin.json so they answer by name. They
-               pin basic-cli 0.25.0, as the patched examples do, because
-               that is the platform this server ships and the one a reader is
-               most likely writing against.
+               pin basic-cli 0.25.0, as upstream's examples do.
 overview.md <- this package's own. Every API claim on it was compiled, and every
                fenced block appears in verify/overview-snippets.roc.
 
@@ -54,12 +51,10 @@ overview.md <- this package's own. Every API claim on it was compiled, and every
 #   assets/, scripts/ contributor material, not app-facing
 #   .github/          the same
 
-# Weaver ships no LICENSE file at this tag, and neither does the repository it
-# forks (smores56/weaver). index.json and examples/ are upstream's text, and
-# this package is published in the expectation that upstream adopts UPL-1.0.
-# LICENSE says which files are whose. When upstream states a license, repin to
-# that tag and make package.json name it.
+# Weaver is UPL-1.0 from 0.9.1, and 0.10.0 ships a LICENSE file. LICENSE keeps
+# its notice and the MIT notice of the project that weaver forks
+# (smores56/weaver), and package.json names UPL-1.0.
 
 # Parsed counts at this pin, for the next repin to diff against. These are what
 # `plugin validate` reports on its `corpus` line:
-# 243 items in 14 modules: 38 host, 2 private, 203 public.
+# 253 items in 14 modules: 48 host, 2 private, 203 public.

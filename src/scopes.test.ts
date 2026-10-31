@@ -60,7 +60,7 @@ test("every scope in the registry has the content it declares", () => {
 test("the corpora are the sizes the plan was written against", () => {
   const builtin = registry.index("builtin");
   assert.equal(builtin.items.filter((i) => i.kind === "value").length, 2297);
-  assert.equal(builtin.items.filter((i) => i.kind === "type").length, 29);
+  assert.equal(builtin.items.filter((i) => i.kind === "type").length, 30);
 
   const bws = registry.index("basic-webserver");
   assert.equal(bws.items.filter((i) => i.tier === "host").length, 141);
@@ -70,14 +70,16 @@ test("the corpora are the sizes the plan was written against", () => {
   assert.equal(bws.items.filter((i) => i.tier === "private").length, 2);
 
   const cli = registry.index("basic-cli");
-  assert.equal(cli.items.filter((i) => i.tier === "host").length, 120);
-  assert.equal(cli.items.filter((i) => i.tier === "public").length, 290);
-  assert.equal(cli.items.filter((i) => i.tier === "private").length, 0);
+  assert.equal(cli.items.filter((i) => i.tier === "host").length, 157);
+  assert.equal(cli.items.filter((i) => i.tier === "public").length, 396);
+  // `Sqlite.RowView`, `Sqlite.Cursor` and `Sqlite.SqlState` are types of the
+  // decoder machinery that `Sqlite.roc` does not export.
+  assert.equal(cli.items.filter((i) => i.tier === "private").length, 3);
 });
 
 // An app pins one platform, so one address space never resolves both platforms,
 // and their 197 shared names never compete.
-const SHARED = ["Cmd.exec!", "Path.read_utf8!", "Sqlite.execute!", "IOErr"];
+const SHARED = ["Cmd.exec!", "Path.read_utf8!", "Sqlite.Value", "IOErr"];
 
 test("an address space holds one platform, so nothing in it collides", () => {
   for (const platform of PLATFORM_SCOPES) {
@@ -306,7 +308,7 @@ test("a namespace no provider can serve is left empty and says so", () => {
       "Install a package plugin at 1.0.0, or run this server with --force=roc-lang/http to read 1.2.0 anyway."
   );
   // No note when every namespace has a provider, as in the shipped corpora.
-  assert.equal(formatPackageNote("basic-cli", "0.25.0", registry.packages("basic-cli")), null);
+  assert.equal(formatPackageNote("basic-cli", "0.26.0", registry.packages("basic-cli")), null);
 });
 
 // -----------------------------------------------------------------------------
@@ -441,7 +443,7 @@ test("exposes is read from the platform header, not hardcoded", () => {
   }
 
   const cli = read("basic-cli");
-  assert.equal(cli.length, 19);
+  assert.equal(cli.length, 23);
   assert.ok(cli.includes("Stdout") && cli.includes("Tty") && cli.includes("Utc"));
   for (const hidden of ["Host", "InternalDateTime", "InternalHttp", "InternalSqlite"]) {
     assert.ok(!cli.includes(hidden), `${hidden} is exposed after all`);
@@ -521,7 +523,7 @@ test("a file-level type that does not name its file is private, not public", () 
 test("items carry the package they ship in", () => {
   const idx = registry.index("basic-webserver");
   assert.equal(idx.byFullName.get("Method")!.origin, "http 1.0.0");
-  assert.equal(idx.byFullName.get("Server.Outcome")!.origin, "basic-webserver 0.17.0");
+  assert.equal(idx.byFullName.get("Server.Outcome")!.origin, "basic-webserver 0.19.0");
   assert.equal(registry.index("builtin").byFullName.get("Str.concat")!.origin, "Builtin.roc");
 });
 
@@ -627,7 +629,7 @@ test("every overview pins the version the registry does", () => {
 // -----------------------------------------------------------------------------
 
 test("every bundled example and doc page carries a summary line", () => {
-  for (const [scope, count] of [["basic-webserver", 27], ["basic-cli", 34]] as const) {
+  for (const [scope, count] of [["basic-webserver", 27], ["basic-cli", 37]] as const) {
     const examples = registry.examples(scope);
     assert.equal(examples.length, count, `${scope} bundles ${examples.length} examples`);
     for (const ex of examples) {
@@ -711,14 +713,14 @@ test("every checked-in scope is built from a manifest on disk", () => {
   assert.deepEqual(cli.modules, [
     {
       release:
-        "https://github.com/roc-lang/basic-cli/releases/download/0.25.0/CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA.tar.zst",
+        "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst",
       ns: "platform:basic-cli",
-      origin: "basic-cli 0.25.0",
+      origin: "basic-cli 0.26.0",
       moduleFromFilename: true,
       exposesFrom: "main.roc",
     },
   ]);
-  assert.equal(cli.version, "0.25.0");
+  assert.equal(cli.version, "0.26.0");
   assert.equal(cli.scaffold, "corpus/platforms/basic-cli/scaffold.roc");
   assert.equal(cli.examples, "corpus/platforms/basic-cli/examples");
   assert.equal(SCOPE_DEFS["basic-webserver"].docs, "corpus/platforms/basic-webserver/docs");
@@ -731,8 +733,8 @@ test("every checked-in scope is built from a manifest on disk", () => {
   ]);
   // A package is documented, never a scope.
   assert.deepEqual(PACKAGE_DOCS.map((d) => [d.name, d.id, d.version]), [
-    ["roc-parser", "lukewilliamboswell/roc-parser", "2.0.0"],
-    ["roc-random", "kili-ilo/roc-random", "0.9.2"],
+    ["roc-parser", "lukewilliamboswell/roc-parser", "3.0.0"],
+    ["roc-random", "kili-ilo/roc-random", "0.9.3"],
   ]);
   // The packages this server vendors, read from their own manifests.
   const gh = (repo: string, tag: string, hash: string) =>
@@ -741,15 +743,15 @@ test("every checked-in scope is built from a manifest on disk", () => {
     { id: "roc-lang/http", version: "1.0.0", release: HTTP_URL, from: "roc-syntax-mcp", tier: 3 },
     {
       id: "lukewilliamboswell/roc-parser",
-      version: "2.0.0",
-      release: gh("lukewilliamboswell/roc-parser", "2.0.0", "7CLzCK6qUz7zmj6nvBxMEFu11HPwQTnCovKiyWzDSLTW"),
+      version: "3.0.0",
+      release: gh("lukewilliamboswell/roc-parser", "3.0.0", "6xsRdRqenJrAb4wG7HaST4Xh349vD5sHAJDsKTK6E3dr"),
       from: "roc-syntax-mcp",
       tier: 3,
     },
     {
       id: "kili-ilo/roc-random",
-      version: "0.9.2",
-      release: gh("kili-ilo/roc-random", "0.9.2", "2ZXLX8WRqrosGu1V3VL5aXqgtfTRvJmjFPx8a26ecVmc"),
+      version: "0.9.3",
+      release: gh("kili-ilo/roc-random", "0.9.3", "HoULZB8QzktiNPYSe9myzy9JQzm1nMbjDPVWoA63QpVf"),
       from: "roc-syntax-mcp",
       tier: 3,
     },

@@ -3,7 +3,11 @@
 ## Every drawing call needs a `Draw.Frame`, and the only `Frame` there is the
 ## one `render!` is handed. So `update!` cannot draw. It has no frame to draw
 ## on, and the compiler reports an error.
-app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.10.0/5xecDmRJroKT9fnSiYsGdCKEzNWLnRKGtHJ5CxuCnpb9.tar.zst" }
+##
+## Shaders and 3D drawing have their own program, `ray_shader`. Since 0.11.0 a
+## shader is `Shader(uniforms)` with a Roc record for its uniforms, and
+## `Draw.Shader` is gone.
+app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
 
 import rr.App
 import rr.Camera
@@ -13,6 +17,7 @@ import rr.Math
 
 Model : {
 	camera : Camera.Camera2D,
+
 	## Read in `update!` from `input.window`, because `frame.size!()` is legal
 	## only in `render!`. The two disagree about the type as well as the phase:
 	## `input.window.size` is `I32` and `frame.size!()` is `F32`.
@@ -88,18 +93,24 @@ render! = |model, frame| {
 	# own `Frame`, and that is the one the scope applies to. The outer `frame` is
 	# still in scope inside the callback and drawing on it still type-checks, so
 	# the name the callback binds is the one to use.
-	frame.with_camera!(model.camera, |world| {
-		world.circle!({ center: Math.vec2(0, 0), radius: 40, style: Draw.filled(Color.from_hex_rgb(0x2f80ed)) })
-		world.rectangle!({ x: -120, y: -20, width: 60, height: 40, style: Draw.outlined(Color.ray_white, 1) })
-		Ok({})
-	})?
+	frame.with_camera!(
+		model.camera,
+		|world| {
+			world.circle!({ center: Math.vec2(0, 0), radius: 40, style: Draw.filled(Color.from_hex_rgb(0x2f80ed)) })
+			world.rectangle!({ x: -120, y: -20, width: 60, height: 40, style: Draw.outlined(Color.ray_white, 1) })
+			Ok({})
+		},
+	)?
 
 	# Scissor takes a `Math.Rect`, which is `{ x, y, width, height }`, and clips
 	# every call made on the frame it hands back.
-	frame.with_scissor!({ x: 320, y: 300, width: 240, height: 160 }, |clipped| {
-		clipped.circle!({ center: { x: 440, y: 380 }, radius: 200, style: Draw.filled(Color.with_alpha(Color.orange, 120)) })
-		Ok({})
-	})?
+	frame.with_scissor!(
+		{ x: 320, y: 300, width: 240, height: 160 },
+		|clipped| {
+			clipped.circle!({ center: { x: 440, y: 380 }, radius: 200, style: Draw.filled(Color.with_alpha(Color.orange, 120)) })
+			Ok({})
+		},
+	)?
 
 	# `convex_polygon!` fills a convex shape only. The fill is a fan of
 	# triangles from the first point, so a concave shape also fills its notch.

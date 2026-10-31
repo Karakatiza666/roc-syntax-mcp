@@ -4,9 +4,13 @@
 ## A subcommand is an ordinary builder plus a name, a description and a mapper
 ## that lifts its own data into the parent's union. It nests: a subcommand's
 ## builder may itself carry `SubCmd.optional`.
+##
+## Everything after a subcommand's name belongs to that subcommand alone (0.10.0).
+## `work build -q` fails with `The argument "-q" was not recognized.`, because
+## `-q` is the parent's option. Give it before the name: `work -q build x`.
 app [main!] {
 	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.25.0/CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA.tar.zst",
-	weaver: "https://github.com/lukewilliamboswell/weaver/releases/download/0.9.0/7j6KBFBEZ8pNMLQHkx9xiwyZ2PmwQPgKNDPUih6gKe77.tar.zst",
+	weaver: "https://github.com/lukewilliamboswell/weaver/releases/download/0.10.0/7CdYzjBAJmprmnK45oTpmH6BXt76ZASN2Ck5uZQEoWsK.tar.zst",
 }
 
 import pf.OsStr

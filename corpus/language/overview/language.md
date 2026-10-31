@@ -52,7 +52,7 @@ can default (`port : U16 ?? 8080`, read as `.port`) or be optional
 ## Control flow
 
 ```roc
-if n == 1 "one" else "other"      # else is required unless the body evaluates to {}
+if (n == 1) "one" else "other"    # else is required unless the body evaluates to {}
 match value {                     # exhaustive
 	Ok(x) if x > 0 => "pos"       # guard
 	Ok(_) | Err(_) => "other"     # alternatives
@@ -125,8 +125,8 @@ runs directly under `roc file.roc`, where `echo!` is available without import.
 - `List.fold` (not `walk` or `reduce`), `keep_if` (not `filter`), `keep_oks`,
   `join_map` (not `concat_map`). Check with `search_symbols`.
 - There is no `continue` yet, only `break`.
-- A `var` is reassignable only inside the function that declared it, so a lambda
-  cannot mutate it. Use a `for` loop.
+- A `var` changes only by `$xs = $xs.append(x)`, since a method returns a copy,
+  and only in the function that declared it. A lambda cannot. Use a `for` loop.
 - `for` patterns must be exhaustive: bind the whole item and `match` inside.
 - Errors go in the `Try` err position as an anonymous tag union, or `_`.
   Declaring an error type is the exception.

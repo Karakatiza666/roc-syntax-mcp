@@ -4,9 +4,9 @@
 # refresh can diff tag-to-tag and apply the patch series again.
 
 repo     https://github.com/roc-lang/basic-webserver
-tag      0.17.0
-commit   427f6a7
-tarball  AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst
+tag      0.19.0
+commit   1654ae3
+tarball  4KBAoiBazDfi9UF6e3BYKwon6rA8mnx3dbLMLKFzdEMw.tar.zst
 
 # This platform re-exports the same roc-lang/http release that basic-cli pins. Its index is at corpus/packages/http/, with its provenance
 # in corpus/packages/http/UPSTREAM.
@@ -16,13 +16,7 @@ tarball  AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst
 # pins this release with this nightly. A program with a `roc:` line of its own
 # uses that nightly. So this line moves only when the platform is repinned, and
 # not when the bundled nightly moves.
-#
-# Tag 0.17.0 does not build on the bundled nightly 258ab27. OsStr.roc, Path.roc
-# and Url.roc use the old forms of `from_interpolation` and `Json.invalid_json`.
-# There, `roc build` reports 3 errors and still writes a binary, and a request
-# that interpolates a `Path` hangs. The fix is upstream (df5f3c7, PR #241), but
-# no release has it.
-compiler nightly-2026-10-04-130536d
+compiler nightly-2026-10-24-f6c6cfb
 
 index.json <- platform/   parsed by `npm run build:index` from the compiler's
                          package cache. Signatures and docstrings only; no
@@ -46,22 +40,23 @@ docs/      <- docs/sse.md, docs/benchmarking.md
 #   patch -p1 < patches/0001-repin-examples-*.patch
 #   patch -p1 < patches/0002-restore-parked-gregorian-examples.patch
 #
-# 0001 is necessary, because every example at tag 0.17.0 pins platform 0.16.0.
-# 0002 restores the six examples that upstream disables as `.todoroc` (command,
-# echo, error-handling, file-accessed-modified-created-time, hello-web,
-# init-basic). They depend on gregorian 1.0.0-rc.3, which the pinned nightly
-# rejects for its redundant return-position `..` unions. The patch renames each
-# file back to `.roc` and removes upstream's TODO preamble, the gregorian
-# dependency and its import. Where gregorian formatted an ISO 8601 string, the
-# patch prints `seconds_since_epoch().to_str()`. Delete the patch when gregorian
-# has a release that builds. Under nightly 258ab27, gregorian gives ten
-# warnings, five for redundant open unions and five for redundant returns.
-# Tag 0.17.0 includes the `command_cwd_response!` rename, so no patch for it
-# exists.
+# 0001 is necessary, because every example at tag 0.19.0 pins platform 0.17.0
+# (the five parked ones, 0.16.0).
+# 0002 restores the five examples that upstream still disables as `.todoroc`
+# (command, echo, error-handling, file-accessed-modified-created-time,
+# init-basic). Upstream restored hello-web in 0.19.0, so the patch no longer
+# touches it. The five depend on gregorian 1.0.0-rc.3, which the compiler
+# rejects for its redundant return-position `..` unions. The patch renames each file back to `.roc` and removes upstream's
+# TODO preamble, the gregorian dependency and its import. Where gregorian
+# formatted an ISO 8601 string, the patch prints
+# `seconds_since_epoch().to_str()`. It also moves their `roc:` line from
+# c507926 to f6c6cfb, because platform 0.19.0 does not build on c507926
+# (`Json.invalid_json` takes an argument there). Delete the patch when
+# gregorian has a release that builds. Under nightly f6c6cfb, gregorian gives ten warnings,
+# five for redundant open unions and five for redundant returns.
 #
-# The examples keep upstream's `roc:` lines: 130536d, and c507926 in the six
-# parked examples. Each example passes `roc check` on the nightly it pins, with
-# the two patches applied. On another nightly, the compiler warns and names the
+# The examples keep upstream's `roc:` line, f6c6cfb. Each example passes
+# `roc check` on the nightly it pins, with the two patches applied. On another nightly, the compiler warns and names the
 # pinned one, so an agent that copies an example learns which nightly to run.
 
 # Not bundled, by choice:

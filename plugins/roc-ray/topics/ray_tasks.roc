@@ -20,8 +20,8 @@
 ## either pins the same release in its own header, as below. Without the pin,
 ## `Request.from_method` "does not exist".
 app [Model, program] {
-	rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.10.0/5xecDmRJroKT9fnSiYsGdCKEzNWLnRKGtHJ5CxuCnpb9.tar.zst",
 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+	rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst",
 }
 
 import rr.App
@@ -38,6 +38,7 @@ Model : {
 	## A directory handle is an ordinary value: opened once in `init!`, kept
 	## in the model, captured by any task that reads beneath it.
 	notes_dir : Files.ReadDir,
+
 	## Which fetch the reply belongs to. Two tasks started a cycle apart can
 	## finish in any order, so a reply that does not match the current request
 	## is dropped rather than shown.
@@ -67,6 +68,7 @@ config = App.default
 init! : App.Init(Model, _)
 init! = App.init(
 	config,
+
 	## Waiting is legal here, and it blocks: nothing is drawn until this
 	## returns. If a file is small enough to read at startup, read it here.
 	## Anything else belongs in a task. `Task.spawn!` is refused here, because

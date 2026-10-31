@@ -32,7 +32,8 @@
 #   requires { main! : List(Str) => Try(_, [Exit(I8), ..]) }
 #
 # The list holds only the arguments after the program name.
-# `roc main.roc -- a b` and a built `./main a b` both give `["a", "b"]`.
+# `roc main.roc a b` and a built `./main a b` both give `["a", "b"]`. Every word
+# after the file reaches the app, so `roc main.roc -- a b` gives `["--", "a", "b"]`.
 #
 # So `Err(Exit(2))` sets the process exit code to 2. The platform prints any
 # other `Err` with `Str.inspect` and exits with code 1. The Echo platform has

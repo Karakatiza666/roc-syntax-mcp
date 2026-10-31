@@ -116,12 +116,12 @@ const BUILTIN_TOPICS: Record<string, TopicMeta> = {
   },
   loops: {
     file: "loops.roc",
-    description: "For loops, while loops, `break`, and reassignable `var $name`.",
-    keywords: ["for", "loop", "while", "break", "var", "$", "mutable"],
+    description: "For loops, while loops, `break`, reassignable `var $name`, exhaustive `for` patterns, and the unused value that a loop body cannot drop.",
+    keywords: ["for", "loop", "while", "break", "var", "$", "mutable", "unused value"],
   },
   conditionals: {
     file: "conditionals.roc",
-    description: "`if`/`else`/`else if` expressions. `else` is optional when the body is `{}`. Short-circuiting `and`/`or`.",
+    description: "`if`/`else`/`else if` expressions, the one-line `if (cond) a else b`. `else` is optional when the body is `{}`. Short-circuiting `and`/`or`.",
     keywords: ["if", "else", "else if", "conditional", "branch", "and", "or", "short-circuit"],
   },
   tuples: {
@@ -160,7 +160,7 @@ const BUILTIN_TOPICS: Record<string, TopicMeta> = {
   },
   naming: {
     file: "naming.roc",
-    description: "Naming rules for values, types and `var`s, reserved words, definition order, unused-name warnings, shadowing and duplicate definitions, and the rules for capturing a `var`.",
+    description: "Naming rules for values, types and `var`s, reserved words, definition order, unused-name warnings, shadowing and duplicate definitions, a type named after a builtin, and the `var` rules: capture, and the update that only `=` makes.",
     keywords: ["name", "naming", "identifier", "shadow", "shadowing", "duplicate definition", "redefine",
       "unused", "_name", "underscore", "capture", "closure", "before definition",
       "reserved", "reserved word", "keyword", "reserved name"],
@@ -183,9 +183,9 @@ const BUILTIN_TOPICS: Record<string, TopicMeta> = {
   },
   functions: {
     file: "functions.roc",
-    description: "Function literals `|args| body`, blocks, `return`, `...`, recursion, top-level cycles, and tail calls (accumulators, modulo cons).",
+    description: "Function literals `|args| body`, blocks, `return` and the unreachable code after it, `...`, recursion, top-level cycles, and tail calls (accumulators, modulo cons).",
     keywords: ["function", "lambda", "anonymous", "return", "placeholder", "...", "recursion", "recursive",
-      "tail call", "stack overflow", "accumulator"],
+      "tail call", "stack overflow", "accumulator", "unreachable"],
   },
   static_dispatch: {
     file: "static_dispatch.roc",
@@ -291,7 +291,7 @@ const BUILTIN_TOPICS: Record<string, TopicMeta> = {
   platform_abi: {
     file: "platform_abi.roc",
     description:
-      "The host ABI of a platform: closed hosted results, the single-tag discriminant byte, record field order and `_ : {}`, three-state returns, `()` vs `{}` for the unit argument, the representations of `Path`, a shared `IOErr`, and who frees a hosted argument.",
+      "The host ABI of a platform: closed hosted results, the single-tag discriminant byte, record field order and `_ : {}`, three-state returns, the `()` unit argument, the representations of `Path`, a shared `IOErr`, and who frees a hosted argument.",
     keywords: ["abi", "RocSingleTagWrapper", "field order", "record field order", "layout", "padding",
       "segfault", "nested Try", "unit argument", "ownership", "owned", "leak", "RocList", "free"],
   },

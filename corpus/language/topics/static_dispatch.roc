@@ -36,7 +36,7 @@ example2 = "Three" |> my_concat(" Four")
 # Its receiver is the `List(Str)`, yet it is a `Str` method, so `.join_with()`
 # on a `List` receiver would not resolve. `|>` connects the two parts.
 label_names : Str -> Str
-label_names = |joined| if joined.is_empty() "No names provided" else "Names: ${joined}"
+label_names = |joined| if (joined.is_empty()) "No names provided" else "Names: ${joined}"
 
 format_names : List(Str) -> Str
 format_names = |names|

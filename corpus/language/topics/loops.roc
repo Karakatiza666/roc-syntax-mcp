@@ -8,6 +8,18 @@
 # A `for` loop runs over an iterator. Anything with an `iter` method works,
 # including lists, dicts, sets, and ranges. The loop body contains only
 # statements, has no final expression, and the loop itself evaluates to `{}`.
+# The last line of the body is a statement too, so a line whose value nothing
+# uses is an error. Write `_ = f(x)` to ignore a value on purpose.
+#
+# @rejects type mismatch
+# count_big = |items| {
+# 	var $count = 0
+# 	for item in items {
+# 		$count = $count + 1
+# 		item > 10
+# 	}
+# 	$count
+# }
 
 # `for` loop with a var accumulator.
 for_loop = |num_list| {
@@ -88,8 +100,18 @@ count_items = |items| {
 # The `for` pattern must be exhaustive, exactly like a destructuring
 # assignment. `for Ok(n) in results { ... }` is not allowed, because the body
 # would have no value for `n` if an item were `Err`. Name the whole item and
-# `match` inside the body instead. For a tag pattern, this compiler crashes
-# with "instantiation widened a closed tag union" and reports no error.
+# `match` inside the body instead. Annotate the function: without an
+# annotation, this compiler does not report a tag pattern, and a call crashes.
+#
+# @rejects non exhaustive destructure
+# sum_oks : List(Try(U64, Str)) -> U64
+# sum_oks = |results| {
+# 	var $sum = 0
+# 	for Ok(n) in results {
+# 		$sum = $sum + n
+# 	}
+# 	$sum
+# }
 #
 # @rejects non exhaustive destructure
 # count_ones = |items| {
@@ -100,6 +122,30 @@ count_items = |items| {
 # 	$count
 # }
 # ones = count_ones([1.I64])
+
+# A `for` pattern cannot bind a `var`. Bind a plain name, and assign it to the
+# `var` with `=` in the body.
+last_name : List(Str) -> Str
+last_name = |names| {
+	var $latest = ""
+
+	for name in names {
+		$latest = name
+	}
+
+	$latest
+}
+
+expect last_name(["Ann", "Bo"]) == "Bo"
+
+# @rejects var in for pattern
+# last_bad = |names| {
+# 	var $latest = ""
+# 	for $latest in names {
+# 		{}
+# 	}
+# 	$latest
+# }
 
 # `break` exits a `for` or `while` loop early.
 break_in_for_loop = |bool_list| {

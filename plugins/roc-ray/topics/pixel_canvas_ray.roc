@@ -27,7 +27,7 @@
 ## - At most 32 render textures are alive at one time. The next `load!` answers
 ##   `ResourceLimit`. A size of zero answers `RenderTextureLoadFailed`.
 ##   Load the canvas once in `init!` and keep it in the model.
-app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.10.0/5xecDmRJroKT9fnSiYsGdCKEzNWLnRKGtHJ5CxuCnpb9.tar.zst" }
+app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
 
 import rr.App
 import rr.Assets

@@ -9,7 +9,7 @@ app [Model, Msg, init, update, render, subscriptions] {
 	# The app pins joy-html itself, at exactly the release the platform pins.
 	# `render` returns the platform's `Html`. Another joy-html release has a
 	# different `Html` type, and the compiler error cannot name the difference.
-	html: "https://github.com/niclas-ahden/joy-html/releases/download/0.17.0/AcmwFzyfbsf5RALWNdX6cXw1cuuDXt96YfcysNqgFqoG.tar.zst",
+	html: "https://github.com/niclas-ahden/joy-html/releases/download/0.17.1/AcmwFzyfbsf5RALWNdX6cXw1cuuDXt96YfcysNqgFqoG.tar.zst",
 }
 
 # `exposing [Html]` is an error, "redundant expose": a type module exposes its

@@ -4,21 +4,22 @@
 # refresh can diff tag-to-tag and apply the patch series again.
 
 repo     https://github.com/roc-lang/basic-cli
-tag      0.25.0
-commit   6e787d2
-tarball  CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA.tar.zst
+tag      0.26.0
+commit   91d3ec4
+tarball  GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst
 
 # This platform re-exports the same roc-lang/http release that basic-webserver
 # pins. Its index is at corpus/packages/http/, with its
 # provenance in corpus/packages/http/UPSTREAM.
 
 # The nightly of this release: the `nightly-tag:` of upstream's workflows at the
-# tag, because the tag has no .roc-version. Every app below pins its platform by
+# tag (and "Requires ... or later" in the release notes), because the tag has no
+# .roc-version. Every app below pins its platform by
 # tarball URL, and the gates check each program that pins this release with
 # this nightly. A program with a `roc:` line of its own uses that nightly. So
 # this line moves only when the platform is repinned, and not when the bundled
 # nightly moves.
-compiler nightly-2026-10-09-258ab27
+compiler nightly-2026-10-12-2664a27
 
 index.json <- platform/   parsed by `npm run build:index` from the compiler's
                          package cache. Signatures and docstrings only; no
@@ -40,9 +41,9 @@ examples/  <- examples/*.roc
 #
 #   patch -p1 < patches/0001-repin-examples-*.patch
 #
-# 0001 is necessary, because every example at tag 0.25.0 pins platform 0.24.0,
-# which does not build on the nightly above. The patch replaces that one URL
-# with the tarball URL above.
+# 0001 is necessary, because every example at tag 0.26.0 pins platform 0.25.0,
+# which does not build (the host interface changed). The patch replaces that
+# one URL with the tarball URL above.
 # There is no second patch. Nothing in this corpus depends on a third-party
 # package, so the gregorian failure that basic-webserver patches does not occur
 # here. Every example passes `roc check` with 0001 applied.

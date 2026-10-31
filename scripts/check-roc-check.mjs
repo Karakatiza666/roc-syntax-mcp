@@ -32,11 +32,11 @@ try {
 const PATH_WITH_ROC = `${path.dirname(path.resolve(ROC))}${path.delimiter}${process.env.PATH}`;
 
 const PLATFORM =
-  "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst";
+  "https://github.com/roc-lang/basic-webserver/releases/download/0.19.0/4KBAoiBazDfi9UF6e3BYKwon6rA8mnx3dbLMLKFzdEMw.tar.zst";
 const HTTP =
   "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst";
 const CLI_PLATFORM =
-  "https://github.com/roc-lang/basic-cli/releases/download/0.25.0/CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA.tar.zst";
+  "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst";
 const GREGORIAN =
   "https://cdn.jasperwoudenberg.com/roc-gregorian-v1.0.0-rc.2/Ce3xuHN92F5oGRuzjUTmm65jULAEj8pvvrTBmZJzE1M4.tar.zst";
 
@@ -237,7 +237,7 @@ const [clean, typo, gregorian] = await session(
   rocFor(PLATFORM)
 );
 
-check("detection scaffolds a bare handler nobody scoped", /Wrapped in the basic-webserver 0\.17\.0 app/.test(clean), clean);
+check("detection scaffolds a bare handler nobody scoped", /Wrapped in the basic-webserver 0\.19\.0 app/.test(clean), clean);
 check("a scaffolded handler that is correct passes", /`roc check` passed\./.test(clean), clean);
 check("errors report the caller's own line", /main\.roc:3:/.test(typo), typo);
 check("the temporary path never reaches the caller", !/roc-check-[A-Za-z0-9]+\/main\.roc/.test(typo), typo);
@@ -248,13 +248,13 @@ check("a broken package is counted, not quoted", /gregorian\/Date\.roc: 14/.test
 // basic-cli has `Utc`, so this code compiles only under the basic-cli app
 // header. It declares no `main!`, so the scaffold supplies one, and the reply
 // names the platform.
-const CLI_CLEAN = `uptime! : () => Try(U128, _)
+const CLI_CLEAN = `uptime! : () => Try(Utc, _)
 uptime! = || Ok(Utc.now!())
 `;
 const cliApp = `app [main!] { pf: platform "${CLI_PLATFORM}" }\n\nimport pf.Stdout\n`;
 const cliWorkspace = workspace("detected-cli", { "main.roc": cliApp });
 const [cliClean] = await session(cliWorkspace, [{ code: CLI_CLEAN }], rocFor(CLI_PLATFORM));
-check("detection scaffolds against the platform the workspace pins", /Wrapped in the basic-cli 0\.25\.0 app/.test(cliClean), cliClean);
+check("detection scaffolds against the platform the workspace pins", /Wrapped in the basic-cli 0\.26\.0 app/.test(cliClean), cliClean);
 check("a scaffolded basic-cli program that is correct passes", /`roc check` passed\./.test(cliClean), cliClean);
 
 // No app header here, so only the argument can name the platform.
@@ -266,7 +266,7 @@ const [cliScoped, unscoped] = await session(
   rocFor(CLI_PLATFORM)
 );
 check("an explicit scope scaffolds where detection found nothing", /`roc check` passed\./.test(scoped), scoped);
-check("the explicit scope selects between the platforms", /Wrapped in the basic-cli 0\.25\.0 app/.test(cliScoped) && /`roc check` passed\./.test(cliScoped), cliScoped);
+check("the explicit scope selects between the platforms", /Wrapped in the basic-cli 0\.26\.0 app/.test(cliScoped) && /`roc check` passed\./.test(cliScoped), cliScoped);
 check("without a scope or a detection, bare code is not wrapped", /failed/.test(unscoped) && !/Wrapped in the/.test(unscoped), unscoped);
 
 // `roc_fmt` reads a path as `roc_check` does. A unit test cannot run a real

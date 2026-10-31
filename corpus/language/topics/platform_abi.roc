@@ -1,6 +1,6 @@
 # The ABI between a platform's Roc code and its host: the cases that compile
 # and then fail at run time. The `platforms` topic covers the header, the
-# hosted functions and the host side. These sections follow basic-cli 0.25.0.
+# hosted functions and the host side. These sections follow basic-cli 0.26.0.
 #
 #
 # 1. A hosted result is a closed union
@@ -13,10 +13,10 @@
 #
 #   ❌ line! = |message| Host.stdout_line!(message)
 #
-# gives the caller a closed `[StdoutErr(IOErr)]`, and `?` cannot combine it
-# with any other error. Rebuild the union in Roc first (the `widen_*` match of
-# the `platforms` topic, or `.map_err`), so the compiler controls its layout and
-# the caller gets an open one.
+# gives the caller a closed `[Interrupted, StdoutErr(IOErr)]`, and `?` cannot
+# combine it with any other error. Rebuild the union in Roc first (the
+# `widen_*` match of the `platforms` topic, or `.map_err`), so the compiler
+# controls its layout and the caller gets an open one.
 #
 #
 # 2. The tag union discriminant
@@ -51,100 +51,93 @@ Header := { tag : U8, _ : {}, value : U32 }
 # @rejects unnamed field not allowed in structural record
 # BadHeader : { tag : U8, _ : {}, value : U32 }
 
-# basic-cli's Cmd.roc warns about the order:
+# basic-cli's Host.roc returns the output of a command as a record:
 #
-#   # Do not change the order of the fields! It will lead to a segfault.
-#   OutputFromHostSuccess : {
-#       stderr_bytes : List(U8),
-#       stdout_bytes : List(U8),
-#   }
+#   CmdOutput : { status : [Exited(I32), Signaled(I32)], stdout_bytes : List(U8), stderr_bytes : List(U8) }
 #
-# Both fields have the same alignment, and their names are already in order.
+# The two lists have the alignment of a pointer, and `status` has the alignment
+# of an `I32`. So the host writes `stderr_bytes`, `stdout_bytes`, then
+# `status`: the field that comes first in the source comes last in memory.
 #
 #
 # 4. A three-state return
 #
 #
-# When the host must distinguish three outcomes, give the error union one tag
-# per failure mode. basic-cli's Cmd:
+# When the host must distinguish three outcomes, keep the outcomes that are not
+# failures in the success value, and give the error union one tag per failure
+# mode. basic-cli's Host.roc:
 #
-#   cmd_exec_output! : Cmd => Try(
-#       CmdOutputSuccess,                          # exit code 0
-#       [
-#           NonZeroExitCode(CmdOutputFailure),     # ran, exit code != 0
-#           FailedToGetExitCode(IOErr),            # could not run it
-#       ],
-#   )
+#   cmd_run! : Cmd => Try(CmdOutput, [CmdErr(CmdErr), Interrupted])
 #
-# Older basic-cli releases nested a `Try` in the error position for this. The
-# current releases use the flat union, which reads better at every match.
+# A command that ran and exited non-zero is `Ok`, with `Exited(code)` as its
+# `status`. `CmdErr` is a command that could not start or did not finish, and
+# `Interrupted` is a signal that the program caught. Do not nest a `Try` in the
+# error position for the third state. The flat union reads better at every
+# match.
 #
 #
-# 5. `()` vs `{}` for the unit argument
+# 5. The unit argument
 #
 #
-# An effectful function that takes "no real argument" can use either:
+# An effectful function that takes no real argument takes `()`:
 #
-#   line! : Str         => Try({}, ...)   # explicit-arg form
-#   now!  : {}          => U128           # empty record (common)
-#   get!  : ()          => Try(Str, ...)  # unit tuple (also accepted)
+#   now!             : () => Utc
+#   get!             : () => Try(Locale, [NotAvailable])
+#   enable_raw_mode! : () => Try({}, [TtyErr(IOErr)])
 #
-# Both `{}` (empty record) and `()` (unit tuple) compile, and basic-cli
-# mixes them: `Utc.now!` uses `{}`, `Locale.get!` and `Tty.enable_raw_mode!`
-# use `()`. Functionally they're interchangeable for "no input."
-#
-# Convention: prefer `{}` for consistency with the rest of the platform. It
-# composes more cleanly with record patterns, and most basic-cli modules use
-# it. Use `()` only if the host already expects a unit tuple in its calling
-# convention.
+# The caller writes `Utc.now!()`. Every such function in basic-cli 0.26.0
+# takes `()`, so a platform that follows it matches what its users expect.
 #
 #
-# 6. Opaque types with several internal representations (Path)
+# 6. Types with several internal representations (Path)
 #
 #
 # Some platform types must record where their value came from. basic-cli's
-# `Path` is a good template. It is an opaque alias (`::`) with a tag union
-# body, plus a methods block that hides every way to construct it:
+# `Path` is a good template. It is a nominal tag union, and each tag keeps the
+# units of one operating system unchanged:
 #
-# Path :: [
-#     FromOperatingSystem(List(U8)),   # nul-terminated, OS-charset bytes
-#     ArbitraryBytes(List(U8)),        # user bytes, must validate before FFI
-#     FromStr(Str),                    # UTF-8 from a RocStr
+# Path := [
+#     Utf8(Str),                  # a string literal or a Str
+#     UnixBytes(List(U8)),        # Unix bytes, which need not be UTF-8
+#     WindowsU16s(List(U16)),     # Windows UTF-16 units, which need not be valid
 # ].{
-#     from_str : Str -> Path
-#     from_str = |s| FromStr(s)
-#
 #     display : Path -> Str
-#     display = |p| match p {
-#         FromStr(s) => s
-#         FromOperatingSystem(b) | ArbitraryBytes(b) =>
-#             match Str.from_utf8(b) {
-#                 Ok(s) => s
-#                 Err(_) => Str.from_utf8_lossy(b)
-#             }
-#     }
+#     display = |path|
+#         match path {
+#             Utf8(str) => str
+#             UnixBytes(bytes) => Str.from_utf8_lossy(bytes)
+#             WindowsU16s(u16s) => Str.from_utf8_lossy(InternalUtf16.to_utf8_lossy(u16s))
+#         }
 # }
 #
 # Why this pattern is useful for platforms:
 #   The host can give you bytes whose encoding you cannot recover later
-#     (POSIX paths do not have to be UTF-8). If the type records the source,
-#     the public `display` / `to_str_using_charset` methods can choose correctly.
+#     (POSIX paths do not have to be UTF-8). If the type keeps the raw units,
+#     effects pass them back to the host unchanged, and only `display` loses
+#     information. Its `to_inspect` prints the raw units.
 #   Bytes from userspace can contain interior nul bytes, and a C API silently
-#     truncates them. The opaque type forces validation in one place (the
-#     bytes accessor / FFI shim) and not at every call.
+#     truncates them. One type forces validation in one place (the FFI shim)
+#     and not at every call.
 #
 #
 # 7. A shared error type
 #
 #
 # IOErr := [
+#     AddrInUse,
+#     AddrNotAvailable,
 #     AlreadyExists,
 #     BrokenPipe,
+#     ConnectionRefused,
+#     ConnectionReset,
 #     Interrupted,
+#     IsADirectory,
 #     NotFound,
+#     NotADirectory,
 #     Other(Str),          # any OS error that the other tags do not name
 #     OutOfMemory,
 #     PermissionDenied,
+#     TimedOut,
 #     Unsupported,
 # ]
 #

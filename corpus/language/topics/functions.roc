@@ -46,6 +46,16 @@ early_return = |arg| {
 	Str.count_utf8_bytes(first)
 }
 
+# Code after a `return` in the same block can never run, and the compiler warns
+# about it. So does code after a `crash` or a `break`, and code after an `if` or
+# `match` whose every branch returns.
+#
+# @warns unreachable code
+# after_return = |arg| {
+# 	return 0
+# 	arg - 1
+# }
+
 # `...` is the placeholder for code not written yet. It desugars to
 # `crash "not implemented"`.
 todo_later = |_str| ...
@@ -61,10 +71,10 @@ expect same_len(["a"]) == 1 and same_len([1, 2]) == 2
 # the caller, also when the callee is a different function or a function value.
 # So `is_even(10_000_000)` does not overflow the stack.
 is_even : U64 -> Bool
-is_even = |n| if n == 0 True else is_odd(n - 1)
+is_even = |n| if (n == 0) True else is_odd(n - 1)
 
 is_odd : U64 -> Bool
-is_odd = |n| if n == 0 False else is_even(n - 1)
+is_odd = |n| if (n == 0) False else is_even(n - 1)
 
 expect is_even(10_000_000) and is_odd(7)
 
@@ -77,13 +87,13 @@ expect is_even(10_000_000) and is_odd(7)
 # A recursive call that is not the last operation uses one stack frame per
 # level, so a deep input can overflow the stack. `n * factorial(n - 1)` is one.
 factorial : U64 -> U64
-factorial = |n| if n <= 1 1 else n * factorial(n - 1)
+factorial = |n| if (n <= 1) 1 else n * factorial(n - 1)
 
 # Pass an accumulator to make the call a self-tail call. When every self-call is
 # a tail call, the compiler turns the function into a loop. The loop cannot
 # overflow the stack, but it can run forever.
 factorial_acc : U64, U64 -> U64
-factorial_acc = |n, acc| if n <= 1 acc else factorial_acc(n - 1, n * acc)
+factorial_acc = |n, acc| if (n <= 1) acc else factorial_acc(n - 1, n * acc)
 
 expect factorial(5) == factorial_acc(5, 1)
 
@@ -95,7 +105,7 @@ LinkedList(a) := [Nil, Cons(a, LinkedList(a))]
 
 count_up : U64, U64 -> LinkedList(U64)
 count_up = |current, end|
-	if current >= end Nil else Cons(current, count_up(current + 1, end))
+	if (current >= end) Nil else Cons(current, count_up(current + 1, end))
 
 length : LinkedList(U64), U64 -> U64
 length = |lst, acc| match lst {

@@ -45,7 +45,9 @@
 #     for `run`, `build`, `check`, `test`, `docs` and `deps`. `0` removes a
 #     limit.
 #   - `roc bundle main.roc Parser.roc ...` writes the bundle, named by its hash,
-#     for any static https host. See the `compiler` topic.
+#     for any static https host. The files can come in any order, but one must
+#     be the package's `main.roc`, or `roc bundle` gives an error. See the
+#     `compiler` topic.
 #
 # A URL can hold one MAJOR.MINOR.PATCH segment before the hash. Two segments
 # give "ambiguous package version". When the dependency graph has one package

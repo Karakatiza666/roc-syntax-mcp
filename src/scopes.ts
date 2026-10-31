@@ -997,7 +997,7 @@ export const BUNDLED_COMPILER: string =
  * and the header of each platform puts it in that platform's address space.
  *
  * lukewilliamboswell/roc-parser is indexed on the same terms, and no platform
- * pins it. A script gets CSV, YAML, XML and Markdown parsers when its own app
+ * pins it. A script gets CSV, YAML, JSON, XML and Markdown parsers when its own app
  * header pins the package, and `addressSpace` indexes it from there.
  *
  * kili-ilo/roc-random is vendored at the release roc-ray pins, so that

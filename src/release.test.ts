@@ -103,7 +103,7 @@ test("a snapshot carries the header's exposes and pins, and each module's import
 });
 
 // The exact bytes that an app compiles against win over a corpus that
-// documents a different release. Without the cache, the bundled 0.9.2 answers,
+// documents a different release. Without the cache, the bundled 0.9.3 answers,
 // and the conflict note tells that the two releases differ.
 test("a package pinned at a release no corpus serves is read from the cache", () => {
   const pin = { alias: "rand", id: "kili-ilo/roc-random", version: "9.9.9", url: rand("9.9.9"), requiredBy: "app" as const };
@@ -111,7 +111,7 @@ test("a package pinned at a release no corpus serves is read from the cache", ()
   registry.setWorkspacePins([pin]);
 
   const before = registry.spacePackages(null)[0];
-  assert.equal(before.provider?.version, "0.9.2", "the bundled release answers until the cache has it");
+  assert.equal(before.provider?.version, "0.9.3", "the bundled release answers until the cache has it");
   assert.deepEqual(registry.wantedReleases(null), [rand("9.9.9")]);
 
   tree(path.join(cache, HASH), RANDOM_TREE);
@@ -148,8 +148,8 @@ test("a pinned release a corpus serves is read from its index, never fetched", (
     {
       alias: "rand",
       id: "kili-ilo/roc-random",
-      version: "0.9.2",
-      url: rand("0.9.2", "2ZXLX8WRqrosGu1V3VL5aXqgtfTRvJmjFPx8a26ecVmc"),
+      version: "0.9.3",
+      url: rand("0.9.3", "HoULZB8QzktiNPYSe9myzy9JQzm1nMbjDPVWoA63QpVf"),
       requiredBy: "app",
     },
   ]);

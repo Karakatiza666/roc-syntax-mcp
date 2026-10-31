@@ -4,16 +4,17 @@
 ##
 ## This module only parses bytes, from a socket or a capture file. It is not
 ## the roc-lang/http package (the `http` package topic), and not the request
-## type that basic-webserver gives to a handler.
+## type that basic-webserver gives to a handler. `HTTP.RequestLiteral` and
+## `ResponseLiteral` check a message at build time (parser_compile_time).
 ##
 ## Full manual: requests, header fields, responses, how the body is found,
 ## chunked bodies, pipelined messages, use inside a larger grammar, rejected
 ## messages and request smuggling, and what is out of scope:
-## https://github.com/lukewilliamboswell/roc-parser/blob/2.0.0/docs/http.adoc
+## https://github.com/lukewilliamboswell/roc-parser/blob/3.0.0/docs/http.adoc
 ## (`conformance.adoc` says that the parser rejects a lowercase method. It does not.)
 app [main!] {
-	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.25.0/CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA.tar.zst",
-	parser: "https://github.com/lukewilliamboswell/roc-parser/releases/download/2.0.0/7CLzCK6qUz7zmj6nvBxMEFu11HPwQTnCovKiyWzDSLTW.tar.zst",
+	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst",
+	parser: "https://github.com/lukewilliamboswell/roc-parser/releases/download/3.0.0/6xsRdRqenJrAb4wG7HaST4Xh349vD5sHAJDsKTK6E3dr.tar.zst",
 }
 
 import pf.Stdout

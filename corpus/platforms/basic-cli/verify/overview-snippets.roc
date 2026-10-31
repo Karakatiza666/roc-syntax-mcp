@@ -2,7 +2,7 @@
 ## the page stops matching the pinned platform,
 ## scripts/check-platform-examples.sh fails.
 app [main!] {
-	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.25.0/CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA.tar.zst",
+	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst",
 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
 }
 
@@ -49,16 +49,16 @@ report! = |missing|
 ## The commands section.
 head_of_git! : () => Try({}, _)
 head_of_git! = || {
-	out = Cmd.new("git").args(["rev-parse", "HEAD"]).exec_output!()?
-	Stdout.line!(out.stdout_utf8)?
+	head = Cmd.new("git").args(["rev-parse", "HEAD"]).capture!()?
+	Stdout.line!(head.trim())?
 	Ok({})
 }
 
 ## The HTTP client section.
 fetch! : () => Try({}, _)
 fetch! = || {
-	body = Http.get_utf8!("https://example.com")?
-	res = Http.send!(Request.from_method(GET).with_uri("https://example.com"))?
+	body = Http.get_utf8!("https://example.com", {})?
+	res = Http.send!(Request.from_method(GET).with_uri("https://example.com"), {})?
 	code = Response.status(res)
 	Stdout.line!("${body} ${code.to_str()}")?
 	Ok({})
@@ -67,12 +67,11 @@ fetch! = || {
 ## The SQLite section.
 todos! : () => Try({}, _)
 todos! = || {
-	rows = Sqlite.query_many!({
-		path: "todos.db",
-		query: "SELECT id, task FROM todos WHERE status = :status;",
-		bindings: [{ name: ":status", value: String("todo") }],
-		rows: |cols| |stmt| Ok({ id: Sqlite.i64("id")(cols)(stmt)?, task: Sqlite.str("task")(cols)(stmt)? }),
-	})?
+	db = Sqlite.open!("todos.db", {})?
+	rows = db.query_all!(
+		"SELECT id, task FROM todos WHERE status = ${String("todo")}",
+		{ id: Sqlite.Decoder.i64("id"), task: Sqlite.Decoder.str("task") }.Sqlite.Decoder,
+	)?
 	Stdout.line!("${rows.len().to_str()} rows")?
 	Ok({})
 }

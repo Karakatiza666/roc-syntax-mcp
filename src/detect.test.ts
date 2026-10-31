@@ -18,9 +18,9 @@ import {
 } from "./detect.ts";
 import { CORE } from "./scopes.ts";
 
-const BUNDLED = "0.17.0";
+const BUNDLED = "0.19.0";
 const url = (v: string) =>
-  `https://github.com/roc-lang/basic-webserver/releases/download/${v}/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst`;
+  `https://github.com/roc-lang/basic-webserver/releases/download/${v}/4KBAoiBazDfi9UF6e3BYKwon6rA8mnx3dbLMLKFzdEMw.tar.zst`;
 
 const appFile = (v: string) => `app [Context, program] {
 \tpf: platform "${url(v)}",
@@ -57,7 +57,7 @@ function workspace(name: string, files: Record<string, string>): string {
 // -----------------------------------------------------------------------------
 
 test("the platform reference is read out of a multi-line app header", () => {
-  assert.equal(platformRef(appFile("0.17.0")), url("0.17.0"));
+  assert.equal(platformRef(appFile("0.19.0")), url("0.19.0"));
   assert.equal(platformRef('app [main!] { pf: platform "../platform/main.roc" }'), "../platform/main.roc");
 });
 
@@ -89,7 +89,7 @@ test("a recognized platform URL yields its scope and pin", () => {
 // says what the app compiles against. If detection read only `pf:`, the server
 // would not see a package that the platform does not declare.
 test("the app header's package pins are read beside the platform", () => {
-  assert.deepEqual(appPins(appFile("0.17.0")), [
+  assert.deepEqual(appPins(appFile("0.19.0")), [
     {
       alias: "http",
       id: "roc-lang/http",
@@ -211,19 +211,19 @@ test("a matching pin says nothing", () => {
   assert.equal(mismatchNote(detectAt(root, 1000, CORE), CORE), null);
 });
 
-// A real case: every example in the upstream 0.17.0 tag pins 0.16.0.
+// A real case: every example in the upstream 0.19.0 tag pins 0.17.0.
 test("an older pin warns that new APIs will not compile", () => {
   const root = workspace("older", { "main.roc": appFile("0.15.0") });
   const d = detectAt(root, 1000, CORE);
   assert.equal(d.relation, "older");
   const note = mismatchNote(d, CORE)!;
   assert.match(note, /pins basic-webserver 0\.15\.0/);
-  assert.match(note, /bundles 0\.17\.0/);
+  assert.match(note, /bundles 0\.19\.0/);
   assert.match(note, /will not compile/);
 });
 
 test("a newer pin warns that the index is a lower bound", () => {
-  const root = workspace("newer", { "main.roc": appFile("0.18.0") });
+  const root = workspace("newer", { "main.roc": appFile("0.20.0") });
   const d = detectAt(root, 1000, CORE);
   assert.equal(d.relation, "newer");
   assert.match(mismatchNote(d, CORE)!, /lower bound/);

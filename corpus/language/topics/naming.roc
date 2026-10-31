@@ -69,6 +69,15 @@ ignore_quantity = |price, _quantity| price * 2
 # @warns duplicate definition
 # bump = |later| later + 1
 #
+# A type that has the name of a builtin type, such as `Str`, `Dict` or `Iter`,
+# gives a warning and hides the builtin in its scope. A nested type inside a
+# `.{ }` block counts too. Choose another name.
+#
+# @warns builtin type shadowed
+# Net := [].{
+# 	Dict := [Entry]
+# }
+#
 # A definition cannot read the name that it defines, even when an earlier
 # definition has that name. Use a new name, or a `var`.
 #
@@ -88,6 +97,9 @@ ignore_quantity = |price, _quantity| price * 2
 #   4. A lambda reads the value that the `var` had when the lambda was defined.
 #   5. Each value that you assign to it must have the same type.
 #   6. Reassigning a `var` copies nothing, because a `var` is only a name.
+#   7. Only `=` changes it. A method such as `List.append` returns an updated
+#      copy, so write `$xs = $xs.append(x)`. A `match` or `for` pattern cannot
+#      bind a `var`.
 captured = || {
 	var $n = 1
 	read_n = || $n
@@ -127,6 +139,18 @@ expect captured() == (1, 5)
 # no_var = || {
 # 	$total = 0
 # 	$total
+# }
+#
+# @warns discarded var update
+# lost_update = || {
+# 	var $names = []
+# 	$names.append("Sam")
+# 	$names
+# }
+#
+# @rejects var in match pattern
+# bind_in_match = |text| match text {
+# 	$word => $word
 # }
 
 # `as` in a pattern names the whole matched value next to the names inside it.

@@ -201,7 +201,7 @@ descriptions. The agent gets a topic through `get_roc_syntax(topic:)`, by its na
 | Language | `idioms`, `iterators`, `ranges`, `record_fields`, `derived_methods`, `json`, `hashing`, `operators`, `pattern_matching`, `list_patterns`, `tag_unions`, `try_operator`, `strings`, `effects`, `loops`, `conditionals`, `tuples`, `records`, `types`, `naming`, `numbers`, `opaque`, `nominal`, `functions`, `compile_time`, `memory`, `dict_set`, `static_dispatch`, `imports`, `modules`, `packages`, `comments`, `testing`, `compiler`, `app_header`, `dbg_crash`, `platforms`, `platform_abi`, `builder_pattern`, `scripting`, `error_design` |
 | basic-webserver | `webserver_handler`, `webserver_sqlite`, `webserver_sse`, `webserver_html`, `webserver_forms`, `webserver_static` |
 | basic-cli | `cli_app`, `cli_files`, `cli_command`, `cli_http`, `cli_sqlite`, `cli_terminal`, `cli_net` |
-| roc-parser | `parser_combinators`, `parser_csv`, `parser_yaml`, `parser_xml`, `parser_markdown`, `parser_http` |
+| roc-parser | `parser_combinators`, `parser_csv`, `parser_yaml`, `parser_json`, `parser_xml`, `parser_markdown`, `parser_asciidoc`, `parser_roc_syntax`, `parser_http`, `parser_compile_time` |
 | roc-random | `random_generators` |
 
 The platform and package topics are complete apps. Each one passes
@@ -259,7 +259,7 @@ language, the commit.
 | `basic-webserver` | Platform | HTTP server, SQLite, files, commands, SSE |
 | `basic-cli` | Platform | stdio, files and paths, commands, HTTP client, SQLite, TCP, TTY |
 | `http` | Package | The HTTP types both platforms re-export |
-| `roc-parser` | Package | Parser combinators, and parsers for CSV, YAML, XML, Markdown and HTTP/1.1 messages that decode into your own types |
+| `roc-parser` | Package | Parser combinators, and parsers for CSV, YAML, JSON, XML, Markdown, AsciiDoc, Roc source and HTTP/1.1 messages that decode into your own types or check a literal during compilation |
 | `roc-random` | Package | Pseudorandom values from a seed |
 
 The packages work on any platform. `get_roc_syntax(topic: "roc-parser")` returns a
@@ -369,8 +369,8 @@ plugin:
 
 | Plugin | Kind | What it shows |
 |---|---|---|
-| `@roc-syntax/roc-ray` | Platform | RocRay, for games, graphics and sound. A platform plugin brings its own app scaffold, so `roc_check` wraps a bare snippet in a RocRay app. The plugin also pins its own compiler nightly, older than the server's, because the release requires that nightly |
-| `@roc-syntax/weaver` | Package | Weaver, a command-line argument parser. A package plugin has no scaffold. In any app that pins the package, on any platform, its functions are searched with the builtins. Upstream states no license yet, so the plugin's `LICENSE` tells which files are upstream's |
+| `@roc-syntax/roc-ray` | Platform | RocRay, for games, graphics and sound. A platform plugin brings its own app scaffold, so `roc_check` wraps a bare snippet in a RocRay app. The plugin also pins its own compiler nightly, older than the server's, because the release was built and tested with that nightly |
+| `@roc-syntax/weaver` | Package | Weaver, a command-line argument parser. A package plugin has no scaffold. In any app that pins the package, on any platform, its functions are searched with the builtins. The plugin is UPL-1.0, and its `LICENSE` retains the MIT notice of the project that weaver forks |
 | `@roc-syntax/cloudflare-workers` | Platform | cloudflare-workers, for Cloudflare Workers in Roc: HTTP, D1, KV, R2, Queues, Durable Objects and RPC. The release is a bundle with a host and a JS shim. The plugin gives the project files (`talon.toml`, `worker.js`, `wrangler.toml`) that the platform needs, and it pins its own compiler nightly |
 | `@roc-syntax/joy` | Platform and package | Joy, for browser apps in WebAssembly, and joy-html, the package that Joy views are written in. One plugin holds both. The server refuses the plugin unless its joy-html is the release that the Joy platform pins. `render` returns joy-html's `Html` type, and the `Html` of another release is a different type |
 

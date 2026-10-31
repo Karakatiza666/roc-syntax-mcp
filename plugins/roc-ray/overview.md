@@ -6,17 +6,17 @@ There is no separate `roc-ray-types` package. Every type is `rr.*`.
 signature, `search scope="roc-ray"` when you do not know the name,
 `list_roc_index kind="examples"` for complete programs that all compile, and
 `get_roc_syntax(topic: "ray_game")` for a worked program on one subject:
-`ray_project`, `ray_game`, `ray_app`, `ray_draw`, `ray_input`, `ray_tasks`,
+`ray_project`, `ray_game`, `ray_app`, `ray_draw`, `ray_shader`, `ray_input`, `ray_tasks`,
 `ray_text`, `ray_assets`, `release_multiplatform_ray`, `ray_headless`,
 `wasm_bridge_ray`, `pixel_canvas_ray`, `ray_capture`.
 
 ## Starting a project
 
 A game is one `main.roc`. The platform line is a release URL that the first
-build downloads and caches, so the only install is a Roc nightly. The bundle's
-own header pins `nightly-2026-09-27-a3ce7f1`. Under any other nightly, every
-check reports a "roc version mismatch" warning on the platform's `main.roc`.
-That warning is not in your code.
+build downloads and caches, so the only install is a Roc nightly. Since 0.11.0
+the platform names no compiler: use a recent nightly. This release was built
+and tested with `nightly-2026-10-23-18478ff`. An app header from 0.10.0 may
+carry a `roc: "nightly-..."` entry; delete it.
 
 ```bash
 roc main.roc -- --dev                 # build and run; args after -- go to the app
@@ -63,7 +63,7 @@ source-tree declaration and a recording mode can ask for a hidden window.
 
 ```roc
 app [Model, program] {
-	rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.10.0/5xecDmRJroKT9fnSiYsGdCKEzNWLnRKGtHJ5CxuCnpb9.tar.zst",
+	rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst",
 }
 
 program = { init!, update!, render! }
@@ -140,15 +140,28 @@ type-checks inside it, so use the inner name.
 
 ```roc
 	frame.clear!(Color.from_hex_rgb(0x0d1425))
-	frame.with_camera!(model.camera, |world| {
-		world.circle!({ center: model.pointer, radius: 12, style: Draw.filled(Color.ray_white) })
-		Ok({})
-	})?
+	frame.with_camera!(
+		model.camera,
+		|world| {
+			world.circle!({ center: model.pointer, radius: 12, style: Draw.filled(Color.ray_white) })
+			Ok({})
+		},
+	)?
 ```
 
 `with_camera!`, `with_scissor!` and `with_blend_mode!` raise `ScopeLimit`.
 `with_shader!` and `with_render_texture!` add `ScopeUnavailable`. A record
 literal is a `Math.Vec2` wherever one is expected.
+
+A shader is `Shader(uniforms)` from the `Shader` module, not `Draw.Shader`. Its
+uniforms are a Roc record that you hand to `Shader.from_source!` or
+`Shader.from_store!` with their starting values, and the load checks the record
+against the GLSL: a field the shader lacks is `UniformNotFound`, one of the
+wrong type is `UniformTypeMismatch`. Each frame, `model.shader.with_uniforms(...)`
+is pure and `frame.with_shader!` uploads the whole record. The per-name
+`uniform_f32!` and `set!` of 0.10 are gone. `Camera.perspective` and
+`frame.with_camera_3d!` draw in 3D, and `frame.textured_triangles_3d!` draws
+textured triangles inside it. `ray_shader` is a worked program.
 
 ## Text, and everything else that is loaded
 

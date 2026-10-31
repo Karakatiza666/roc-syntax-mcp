@@ -1,24 +1,25 @@
-## A parser for your own text format, from lukewilliamboswell/roc-parser 2.0
-## combinators, when no module parses the format. JSON is `Json.parse` in the
-## standard library. The formats this package ships are in parser_csv,
-## parser_yaml, parser_xml, parser_markdown and parser_http.
+## A parser for your own text format, from lukewilliamboswell/roc-parser 3.0:
+## combinators, for when no module parses the format. The formats this package
+## ships are in parser_csv, parser_yaml, parser_json, parser_xml, parser_markdown,
+## parser_asciidoc, parser_roc_syntax and parser_http. `Utf8.parse_quote` turns a
+## combinator parser into a build-time check (parser_compile_time).
 ##
 ## Full manual:
 ##
 ## - A first parser, step by step, from one key to every line with errors:
-##   https://github.com/lukewilliamboswell/roc-parser/blob/2.0.0/docs/combinator-primer.adoc
+##   https://github.com/lukewilliamboswell/roc-parser/blob/3.0.0/docs/combinator-primer.adoc
 ## - Every combinator by task: running, sequencing, alternatives, repetition,
 ##   recursion, bytes against characters, and input that is not text:
-##   https://github.com/lukewilliamboswell/roc-parser/blob/2.0.0/docs/combinators.adoc
+##   https://github.com/lukewilliamboswell/roc-parser/blob/3.0.0/docs/combinators.adoc
 ## - A format of your own, from the result types to a tested parser, line-based
-##   or not: https://github.com/lukewilliamboswell/roc-parser/blob/2.0.0/docs/custom-format.adoc
+##   or not: https://github.com/lukewilliamboswell/roc-parser/blob/3.0.0/docs/custom-format.adoc
 ## - Error reports for each format and for your own parsers, with the location:
-##   https://github.com/lukewilliamboswell/roc-parser/blob/2.0.0/docs/errors.adoc
+##   https://github.com/lukewilliamboswell/roc-parser/blob/3.0.0/docs/errors.adoc
 ## - Speed and memory, why the package is fast or slow, and tips for your own
-##   parsers: https://github.com/lukewilliamboswell/roc-parser/blob/2.0.0/docs/performance.adoc
+##   parsers: https://github.com/lukewilliamboswell/roc-parser/blob/3.0.0/docs/performance.adoc
 app [main!] {
-	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.25.0/CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA.tar.zst",
-	parser: "https://github.com/lukewilliamboswell/roc-parser/releases/download/2.0.0/7CLzCK6qUz7zmj6nvBxMEFu11HPwQTnCovKiyWzDSLTW.tar.zst",
+	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst",
+	parser: "https://github.com/lukewilliamboswell/roc-parser/releases/download/3.0.0/6xsRdRqenJrAb4wG7HaST4Xh349vD5sHAJDsKTK6E3dr.tar.zst",
 }
 
 import pf.Stdout

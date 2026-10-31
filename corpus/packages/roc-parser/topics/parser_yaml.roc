@@ -1,7 +1,8 @@
-## Read YAML configuration with lukewilliamboswell/roc-parser 2.0: decode a
+## Read YAML configuration with lukewilliamboswell/roc-parser 3.0: decode a
 ## document into your own record with `Yaml.decode`, set other key spellings
 ## with `Yaml.decoder`, or explore a `Yaml` tree with `Yaml.parse_str`,
-## `get_path` and `as_str`.
+## `get_path` and `as_str`. `Yaml.tokenize_str` colors source for a highlighter,
+## and a literal can be checked at build time (the parser_compile_time topic).
 ##
 ## The parser reads the YAML 1.2 core schema subset that configuration files
 ## and Markdown frontmatter use. It rejects the rest with `InvalidYaml`. It
@@ -9,10 +10,10 @@
 ##
 ## Full manual: decoding into a record, key spellings, the tree, frontmatter,
 ## how plain values are typed, multi-line text, lists, quoting, what is
-## rejected, and error locations: https://github.com/lukewilliamboswell/roc-parser/blob/2.0.0/docs/yaml.adoc
+## rejected, and error locations: https://github.com/lukewilliamboswell/roc-parser/blob/3.0.0/docs/yaml.adoc
 app [main!] {
-	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.25.0/CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA.tar.zst",
-	parser: "https://github.com/lukewilliamboswell/roc-parser/releases/download/2.0.0/7CLzCK6qUz7zmj6nvBxMEFu11HPwQTnCovKiyWzDSLTW.tar.zst",
+	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst",
+	parser: "https://github.com/lukewilliamboswell/roc-parser/releases/download/3.0.0/6xsRdRqenJrAb4wG7HaST4Xh349vD5sHAJDsKTK6E3dr.tar.zst",
 }
 
 import pf.Stdout
@@ -91,7 +92,7 @@ expect load_server("user-id: 7\nmax-conections: 10").is_err()
 #
 # The tree tags are `Null`, `Bool`, `Int` (an `I64`), `Float`, `Text`,
 # `Sequence` and `Mapping`. The 1.x releases named the text tag `String` and
-# the error tag `YamlError`. In 2.0, a match on `String(s)` fails to compile,
+# the error tag `YamlError`. Since 2.0, a match on `String(s)` fails to compile,
 # and the error tag is `InvalidYaml`.
 
 ## `get_path` reads a sequence index as a decimal string. Each `?` adds its own
@@ -152,6 +153,49 @@ expect Yaml.parse_str("one: 1\n---\ntwo: 2").is_err()
 expect Yaml.parse_str("server:\n\tport: 80").is_err()
 expect Yaml.parse_str("name: a\nname: b").is_err()
 expect Yaml.parse_str("list: [1,\n  2]").is_err()
+
+# --- Highlight source, even broken source ----------------------------------
+#
+# `Yaml.tokenize_str` (and `tokenize_bytes` for any bytes) is a separate lexer
+# for highlighters. It never fails: it returns `{ source, tokens, diagnostics,
+# status }`, where the tokens cover every byte of the input in order, with
+# comments, whitespace and CRLF kept. `status` is `Complete`, `Recovered` (a
+# lexical problem, listed in `diagnostics`) or `Limited` (256 open flow
+# collections). It does not depend on what `Yaml.parse_str` accepts, so an
+# anchor, a tag or a snippet that the semantic parser rejects is still colored.
+#
+# A token is `{ kind, start, end, role, scalar }` with byte offsets, `role`
+# `Key`, `Value` or `Other`, and `scalar` the core-schema category of a plain
+# scalar. `Yaml.highlight_category(token)` maps it to `PropertyName`,
+# `StringText`, `NumericLiteral`, `BooleanLiteral`, `NullLiteral`, `CommentText`,
+# `Symbol`, `Trivia`, `Name`, `TypeName` or `InvalidText`, with no theme colors.
+workflow = "# CI\r\non: [push]\r\nname: 'Check'\r\ncontinue-on-error: false\r\nrun: |-\r\n  # shell, not a comment\r\n  echo ok\r\n"
+
+piece : Yaml.Tokenized, Yaml.Token -> List(U8)
+piece = |tokenized, token| tokenized.source.sublist({ start: token.start, len: token.end - token.start })
+
+expect {
+	tokenized = Yaml.tokenize_str(workflow)
+	tokenized.tokens.fold([], |bytes, token| bytes.concat(piece(tokenized, token))) == workflow.to_utf8()
+}
+
+categories : Str -> List((Str, Yaml.HighlightCategory))
+categories = |text| {
+	tokenized = Yaml.tokenize_str(text)
+	tokenized.tokens
+		.map(|token| (Str.from_utf8(piece(tokenized, token)) ?? "?", Yaml.highlight_category(token)))
+		.keep_if(|(_, category)| category != Trivia)
+}
+
+expect categories("on: false") == [("on", PropertyName), (":", Symbol), ("false", BooleanLiteral)]
+
+# Text in a block scalar that starts with `#` is a script line, not a comment.
+expect categories("run: |-\n  # not a comment").any(|(_, category)| category == CommentText) == False
+
+# Broken input still tokenizes, and says so.
+expect Yaml.tokenize_str("name: \"unfinished").status == Recovered
+expect Yaml.tokenize_str("name: ok").status == Complete
+expect !Yaml.tokenize_bytes([0xFF, 0x0A]).diagnostics.is_empty()
 
 # `Yaml.Format` and `Yaml.Cursor` are the decode protocol. Only `Yaml.decode`
 # calls them. Never call them.

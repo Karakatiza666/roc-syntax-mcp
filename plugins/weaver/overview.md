@@ -17,7 +17,7 @@ compile.
 ```roc
 app [main!] {
 	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.25.0/CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA.tar.zst",
-	weaver: "https://github.com/lukewilliamboswell/weaver/releases/download/0.9.0/7j6KBFBEZ8pNMLQHkx9xiwyZ2PmwQPgKNDPUih6gKe77.tar.zst",
+	weaver: "https://github.com/lukewilliamboswell/weaver/releases/download/0.10.0/7CdYzjBAJmprmnK45oTpmH6BXt76ZASN2Ck5uZQEoWsK.tar.zst",
 }
 ```
 
@@ -68,6 +68,11 @@ declares the stage it may follow and the stage it leaves behind, so an `Opt`
 after a `Param` reports `Builder.GetParamsAction` where `GetOptionsAction` was
 wanted, and anything after a `Param.*_list` reports `Builder.StopCollectingAction`,
 which is an empty tag union and accepts nothing.
+
+Since 0.10.0 a subcommand owns everything after its name. `work build -q` is
+rejected with `The argument "-q" was not recognized.` when `-q` is the parent's
+option, and an extra parameter after the name is no longer given to the parent.
+Put the parent's options before the name: `work -q build x`.
 
 Two fields is the minimum: `{ only: ... }.Cli` is rejected as "single-field record
 builder (minimum 2 fields required)", an unimplemented feature carrying no

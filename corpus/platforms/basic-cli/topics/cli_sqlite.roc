@@ -1,122 +1,107 @@
-## SQLite: one call per shape of result, row decoders built by hand, and
-## prepared statements when the same query runs many times.
-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.25.0/CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA.tar.zst" }
+## SQLite: a `Db` connection you hold, interpolated queries that bind their
+## values, and decoders that are ordinary values.
+app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst" }
 
 import pf.OsStr
 import pf.Path
 import pf.Sqlite
+import pf.Sqlite.Decoder
+import pf.Sqlite.Query
 import pf.Stdout
 
 Todo : { id : I64, task : Str, done : Bool }
 
 main! : List(OsStr) => Try({}, _)
 main! = |_args| {
-	db : Path
-	db = "todos.db"
+	path : Path
+	path = "todos.db"
 
-	# Writes: `execute!`. It fails with `RowsReturnedUseQueryInstead` if the
-	# statement returns rows. This catches a query sent to `execute!` by mistake.
-	Sqlite.execute!({
-		path: db,
-		query: "INSERT INTO todos (task, done) VALUES (:task, :done);",
-		bindings: [
-			{ name: ":task", value: String("write the topic") },
-			{ name: ":done", value: Integer(0) },
-		],
-	})?
+	# `open!` returns a `Db` that you pass around and can `close!`. `{}` takes the
+	# defaults: create the file if it is missing, and wait up to five seconds for
+	# a lock. `{ mode: ReadOnly }` opens an existing file without writing.
+	db = Sqlite.open!(path, {})?
 
-	# Exactly one row: `query!`, with a `row` decoder. `query!` and `query_many!`
-	# have no annotation upstream, so the decoder does not give the result its
-	# type. Annotate the binding, or no method call on the result can dispatch.
-	count : U64
-	count = Sqlite.query!({
-		path: db,
-		query: "SELECT COUNT(*) AS \"n\" FROM todos;",
-		bindings: [],
-		row: Sqlite.u64("n"),
-	})?
+	# Writes: `execute!`. A statement that returns rows is rejected before it runs.
+	#
+	# Each `${...}` in a query is a bound parameter, never pasted into the SQL.
+	# The value names its storage class: `Integer(n)`, `String(s)`, `Real(x)`,
+	# `Bytes(b)` or `Null`. An interpolation inside quotes or a comment is a
+	# compile error.
+	task = "write the topic"
+	db.execute!("INSERT INTO todos (task, done) VALUES (${String(task)}, ${Integer(0)})")?
+
+	# Exactly one row: `query_one!`. A column is named, or numbered from 0.
+	count = db.query_one!("SELECT COUNT(*) FROM todos", Decoder.i64(0))?
 	Stdout.line!("${count.to_str()} todos")?
 
-	# Many rows: `query_many!`, with a `rows` decoder.
-	todos : List(Todo)
-	todos = Sqlite.query_many!({
-		path: db,
-		query: "SELECT id, task, done FROM todos WHERE done = :done;",
-		bindings: [{ name: ":done", value: Integer(0) }],
-		rows: decode_todo,
-	})?
+	# Many rows: `query_all!`.
+	todos = db.query_all!("SELECT id, task, done FROM todos WHERE done = ${Integer(0)}", decode_todo)?
 	for todo in todos {
 		Stdout.line!("  ${todo.id.to_str()} ${todo.task}")?
 	}
 
-	# One column, many rows: a leaf decoder is already a row decoder.
-	tasks : List(Str)
-	tasks = Sqlite.query_many!({
-		path: db,
-		query: "SELECT task FROM todos;",
-		bindings: [],
-		rows: Sqlite.str("task"),
+	# A large table: `rows` is a lazy stream. Leaving the loop ends the query.
+	for! item in db.rows("SELECT id, task, done FROM todos", decode_todo) {
+		match item {
+			Ok(todo) if todo.id > 100 => break
+			Ok(todo) => Stdout.line!(todo.task)?
+			Err(BadRow(_)) => {}
+			Err(Interrupted) => { return Err(Interrupted) }
+			Err(SqliteErr(err)) => { return Err(SqliteErr(err)) }
+			Err(Closed) => { return Err(Closed) }
+		}
+	}
+
+	# A transaction commits when the body returns `Ok` and rolls back on `Err`.
+	db.transaction!(|| {
+		db.execute!("UPDATE todos SET done = ${Integer(1)} WHERE id = ${Integer(1)}")?
+		db.execute!("UPDATE todos SET done = ${Integer(1)} WHERE id = ${Integer(2)}")?
+		Ok({})
 	})?
-	Stdout.line!("${tasks.len().to_str()} tasks")?
 
-	prepared!(db)?
+	# A query assembled at run time: SQL text with `?` markers and the values in
+	# order. The connection keeps the statements it has prepared by their SQL text.
+	wanted_ids = [1, 3]
+	markers = Str.join_with(wanted_ids.map(|_| "?"), ", ")
+	picked = db.query_all!(
+		Query.new("SELECT task FROM todos WHERE id IN (${markers})", wanted_ids.map(|id| Integer(id))),
+		Decoder.str("task"),
+	)?
+	Stdout.line!("${picked.len().to_str()} picked")?
+
+	db.close!()?
 	Ok({})
 }
 
-## A row decoder takes the column names, then the statement, and yields one
-## decoded row. Do not annotate it. The type of the inner stage uses a host-side
-## handle that an app cannot name, so you cannot write the type. `Sqlite` has
-## no `map2`, so the record builder `{ ... }.Sqlite` does not compile. Combine
-## the leaf decoders by hand and build the record yourself.
-decode_todo = |cols|
-	|stmt| {
-		id = Sqlite.i64("id")(cols)(stmt)?
-		task = Sqlite.str("task")(cols)(stmt)?
-		done = Sqlite.i64("done")(cols)(stmt)?
-		Ok({ id, task, done: done != 0 })
+## A decoder is an ordinary value: a record of column decoders, turned into a
+## decoder of records by the record-builder suffix `.Decoder`. You can annotate
+## it, share it between queries, and name a column by name or by position. The
+## second type argument is what can go wrong with a row, and `_` infers it.
+decode_todo : Decoder(Todo, _)
+decode_todo = {
+	id: Decoder.i64("id"),
+	task: Decoder.str("task"),
+	done: Decoder.i64("done").map(|n| n != 0),
+}.Decoder
+
+## Leaf decoders: `i64`, `f64`, `str`, `bytes`, `bool` and `value`. SQLite
+## integers are `I64`. For a narrower width, `map_try` and a checked conversion:
+## its error fails the row like any other decoding error.
+narrow : Decoder(U8, _)
+narrow = Decoder.i64("n").map_try(|n| n.to_u8_try().map_err(|OutOfRange| OutOfRange))
+
+## `nullable` turns a decoder into one that accepts NULL, as `Err(Null)`.
+maybe_note : Decoder(Try(Str, [Null]), _)
+maybe_note = Decoder.str("note").nullable()
+
+## Failures arrive under one tag, `SqliteErr(Sqlite.Err)`, and `Sqlite.Err` can be
+## compared with `==`. A constraint violation has a code to match on, with no
+## message text to search. `NoRows` and `TooManyRows` are `query_one!` outcomes,
+## and a row that fails to decode is `BadRow(err)`.
+add_label! : Sqlite.Db, Str => Try([Added, AlreadyExists], _)
+add_label! = |db, name|
+	match db.execute!("INSERT INTO labels (name) VALUES (${String(name)})") {
+		Ok({}) => Ok(Added)
+		Err(SqliteErr(Failed({ code: Constraint(Unique), .. }))) => Ok(AlreadyExists)
+		Err(other) => Err(other)
 	}
-
-## Leaf decoders: `str`, `bytes`, `f64`, and every integer width, each with a
-## `nullable_` twin that decodes to `[NotNull(a), Null]` instead of failing on a
-## NULL column.
-maybe_note = Sqlite.nullable_str("note")
-
-## Prepare once, execute many. Each execution starts fresh, so bindings from the
-## previous run never leak into the next one. Results are not cached.
-prepared! : Path => Try({}, _)
-prepared! = |db| {
-	stmt = Sqlite.prepare!({ path: db, query: "UPDATE todos SET done = 1 WHERE id = :id;" })?
-	stmt.execute!([{ name: ":id", value: Integer(1) }])?
-	stmt.execute!([{ name: ":id", value: Integer(2) }])?
-
-	rows = Sqlite.prepare!({ path: db, query: "SELECT task FROM todos;" })?
-	first : List(Str)
-	first = rows.query_many!([], Sqlite.str("task"))?
-	again : List(Str)
-	again = rows.query_many!([], Sqlite.str("task"))?
-	expect first.len() == again.len()
-	Ok({})
-}
-
-## `Sqlite.Value` is the binding type: `Null`, `Real(F64)`, `Integer(I64)`,
-## `String(Str)`, `Bytes(List(U8))`. A binding pairs it with the `:name` the
-## query uses, colon included.
-bindings : List(Sqlite.Binding)
-bindings = [
-	{ name: ":id", value: Integer(7) },
-	{ name: ":label", value: String("urgent") },
-	{ name: ":score", value: Real(0.5) },
-	{ name: ":blob", value: Bytes([1, 2, 3]) },
-	{ name: ":nothing", value: Null },
-]
-
-## Failures are `SqliteErr(ErrCode, Str)` for the database's own errors and
-## `NoSuchField(Str)` when a decoder names a column the query did not select.
-explain : Sqlite.DecodeErr -> Str
-explain = |err|
-	match err {
-		NoSuchField(name) => "the query returned no column named ${name}"
-		SqliteErr(code, message) => "${Str.inspect(code)}: ${message}"
-	}
-
-expect explain(NoSuchField("task")) == "the query returned no column named task"

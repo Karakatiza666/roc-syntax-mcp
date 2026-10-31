@@ -45,7 +45,7 @@ package, with its own license and its own notices.
 |---|---|
 | `plugins/roc-ray/` | UPL-1.0, © 2024 Luke Boswell and subsequent authors |
 | `plugins/joy/` | Apache-2.0, © 2024 Niclas Åhdén |
-| `plugins/weaver/` | Vendors source that upstream has not licensed yet. See [`plugins/weaver/LICENSE`](plugins/weaver/LICENSE) and [`LICENSES/LicenseRef-weaver-no-license.txt`](LICENSES/LicenseRef-weaver-no-license.txt) |
+| `plugins/weaver/` | UPL-1.0, © 2026 Luke Boswell and subsequent authors. Retains the MIT notice of the project that weaver forks, © 2024 Sam Mohr. See [`plugins/weaver/LICENSE`](plugins/weaver/LICENSE) |
 
 This package does not bundle its two runtime dependencies,
 `@modelcontextprotocol/server` and `zod`. Your package manager installs them,

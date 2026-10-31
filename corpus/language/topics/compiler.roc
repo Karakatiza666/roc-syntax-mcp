@@ -3,7 +3,7 @@
 # you recall from the old compiler (`--optimize`, `--linker`, `roc dev`) do not
 # exist here.
 #
-# Measured on nightly-2026-10-11-7d256b9.
+# Measured on nightly-2026-10-31-f7bef6b, with basic-cli 0.26.0.
 
 # ---------------------------------------------------------------------------
 # The loop: check, test, run, build
@@ -11,9 +11,13 @@
 #
 #   roc check app.roc         type-check only. Fastest. Use after each edit
 #   roc test app.roc          run the top-level `expect`s, as below
-#   roc run app.roc -- a b    compile and run, passing `a b` to the app
+#   roc run app.roc a b       compile and run, passing `a b` to the app
 #   roc build app.roc         write an optimized binary, `app`, to the current
 #                             directory. `--output=<path>` puts it elsewhere
+#
+# Every word after the `.roc` file goes to the app exactly as written, so put
+# `roc` flags before the file: `roc --opt=interpreter app.roc a`. A `--`
+# after the file is not a separator. The app receives it as an argument.
 #
 # The folder of `--output` must exist. `--output=dist/app` without `dist/`
 # fails in the linker: "cannot open output file dist/app".
@@ -49,6 +53,8 @@ expect [1, 2, 3].len() == 3
 #   roc run          clean   errors, or a `dbg` ran    warnings, even if the
 #                            even if the app succeeded app succeeded
 #
+# The `dbg` exit is basic-cli's: its host exits 1 after any `dbg`, and so does
+# a built binary. A script with no app header (the Echo platform) exits 0.
 # So a non-zero `roc run` does not mean the app failed. Read the output. Remove
 # every `dbg` and fix every warning, and the exit code is the app's own.
 #
@@ -88,9 +94,10 @@ expect [1, 2, 3].len() == 3
 #
 # The link uses no toolchain on the build machine. The `platforms` topic says
 # which files a target must list. From Linux, the x64 and arm64 Linux targets, x64freebsd, x64netbsd and wasm32 link
-# with no other tools. x64win on basic-cli 0.25.0 fails with "undefined symbol:
-# mainCRTStartup", because the platform lists no startup object. x64mac and
-# arm64mac fail with "library not found for -lSystem", unless the platform
+# with no other tools. So do x64win and x64mac on basic-cli 0.26.0, because it
+# ships their startup objects and libraries. A Windows target whose platform
+# lists no startup object fails with "undefined symbol: mainCRTStartup". A
+# macOS target fails with "library not found for -lSystem" unless the platform
 # ships the macOS libraries.
 
 # ---------------------------------------------------------------------------
@@ -112,7 +119,7 @@ expect [1, 2, 3].len() == 3
 # Any app, package or platform header can pin the compiler with the reserved
 # `roc` entry:
 #
-#   app [main!] { pf: platform "../basic-cli/main.roc", roc: "nightly-2026-10-06-c34079d" }
+#   app [main!] { pf: platform "../basic-cli/main.roc", roc: "nightly-2026-10-12-2664a27" }
 #
 # The value is a string that `roc version` prints: a nightly tag or a release
 # such as "0.1.0". Any other value is "invalid roc version", and so is a

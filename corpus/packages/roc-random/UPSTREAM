@@ -2,12 +2,12 @@
 # this directory.
 
 repo     https://github.com/kili-ilo/roc-random
-tag      0.9.2
-commit   6d16260
-tarball  2ZXLX8WRqrosGu1V3VL5aXqgtfTRvJmjFPx8a26ecVmc.tar.zst
-compiler nightly-2026-10-09-258ab27
+tag      0.9.3
+commit   8749f61
+tarball  HoULZB8QzktiNPYSe9myzy9JQzm1nMbjDPVWoA63QpVf.tar.zst
+compiler nightly-2026-10-12-2664a27
 
-# This file stays at the release that roc-ray 0.10.0 pins. roc-ray's exposed
+# This file stays at the release that roc-ray 0.11.1 pins. roc-ray's exposed
 # Random module uses this package's State, Generator and Generation types, so
 # an app that passes them across that platform boundary must pin this exact
 # release. Change the pin only when the platforms that pin this package change

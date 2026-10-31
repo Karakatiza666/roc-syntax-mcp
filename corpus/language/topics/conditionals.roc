@@ -4,22 +4,26 @@
 # Roc has no truthiness. `if` accepts only `Bool` values.
 # @rejects type mismatch
 # any_items : List(U64) -> U64
-# any_items = |items| if items.len() 1 else 0
+# any_items = |items| if (items.len()) 1 else 0
 #
 # `else` is required whenever the `if` produces a value, and optional when the
 # body evaluates to `{}`. See `log_if_empty!` below.
 # @rejects type mismatch
 # size_label : U64 -> Str
-# size_label = |n| if n > 9 "big"
+# size_label = |n| if (n > 9) "big"
 
 if_demo : U64 -> Str
 if_demo = |num| {
-	# One-line if/else.
-	one_line_if = if num == 1 "One" else "NotOne"
+	# One-line if/else. A branch that is not a block needs no braces. Put the
+	# condition in parentheses then, as `roc fmt` does, because `if n < 0 -n`
+	# reads like a subtraction. The parentheses change only the formatting.
+	# Before a `{` branch the brace marks the end of the condition, so leave
+	# them out.
+	one_line_if = if (num == 1) "One" else "NotOne"
 
 	# Multi-line if/else (still a single expression).
 	two_line_if =
-		if num == 2
+		if (num == 2)
 			"Two"
 		else
 			"NotTwo"
@@ -33,9 +37,9 @@ if_demo = |num| {
 		}
 
 	# `else if` chains for multiple cases.
-	if num == 3
+	if (num == 3)
 		"Three"
-	else if num == 4
+	else if (num == 4)
 		"Four"
 	else
 		one_line_if.concat(two_line_if).concat(with_curlies)
@@ -53,10 +57,10 @@ log_if_empty! = |name| {
 }
 
 # `and` and `or` are short-circuiting, and are themselves defined in terms of
-# `if`: `a() or b()` is `if a() True else b()`, and `a() and b()` is
-# `if a() b() else False`.
+# `if`: `a() or b()` is `if (a()) True else b()`, and `a() and b()` is
+# `if (a()) b() else False`.
 #
 # Roc has no `&&` or `||`, because `|` introduces a function and `||` already
 # means a function that takes no arguments.
 guard : U64 -> Str
-guard = |n| if n > 0 and n < 10 "single digit" else "out of range"
+guard = |n| if (n > 0 and n < 10) "single digit" else "out of range"

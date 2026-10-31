@@ -16,7 +16,7 @@
 # corpus/language/langref/. It exits 1 if not. src/langref.test.ts checks the
 # same map against the parser in src/langref.ts, so this check also proves that
 # the two parsers split the pages into the same sections.
-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.25.0/CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA.tar.zst" }
+app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst" }
 
 import pf.Cmd
 import pf.Env
@@ -35,9 +35,21 @@ langref_dir = "corpus/language/langref"
 map_file = "corpus/language/langref-map.txt"
 upstream_file = "corpus/language/UPSTREAM"
 
+## The arguments after the script path. Nightlies from 2026-10-31 on pass every
+## argument to the app as written, so a `--` before them arrives as the first
+## argument. Older nightlies drop it. This accepts both.
+app_args : List(OsStr) -> List(Str)
+app_args = |args| {
+	shown = args.map(OsStr.display)
+	match shown {
+		["--", .. as rest] => rest
+		_ => shown
+	}
+}
+
 main! : List(OsStr) => Try({}, _)
 main! = |args| {
-	match args.map(OsStr.display) {
+	match app_args(args) {
 		["--check-map"] => check_map!()
 		[repo] => diff!(repo, Err(Head))
 		[repo, commit] => diff!(repo, Ok(commit))
@@ -260,7 +272,7 @@ expect parse_map("# comment\nfunctions#tail-calls   functions, effects\n\nnaming
 ## Runs git in the checkout. A non-zero exit is a result, not an error.
 git! : Str, List(Str) => Try({ code : I32, out : Str, err : Str }, _)
 git! = |repo, args| {
-	run = Cmd.new_str("git").args_str(["-C", repo].concat(args)).run!()?
+	run = Cmd.new("git").args(["-C", repo].concat(args).map(OsStr.from_str)).run!()?
 	code = match run.status {
 		Exited(c) => c
 		Signaled(s) => 128 + s

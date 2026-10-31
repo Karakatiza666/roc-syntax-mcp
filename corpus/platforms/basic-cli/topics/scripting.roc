@@ -16,8 +16,8 @@
 ## `cli_terminal`). This topic connects them: from the arguments to the exit
 ## code, and the formats that a script reads and writes.
 app [main!] {
-	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.25.0/CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA.tar.zst",
-	parser: "https://github.com/lukewilliamboswell/roc-parser/releases/download/2.0.0/7CLzCK6qUz7zmj6nvBxMEFu11HPwQTnCovKiyWzDSLTW.tar.zst",
+	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst",
+	parser: "https://github.com/lukewilliamboswell/roc-parser/releases/download/3.0.0/6xsRdRqenJrAb4wG7HaST4Xh349vD5sHAJDsKTK6E3dr.tar.zst",
 }
 
 import pf.Cmd
@@ -172,12 +172,12 @@ grep_stdin! = |needle| {
 announce_release! : () => Try({}, _)
 announce_release! = || {
 	# A subprocess for a fact that only that program can give. See `cli_command`.
-	tag = Cmd.new("git").args(["describe", "--tags"]).exec_output!()?.stdout_utf8.trim()
+	tag = Cmd.new("git").args(["describe", "--tags"]).capture!()?.trim()
 
 	# A JSON API. The annotation tells the decoder what to build, so it is
 	# required. See `cli_http`.
 	latest : { tag_name : Str }
-	latest = Http.get!("https://api.github.com/repos/roc-lang/roc/releases/latest")?
+	latest = Http.get!("https://api.github.com/repos/roc-lang/roc/releases/latest", {})?
 
 	# Environment variables are OsStr, because an OS does not promise text.
 	# `??` is all you need for "optional with a default".

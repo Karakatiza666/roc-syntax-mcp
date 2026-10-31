@@ -34,7 +34,7 @@
       ]
     },
     {
-      "release": "https://github.com/niclas-ahden/joy-html/releases/download/0.17.0/AcmwFzyfbsf5RALWNdX6cXw1cuuDXt96YfcysNqgFqoG.tar.zst",
+      "release": "https://github.com/niclas-ahden/joy-html/releases/download/0.17.1/AcmwFzyfbsf5RALWNdX6cXw1cuuDXt96YfcysNqgFqoG.tar.zst",
       "description": "The joy-html package: an HTML tree typed by its message, with typed attributes and events, keyed and lazy regions, and rendering to a string for the server.",
       "purpose": "HTML views, for Joy apps and server pages",
       "overview": "html-overview.md",

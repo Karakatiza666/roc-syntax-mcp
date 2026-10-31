@@ -4,32 +4,40 @@
 # diff tag to tag.
 
 repo     https://github.com/lukewilliamboswell/roc-ray
-tag      0.10.0
-platform 5xecDmRJroKT9fnSiYsGdCKEzNWLnRKGtHJ5CxuCnpb9.tar.zst
-# The release's other bundle, DDs5HiQ8vfCk6zFwWshZ9Dyx3avmQqV9EuNkQn4VGmHi.tar.zst,
+tag      0.11.1
+platform 4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst
+# The release's other bundle, 4HTCkB6nkWxGHMP3aMvifD5a9CfyNfVGsD5cEpZURxcf.tar.zst,
 # is the Wayland build of the same platform. Its .roc modules have the same API.
-# Nothing here pins it. There is no types bundle. In 0.10.0 the platform
-# contains the roc-ray-types package of the release candidates, so this plugin
-# has no types/ directory and the manifest has no `packages` entry.
-
-# The nightly every app here was checked under, and the manifest's `compiler`
-# line. It is the release's own "Supported compiler", and the platform bundle's
-# header pins it with a `roc: "nightly-2026-09-27-a3ce7f1"` entry.
+# Nothing here pins it. There is no types bundle. The platform contains the
+# roc-ray-types package of the release candidates, so this plugin has no types/
+# directory and the manifest has no `packages` entry.
 #
-# Because of that pin, this is not the nightly in corpus/language/UPSTREAM. Under
-# nightly-2026-10-04-130536d every app here fails the gate on exactly one
-# diagnostic, a "roc version mismatch" warning pointing at the cached
-# platform's main.roc:66, and the bundle is content-addressed, so nothing in
-# this plugin can drop it. With that one line stripped from a local copy of the
-# bundle (`roc check --replace-dep <bundle url> <copy>/main.roc`), every app
-# here checks clean under 10-04 too. Moving this pin needs a roc-ray release
-# whose bundle pins 10-04 or pins nothing.
-compiler nightly-2026-09-27-a3ce7f1
+# 0.11.1 republishes 0.11.0. The platform is unchanged, and only the examples
+# archive differs: 0.11.0's entries had no file type, and the nightly runner
+# refused the archive. This plugin took its examples from 0.11.1's archive.
+# 0.11.0 bundle: JoBzGMU8iK4WzhkVGUjrDvfev2TTjYPhQfPphEVFeux.tar.zst. This
+# plugin does not pin it.
+
+# The manifest's `compiler` line is the nightly the release says it was
+# "Built and tested with": nightly-2026-10-23-18478ff. The release notes add
+# that the platform names no compiler: neither its bundle header nor any
+# example has a `roc:` entry, so a compiler pin is not part of the release.
+# Every app here was checked under nightly-2026-10-23-18478ff, which is not
+# the nightly in corpus/language/UPSTREAM. Another nightly may check the same
+# apps too, because no entry pins one. At 0.10.0 the pin was a hard
+# requirement (a "roc version mismatch" warning on every app under any other
+# nightly), and that is gone.
+compiler nightly-2026-10-23-18478ff
+
+# The platform's header pins two packages, and neither is vendored here:
+#   roc-lang/http 1.0.0, unchanged since 0.10.0
+#   kili-ilo/roc-random 0.9.3 (HoULZB8QzktiNPYSe9myzy9JQzm1nMbjDPVWoA63QpVf.tar.zst),
+#     up from 0.9.2. corpus/packages/roc-random/ follows this pin.
 
 index.json <- the release bundle's own .roc modules, parsed by
               `roc-syntax-mcp plugin index`. No source is vendored: the
               manifest names the bundle URL, and every app pins the same one
-examples/  <- examples-0.10.0.zip, one directory per example, flattened to
+examples/  <- roc-ray-examples-0.11.1.zip, one directory per example, flattened to
               examples/<name>.roc
 topics/    <- this package's own, not upstream's: programs written against
               this pin and declared in plugin.json so they answer by name
@@ -44,6 +52,8 @@ overview.md <- this package's own. Its setup, permission and shipping advice
 #   snake       the same
 #   top_down    the same
 #   live_plot   statically imports a font file the compiler reads at check time
+#   roc-doom-e1m1  new in 0.11.0: 26 modules and about 8 MB of Freedoom
+#               assets, imported as sibling modules
 # breakout, snake and top_down were single files at 0.10.0-rc3. 0.10.0 split
 # them into modules.
 
@@ -51,15 +61,16 @@ overview.md <- this package's own. Its setup, permission and shipping advice
 #   docs/*.adoc  the RocRay manual. It is AsciiDoc, and this host serves only
 #                Markdown from a `docs` directory, so to bundle it, this
 #                package would have to convert it
-#   roc-ray-manual-0.10.0.*, roc-ray-api-docs-0.10.0.zip  rendered copies of
+#   roc-ray-manual-0.11.1.*, roc-ray-api-docs-0.11.1.zip  rendered copies of
 #                the same manual and of the API this corpus indexes
 
-# The repin changes every vendored app in one way. It removes the
-# `roc: "nightly-2026-09-27-a3ce7f1"` entry from each header, single-line and
-# multi-line alike. The entry names the same nightly as the manifest, so it is
-# redundant here, and under any other nightly it would add a second mismatch
-# warning per file. The release zip already pins the 0.10.0 bundle URL, so
-# the pin needs no other change.
+# The repin changes no vendored app. 0.11.0 dropped the `roc:` entry from every
+# example header and the release zip already pins the 0.11.1 bundle URL, so
+# examples/ is a flat copy of each example's main.roc. (At 0.10.0 the repin
+# removed `roc: "nightly-2026-09-27-a3ce7f1"` from each header.) The topics,
+# scaffold and verify/ were reformatted with `roc fmt` under the compiler line
+# above, as upstream's examples are: it parenthesizes the condition of a
+# braceless `if` and expands a call whose last argument is a multi-line closure.
 #
 # After the repin, apply the patch series to examples/:
 #   patch -p1 < patches/0001-load-assets-beside-the-executable.patch
@@ -73,6 +84,7 @@ overview.md <- this package's own. Its setup, permission and shipping advice
 
 # Parsed counts at this pin, for the next repin to diff against. These are what
 # `plugin validate` reports on its `corpus` line:
-# 1260 items in 99 modules: 301 host, 37 private, 922 public.
+# 1346 items in 101 modules: 302 host, 45 private, 999 public.
+# At 0.10.0: 1260 items in 99 modules: 301 host, 37 private, 922 public.
 # At 0.10.0-rc3, with the types package: 1357 items in 112 modules: 276 host,
 # 36 private, 1045 public.

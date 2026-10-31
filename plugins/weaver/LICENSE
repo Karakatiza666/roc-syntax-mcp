@@ -1,25 +1,49 @@
-This package holds files under two terms. The file decides which one applies.
+This package is UPL-1.0 throughout. The file decides whose copyright applies.
 
   index.json, examples/   Upstream's text: the signatures and doc comments of
-                          lukewilliamboswell/weaver 0.9.0, and its examples.
-                          Copyright Luke Boswell, Sam Mohr and subsequent
-                          weaver authors. No license is granted for these
-                          files. See "Upstream's files" below.
+                          lukewilliamboswell/weaver 0.10.0, and its examples.
+                          Copyright 2026 Luke Boswell and subsequent authors,
+                          UPL-1.0. For the code that originates in the project
+                          that weaver forks, the MIT notice below also applies.
 
   Every other file        Ours: the overview, the topics and the verify
                           programs. Copyright 2026 Heorhii Bulakh and
-                          subsequent roc-syntax-mcp authors. UPL-1.0, full
-                          text below.
+                          subsequent roc-syntax-mcp authors. UPL-1.0.
 
 
-Upstream's files
-----------------
+Upstream's license
+------------------
 
-lukewilliamboswell/weaver ships no LICENSE file at tag 0.9.0, and neither does
-the repository it forks, smores56/weaver. These files are published in the
-expectation that upstream adopts UPL-1.0, the license of the rest of the Roc
-ecosystem. If you are one of weaver's authors and want them removed, open an
-issue at https://github.com/Karakatiza666/roc-syntax-mcp/issues.
+lukewilliamboswell/weaver is licensed under UPL-1.0 from 0.9.1, and 0.10.0
+ships a LICENSE file. Its notice reads:
+
+  Copyright (c) 2026 Luke Boswell and subsequent authors
+
+weaver is a fork of https://github.com/smores56/weaver, which is distributed
+under the MIT License. Its notice is retained for the code that originates
+there:
+
+  MIT License
+
+  Copyright (c) 2024 Sam Mohr
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
 
 
 The Universal Permissive License (UPL), Version 1.0

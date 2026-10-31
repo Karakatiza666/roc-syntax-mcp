@@ -272,7 +272,7 @@ export function detectAt(root: string, now: number, catalog: Catalog): Detection
 /**
  * The note that the server appends once per root per TTL. A detected pin that
  * differs from the bundled release is common. For example, every example in the
- * upstream 0.17.0 tag pins 0.16.0.
+ * upstream 0.19.0 tag pins 0.17.0.
  */
 export function mismatchNote(d: Detection, catalog: Catalog): string | null {
   if (d.relation === "unrecognized") {

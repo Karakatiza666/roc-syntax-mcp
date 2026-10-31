@@ -1,12 +1,15 @@
 ## The HTTP client: effects from the platform's `Http`, types from the
 ## `roc-lang/http` package, so an app that sends requests declares both.
 app [main!] {
-	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.25.0/CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA.tar.zst",
+	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst",
 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
 }
 
+import pf.Duration
+import pf.File
 import pf.Http
 import pf.OsStr
+import pf.Path
 import pf.Stdout
 import pf.Url
 import http.Header
@@ -22,8 +25,9 @@ main! = |_args| demo!()
 ## an annotated `main!`.
 demo! : () => Try({}, _)
 demo! = || {
-	# The shortest path: a GET whose body you want as text.
-	body = Http.get_utf8!("https://example.com")?
+	# The shortest path: a GET whose body you want as text. Every sender takes
+	# trailing options. `{}` returns the first response, as it is.
+	body = Http.get_utf8!("https://example.com", {})?
 	Stdout.line!("${body.count_utf8_bytes().to_str()} bytes")?
 
 	# The general path: build a Request, send it, read the Response.
@@ -31,13 +35,13 @@ demo! = || {
 		.with_uri("https://example.com/api")
 		.add_header("accept", "application/json")
 		.with_timeout(TimeoutMilliseconds(5_000))
-	res = Http.send!(req)?
+	res = Http.send!(req, {})?
 	Stdout.line!("status ${Response.status(res).to_str()}")?
 
 	# JSON in one step. The annotation tells the decoder what to build, so it
 	# is required.
 	user : { name : Str, id : U64 }
-	user = Http.get!("https://example.com/user/1")?
+	user = Http.get!("https://example.com/user/1", {})?
 	Stdout.line!("${user.name} is ${user.id.to_str()}")?
 
 	# JSON out. `send_json!` encodes the second argument as the body and returns
@@ -45,11 +49,33 @@ demo! = || {
 	res2 = Http.send_json!(
 		Request.from_method(POST).with_uri("https://example.com/users"),
 		{ name: "ada" },
+		{},
 	)?
 	created : { id : U64 }
 	created = Http.decode_json_response(res2)?
 	Stdout.line!("created ${created.id.to_str()}")?
 
+	Ok({})
+}
+
+## Redirects are opt-in, and the default budget is zero. A positive budget
+## follows 301, 302, 303, 307 and 308. Running out of it is
+## `HttpErr(RedirectLimitExceeded(n))`.
+follow! : Request => Try(Response, _)
+follow! = |req| Http.send!(req, { max_redirects: 5 })
+
+## For a body that does not fit in memory, `send_streaming!` returns as soon as
+## the status and headers arrive, and `chunks()` is the body as a stream. You
+## see the status before any of the body is read, so a 404's body is never
+## downloaded. `idle_timeout` bounds each single wait, not the whole download.
+download! : Url, Path => Try({}, _)
+download! = |url, destination| {
+	request = Request.from_method(GET).with_uri(url.to_str())
+	response = Http.send_streaming!(request, { idle_timeout: After(Duration.seconds(5)) })?
+	if response.status() != 200 {
+		return Err(UnexpectedStatus(response.status()))
+	}
+	File.with_writer!(destination, Truncate, {}, |writer| writer.write_stream!(response.chunks()))?
 	Ok({})
 }
 

@@ -1,6 +1,6 @@
 ## A RocRay game in the browser: one platform-free core, two runners.
 ##
-## roc-ray 0.10.0 has no wasm32 target. `--target=wasm32` fails with
+## roc-ray 0.11.1 has no wasm32 target. `--target=wasm32` fails with
 ## "unsupported target", and upstream closed the web target as not planned
 ## (roc-ray issue #154). So the rules and the picture of the game go in a
 ## module that imports no platform. Two runners drive that module:
@@ -18,8 +18,9 @@
 ## `Game.roc`, inside `Game :: [].{ ... }`. Other files then write
 ## `Game.Shape`. The wasm side is in comments at the end, because no app can
 ## import two platforms. It was built and run with nightly
-## `nightly-2026-09-27-a3ce7f1`, the nightly that roc-ray 0.10.0 pins.
-app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.10.0/5xecDmRJroKT9fnSiYsGdCKEzNWLnRKGtHJ5CxuCnpb9.tar.zst" }
+## `nightly-2026-09-27-a3ce7f1`, the nightly that roc-ray 0.10.0 pinned. The
+## roc-ray runner here checks under the nightly of roc-ray 0.11.1.
+app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
 
 import rr.App
 import rr.Color
@@ -100,15 +101,15 @@ ball_game = {
 	init: { x: 320, y: 180, lit: Bool.False },
 	advance: |ball, input, dt| {
 		speed = 200 * dt
-		dx = (if input.key_down(KeyRight) speed else 0) - (if input.key_down(KeyLeft) speed else 0)
-		dy = (if input.key_down(KeyDown) speed else 0) - (if input.key_down(KeyUp) speed else 0)
-		lit = if input.key_pressed(KeySpace) !ball.lit else ball.lit
+		dx = (if (input.key_down(KeyRight)) speed else 0) - (if (input.key_down(KeyLeft)) speed else 0)
+		dy = (if (input.key_down(KeyDown)) speed else 0) - (if (input.key_down(KeyUp)) speed else 0)
+		lit = if (input.key_pressed(KeySpace)) !ball.lit else ball.lit
 		{ x: ball.x + dx, y: ball.y + dy, lit }
 	},
 	frame: |ball| [
 		Rect({ x: 0, y: 0, width: 640, height: 360, rgba: 0x101820ff }),
 		Poly({ points: [{ x: 40, y: 320 }, { x: 600, y: 320 }, { x: 320, y: 300 }], rgba: 0x27ae60ff }),
-		Disc({ x: ball.x, y: ball.y, radius: 20, rgba: if ball.lit 0xf2c94cff else 0x2f80edff }),
+		Disc({ x: ball.x, y: ball.y, radius: 20, rgba: if (ball.lit) 0xf2c94cff else 0x2f80edff }),
 	],
 }
 
@@ -158,7 +159,7 @@ update! : Model, App.Input(Msg), App.Io => Try(Model, [Exit(I64)])
 update! = |model, input, _io| {
 	cap = max_steps / I32.to_f32(ball_game.fps)
 	owed = model.owed + input.time.elapsed_seconds
-	Ok(catch_up(ball_game, model.game, ray_input(input.devices), if owed > cap cap else owed))
+	Ok(catch_up(ball_game, model.game, ray_input(input.devices), if (owed > cap) cap else owed))
 }
 
 ## `Keys.Key` is nominal and `Key` is structural, so the runner pairs them
@@ -172,8 +173,8 @@ ray_input = |devices| {
 		key_pairs,
 		{ held: 0, struck: 0 },
 		|acc, (key, ray_key)| {
-			held = if devices.key_down(ray_key) U32.bitwise_or(acc.held, Input.bit(key)) else acc.held
-			struck = if devices.key_pressed(ray_key) U32.bitwise_or(acc.struck, Input.bit(key)) else acc.struck
+			held = if (devices.key_down(ray_key)) U32.bitwise_or(acc.held, Input.bit(key)) else acc.held
+			struck = if (devices.key_pressed(ray_key)) U32.bitwise_or(acc.struck, Input.bit(key)) else acc.struck
 			{ held, struck }
 		},
 	)

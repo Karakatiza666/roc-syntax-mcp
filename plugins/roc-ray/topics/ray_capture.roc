@@ -29,7 +29,7 @@
 ##
 ##   roc main.roc -- --record                                # writes captures/demo.webm
 ##   roc main.roc -- --check --host-hidden --host-frames=30  # exit 0 if the pixels are correct
-app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.10.0/5xecDmRJroKT9fnSiYsGdCKEzNWLnRKGtHJ5CxuCnpb9.tar.zst" }
+app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
 
 import rr.App
 import rr.Capture
@@ -171,7 +171,7 @@ update! = |model, input, io| {
 			Err(_) => Capture.pixel_at!(Screen, { x: 8, y: 8 })
 		}
 
-	next = { ..model, shot: if retry Waiting else shot, export, pixel }
+	next = { ..model, shot: if (retry) Waiting else shot, export, pixel }
 
 	## At `max_frames` the host writes the file, but the app does not exit.
 	## `Finished` stays in `input.capture` until the app exits. A failed
@@ -205,7 +205,7 @@ check! = |model, cycle| {
 
 		## The cycle limit of `--host-frames` ends the run with exit code 0, so
 		## a check that never got its results must fail by itself.
-		_ => if cycle >= 20 Err(Exit(4)) else Ok(model)
+		_ => if (cycle >= 20) Err(Exit(4)) else Ok(model)
 	}
 }
 

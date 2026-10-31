@@ -23,9 +23,9 @@ if ! command -v claude >/dev/null; then
 fi
 
 PLATFORM_URL_BASE="https://github.com/roc-lang/basic-webserver/releases/download"
-TARBALL="AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst"
+TARBALL="4KBAoiBazDfi9UF6e3BYKwon6rA8mnx3dbLMLKFzdEMw.tar.zst"
 CLI_URL_BASE="https://github.com/roc-lang/basic-cli/releases/download"
-CLI_TARBALL="CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA.tar.zst"
+CLI_TARBALL="GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst"
 
 # The wrapper writes the stderr of the server to $ROC_MCP_LOG. Without the
 # wrapper, the claude CLI writes that stderr into its own debug log.
@@ -86,9 +86,9 @@ run_case pinned "$WORK/pinned" "Detected basic-webserver 0\.15\.0 from main\.roc
 # 2. The server starts in a subdirectory. Detection finds the app only if it
 # searches the parent directories.
 mkdir -p "$WORK/nested/.git" "$WORK/nested/src"
-app_header 0.17.0 > "$WORK/nested/main.roc"
+app_header 0.19.0 > "$WORK/nested/main.roc"
 printf 'module [x]\n\nx = 1\n' > "$WORK/nested/src/helper.roc"
-run_case nested "$WORK/nested/src" "Detected basic-webserver 0\.17\.0"
+run_case nested "$WORK/nested/src" "Detected basic-webserver 0\.19\.0"
 
 # 3. No app header anywhere, so the working set is only language and builtin.
 mkdir -p "$WORK/plain/.git"
@@ -98,14 +98,14 @@ run_case plain "$WORK/plain" "No platform detected"
 # 4. A second platform. Detection selects the corpus as well as the version, so
 # this case checks that it selects basic-cli and not basic-webserver.
 mkdir -p "$WORK/cli/.git"
-cli_app_header 0.25.0 > "$WORK/cli/main.roc"
-run_case cli "$WORK/cli" "Detected basic-cli 0\.25\.0 from main\.roc"
+cli_app_header 0.26.0 > "$WORK/cli/main.roc"
+run_case cli "$WORK/cli" "Detected basic-cli 0\.26\.0 from main\.roc"
 
 # 5. A package that the app pins and the active platform does not declare. The
 # app header decides the namespaces, so the server must report the extra
 # package through a real client, marked as having no provider.
 mkdir -p "$WORK/apppin/.git"
-app_header_with_pin 0.17.0 \
+app_header_with_pin 0.19.0 \
 	'json: "https://github.com/example/json/releases/download/2.1.0/AAAA.tar.br",' \
 	> "$WORK/apppin/main.roc"
 run_case apppin "$WORK/apppin" "Also pinned: example/json 2\.1\.0 \(no provider\)"

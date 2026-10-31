@@ -14,9 +14,13 @@ platform 2B3sC6U2dWkVUK2VY2gJS5Wej9YCDo3ZYq2e7tMWUCNp.tar.zst
 # nightly below: both bundles fail on "redundant expose".
 
 repo     https://github.com/niclas-ahden/joy-html
-tag      0.17.0
-commit   e2c39ecdeb89072c73a0ddd3e85c482f7696f6f3
+tag      0.17.1
+commit   6c60aa3f9bc44a09027f77df8d909d20fc291404
 package  AcmwFzyfbsf5RALWNdX6cXw1cuuDXt96YfcysNqgFqoG.tar.zst
+# 0.17.1 differs from 0.17.0 in its README, flake.nix and flake.lock only (a
+# Roc bump of the nix build). The package tarball has the same hash, so the
+# Html type is identical. The joy 0.34.0 platform header still names the 0.17.0
+# URL for this same tarball; 0.17.1 is the latest release of the package.
 # The release that the joy 0.34.0 platform header pins. The loader refuses this
 # plugin if the two pins are different, because an app's `render` returns this
 # package's Html type, and a different release has a different Html type.
@@ -45,4 +49,4 @@ joy-overview.md, html-overview.md <- this package's own. Every Roc block on
 # The repin changes one line in every vendored example: the platform pin
 # "../platform/main.roc" ("../../platform/main.roc" for todomvc/app.roc) becomes
 # the release URL above. Nothing else changes, because
-# the examples already pin joy-html 0.17.0 by URL.
+# the examples already pin joy-html 0.17.1 by URL.

@@ -6,6 +6,12 @@
 
 README                                                      skip: work-in-progress banner and a pointer to the tutorial
 README#outline                                              skip: table of contents of the langref, no rule for code
+README#basics                                               skip: part of the table of contents, no rule for code
+README#control-flow                                         skip: part of the table of contents, no rule for code
+README#types                                                skip: part of the table of contents, no rule for code
+README#collections                                          skip: part of the table of contents, no rule for code
+README#program-structure                                    skip: part of the table of contents, no rule for code
+README#advanced                                             skip: part of the table of contents, no rule for code
 
 comments-and-docs                                           comments
 comments-and-docs#single-line-comments                      comments
@@ -75,6 +81,7 @@ if-else                                                     conditionals
 if-else#if-and-else                                         conditionals
 if-else#bool                                                conditionals, pattern_matching
 if-else#else-if                                             conditionals
+if-else#branches-without-curly-braces                       conditionals
 if-else#if-without-else                                     conditionals
 if-else#and-or                                              conditionals, operators
 
