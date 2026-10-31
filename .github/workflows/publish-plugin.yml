@@ -89,12 +89,18 @@ jobs:
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "$name@$version as $tag"
 
-      - name: Read the plugin's nightly
+      # A program of the plugin that pins a bundled platform release, such as
+      # joy's html_ssr on basic-webserver, is checked with that release's
+      # nightly, so the repo root needs those nightlies too.
+      - name: Read the plugin's nightlies
         id: nightly
-        run: echo "tag=$(node -p "require('./$DIR/plugin.json').compiler")" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "tag=$(node -p "require('./$DIR/plugin.json').compiler")" >> "$GITHUB_OUTPUT"
+          { echo "more<<EOF"; node scripts/nightlies.mjs "$DIR" | cut -d'|' -f2 | sort -u; echo "EOF"; } >> "$GITHUB_OUTPUT"
       - uses: ./.github/actions/roc-nightly
         with:
           tag: ${{ steps.nightly.outputs.tag }}
+          more: ${{ steps.nightly.outputs.more }}
       - name: plugin validate
         run: node bin/roc-syntax-mcp.js plugin validate "$DIR"
 
