@@ -4,7 +4,7 @@
 ## and press Escape to quit. This example introduces the three app functions:
 ## `init!` creates the starting state, `update!` responds to each `Input`, and
 ## `render!` draws the current state into a `Frame`.
-app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.10.0/5xecDmRJroKT9fnSiYsGdCKEzNWLnRKGtHJ5CxuCnpb9.tar.zst" }
+app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
 
 import rr.App
 import rr.Color
@@ -81,7 +81,7 @@ render! = |model, frame| {
 	center_x = size.width * 0.5
 	panel = { x: center_x - 280, y: size.height * 0.5 - 150, width: 560, height: 300 }
 
-	accent = if model.accent_on Color.from_hex_rgb(0xf94144) else Color.from_hex_rgb(0x2f80ed)
+	accent = if (model.accent_on) Color.from_hex_rgb(0xf94144) else Color.from_hex_rgb(0x2f80ed)
 	# One slow sine drives every moving part, so the scene breathes together.
 	pulse = 0.5 + 0.5 * F32.sin(model.elapsed * 1.6)
 

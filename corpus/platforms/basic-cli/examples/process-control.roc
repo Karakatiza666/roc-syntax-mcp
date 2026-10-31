@@ -1,8 +1,9 @@
 ## Run a build command with live output and a five-minute deadline.
 ## Usage: roc process-control.roc -- cargo build --release
-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.25.0/CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA.tar.zst" }
+app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst" }
 
 import pf.Cmd
+import pf.Duration
 import pf.OsStr
 import pf.Stderr
 import pf.Stdout
@@ -20,16 +21,25 @@ main! = |args| {
 		.stdin(Null)
 		.stdout(Tee)
 		.stderr(Tee)
-		.timeout_ms(300_000)
-		.manage_tree(Bool.True)
-		.spawn!() ? |err| StartFailed(err)
+		.timeout(Duration.minutes(5))
+		.manage_tree(True)
+		.spawn!()?
 
-	pid = child.pid!() ? |err| ProcessFailed(err)
-	Stdout.line!("Running ${OsStr.display(program)} (pid ${pid.to_str()})")?
+	Stdout.line!("Running ${OsStr.display(program)} (pid ${child.pid().to_str()})")?
 
 	# Both streams are drained concurrently. Tee also keeps a bounded capture.
 	# The deadline terminates the managed process tree if the build gets stuck.
-	output = child.wait!() ? |err| BuildInterrupted(err)
+	output = match child.wait!() {
+		Ok(finished) => finished
+		Err(CmdErr(TimedOut(_))) => {
+			Stderr.line!("Build timed out after five minutes")?
+			return Err(Exit(124))
+		}
+		Err(other) => {
+			return Err(other)
+		}
+	}
+
 	match output.status {
 		Exited(0) => Stdout.line!("Build completed successfully")
 		status => {

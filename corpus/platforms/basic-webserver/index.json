@@ -1,8 +1,8 @@
 {
  "format": 1,
  "releases": {
-  "AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT": {
-   "url": "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+  "4KBAoiBazDfi9UF6e3BYKwon6rA8mnx3dbLMLKFzdEMw": {
+   "url": "https://github.com/roc-lang/basic-webserver/releases/download/0.19.0/4KBAoiBazDfi9UF6e3BYKwon6rA8mnx3dbLMLKFzdEMw.tar.zst",
    "snapshot": {
     "kind": "platform",
     "exposes": [
@@ -2852,7 +2852,7 @@
         "name": "from_interpolation",
         "modulePath": "OsStr",
         "fullName": "OsStr.from_interpolation",
-        "signature": "Str, Iter((Str, Str)) -> OsStr",
+        "signature": "List(Str) -> Try((List(Str) -> OsStr), [InvalidInterpolation(Str)])",
         "docs": "Build a UTF-8 OS string from an interpolated string literal.",
         "line": 58
        },
@@ -3250,7 +3250,7 @@
         "name": "from_interpolation",
         "modulePath": "Path",
         "fullName": "Path.from_interpolation",
-        "signature": "Str, Iter((Str, Str)) -> Path",
+        "signature": "List(Str) -> Try((List(Str) -> Path), [InvalidInterpolation(Str)])",
         "docs": "Create a UTF-8 path from an interpolated string literal.\nThis performs textual concatenation; use [join] for path-component joining.",
         "line": 204
        },
@@ -5806,22 +5806,22 @@
        {
         "kind": "type",
         "tier": "public",
-        "name": "Stream",
+        "name": "Connection",
         "modulePath": "Tcp",
-        "fullName": "Tcp.Stream",
+        "fullName": "Tcp.Connection",
         "signature": "{ host : Host.TcpStream }",
         "docs": "Represents a TCP stream.\n\nThe connection is automatically closed when the last reference to the\nstream is dropped. The host synchronizes stream access, so it is safe to\nretain in application context. A concurrent operation returns\n`TcpReadErr(StreamBusy)` or `TcpWriteErr(StreamBusy)`.",
         "line": 16,
         "decl": "::",
-        "head": "Stream"
+        "head": "Connection"
        },
        {
         "kind": "value",
         "tier": "public",
         "name": "to_inspect",
-        "modulePath": "Tcp.Stream",
-        "fullName": "Tcp.Stream.to_inspect",
-        "signature": "Stream -> Str",
+        "modulePath": "Tcp.Connection",
+        "fullName": "Tcp.Connection.to_inspect",
+        "signature": "Connection -> Str",
         "docs": "Render the stream without exposing its host handle.",
         "line": 19
        },
@@ -5829,9 +5829,9 @@
         "kind": "value",
         "tier": "public",
         "name": "read_up_to!",
-        "modulePath": "Tcp.Stream",
-        "fullName": "Tcp.Stream.read_up_to!",
-        "signature": "Stream, U64 => Try(List(U8), _)",
+        "modulePath": "Tcp.Connection",
+        "fullName": "Tcp.Connection.read_up_to!",
+        "signature": "Connection, U64 => Try(List(U8), _)",
         "docs": "Read up to a number of bytes from this TCP stream. Requests larger\nthan 8 MiB return `TcpReadErr(ReadLimitExceeded)`.",
         "line": 24
        },
@@ -5839,9 +5839,9 @@
         "kind": "value",
         "tier": "public",
         "name": "read_exactly!",
-        "modulePath": "Tcp.Stream",
-        "fullName": "Tcp.Stream.read_exactly!",
-        "signature": "Stream, U64 => Try(List(U8), _)",
+        "modulePath": "Tcp.Connection",
+        "fullName": "Tcp.Connection.read_exactly!",
+        "signature": "Connection, U64 => Try(List(U8), _)",
         "docs": "Read an exact number of bytes or fail.\n\n`TcpUnexpectedEOF` is returned if the stream ends before the specified\nnumber of bytes is reached.",
         "line": 33
        },
@@ -5849,9 +5849,9 @@
         "kind": "value",
         "tier": "public",
         "name": "read_until!",
-        "modulePath": "Tcp.Stream",
-        "fullName": "Tcp.Stream.read_until!",
-        "signature": "Stream, U8 => Try(List(U8), _)",
+        "modulePath": "Tcp.Connection",
+        "fullName": "Tcp.Connection.read_until!",
+        "signature": "Connection, U8 => Try(List(U8), _)",
         "docs": "Read until a delimiter or EOF is reached. If found, the delimiter is\nincluded as the last byte.",
         "line": 43
        },
@@ -5859,9 +5859,9 @@
         "kind": "value",
         "tier": "public",
         "name": "read_line!",
-        "modulePath": "Tcp.Stream",
-        "fullName": "Tcp.Stream.read_line!",
-        "signature": "Stream => Try(Str, _)",
+        "modulePath": "Tcp.Connection",
+        "fullName": "Tcp.Connection.read_line!",
+        "signature": "Connection => Try(Str, _)",
         "docs": "Read until a newline (`\\n`, byte 10) or EOF is reached as UTF-8.\nIf found, the newline is included as the last character.",
         "line": 50
        },
@@ -5869,9 +5869,9 @@
         "kind": "value",
         "tier": "public",
         "name": "write!",
-        "modulePath": "Tcp.Stream",
-        "fullName": "Tcp.Stream.write!",
-        "signature": "Stream, List(U8) => Try({}, _)",
+        "modulePath": "Tcp.Connection",
+        "fullName": "Tcp.Connection.write!",
+        "signature": "Connection, List(U8) => Try({}, _)",
         "docs": "Write bytes to this TCP stream.",
         "line": 60
        },
@@ -5879,9 +5879,9 @@
         "kind": "value",
         "tier": "public",
         "name": "write_utf8!",
-        "modulePath": "Tcp.Stream",
-        "fullName": "Tcp.Stream.write_utf8!",
-        "signature": "Stream, Str => Try({}, _)",
+        "modulePath": "Tcp.Connection",
+        "fullName": "Tcp.Connection.write_utf8!",
+        "signature": "Connection, Str => Try({}, _)",
         "docs": "Write a string to this TCP stream, encoded as UTF-8.",
         "line": 66
        },
@@ -5904,7 +5904,7 @@
         "modulePath": "Tcp",
         "fullName": "Tcp.StreamErr",
         "signature": "[\n\t\tStreamNotFound,\n\t\t## Another handler is currently reading from or writing to this stream.\n\t\tStreamBusy,\n\t\t## A materialized read requested or encountered more than 8 MiB.\n\t\tReadLimitExceeded,\n\t\tPermissionDenied,\n\t\tConnectionRefused,\n\t\tConnectionReset,\n\t\tInterrupted,\n\t\tTimedOut,\n\t\tOutOfMemory,\n\t\tBrokenPipe,\n\t\tUnrecognized(Str),\n\t\t..a,\n\t]",
-        "docs": "Represents errors that can occur when performing an effect with a `Stream`.",
+        "docs": "Represents errors that can occur when performing an effect with a `Connection`.",
         "line": 86,
         "decl": ":",
         "head": "StreamErr(a)"

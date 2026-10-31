@@ -1,5 +1,5 @@
 ## Read native command-line arguments without losing non-Unicode data.
-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.25.0/CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA.tar.zst" }
+app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst" }
 
 import pf.OsStr
 import pf.Env
@@ -10,6 +10,11 @@ main! : List(OsStr) => Try({}, _)
 main! = |args| {
 	program_name = Env.program_name!()?
 	Stdout.line!("program name: ${OsStr.display(program_name)}")?
+
+	# A literal is UTF-8 text, and the arguments are native units. `OsStr`
+	# compares by content, so a flag can be looked up by writing it out.
+	verbose = args.contains("--verbose")
+	Stdout.line!("verbose: ${Str.inspect(verbose)}")?
 
 	match args {
 		[first_arg, ..] => {

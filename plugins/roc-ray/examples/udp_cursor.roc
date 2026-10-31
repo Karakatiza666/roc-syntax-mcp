@@ -4,7 +4,7 @@
 ##
 ## This example shows immediate UDP sends, a Task for receiving data that may
 ## wait, and Messages that carry received batches back to `update!`.
-app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.10.0/5xecDmRJroKT9fnSiYsGdCKEzNWLnRKGtHJ5CxuCnpb9.tar.zst" }
+app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
 
 import rr.App
 import rr.Color
@@ -122,8 +122,8 @@ apply_message = |model, message|
 							received: model.received + List.len(datagrams),
 						}
 					}
-				}
-		}
+			}
+	}
 
 ## Two big-endian `U16`s. Negative or off-screen coordinates clamp rather than
 ## wrap, so a pointer dragged off the window edge stops at it.
@@ -215,7 +215,7 @@ render! = |model, frame| {
 	frame.text_at!({ pos: { x: 232, y: 126 }, text: "peer", size: 13, color: faint })
 	frame.text_at!({ pos: { x: 232, y: 144 }, text: "127.0.0.1:${U16.to_str(model.peer.port)}", size: 17, color: accent_peer })
 	frame.text_at!({ pos: { x: 64, y: 178 }, text: "${U64.to_str(model.received)} received", size: 14, color: muted })
-	frame.text_at!({ pos: { x: 232, y: 178 }, text: "${U64.to_str(model.dropped)} not sent", size: 14, color: if model.dropped == 0 muted else accent_bad })
+	frame.text_at!({ pos: { x: 232, y: 178 }, text: "${U64.to_str(model.dropped)} not sent", size: 14, color: if (model.dropped == 0) muted else accent_bad })
 
 	model.hint.draw!(frame, { pos: { x: 44, y: size.height - 40 }, color: faint })
 	Ok({})

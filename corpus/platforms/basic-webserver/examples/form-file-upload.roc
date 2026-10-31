@@ -1,8 +1,8 @@
 ## Parses a bounded multipart form upload and previews an uploaded PNG image.
 app [Context, program] {
 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
-	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
-	roc: "nightly-2026-10-04-130536d",
+	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.19.0/4KBAoiBazDfi9UF6e3BYKwon6rA8mnx3dbLMLKFzdEMw.tar.zst",
+	roc: "nightly-2026-10-24-f6c6cfb",
 }
 
 import pf.Server
@@ -39,7 +39,6 @@ upload_form =
 				\\    </form>
 				\\</body>
 				\\</html>
-				,
 			),
 		)
 
@@ -80,7 +79,6 @@ display_uploaded_image! = |req| {
 							\\        <div class="image-container"></div>
 							\\    </body>
 							\\</html>
-							,
 						)
 
 					Ok(
@@ -116,7 +114,7 @@ is_png_upload = |part| {
 
 	Str.contains(disposition, "name=\"fileToUpload\"")
 		and media_type == " image/png"
-			and List.starts_with(part.data, png_signature)
+		and List.starts_with(part.data, png_signature)
 }
 
 text_response : U16, Str -> Response
@@ -169,6 +167,6 @@ base64_byte = |index| base64_alphabet.get(index) ?? 'A'
 expect {
 	base64_encode(Str.to_utf8("")) == ""
 		and base64_encode(Str.to_utf8("f")) == "Zg=="
-			and base64_encode(Str.to_utf8("fo")) == "Zm8="
-				and base64_encode(Str.to_utf8("foo")) == "Zm9v"
+		and base64_encode(Str.to_utf8("fo")) == "Zm8="
+		and base64_encode(Str.to_utf8("foo")) == "Zm9v"
 }

@@ -1,8 +1,8 @@
 {
  "format": 1,
  "releases": {
-  "7j6KBFBEZ8pNMLQHkx9xiwyZ2PmwQPgKNDPUih6gKe77": {
-   "url": "https://github.com/lukewilliamboswell/weaver/releases/download/0.9.0/7j6KBFBEZ8pNMLQHkx9xiwyZ2PmwQPgKNDPUih6gKe77.tar.zst",
+  "7CdYzjBAJmprmnK45oTpmH6BXt76ZASN2Ck5uZQEoWsK": {
+   "url": "https://github.com/lukewilliamboswell/weaver/releases/download/0.10.0/7CdYzjBAJmprmnK45oTpmH6BXt76ZASN2Ck5uZQEoWsK.tar.zst",
    "snapshot": {
     "kind": "package",
     "exposes": [
@@ -19,7 +19,7 @@
     "deps": [
      {
       "alias": "ansi",
-      "url": "https://github.com/lukewilliamboswell/roc-ansi/releases/download/0.13.0/JXLM47L6CzrLXB5HBfqc27VnU6CD4jMm5Mk6dgbbovL.tar.zst"
+      "url": "https://github.com/lukewilliamboswell/roc-ansi/releases/download/0.13.3/BioPdu7WjVhTB2j1HaomKMi8htxsuwqwr79GbXY5nAUf.tar.zst"
      },
      {
       "alias": "path",
@@ -453,7 +453,7 @@
         "fullName": "Builder",
         "signature": "{\n\tparser : ArgParser(data),\n\toptions : List(OptionConfig),\n\tparameters : List(ParameterConfig),\n\tsubcommands : SubcommandsConfig,\n}",
         "docs": "",
-        "line": 18,
+        "line": 19,
         "decl": ":=",
         "head": "Builder(data, from_action, to_action)"
        },
@@ -465,7 +465,7 @@
         "fullName": "Builder.GetOptionsAction",
         "signature": "{ get_options : {} }",
         "docs": "",
-        "line": 24,
+        "line": 25,
         "decl": ":",
         "head": "GetOptionsAction"
        },
@@ -477,7 +477,7 @@
         "fullName": "Builder.GetParamsAction",
         "signature": "{ get_params : {} }",
         "docs": "",
-        "line": 25,
+        "line": 26,
         "decl": ":",
         "head": "GetParamsAction"
        },
@@ -489,7 +489,7 @@
         "fullName": "Builder.CliBuilder",
         "signature": "Builder(data, from_action, to_action)",
         "docs": "",
-        "line": 28,
+        "line": 29,
         "decl": ":",
         "head": "CliBuilder(data, from_action, to_action)"
        },
@@ -501,7 +501,7 @@
         "fullName": "Builder.from_arg_parser",
         "signature": "(List(ParsedArg) -> Try({ data : data, remaining_args : List(ParsedArg) }, ArgExtractErr)) -> CliBuilder(data, from_action, to_action)",
         "docs": "",
-        "line": 30
+        "line": 31
        },
        {
         "kind": "value",
@@ -511,7 +511,7 @@
         "fullName": "Builder.from_full_parser",
         "signature": "ArgParser(data) -> CliBuilder(data, from_action, to_action)",
         "docs": "",
-        "line": 49
+        "line": 50
        },
        {
         "kind": "value",
@@ -521,7 +521,7 @@
         "fullName": "Builder.add_option",
         "signature": "CliBuilder(state, from_action, to_action), OptionConfig -> CliBuilder(state, from_action, to_action)",
         "docs": "",
-        "line": 57
+        "line": 58
        },
        {
         "kind": "value",
@@ -531,7 +531,7 @@
         "fullName": "Builder.add_parameter",
         "signature": "CliBuilder(state, from_action, to_action), ParameterConfig -> CliBuilder(state, from_action, to_action)",
         "docs": "",
-        "line": 65
+        "line": 66
        },
        {
         "kind": "value",
@@ -541,7 +541,7 @@
         "fullName": "Builder.add_subcommands",
         "signature": "CliBuilder(state, from_action, to_action), SubcommandsConfig -> CliBuilder(state, from_action, to_action)",
         "docs": "",
-        "line": 73
+        "line": 74
        },
        {
         "kind": "value",
@@ -551,7 +551,7 @@
         "fullName": "Builder.set_parser",
         "signature": "CliBuilder(state, from_action, to_action), ArgParser(next_state) -> CliBuilder(next_state, from_action, to_action)",
         "docs": "",
-        "line": 81
+        "line": 82
        },
        {
         "kind": "value",
@@ -561,7 +561,7 @@
         "fullName": "Builder.update_parser",
         "signature": "CliBuilder(state, from_action, to_action), ({ data : state, remaining_args : List(ParsedArg) } -> Try({ data : next_state, remaining_args : List(ParsedArg) }, ArgExtractErr)) -> CliBuilder(next_state, from_action, to_action)",
         "docs": "",
-        "line": 89
+        "line": 90
        },
        {
         "kind": "value",
@@ -571,7 +571,7 @@
         "fullName": "Builder.bind_parser",
         "signature": "CliBuilder(state, from_action, to_action), (ArgParserState(state) -> ArgParserResult(ArgParserState(next_state))) -> CliBuilder(next_state, from_action, to_action)",
         "docs": "",
-        "line": 105
+        "line": 106
        },
        {
         "kind": "value",
@@ -581,7 +581,7 @@
         "fullName": "Builder.into_parts",
         "signature": "|{ parser, options, parameters, subcommands }|",
         "docs": "",
-        "line": 125,
+        "line": 126,
         "unannotated": true
        },
        {
@@ -592,7 +592,7 @@
         "fullName": "Builder.map",
         "signature": "CliBuilder(a, from_action, to_action), (a -> b) -> CliBuilder(b, from_action, to_action)",
         "docs": "",
-        "line": 132
+        "line": 133
        },
        {
         "kind": "value",
@@ -602,7 +602,7 @@
         "fullName": "Builder.combine",
         "signature": "CliBuilder(a, action1, action2), CliBuilder(b, action2, action3), (a, b -> c) -> CliBuilder(c, action1, action3)",
         "docs": "",
-        "line": 149
+        "line": 150
        },
        {
         "kind": "value",
@@ -612,7 +612,7 @@
         "fullName": "Builder.flag_was_passed",
         "signature": "OptionConfig, List(ParsedArg) -> Bool",
         "docs": "",
-        "line": 174
+        "line": 194
        },
        {
         "kind": "value",
@@ -622,7 +622,7 @@
         "fullName": "Builder.check_for_help_and_version",
         "signature": "CliBuilder(state, from_action, to_action) -> CliBuilder(state, from_action, to_action)",
         "docs": "",
-        "line": 186
+        "line": 206
        }
       ]
      },
@@ -640,7 +640,7 @@
         "fullName": "Cli.CliParser",
         "signature": "{\n\t\tconfig : CliConfig,\n\t\tparser : List(Path) -> ArgParserResult(state),\n\t\ttext_style : TextStyle,\n\t}",
         "docs": "A parser that interprets command line arguments and returns typed data.",
-        "line": 23,
+        "line": 24,
         "decl": ":",
         "head": "CliParser(state)"
        },
@@ -652,7 +652,7 @@
         "fullName": "Cli.map",
         "signature": "CliBuilder(a, from_action, to_action), (a -> b) -> CliBuilder(b, from_action, to_action)",
         "docs": "Map over the parsed value of a Weaver field.",
-        "line": 30
+        "line": 31
        },
        {
         "kind": "value",
@@ -662,7 +662,7 @@
         "fullName": "Cli.map2",
         "signature": "CliBuilder(a, action1, action2), CliBuilder(b, action2, action3), (a, b -> c) -> CliBuilder(c, action1, action3)",
         "docs": "Combine two CLI builders. This powers current Roc record-builder syntax:\n`{ name: Param.str(...), verbose: Opt.flag(...) }.Cli`.",
-        "line": 36
+        "line": 37
        },
        {
         "kind": "value",
@@ -672,7 +672,7 @@
         "fullName": "Cli.weave",
         "signature": "CliBuilder(a, action1, action2), CliBuilder(b, action2, action3), (a, b -> c) -> CliBuilder(c, action1, action3)",
         "docs": "Alias for `map2` for code that wants a descriptive function name.",
-        "line": 41
+        "line": 42
        },
        {
         "kind": "value",
@@ -682,7 +682,7 @@
         "fullName": "Cli.ensure_all_args_were_parsed",
         "signature": "List(ParsedArg) -> Try({}, ArgExtractErr)",
         "docs": "Fail the parsing process if any arguments are left over after parsing.",
-        "line": 46
+        "line": 47
        },
        {
         "kind": "value",
@@ -692,7 +692,7 @@
         "fullName": "Cli.finish",
         "signature": "CliBuilder(data, from_action, to_action), CliConfigParams -> Try(CliParser(data), CliValidationErr)",
         "docs": "Bundle a CLI builder into a parser, ensuring its configuration is valid.",
-        "line": 65
+        "line": 52
        },
        {
         "kind": "value",
@@ -702,7 +702,7 @@
         "fullName": "Cli.finish_without_validating",
         "signature": "CliBuilder(data, from_action, to_action), CliConfigParams -> CliParser(data)",
         "docs": "Bundle a CLI builder into a parser without validating its configuration.",
-        "line": 74
+        "line": 61
        },
        {
         "kind": "value",
@@ -712,7 +712,7 @@
         "fullName": "Cli.assert_valid",
         "signature": "Try(CliParser(data), CliValidationErr) -> CliParser(data)",
         "docs": "Assert that a CLI is properly configured, crashing your program if not.\nHandle `Cli.finish` directly to render its validation error.",
-        "line": 122
+        "line": 109
        },
        {
         "kind": "value",
@@ -722,7 +722,7 @@
         "fullName": "Cli.parse_or_display_message",
         "signature": "CliParser(data), List(arg), (arg -> [Utf8(Str), UnixBytes(List(U8)), WindowsU16s(List(U16))]) -> Try(data, [Help(Str), Version(Str), InvalidUsage(Str)])",
         "docs": "Parse arguments, or return a typed help, version, or usage message.",
-        "line": 132
+        "line": 119
        }
       ]
      },
@@ -731,7 +731,56 @@
       "imports": [
        "path"
       ],
-      "items": []
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "NestedSub",
+        "modulePath": "",
+        "fullName": "NestedSub",
+        "signature": "[\n\tLeaf({ alpha : U64, data : Str }),\n\tBare,\n]",
+        "docs": "",
+        "line": 353,
+        "decl": ":",
+        "head": "NestedSub"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "NestedTop",
+        "modulePath": "",
+        "fullName": "NestedTop",
+        "signature": "[\n\tMid({ depth : Try(U64, [NoValue]), sc : Try(NestedSub, [NoSubcommand]) }),\n\tOther,\n]",
+        "docs": "",
+        "line": 358,
+        "decl": ":",
+        "head": "NestedTop"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "NestedRoot",
+        "modulePath": "",
+        "fullName": "NestedRoot",
+        "signature": "{\n\tforce : Bool,\n\tlevel : Try(U64, [NoValue]),\n\tsc : Try(NestedTop, [NoSubcommand]),\n\tfile : Try(Str, [NoValue]),\n\tfiles : List(Str),\n}",
+        "docs": "",
+        "line": 363,
+        "decl": ":",
+        "head": "NestedRoot"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "LeftNested",
+        "modulePath": "",
+        "fullName": "LeftNested",
+        "signature": "{ force : Bool, level : Try(U64, [NoValue]), sc : Try(NestedTop, [NoSubcommand]) }",
+        "docs": "",
+        "line": 522,
+        "decl": ":",
+        "head": "LeftNested"
+       }
+      ]
      },
      {
       "name": "ErrorFormatter",
@@ -747,7 +796,7 @@
         "fullName": "ErrorFormatter.format_arg_extract_err",
         "signature": "ArgExtractErr -> Str",
         "docs": "Render `ArgExtractErr` errors as readable messages.",
-        "line": 9
+        "line": 10
        },
        {
         "kind": "value",
@@ -757,7 +806,7 @@
         "fullName": "ErrorFormatter.render_arg_extract_err",
         "signature": "ArgExtractErr, { command : Str, usage : Str }, TextStyle -> Str",
         "docs": "Render an argument extraction failure as a complete terminal report.",
-        "line": 80
+        "line": 77
        },
        {
         "kind": "value",
@@ -767,7 +816,7 @@
         "fullName": "ErrorFormatter.format_cli_validation_err",
         "signature": "CliValidationErr -> Str",
         "docs": "Render `CliValidationErr` errors as readable messages.",
-        "line": 93
+        "line": 90
        },
        {
         "kind": "value",
@@ -777,7 +826,7 @@
         "fullName": "ErrorFormatter.render_cli_validation_err",
         "signature": "CliValidationErr, TextStyle -> Str",
         "docs": "Render a CLI configuration failure as a complete terminal report.",
-        "line": 172
+        "line": 169
        },
        {
         "kind": "type",
@@ -787,7 +836,7 @@
         "fullName": "DiagnosticMetadata",
         "signature": "{ title : Str, hint : Str }",
         "docs": "",
-        "line": 185,
+        "line": 182,
         "decl": ":",
         "head": "DiagnosticMetadata"
        }
@@ -949,7 +998,27 @@
         "fullName": "Extract.get_value_for_extraction",
         "signature": "ExtractOptionValueWalkerState, ParsedArg, OptionConfig -> Try(ExtractOptionValueWalkerState, ArgExtractErr)",
         "docs": "",
-        "line": 197
+        "line": 209
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "find_subcommand_boundary",
+        "modulePath": "Extract",
+        "fullName": "Extract.find_subcommand_boundary",
+        "signature": "List(ParsedArg), List(OptionConfig), List(Str) -> Try(U64, [NotFound])",
+        "docs": "Find the subcommand name that ends a command's own arguments.\n\nArguments after a subcommand's name belong to that subcommand alone, so\nthe parent's options and parameters must only see the arguments before\nit. The name is the first argument that is neither an option nor the\nvalue of one of `options`, provided that it is a plain parameter naming\none of `subcommand_names`; anything else, including an argument after\n`--`, means no subcommand is called.",
+        "line": 231
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "ensure_no_remaining_args",
+        "modulePath": "Extract",
+        "fullName": "Extract.ensure_no_remaining_args",
+        "signature": "List(ParsedArg) -> Try({}, ArgExtractErr)",
+        "docs": "The error for the first argument a parser left unconsumed, if any.",
+        "line": 236
        }
       ]
      },
@@ -964,8 +1033,8 @@
         "modulePath": "Help",
         "fullName": "Help.find_subcommand_or_default",
         "signature": "CliConfig, List(Str) -> { config : CliConfig, subcommand_path : List(Str) }",
-        "docs": "Walks the subcommand tree from the root CLI config and returns the target\ncommand config, falling back to the root command if the path is invalid.",
-        "line": 19
+        "docs": "Walks the subcommand tree from the root CLI config and returns the target\ncommand config. If the path is invalid, it falls back to the deepest\ncommand its longest valid prefix names, and returns that prefix as the\npath so the help header always names the command whose content is shown.",
+        "line": 21
        },
        {
         "kind": "value",
@@ -975,7 +1044,7 @@
         "fullName": "Help.find_subcommand",
         "signature": "SubcommandConfig, List(Str) -> Try(SubcommandConfig, [KeyNotFound])",
         "docs": "Searches a command's config for subcommands recursively.",
-        "line": 46
+        "line": 51
        },
        {
         "kind": "value",
@@ -985,7 +1054,7 @@
         "fullName": "Help.help_text",
         "signature": "CliConfig, List(Str), TextStyle -> Str",
         "docs": "Render the help text for a command at or under the root config.",
-        "line": 61
+        "line": 66
        },
        {
         "kind": "value",
@@ -995,7 +1064,7 @@
         "fullName": "Help.usage_help",
         "signature": "CliConfig, List(Str), TextStyle -> Str",
         "docs": "Render just the usage text for a command at or under the root config.",
-        "line": 127
+        "line": 132
        },
        {
         "kind": "type",
@@ -1005,7 +1074,7 @@
         "fullName": "HelpColumn",
         "signature": "{ label : Str, help : Str }",
         "docs": "",
-        "line": 322,
+        "line": 344,
         "decl": ":",
         "head": "HelpColumn"
        }
@@ -2171,7 +2240,7 @@
         "fullName": "Parser.ArgValue",
         "signature": "Try(Path, [NoValue])",
         "docs": "",
-        "line": 4,
+        "line": 5,
         "decl": ":",
         "head": "ArgValue"
        },
@@ -2183,7 +2252,7 @@
         "fullName": "Parser.ParsedArg",
         "signature": "[\n\t\tShort(Str),\n\t\tShortGroup({ names : List(Str), complete : [Complete, Partial] }),\n\t\tLong({ name : Str, value : ArgValue }),\n\t\tParameter(Path),\n\t\tPassedThrough(Path),\n\t]",
         "docs": "",
-        "line": 6,
+        "line": 7,
         "decl": ":",
         "head": "ParsedArg"
        },
@@ -2195,7 +2264,7 @@
         "fullName": "Parser.parse_args",
         "signature": "List(Path) -> List(ParsedArg)",
         "docs": "",
-        "line": 14
+        "line": 15
        },
        {
         "kind": "value",
@@ -2205,7 +2274,17 @@
         "fullName": "Parser.parse_arg",
         "signature": "Path -> ParsedArg",
         "docs": "",
-        "line": 50
+        "line": 51
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "names_option",
+        "modulePath": "Parser",
+        "fullName": "Parser.names_option",
+        "signature": "Str, Str -> Bool",
+        "docs": "Whether a name given on the command line names an option's declared\nshort or long name. An option that declares no such name, written as\nthe empty string, is never named, not even by an empty name like the\none in `--=value`.",
+        "line": 76
        },
        {
         "kind": "value",
@@ -2215,7 +2294,7 @@
         "fullName": "Parser.parse_decoded_arg",
         "signature": "Path, Str -> ParsedArg",
         "docs": "",
-        "line": 73
+        "line": 80
        },
        {
         "kind": "value",
@@ -2225,7 +2304,7 @@
         "fullName": "Parser.parse_long_arg",
         "signature": "Str -> ParsedArg",
         "docs": "",
-        "line": 92
+        "line": 99
        },
        {
         "kind": "value",
@@ -2235,7 +2314,7 @@
         "fullName": "Parser.construct_set_of_options",
         "signature": "Str -> ParsedArg",
         "docs": "",
-        "line": 101
+        "line": 108
        }
       ]
      },
@@ -2253,7 +2332,7 @@
         "fullName": "SubCmd.SubcommandParserConfig",
         "signature": "{\n\t\tname : Str,\n\t\tparser : ArgParser(sub_state),\n\t\tconfig : SubcommandConfig,\n\t}",
         "docs": "",
-        "line": 13,
+        "line": 14,
         "decl": ":",
         "head": "SubcommandParserConfig(sub_state)"
        },
@@ -2265,7 +2344,7 @@
         "fullName": "SubCmd.empty",
         "signature": "{ name : Str, description : Str, value : common_state } -> SubcommandParserConfig(common_state)",
         "docs": "Create an empty subcommand.",
-        "line": 20
+        "line": 21
        },
        {
         "kind": "value",
@@ -2275,7 +2354,7 @@
         "fullName": "SubCmd.finish",
         "signature": "CliBuilder(state, from_action, to_action), { name : Str, description : Str, mapper : state -> common_state } -> SubcommandParserConfig(common_state)",
         "docs": "Bundle a CLI builder into a subcommand.",
-        "line": 40
+        "line": 41
        },
        {
         "kind": "value",
@@ -2285,7 +2364,7 @@
         "fullName": "SubCmd.get_first_arg_to_check_for_subcommand_call",
         "signature": "|{ remaining_args, subcommand_path, .. }, subcommand_parsers, callback|",
         "docs": "",
-        "line": 62,
+        "line": 63,
         "unannotated": true
        },
        {
@@ -2296,7 +2375,7 @@
         "fullName": "SubCmd.optional",
         "signature": "List(SubcommandParserConfig(sub_state)) -> CliBuilder(Try(sub_state, [NoSubcommand]), GetOptionsAction, GetParamsAction)",
         "docs": "Use previously defined subcommands as optional data in a parent CLI.",
-        "line": 91
+        "line": 92
        },
        {
         "kind": "value",
@@ -2306,7 +2385,7 @@
         "fullName": "SubCmd.required",
         "signature": "List(SubcommandParserConfig(sub_data)) -> CliBuilder(sub_data, GetOptionsAction, GetParamsAction)",
         "docs": "Use previously defined subcommands as required data in a parent CLI.",
-        "line": 128
+        "line": 135
        }
       ]
      },
@@ -2495,6 +2574,36 @@
         "signature": "Str -> Str",
         "docs": "",
         "line": 35
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "scalars",
+        "modulePath": "Utils",
+        "fullName": "Utils.scalars",
+        "signature": "Str -> List(Str)",
+        "docs": "Split text into its Unicode scalar values, each as its own string.",
+        "line": 56
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "quote",
+        "modulePath": "Utils",
+        "fullName": "Utils.quote",
+        "signature": "Str -> Str",
+        "docs": "Quote text that came from the command line so it can be shown in a\nterminal message. The result reads like a Roc string literal: quotes and\nbackslashes are escaped, and so is every control character, so argument\ntext can never emit escape sequences or reshape the message.",
+        "line": 74
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "escape_controls",
+        "modulePath": "Utils",
+        "fullName": "Utils.escape_controls",
+        "signature": "Str -> Str",
+        "docs": "Escape every control character in text without quoting it, for text\nsuch as a value parser's reason that may embed argument text.",
+        "line": 94
        }
       ]
      },

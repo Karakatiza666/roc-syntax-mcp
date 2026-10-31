@@ -2,7 +2,7 @@
 ## window stays hidden, but a display is still required; use `xvfb-run` on a
 ## machine without one. This example shows how to configure recording, advance
 ## animation by the same amount for every recorded frame, and track progress.
-app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.10.0/5xecDmRJroKT9fnSiYsGdCKEzNWLnRKGtHJ5CxuCnpb9.tar.zst" }
+app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
 
 import rr.App
 import rr.Capture

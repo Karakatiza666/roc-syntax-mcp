@@ -1,8 +1,8 @@
 ## Uses host-owned operational telemetry and responds with a simple HTML greeting.
 app [Context, program] {
-	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
-	roc: "nightly-2026-10-03-c507926",
+	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.19.0/4KBAoiBazDfi9UF6e3BYKwon6rA8mnx3dbLMLKFzdEMw.tar.zst",
+	roc: "nightly-2026-10-24-f6c6cfb",
 }
 
 import pf.Server
@@ -32,9 +32,9 @@ init! = || {
 
 respond! : Server.Request, Context => Try(Server.Outcome, [ServerErr(Str)])
 respond! = |request, _context| {
-	datetime = UnixTime.now!().seconds_since_epoch().to_str()
+	seconds = UnixTime.now!().seconds_since_epoch()
 
-	Stdout.line!("${datetime} ${Str.inspect(request.method())} ${Str.inspect(request.target())}")
+	Stdout.line!("${seconds.to_str()} ${Str.inspect(request.method())} ${Str.inspect(request.target())}")
 		? |err| ServerErr("Failed to log request: ${Str.inspect(err)}")
 
 	Ok(Server.respond(Response.from_status(200).with_body(Str.to_utf8("<b>Hello from server</b><br>"))))

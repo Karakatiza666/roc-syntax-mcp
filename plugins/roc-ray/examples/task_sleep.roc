@@ -3,7 +3,7 @@
 ## open until you press Escape. This example introduces tasks, work that may
 ## wait without pausing drawing, and messages, the values finished tasks
 ## deliver in a later `Input`.
-app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.10.0/5xecDmRJroKT9fnSiYsGdCKEzNWLnRKGtHJ5CxuCnpb9.tar.zst" }
+app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
 
 import rr.App
 import rr.Task
@@ -71,7 +71,7 @@ update! = |model, input, io| {
 	# Report once, on the cycle the message arrives. The line is queued here
 	# and written by the host, so `update!` never waits for the terminal.
 	if model.state == Waiting and state != Waiting {
-		_ = io.stdout().line!(report_line(cycle))
+		_ = io.stdout().line!(report_line)
 	}
 
 	Ok({ ..model, state, cycle, elapsed: model.elapsed + input.time.elapsed_seconds })
@@ -81,12 +81,13 @@ update! = |model, input, io| {
 start_line : Str
 start_line = "task_sleep: sleeping ${U64.to_str(sleep_millis)} ms on a task while the frame loop keeps drawing"
 
-## What `update!` prints once the sleeper's message comes back.
-report_line : U64 -> Str
-report_line = |arrived_on|
-	"task_sleep: slept ${U64.to_str(sleep_millis)} ms, message arrived on cycle ${U64.to_str(arrived_on)}"
+## What `update!` prints once the sleeper's message comes back. The cycle it
+## arrived on depends on timing, so the window shows it and the printed line,
+## which tests compare exactly, does not.
+report_line : Str
+report_line = "task_sleep: slept ${U64.to_str(sleep_millis)} ms; the message came back while the frame loop kept drawing"
 
-expect report_line(18) == "task_sleep: slept 1200 ms, message arrived on cycle 18"
+expect report_line == "task_sleep: slept 1200 ms; the message came back while the frame loop kept drawing"
 
 apply_message : State, Msg, U64 -> State
 apply_message = |state, message, cycle|
@@ -96,7 +97,7 @@ apply_message = |state, message, cycle|
 				Waiting => Woke({ arrived_on: cycle })
 				already => already
 			}
-		}
+	}
 
 expect match apply_message(Waiting, Woke, 18) {
 	Woke({ arrived_on }) => arrived_on == 18

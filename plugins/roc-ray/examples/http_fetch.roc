@@ -9,8 +9,8 @@
 ## origin this run fetches from, and the host refuses every other: a redirect
 ## to a different origin arrives as `PermissionDenied`.
 app [Model, program] {
-	rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.10.0/5xecDmRJroKT9fnSiYsGdCKEzNWLnRKGtHJ5CxuCnpb9.tar.zst",
 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+	rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst",
 }
 
 import rr.App
@@ -100,7 +100,7 @@ chosen_url = |args| {
 		}
 		$index = $index + 1
 	}
-	if $found != "" $found else default_url
+	if ($found != "") $found else default_url
 }
 
 ## Declare the one origin this run fetches from, and nothing else.
@@ -125,7 +125,7 @@ update! = |model, input, io| {
 	# Cycle 0 starts the first fetch; R starts another one. Both are the same
 	# call, and both return immediately -- the task runs after `update!` does.
 	refetch = input.time.cycle_count == 0 or input.devices.key_pressed(KeyR)
-	fetch = if refetch model.fetch + 1 else model.fetch
+	fetch = if (refetch) model.fetch + 1 else model.fetch
 
 	# Folded against the id being waited for, so whatever an abandoned fetch
 	# delivers on this cycle goes the same way the fetch itself did.
@@ -142,8 +142,8 @@ update! = |model, input, io| {
 		..model,
 		fetch,
 		elapsed,
-		state: if refetch Waiting else state,
-		started_waiting: if refetch elapsed else model.started_waiting,
+		state: if (refetch) Waiting else state,
+		started_waiting: if (refetch) elapsed else model.started_waiting,
 	})
 }
 
@@ -314,7 +314,7 @@ headline = |state|
 				["HTTP ${U16.to_str(status)}", "${U64.to_str(bytes)} bytes", "${U64.to_str(waited_ms)} ms"],
 				"    ",
 			)
-		}
+	}
 
 ## Green when a response arrived, red when it did not, amber while waiting.
 ## One colour drives the card's accent bar, its status line and its indicator,

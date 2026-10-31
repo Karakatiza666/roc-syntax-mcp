@@ -3,7 +3,7 @@
 ## Move with WASD or the arrow keys, zoom with the mouse wheel, rotate with
 ## Q/E, reset with R, and quit with Escape. This example demonstrates camera
 ## drawing and converting positions between world and screen coordinates.
-app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.10.0/5xecDmRJroKT9fnSiYsGdCKEzNWLnRKGtHJ5CxuCnpb9.tar.zst" }
+app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
 
 import rr.App
 import rr.Camera
@@ -59,7 +59,7 @@ init! = App.init(
 )
 
 axis : Bool, Bool -> F32
-axis = |negative, positive| if negative -1 else if positive 1 else 0
+axis = |negative, positive| if (negative) -1 else if (positive) 1 else 0
 
 ## Moves the player from the current keyboard state and elapsed time. Passing
 ## only these values keeps the movement rules easy to test separately.
@@ -89,7 +89,7 @@ update! = |model, input, _io| {
 	player = move_player(model.player, devices, dt)
 	zoom = Math.clamp(model.zoom + devices.mouse.wheel * 0.1, 0.5, 2.5)
 	rotation_dir = axis(devices.key_down(KeyQ), devices.key_down(KeyE))
-	rotation = if devices.key_pressed(KeyR) 0 else model.rotation + rotation_dir * 90 * dt
+	rotation = if (devices.key_pressed(KeyR)) 0 else model.rotation + rotation_dir * 90 * dt
 
 	Ok({ ..model, player, zoom, rotation, mouse: devices.mouse.position() })
 }

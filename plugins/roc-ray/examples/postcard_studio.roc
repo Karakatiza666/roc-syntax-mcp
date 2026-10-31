@@ -4,7 +4,7 @@
 ##
 ## This example shows how to draw a large composition into a render texture,
 ## display a scaled preview, and use a Task for an export that may take time.
-app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.10.0/5xecDmRJroKT9fnSiYsGdCKEzNWLnRKGtHJ5CxuCnpb9.tar.zst" }
+app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
 
 import rr.App
 import rr.Capture
@@ -19,7 +19,6 @@ import rr.Text
 ## repeatable demo is running. Keeping the render texture here lets `render!`
 ## draw the same full-resolution postcard before showing its smaller preview.
 Model : {
-
 	## Prepared at the poster's size, because that is where they are drawn: the
 	## window sees them through the same downscale as everything else.
 	card : { title : Text.Prepared, subtitle : Text.Prepared },
@@ -76,12 +75,12 @@ postcard_config = |args| {
 			.with_title("RocRay Postcard Studio")
 			.with_size({ width: 720, height: 480 })
 			.with_frame_pacing(Capped(120))
-	if List.contains(args, record_demo_flag) base.with_visible(Bool.False).with_output_dir("examples/gallery") else base.with_output_dir("postcards")
+	if (List.contains(args, record_demo_flag)) base.with_visible(Bool.False).with_output_dir("examples/gallery") else base.with_output_dir("postcards")
 }
 
 ## The demo's colourway on a given cycle: each of the three in turn.
 demo_theme : U64 -> U64
-demo_theme = |cycle| if cycle < 42 0 else if cycle < 84 1 else 2
+demo_theme = |cycle| if (cycle < 42) 0 else if (cycle < 84) 1 else 2
 
 ## The demo's sun on a given cycle: an arc across the sky, dipping in the
 ## middle, repeated every `demo_frames` cycles.
@@ -150,19 +149,19 @@ update! = |model, input, io| {
 
 	cycle = input.time.cycle_count
 	theme =
-		if resolved.demo demo_theme(cycle)
-		else if devices.key_pressed(Key1) 0
-		else if devices.key_pressed(Key2) 1
-		else if devices.key_pressed(Key3) 2
+		if (resolved.demo) demo_theme(cycle)
+		else if (devices.key_pressed(Key1)) 0
+		else if (devices.key_pressed(Key2)) 1
+		else if (devices.key_pressed(Key3)) 2
 		else resolved.theme
 
 	save = devices.key_pressed(KeyS)
-	sun = if resolved.demo demo_sun(cycle) else devices.mouse.position()
+	sun = if (resolved.demo) demo_sun(cycle) else devices.mouse.position()
 	next = {
 		..resolved,
 		theme,
 		sun,
-		status: if save chrome.saving else resolved.status,
+		status: if (save) chrome.saving else resolved.status,
 	}
 
 	if save {
@@ -205,7 +204,7 @@ render! = |model, frame| {
 			# image asset.
 			for index in 0.U64..<8 {
 				y = 716 + U64.to_f32(index) * 28
-				x = if index % 2 == 0 100 else 184
+				x = if (index % 2 == 0) 100 else 184
 				poster.line!({ start: { x, y }, end: { x: x + 1120, y }, stroke: Draw.stroke(Color.with_alpha(colors.ink, 65), 4) })
 			}
 

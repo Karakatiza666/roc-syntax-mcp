@@ -17,7 +17,7 @@
 ## executable, which needs no declaration and works from any directory. Copy
 ## `assets/` next to a built executable. Both files were made by
 ## `assets/make_assets.py` and are original to this repository.
-app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.10.0/5xecDmRJroKT9fnSiYsGdCKEzNWLnRKGtHJ5CxuCnpb9.tar.zst" }
+app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
 
 import rr.App
 import rr.Assets
@@ -92,7 +92,7 @@ init! = App.init_for_args(
 ## down to 0 over `hop_seconds`. No effects, so the `expect`s below test it.
 step_hop : F32, Bool, F32 -> F32
 step_hop = |hop, space_pressed, dt|
-	if space_pressed 1 else F32.max(hop - dt / hop_seconds, 0)
+	if (space_pressed) 1 else F32.max(hop - dt / hop_seconds, 0)
 
 ## How high the blob is above its resting place, in logical units, at a point
 ## in its hop: up and back down along half a sine wave.

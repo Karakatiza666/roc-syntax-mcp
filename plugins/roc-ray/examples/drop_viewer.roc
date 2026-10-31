@@ -1,7 +1,7 @@
 ## Displays an image dropped onto the window; press Escape to quit. This
 ## example shows one-time dropped-file input, tasks that read without pausing
 ## drawing, messages that return the bytes to `update!`, and texture creation.
-app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.10.0/5xecDmRJroKT9fnSiYsGdCKEzNWLnRKGtHJ5CxuCnpb9.tar.zst" }
+app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
 
 import rr.App
 import rr.Assets
@@ -99,13 +99,13 @@ update! = |model, input, io| {
 				Ok(texture) => { status: Showing(path, position), image: Shown(texture) }
 				Err(_) => { status: Refused("${path}: the decoder refused these bytes"), image: model.image }
 			}
-		}
+	}
 
 	Ok({
 		..model,
 		status: next.status,
 		image: next.image,
-		partial_drop: if List.is_empty(input.dropped) model.partial_drop else input.dropped_overflow,
+		partial_drop: if (List.is_empty(input.dropped)) model.partial_drop else input.dropped_overflow,
 	})
 }
 
@@ -262,7 +262,7 @@ render! = |model, frame| {
 				rotation: 0,
 				tint: Color.white,
 			})
-		}
+	}
 
 	# A lit dot carries the state; the words carry the detail.
 	frame.circle!({ center: { x: 47, y: 105 }, radius: 5, style: Draw.filled(status_color(model.status)) })

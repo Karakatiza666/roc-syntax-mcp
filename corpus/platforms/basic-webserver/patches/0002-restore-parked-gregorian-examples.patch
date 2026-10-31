@@ -1,23 +1,25 @@
 diff --git a/examples/command.todoroc b/examples/command.roc
-similarity index 89%
+similarity index 88%
 rename from examples/command.todoroc
 rename to examples/command.roc
-index 4bda0d3..7468d2d 100644
+index 38daf36..b35c318 100644
 --- a/examples/command.todoroc
 +++ b/examples/command.roc
-@@ -1,12 +1,7 @@
+@@ -1,13 +1,8 @@
 -# TODO: Restore this .roc example and its scripts/test_spec.json cases after
 -# roc-gregorian publishes a release without redundant return-position `..` unions.
 -# The pinned compiler rejects five such unions in 1.0.0-rc.3/Util.roc.
 -# Upstream: https://git.sr.ht/~jwoudenberg/roc/tree/main/item/gregorian
  ## Demonstrates command execution, captured output, environment variables, timeouts, and output limits.
  app [Context, program] {
- 	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+ 	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.19.0/4KBAoiBazDfi9UF6e3BYKwon6rA8mnx3dbLMLKFzdEMw.tar.zst",
  	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
 -	gregorian: "https://cdn.jasperwoudenberg.com/roc-gregorian-v1.0.0-rc.3/3R8EMBQy6rYy3vbLY3u4CLcT8qwAPAyxaaGTA18Gknbe.tar.zst",
- 	roc: "nightly-2026-10-03-c507926",
+-	roc: "nightly-2026-10-03-c507926",
++	roc: "nightly-2026-10-24-f6c6cfb",
  }
  
+ import pf.Server
 @@ -17,7 +12,6 @@ import pf.Path
  import pf.UnixTime
  import pf.Stdout
@@ -36,26 +38,27 @@ index 4bda0d3..7468d2d 100644
  			# Log request time, method and URL through the helper process.
  			match Cmd.exec_str!(python, [helper, "echo", "${time} ${Str.inspect(req.method())} ${Str.inspect(req.target())}"]) {
 diff --git a/examples/echo.todoroc b/examples/echo.roc
-similarity index 88%
+similarity index 87%
 rename from examples/echo.todoroc
 rename to examples/echo.roc
-index 87bbc5d..06241e1 100644
+index a9ba1be..386cbe5 100644
 --- a/examples/echo.todoroc
 +++ b/examples/echo.roc
-@@ -1,12 +1,7 @@
+@@ -1,20 +1,14 @@
 -# TODO: Restore this .roc example and its scripts/test_spec.json cases after
 -# roc-gregorian publishes a release without redundant return-position `..` unions.
 -# The pinned compiler rejects five such unions in 1.0.0-rc.3/Util.roc.
 -# Upstream: https://git.sr.ht/~jwoudenberg/roc/tree/main/item/gregorian
  ## Echo server: logs the request method and target, then replies with the request body.
  app [Context, program] {
- 	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+ 	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.19.0/4KBAoiBazDfi9UF6e3BYKwon6rA8mnx3dbLMLKFzdEMw.tar.zst",
  	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
 -	gregorian: "https://cdn.jasperwoudenberg.com/roc-gregorian-v1.0.0-rc.3/3R8EMBQy6rYy3vbLY3u4CLcT8qwAPAyxaaGTA18Gknbe.tar.zst",
- 	roc: "nightly-2026-10-03-c507926",
+-	roc: "nightly-2026-10-03-c507926",
++	roc: "nightly-2026-10-24-f6c6cfb",
  }
  
-@@ -14,7 +9,6 @@ import pf.Server
+ import pf.Server
  import pf.Stdout
  import pf.UnixTime
  import http.Response
@@ -73,25 +76,27 @@ index 87bbc5d..06241e1 100644
  	Stdout.line!("${time} ${Str.inspect(req.method())} ${Str.inspect(req.target())}")
  		? |err| ServerErr("Failed to log request: ${Str.inspect(err)}")
 diff --git a/examples/error-handling.todoroc b/examples/error-handling.roc
-similarity index 81%
+similarity index 79%
 rename from examples/error-handling.todoroc
 rename to examples/error-handling.roc
-index 2086e98..7f85a3f 100644
+index 9166d80..887a007 100644
 --- a/examples/error-handling.todoroc
 +++ b/examples/error-handling.roc
-@@ -1,12 +1,7 @@
+@@ -1,13 +1,8 @@
 -# TODO: Restore this .roc example and its scripts/test_spec.json cases after
 -# roc-gregorian publishes a release without redundant return-position `..` unions.
 -# The pinned compiler rejects five such unions in 1.0.0-rc.3/Util.roc.
 -# Upstream: https://git.sr.ht/~jwoudenberg/roc/tree/main/item/gregorian
  ## Demonstrates typed error handling while fetching content from a configured URL.
  app [Context, program] {
- 	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+ 	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.19.0/4KBAoiBazDfi9UF6e3BYKwon6rA8mnx3dbLMLKFzdEMw.tar.zst",
  	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
 -	gregorian: "https://cdn.jasperwoudenberg.com/roc-gregorian-v1.0.0-rc.3/3R8EMBQy6rYy3vbLY3u4CLcT8qwAPAyxaaGTA18Gknbe.tar.zst",
- 	roc: "nightly-2026-10-03-c507926",
+-	roc: "nightly-2026-10-03-c507926",
++	roc: "nightly-2026-10-24-f6c6cfb",
  }
  
+ import pf.Stdout
 @@ -17,7 +12,6 @@ import pf.Url
  import pf.Env
  import pf.UnixTime
@@ -110,25 +115,27 @@ index 2086e98..7f85a3f 100644
  	Stdout.line!("${datetime} ${Str.inspect(req.method())} ${Str.inspect(req.target())}")
  		? |err| FailedToLogRequest(err)
 diff --git a/examples/file-accessed-modified-created-time.todoroc b/examples/file-accessed-modified-created-time.roc
-similarity index 77%
+similarity index 75%
 rename from examples/file-accessed-modified-created-time.todoroc
 rename to examples/file-accessed-modified-created-time.roc
-index 33db6f2..db3b190 100644
+index f6dcf53..adfad47 100644
 --- a/examples/file-accessed-modified-created-time.todoroc
 +++ b/examples/file-accessed-modified-created-time.roc
-@@ -1,12 +1,7 @@
+@@ -1,13 +1,8 @@
 -# TODO: Restore this .roc example and its scripts/test_spec.json cases after
 -# roc-gregorian publishes a release without redundant return-position `..` unions.
 -# The pinned compiler rejects five such unions in 1.0.0-rc.3/Util.roc.
 -# Upstream: https://git.sr.ht/~jwoudenberg/roc/tree/main/item/gregorian
  ## Reads and serves the accessed, modified, and created timestamps of `LICENSE`.
  app [Context, program] {
- 	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+ 	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.19.0/4KBAoiBazDfi9UF6e3BYKwon6rA8mnx3dbLMLKFzdEMw.tar.zst",
  	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
 -	gregorian: "https://cdn.jasperwoudenberg.com/roc-gregorian-v1.0.0-rc.3/3R8EMBQy6rYy3vbLY3u4CLcT8qwAPAyxaaGTA18Gknbe.tar.zst",
- 	roc: "nightly-2026-10-03-c507926",
+-	roc: "nightly-2026-10-03-c507926",
++	roc: "nightly-2026-10-24-f6c6cfb",
  }
  
+ import pf.Stdout
 @@ -15,7 +10,6 @@ import pf.Server
  import pf.Path
  import pf.UnixTime
@@ -143,64 +150,28 @@ index 33db6f2..db3b190 100644
  format_timestamp = |timestamp|
 -	(Time.unix_epoch + timestamp.seconds_since_epoch()).iso8601()
 +	timestamp.seconds_since_epoch().to_str()
-diff --git a/examples/hello-web.todoroc b/examples/hello-web.roc
-similarity index 74%
-rename from examples/hello-web.todoroc
-rename to examples/hello-web.roc
-index ef78b00..69f755c 100644
---- a/examples/hello-web.todoroc
-+++ b/examples/hello-web.roc
-@@ -1,12 +1,7 @@
--# TODO: Restore this .roc example and its scripts/test_spec.json cases after
--# roc-gregorian publishes a release without redundant return-position `..` unions.
--# The pinned compiler rejects five such unions in 1.0.0-rc.3/Util.roc.
--# Upstream: https://git.sr.ht/~jwoudenberg/roc/tree/main/item/gregorian
- ## Uses host-owned operational telemetry and responds with a simple HTML greeting.
- app [Context, program] {
- 	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
- 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
--	gregorian: "https://cdn.jasperwoudenberg.com/roc-gregorian-v1.0.0-rc.3/3R8EMBQy6rYy3vbLY3u4CLcT8qwAPAyxaaGTA18Gknbe.tar.zst",
- 	roc: "nightly-2026-10-03-c507926",
- }
- 
-@@ -14,7 +9,6 @@ import pf.Server
- import pf.Stdout
- import pf.UnixTime
- import http.Response
--import gregorian.Time
- 
- # `init!` produces this immutable context once, and every request receives it.
- Context : {}
-@@ -38,7 +32,7 @@ init! = || {
- 
- respond! : Server.Request, Context => Try(Server.Outcome, [ServerErr(Str)])
- respond! = |request, _context| {
--	datetime = (Time.unix_epoch + UnixTime.now!().seconds_since_epoch()).iso8601()
-+	datetime = UnixTime.now!().seconds_since_epoch().to_str()
- 
- 	Stdout.line!("${datetime} ${Str.inspect(request.method())} ${Str.inspect(request.target())}")
- 		? |err| ServerErr("Failed to log request: ${Str.inspect(err)}")
 diff --git a/examples/init-basic.todoroc b/examples/init-basic.roc
-similarity index 72%
+similarity index 70%
 rename from examples/init-basic.todoroc
 rename to examples/init-basic.roc
-index 339ba2b..9e1d1a4 100644
+index 86408ad..9a12b86 100644
 --- a/examples/init-basic.todoroc
 +++ b/examples/init-basic.roc
-@@ -1,12 +1,7 @@
+@@ -1,20 +1,14 @@
 -# TODO: Restore this .roc example and its scripts/test_spec.json cases after
 -# roc-gregorian publishes a release without redundant return-position `..` unions.
 -# The pinned compiler rejects five such unions in 1.0.0-rc.3/Util.roc.
 -# Upstream: https://git.sr.ht/~jwoudenberg/roc/tree/main/item/gregorian
  ## Initializes shared context once and uses it while logging and responding to requests.
  app [Context, program] {
- 	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.17.0/AC9goxhsjJJdrQtnc2ga3eTiESyh6ZLraZJsCVdEfeZT.tar.zst",
+ 	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.19.0/4KBAoiBazDfi9UF6e3BYKwon6rA8mnx3dbLMLKFzdEMw.tar.zst",
  	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
 -	gregorian: "https://cdn.jasperwoudenberg.com/roc-gregorian-v1.0.0-rc.3/3R8EMBQy6rYy3vbLY3u4CLcT8qwAPAyxaaGTA18Gknbe.tar.zst",
- 	roc: "nightly-2026-10-03-c507926",
+-	roc: "nightly-2026-10-03-c507926",
++	roc: "nightly-2026-10-24-f6c6cfb",
  }
  
-@@ -14,7 +9,6 @@ import pf.Stdout
+ import pf.Stdout
  import pf.Server
  import pf.UnixTime
  import http.Response

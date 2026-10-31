@@ -1,5 +1,5 @@
 diff --git a/examples/post_process.roc b/examples/post_process.roc
-index edfc394..eca3c74 100644
+index b9cb05f..bef5ea1 100644
 --- a/examples/post_process.roc
 +++ b/examples/post_process.roc
 @@ -9,6 +9,7 @@ import rr.App
@@ -8,9 +8,9 @@ index edfc394..eca3c74 100644
  import rr.Draw
 +import rr.Files
  import rr.Math
+ import rr.Shader
  import rr.Text
- 
-@@ -31,19 +32,39 @@ Model : {
+@@ -26,19 +27,39 @@ Model : {
  
  program = { init!, update!, render! }
  
@@ -58,9 +58,9 @@ index edfc394..eca3c74 100644
 +		assets = Assets.open!(open_assets!(io)?, IgnoreManifest)?
  		font = Draw.default_font!()
  		target = Draw.RenderTexture.load!({ width: 800, height: 600 })?
- 		shader = Draw.Shader.from_store!(assets, { vertex_path: "", fragment_path: "post_process.fs" })?
+ 		shader = Shader.from_store!(assets, { vertex_path: "", fragment_path: "post_process.fs" }, { time: 0 })?
 diff --git a/examples/sprite_and_sound.roc b/examples/sprite_and_sound.roc
-index 6864091..be9be71 100644
+index eb26707..8d58a01 100644
 --- a/examples/sprite_and_sound.roc
 +++ b/examples/sprite_and_sound.roc
 @@ -4,15 +4,18 @@
@@ -84,7 +84,7 @@ index 6864091..be9be71 100644
 +## executable, which needs no declaration and works from any directory. Copy
 +## `assets/` next to a built executable. Both files were made by
  ## `assets/make_assets.py` and are original to this repository.
- app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.10.0/5xecDmRJroKT9fnSiYsGdCKEzNWLnRKGtHJ5CxuCnpb9.tar.zst" }
+ app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
  
 @@ -21,6 +24,7 @@ import rr.Assets
  import rr.Audio

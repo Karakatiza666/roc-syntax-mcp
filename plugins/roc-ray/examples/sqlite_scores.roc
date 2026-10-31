@@ -8,7 +8,7 @@
 ## `with_app_id`, and `io.files().app_data!()` opens the directory the system
 ## keeps for it -- `~/.local/share/dev.roc-ray.sqlite-scores` on Linux -- with
 ## no permission to declare, because it is the app's own.
-app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.10.0/5xecDmRJroKT9fnSiYsGdCKEzNWLnRKGtHJ5CxuCnpb9.tar.zst" }
+app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
 
 import rr.App
 import rr.Color
@@ -78,7 +78,7 @@ runner_names = ["ada", "grace", "alan", "edsger", "barbara", "ken", "donald", "m
 
 program = { init!, update!, render! }
 
-init! : App.Init(Model, [ResourceLimit, ..])
+init! : App.Init(Model, [ResourceLimit])
 init! = App.init(
 	App.default
 		.with_title("RocRay SQLite Scores")
@@ -124,7 +124,7 @@ init! = App.init(
 					subtitle,
 					hint,
 				})
-			}
+		}
 	},
 )
 
@@ -216,7 +216,7 @@ record_run! = |db, insert, name, score| {
 				Ok(rows) => Refreshed(rows)
 				Err(reason) => Failed(reason)
 			}
-		}
+	}
 }
 
 ## Wipe every run, then read the board back.
@@ -234,7 +234,7 @@ reset_board! = |db| {
 				Ok(rows) => Refreshed(rows)
 				Err(reason) => Failed(reason)
 			}
-		}
+	}
 }
 
 ## Fractional seconds since the Unix epoch, which is what the REAL column
@@ -347,9 +347,9 @@ draw_entry! = |frame, index, entry, best, width| {
 	if index % 2 == 1 {
 		frame.rectangle!({ x: 45, y: y - 6, width: width - 2, height: 30, style: Draw.filled(Color.from_hex_rgba(0xffffff06)) })
 	}
-	medal = if index == 0 gold else if index < 3 silver else faint
+	medal = if (index == 0) gold else if (index < 3) silver else faint
 	frame.circle!({ center: { x: 74, y: y + 9 }, radius: 11, style: Draw.filled(Color.with_alpha(medal, 40)) })
-	frame.text_at!({ pos: { x: if index < 9 70 else 66, y: y }, text: U64.to_str(index + 1), size: 16, color: medal })
+	frame.text_at!({ pos: { x: if (index < 9) 70 else 66, y: y }, text: U64.to_str(index + 1), size: 16, color: medal })
 	frame.text_at!({ pos: { x: 104, y: y }, text: entry.name, size: 19, color: ink })
 
 	# The bar is the row's score against the board's best, so the shape of the
