@@ -1,0 +1,1820 @@
+{
+ "format": 1,
+ "releases": {
+  "AKLgwxjBQN2XkE4G5sZtzrjPSxhwo6XmJRSPdWhpgVUN": {
+   "url": "https://github.com/Karakatiza666/roc-websocket/releases/download/0.0.5/AKLgwxjBQN2XkE4G5sZtzrjPSxhwo6XmJRSPdWhpgVUN.tar.zst",
+   "snapshot": {
+    "kind": "package",
+    "exposes": [
+     "Base64",
+     "Client",
+     "CloseCode",
+     "Frame",
+     "Handshake",
+     "Protocol",
+     "Server",
+     "Sha1",
+     "Ws"
+    ],
+    "deps": [],
+    "modules": [
+     {
+      "name": "Base64",
+      "imports": [],
+      "items": [
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "encode",
+        "modulePath": "Base64",
+        "fullName": "Base64.encode",
+        "signature": "List(U8) -> Str",
+        "docs": "The Base64 text of `bytes`, padded with `=` to a multiple of 4.\n\n```roc\nexpect Base64.encode(\"foobar\".to_utf8()) == \"Zm9vYmFy\"\n```",
+        "line": 10
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "decode",
+        "modulePath": "Base64",
+        "fullName": "Base64.decode",
+        "signature": "Str -> Try(List(U8), [InvalidBase64])",
+        "docs": "The bytes of padded Base64 text. Text whose length is not a multiple of 4,\na character outside the alphabet, or padding anywhere but the end is\n`Err(InvalidBase64)`.\n\n```roc\nexpect Base64.decode(\"Zm9vYg==\") == Ok(\"foob\".to_utf8())\n```",
+        "line": 35
+       }
+      ]
+     },
+     {
+      "name": "Client",
+      "imports": [],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Errors",
+        "modulePath": "Client",
+        "fullName": "Client.Errors",
+        "signature": "[Refused(Str), InvalidClose(Str), ControlTooLong(U64), BadFrame(Str), ..e]",
+        "docs": "The tags the client adds to the platform's row `e`.",
+        "line": 19,
+        "decl": ":",
+        "head": "Errors(e)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Error",
+        "modulePath": "Client",
+        "fullName": "Client.Error",
+        "signature": "Ws.Error(Client.Errors(e))",
+        "docs": "Every error of a client call: `Closed`, `Closing` and `Client.Errors(e)`.",
+        "line": 22,
+        "decl": ":",
+        "head": "Error(e)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Transport",
+        "modulePath": "Client",
+        "fullName": "Client.Transport",
+        "signature": "Ws.Transport(b, Client.Errors(e))",
+        "docs": "What `Client.open!` needs: a byte stream and randomness over one link\nvalue `b`, whose errors are the platform's row with the client's tags.",
+        "line": 26,
+        "decl": ":",
+        "head": "Transport(b, e)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Ops",
+        "modulePath": "Client",
+        "fullName": "Client.Ops",
+        "signature": "Ws.Core(Client.Conn(b, e), Client.Errors(e), Ws.Ping(Client.Conn(b, e), Client.Errors(e), Ws.Pong(Client.Conn(b, e), Client.Errors(e), Ws.Frames(Client.Conn(b, e), Client.Errors(e), Ws.Poll(Client.Conn(b, e), Client.Errors(e), {})))))",
+        "docs": "The operations of a client connection as a record, for code generic\nover features: the core, ping, pong, frames and poll.",
+        "line": 30,
+        "decl": ":",
+        "head": "Ops(b, e)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Conn",
+        "modulePath": "Client",
+        "fullName": "Client.Conn",
+        "signature": "{ session : Session(b, [Refused(Str), ..e]) }",
+        "docs": "An open client connection over the link value `b`, from `Client.open!`.",
+        "line": 33,
+        "decl": "::",
+        "head": "Conn(b, e)"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "link",
+        "modulePath": "Client.Conn",
+        "fullName": "Client.Conn.link",
+        "signature": "Client.Conn(b, e) -> b",
+        "docs": "The link value as the last call left it, for an adapter that needs\nits stream back (to close it, for example).",
+        "line": 37
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "map_link",
+        "modulePath": "Client.Conn",
+        "fullName": "Client.Conn.map_link",
+        "signature": "Client.Conn(b, e), (b -> b) -> Client.Conn(b, e)",
+        "docs": "The same connection with its link value changed by `change`, for an\nadapter that adjusts its stream between calls (a read timeout for\none call, for example). The protocol state is untouched, so bytes\nalready read and a half-received message are kept.",
+        "line": 44
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "send!",
+        "modulePath": "Client.Conn",
+        "fullName": "Client.Conn.send!",
+        "signature": "Client.Conn(b, e), Ws.Message => Try(Client.Conn(b, e), Client.Error(e))",
+        "docs": "Send one message, in one frame.",
+        "line": 48
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "receive!",
+        "modulePath": "Client.Conn",
+        "fullName": "Client.Conn.receive!",
+        "signature": "Client.Conn(b, e) => Try((Client.Conn(b, e), Ws.Message), Client.Error(e))",
+        "docs": "The next message. A platform read deadline passing is not reported:\n`receive!` keeps waiting (see `poll!`). After `close!`, it delivers\nthe messages on their way and ends with `Closed({ by: Us, .. })`.",
+        "line": 57
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "poll!",
+        "modulePath": "Client.Conn",
+        "fullName": "Client.Conn.poll!",
+        "signature": "Client.Conn(b, e) => Try((Client.Conn(b, e), [Message(Ws.Message), TimedOut]), Client.Error(e))",
+        "docs": "The next message, or `TimedOut` when the platform's read deadline\npassed with no message. Nothing is lost.",
+        "line": 65
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "close!",
+        "modulePath": "Client.Conn",
+        "fullName": "Client.Conn.close!",
+        "signature": "Client.Conn(b, e), U16, Str => Try(Client.Conn(b, e), Client.Error(e))",
+        "docs": "Start the closing handshake: send Close and return. A code that may\nnot be sent or a reason over 123 bytes is `InvalidClose`.",
+        "line": 73
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "ping!",
+        "modulePath": "Client.Conn",
+        "fullName": "Client.Conn.ping!",
+        "signature": "Client.Conn(b, e), List(U8) => Try(Client.Conn(b, e), Client.Error(e))",
+        "docs": "Send a Ping, payload at most 125 bytes.",
+        "line": 80
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "pong!",
+        "modulePath": "Client.Conn",
+        "fullName": "Client.Conn.pong!",
+        "signature": "Client.Conn(b, e), List(U8) => Try(Client.Conn(b, e), Client.Error(e))",
+        "docs": "Send an unsolicited Pong, payload at most 125 bytes.",
+        "line": 87
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "send_frame!",
+        "modulePath": "Client.Conn",
+        "fullName": "Client.Conn.send_frame!",
+        "signature": "Client.Conn(b, e), Frame => Try(Client.Conn(b, e), Client.Error(e))",
+        "docs": "Send any frame, masked. A frame that breaks RFC 6455 is `BadFrame`.",
+        "line": 94
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "receive_frame!",
+        "modulePath": "Client.Conn",
+        "fullName": "Client.Conn.receive_frame!",
+        "signature": "Client.Conn(b, e) => Try((Client.Conn(b, e), Frame), Client.Error(e))",
+        "docs": "The next frame as it arrives: no assembly, no reply. Do not mix it\nwith `receive!` inside a fragmented message.",
+        "line": 102
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "default_max_message",
+        "modulePath": "Client",
+        "fullName": "Client.default_max_message",
+        "signature": "U64",
+        "docs": "The largest message accepted when the request does not say: 16 MiB.",
+        "line": 110
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "ops",
+        "modulePath": "Client",
+        "fullName": "Client.ops",
+        "signature": "{} -> Client.Ops(b, e)",
+        "docs": "The operations as a record, for code generic over features.",
+        "line": 114
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "open!",
+        "modulePath": "Client",
+        "fullName": "Client.open!",
+        "signature": "Client.Transport(b, e), b, Ws.ConnectRequest => Try(Ws.Opened(Client.Conn(b, e)), Client.Error(e))",
+        "docs": "Do the opening handshake over a connected link and return the\nconnection. `request.url` gives the `Host` header and the resource; the\nadapter has already connected to its host and port (and done TLS for\n`wss://`). A refused upgrade, the stream ending during it, or no answer\nbefore the platform's read deadline is `Refused`.",
+        "line": 131
+       }
+      ]
+     },
+     {
+      "name": "CloseCode",
+      "imports": [],
+      "items": [
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "normal",
+        "modulePath": "CloseCode",
+        "fullName": "CloseCode.normal",
+        "signature": "U16",
+        "docs": "1000: the purpose of the connection is fulfilled.",
+        "line": 6
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "going_away",
+        "modulePath": "CloseCode",
+        "fullName": "CloseCode.going_away",
+        "signature": "U16",
+        "docs": "1001: the endpoint goes away (server shutdown, page left).",
+        "line": 10
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "protocol_error",
+        "modulePath": "CloseCode",
+        "fullName": "CloseCode.protocol_error",
+        "signature": "U16",
+        "docs": "1002: the peer broke the protocol.",
+        "line": 14
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "unsupported_data",
+        "modulePath": "CloseCode",
+        "fullName": "CloseCode.unsupported_data",
+        "signature": "U16",
+        "docs": "1003: a kind of data the endpoint cannot accept.",
+        "line": 18
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "no_status",
+        "modulePath": "CloseCode",
+        "fullName": "CloseCode.no_status",
+        "signature": "U16",
+        "docs": "1005: the Close frame had no code. Reported, never sent.",
+        "line": 22
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "abnormal",
+        "modulePath": "CloseCode",
+        "fullName": "CloseCode.abnormal",
+        "signature": "U16",
+        "docs": "1006: the connection dropped with no Close frame. Reported, never sent.",
+        "line": 26
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "invalid_payload",
+        "modulePath": "CloseCode",
+        "fullName": "CloseCode.invalid_payload",
+        "signature": "U16",
+        "docs": "1007: a text message was not UTF-8.",
+        "line": 30
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "policy_violation",
+        "modulePath": "CloseCode",
+        "fullName": "CloseCode.policy_violation",
+        "signature": "U16",
+        "docs": "1008: the message breaks the endpoint's policy.",
+        "line": 34
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "too_big",
+        "modulePath": "CloseCode",
+        "fullName": "CloseCode.too_big",
+        "signature": "U16",
+        "docs": "1009: a message too big to process.",
+        "line": 38
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "mandatory_extension",
+        "modulePath": "CloseCode",
+        "fullName": "CloseCode.mandatory_extension",
+        "signature": "U16",
+        "docs": "1010: the client expected an extension the server did not negotiate.",
+        "line": 42
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "internal_error",
+        "modulePath": "CloseCode",
+        "fullName": "CloseCode.internal_error",
+        "signature": "U16",
+        "docs": "1011: the server hit an unexpected condition.",
+        "line": 46
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "is_sendable",
+        "modulePath": "CloseCode",
+        "fullName": "CloseCode.is_sendable",
+        "signature": "U16 -> Bool",
+        "docs": "Whether an endpoint may put `code` in a Close frame: 1000-1003,\n1007-1014 (1012-1014 registered with IANA after RFC 6455), and\n3000-4999 (libraries and applications). 1004, 1005, 1006 and 1015 are\nreserved and never sent.",
+        "line": 53
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "payload",
+        "modulePath": "CloseCode",
+        "fullName": "CloseCode.payload",
+        "signature": "U16, Str -> Try(List(U8), [InvalidCode(U16), ReasonTooLong(U64)])",
+        "docs": "The payload of a Close frame: the code, big-endian, then the reason as\nUTF-8, at most 123 bytes so the frame stays within 125.",
+        "line": 59
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse",
+        "modulePath": "CloseCode",
+        "fullName": "CloseCode.parse",
+        "signature": "List(U8) -> Try({ code : U16, reason : Str, has_code : Bool }, [Invalid({ code : U16, why : Str })])",
+        "docs": "The code and reason of a received Close payload. An empty payload is\ncode 1005 and no reason. A 1-byte payload, a code that may not be sent,\nor a reason that is not UTF-8 is `Err`, with the code to fail the\nconnection with (1002 or 1007).",
+        "line": 75
+       }
+      ]
+     },
+     {
+      "name": "Frame",
+      "imports": [],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Frame",
+        "modulePath": "",
+        "fullName": "Frame",
+        "signature": "{ fin : Bool, opcode : Frame.Opcode, payload : List(U8) }",
+        "docs": "One WebSocket frame (RFC 6455 section 5.2), with its payload unmasked.\n\nExtensions are not supported, so the RSV bits are always 0: a frame with\none set is invalid.",
+        "line": 5,
+        "decl": ":=",
+        "head": "Frame"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "is_eq",
+        "modulePath": "Frame",
+        "fullName": "Frame.is_eq",
+        "signature": "_",
+        "docs": "",
+        "line": 7
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Opcode",
+        "modulePath": "Frame",
+        "fullName": "Frame.Opcode",
+        "signature": "[Continuation, Text, Binary, Close, Ping, Pong]",
+        "docs": "What a frame carries. `Continuation` continues a fragmented message;\n`Close`, `Ping` and `Pong` are control frames.",
+        "line": 11,
+        "decl": ":",
+        "head": "Opcode"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Masking",
+        "modulePath": "Frame",
+        "fullName": "Frame.Masking",
+        "signature": "[Masked(List(U8)), Unmasked]",
+        "docs": "Whether frames are masked. A client masks every frame it sends with\n4 unpredictable bytes; a server never masks (RFC 6455 section 5.3).",
+        "line": 15,
+        "decl": ":",
+        "head": "Masking"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Expect",
+        "modulePath": "Frame",
+        "fullName": "Frame.Expect",
+        "signature": "[ExpectMasked, ExpectUnmasked]",
+        "docs": "Which masking the receiver requires: a server requires masked frames, a\nclient unmasked ones.",
+        "line": 19,
+        "decl": ":",
+        "head": "Expect"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Header",
+        "modulePath": "Frame",
+        "fullName": "Frame.Header",
+        "signature": "{\n\t\tfin : Bool,\n\t\topcode : Frame.Opcode,\n\t\tmask : Frame.Masking,\n\t\tlength : U64,\n\t\t## Bytes of the header: 2 to 14.\n\t\tsize : U64,\n\t}",
+        "docs": "The fixed part of a frame, read before its payload.",
+        "line": 22,
+        "decl": ":",
+        "head": "Header"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "text",
+        "modulePath": "Frame",
+        "fullName": "Frame.text",
+        "signature": "Str -> Frame",
+        "docs": "A whole text message in one frame.",
+        "line": 33
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "binary",
+        "modulePath": "Frame",
+        "fullName": "Frame.binary",
+        "signature": "List(U8) -> Frame",
+        "docs": "A whole binary message in one frame.",
+        "line": 37
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "ping",
+        "modulePath": "Frame",
+        "fullName": "Frame.ping",
+        "signature": "List(U8) -> Frame",
+        "docs": "A ping. The payload is at most 125 bytes.",
+        "line": 41
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "pong",
+        "modulePath": "Frame",
+        "fullName": "Frame.pong",
+        "signature": "List(U8) -> Frame",
+        "docs": "A pong. The payload is at most 125 bytes.",
+        "line": 45
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "is_control",
+        "modulePath": "Frame",
+        "fullName": "Frame.is_control",
+        "signature": "Frame.Opcode -> Bool",
+        "docs": "Whether the opcode is a control opcode.",
+        "line": 49
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "code",
+        "modulePath": "Frame",
+        "fullName": "Frame.code",
+        "signature": "Frame.Opcode -> U8",
+        "docs": "The 4-bit code of an opcode.",
+        "line": 56
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "mask",
+        "modulePath": "Frame",
+        "fullName": "Frame.mask",
+        "signature": "List(U8), List(U8) -> List(U8)",
+        "docs": "XOR `bytes` with the 4-byte `key`, repeated (RFC 6455 section 5.3).\nMasking twice with one key gives the original bytes.",
+        "line": 68
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "encode",
+        "modulePath": "Frame",
+        "fullName": "Frame.encode",
+        "signature": "Frame, Frame.Masking -> Try(List(U8), [ControlTooLong(U64), FragmentedControl, BadMask(U64)])",
+        "docs": "The bytes of a frame on the wire. A control frame payload must be at most\n125 bytes and a control frame must be final; a mask must be 4 bytes.",
+        "line": 78
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "header",
+        "modulePath": "Frame",
+        "fullName": "Frame.header",
+        "signature": "List(U8), Frame.Expect -> Try(Frame.Header, [Incomplete(U64), Invalid(Str)])",
+        "docs": "The header at the start of `bytes`. `Incomplete(n)` means the header\nneeds `n` bytes in all. `Invalid` names the RFC rule the frame breaks.",
+        "line": 115
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "decode",
+        "modulePath": "Frame",
+        "fullName": "Frame.decode",
+        "signature": "List(U8), Frame.Expect -> Try({ frame : Frame, rest : List(U8) }, [Incomplete(U64), Invalid(Str)])",
+        "docs": "The first frame of `bytes`, unmasked, and the bytes after it.\n`Incomplete(n)` means the frame needs `n` bytes in all, so a reader\nthat reads `n - bytes.len()` more bytes never reads past the frame.",
+        "line": 166
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "fragments",
+        "modulePath": "Frame",
+        "fullName": "Frame.fragments",
+        "signature": "[Text(Str), Binary(List(U8))], U64 -> List(Frame)",
+        "docs": "The frames of one message, each payload at most `size` bytes (at least 1).\nThe first frame has the message's opcode, the others are\n`Continuation`, and only the last is final.",
+        "line": 185
+       }
+      ]
+     },
+     {
+      "name": "Handshake",
+      "imports": [],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Url",
+        "modulePath": "Handshake",
+        "fullName": "Handshake.Url",
+        "signature": "{ secure : Bool, host : Str, port : U16, resource : Str }",
+        "docs": "A parsed `ws://` or `wss://` URL. `resource` is the path and query,\n`/` when the URL has none.",
+        "line": 12,
+        "decl": ":",
+        "head": "Url"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Header",
+        "modulePath": "Handshake",
+        "fullName": "Handshake.Header",
+        "signature": "(Str, Str)",
+        "docs": "A header, its name as received.",
+        "line": 15,
+        "decl": ":",
+        "head": "Header"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "ClientRequest",
+        "modulePath": "Handshake",
+        "fullName": "Handshake.ClientRequest",
+        "signature": "{\n\t\turl : Handshake.Url,\n\t\tkey : List(U8),\n\t\tprotocols : List(Str),\n\t\theaders : List(Handshake.Header),\n\t}",
+        "docs": "What a client asks for. `key` is 16 random bytes.",
+        "line": 18,
+        "decl": ":",
+        "head": "ClientRequest"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Agreed",
+        "modulePath": "Handshake",
+        "fullName": "Handshake.Agreed",
+        "signature": "{ protocol : Str, extensions : List(Str), headers : List(Handshake.Header) }",
+        "docs": "What the server agreed to. `protocol` is `\"\"` when the server chose no\nsubprotocol.",
+        "line": 27,
+        "decl": ":",
+        "head": "Agreed"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Upgrade",
+        "modulePath": "Handshake",
+        "fullName": "Handshake.Upgrade",
+        "signature": "{ resource : Str, host : Str, key : Str, protocols : List(Str), headers : List(Handshake.Header) }",
+        "docs": "A request head a server received, validated as a WebSocket upgrade.\n`key` is the client's `Sec-WebSocket-Key` text.",
+        "line": 31,
+        "decl": ":",
+        "head": "Upgrade"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "guid",
+        "modulePath": "Handshake",
+        "fullName": "Handshake.guid",
+        "signature": "Str",
+        "docs": "The GUID that RFC 6455 section 1.3 appends to the key.",
+        "line": 34
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "accept_key",
+        "modulePath": "Handshake",
+        "fullName": "Handshake.accept_key",
+        "signature": "Str -> Str",
+        "docs": "`Sec-WebSocket-Accept` for a `Sec-WebSocket-Key`: Base64 of the SHA-1 of\nthe key and the GUID.\n\n```roc\nexpect Handshake.accept_key(\"dGhlIHNhbXBsZSBub25jZQ==\") == \"s3pPLMBiTxaQ9kYGzzhZRbK+xOo=\"\n```",
+        "line": 43
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_url",
+        "modulePath": "Handshake",
+        "fullName": "Handshake.parse_url",
+        "signature": "Str -> Try(Handshake.Url, [BadUrl(Str)])",
+        "docs": "Parse `ws://host[:port][/path][?query]` or `wss://...`. The default port is\n80 for `ws` and 443 for `wss`. A fragment (`#...`) is not allowed\n(RFC 6455 section 3). An IPv6 host is written in brackets.",
+        "line": 49
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "client_request",
+        "modulePath": "Handshake",
+        "fullName": "Handshake.client_request",
+        "signature": "Handshake.ClientRequest -> Try(Str, [BadKey(U64)])",
+        "docs": "The request head a client sends: an HTTP/1.1 `GET` with the upgrade\nheaders, then `headers`. The `Host` header has the port when it is not\nthe default one.",
+        "line": 103
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "check_response",
+        "modulePath": "Handshake",
+        "fullName": "Handshake.check_response",
+        "signature": "Str, Handshake.ClientRequest -> Try(Handshake.Agreed, [Refused(Str)])",
+        "docs": "Check the server's response head against the request (RFC 6455\nsection 4.1, the client's checks): status 101, `Upgrade: websocket`,\n`Connection: Upgrade`, the right `Sec-WebSocket-Accept`, no extension,\nand a subprotocol only if it is one the client offered.",
+        "line": 134
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_upgrade",
+        "modulePath": "Handshake",
+        "fullName": "Handshake.parse_upgrade",
+        "signature": "Str -> Try(Handshake.Upgrade, [Rejected({ status : U16, why : Str })])",
+        "docs": "Validate a request head as a WebSocket upgrade (RFC 6455 section\n4.2.1, the server's checks). `Err(Rejected({ status, why }))` gives\nthe status to answer with (400, 405, or 426 for a wrong version) and\n`Handshake.rejection` writes that answer.",
+        "line": 169
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "accept_response",
+        "modulePath": "Handshake",
+        "fullName": "Handshake.accept_response",
+        "signature": "Handshake.Upgrade, Str, List(Handshake.Header) -> Try(Str, [NotOffered(Str)])",
+        "docs": "The server's 101 response to a valid upgrade, with the subprotocol it\nchose (`\"\"` for none; it must be one the client offered) and extra\nheaders.",
+        "line": 206
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "choose_protocol",
+        "modulePath": "Handshake",
+        "fullName": "Handshake.choose_protocol",
+        "signature": "Handshake.Upgrade, List(Str) -> Str",
+        "docs": "The first protocol of `supported`, the server's order of preference,\nthat the client offered, or `\"\"`.",
+        "line": 225
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "rejection",
+        "modulePath": "Handshake",
+        "fullName": "Handshake.rejection",
+        "signature": "U16, Str -> Str",
+        "docs": "A refusal of an upgrade: the status, `Sec-WebSocket-Version: 13` for a\n426, and `why` as the body.",
+        "line": 230
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "refusal",
+        "modulePath": "Handshake",
+        "fullName": "Handshake.refusal",
+        "signature": "U16, List(Handshake.Header), Str -> Str",
+        "docs": "A response refusing an upgrade: the status line, `Sec-WebSocket-Version: 13`\nfor a 426 (RFC 6455 section 4.4), the extra `headers`, and `body` as\nplain text. It ends with `Connection: close`.",
+        "line": 236
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "head_end",
+        "modulePath": "Handshake",
+        "fullName": "Handshake.head_end",
+        "signature": "List(U8), U64 -> Try(U64, [NotFound])",
+        "docs": "The index just after the first `\\r\\n\\r\\n` that starts at or after\n`from`: the end of an HTTP head and the start of the bytes after it.\nA reader that appends bytes searches from 3 before the new ones.",
+        "line": 270
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "head_wanted",
+        "modulePath": "Handshake",
+        "fullName": "Handshake.head_wanted",
+        "signature": "List(U8) -> U64",
+        "docs": "How many more bytes a reader can read without passing the end of an\nHTTP head (`\\r\\n\\r\\n`), given the bytes read so far: 0 when `bytes`\nalready ends the head. A reader that reads at most this many bytes\nnever takes bytes of the first frame.",
+        "line": 287
+       }
+      ]
+     },
+     {
+      "name": "Protocol",
+      "imports": [],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Protocol",
+        "modulePath": "",
+        "fullName": "Protocol",
+        "signature": "{\n\trole : [Client, Server],\n\tmax_message : U64,\n\tphase : [Open, Closing({ code : U16, reason : Str }), Done(Ws.Closure)],\n\tpending : List(U8),\n\tpartial : [Idle, Partial({ kind : [Text, Binary], bytes : List(U8) })],\n}",
+        "docs": "The receiving side of RFC 6455 as a state machine with no I/O: feed it\nbytes, get events. It checks every frame, assembles fragments into\nmessages, answers Ping and Close, fails the connection on a protocol error,\nand tracks the closing handshake.\n\nA driver keeps the `Protocol` between reads: it reads any number of\nbytes, calls `receive`, writes each `Write` frame (masked with\n`Protocol.masking` for a client), and acts on the other events. Bytes after\nthe last whole frame stay in the state until more arrive.",
+        "line": 14,
+        "decl": "::",
+        "head": "Protocol"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Event",
+        "modulePath": "Protocol",
+        "fullName": "Protocol.Event",
+        "signature": "[Message(Ws.Message), Write(Frame), Ping(List(U8)), Pong(List(U8)), Closed(Ws.Closure)]",
+        "docs": "What one call of `receive` produced, in order.\n- `Message`: a whole message.\n- `Write`: a frame to send now (a Pong, the Close echo, or the Close that\n  fails the connection).\n- `Ping`, `Pong`: a control frame arrived (a Ping is answered by a\n  `Write` already).\n- `Closed`: the connection has ended; nothing more follows.",
+        "line": 29,
+        "decl": ":",
+        "head": "Event"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "new",
+        "modulePath": "Protocol",
+        "fullName": "Protocol.new",
+        "signature": "[Client, Server], U64 -> Protocol",
+        "docs": "A protocol in the open state, for an endpoint of `role`, accepting\nmessages of at most `max_message` bytes.",
+        "line": 33
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "is_open",
+        "modulePath": "Protocol",
+        "fullName": "Protocol.is_open",
+        "signature": "Protocol -> Bool",
+        "docs": "Whether messages may still be sent: no Close was sent or received.",
+        "line": 37
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "is_done",
+        "modulePath": "Protocol",
+        "fullName": "Protocol.is_done",
+        "signature": "Protocol -> Bool",
+        "docs": "Whether the connection has ended.",
+        "line": 41
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "closure",
+        "modulePath": "Protocol",
+        "fullName": "Protocol.closure",
+        "signature": "Protocol -> Try(Ws.Closure, [NotDone])",
+        "docs": "How the connection ended, once it has.",
+        "line": 48
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "closing",
+        "modulePath": "Protocol",
+        "fullName": "Protocol.closing",
+        "signature": "Protocol -> Try({ code : U16, reason : Str }, [NotClosing])",
+        "docs": "The Close this endpoint sent and is waiting to see answered.",
+        "line": 55
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "is_idle",
+        "modulePath": "Protocol",
+        "fullName": "Protocol.is_idle",
+        "signature": "Protocol -> Bool",
+        "docs": "Whether no frame or message is half received.",
+        "line": 62
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "wanted",
+        "modulePath": "Protocol",
+        "fullName": "Protocol.wanted",
+        "signature": "Protocol -> U64",
+        "docs": "How many bytes the current frame still needs at least. Reading at most\nthis many never reads past the frame. 0 once the connection has ended.",
+        "line": 67
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "masking",
+        "modulePath": "Protocol",
+        "fullName": "Protocol.masking",
+        "signature": "Protocol, List(U8) -> Frame.Masking",
+        "docs": "The masking for a frame this endpoint sends: a client masks with `key`,\n4 random bytes; a server does not mask.",
+        "line": 81
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "expects",
+        "modulePath": "Protocol",
+        "fullName": "Protocol.expects",
+        "signature": "Protocol -> Frame.Expect",
+        "docs": "The masking a received frame must have: a server expects masked frames,\na client unmasked ones.",
+        "line": 89
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "receive",
+        "modulePath": "Protocol",
+        "fullName": "Protocol.receive",
+        "signature": "Protocol, List(U8) -> (Protocol, List(Protocol.Event))",
+        "docs": "Feed received bytes, any number of them.",
+        "line": 93
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "close",
+        "modulePath": "Protocol",
+        "fullName": "Protocol.close",
+        "signature": "Protocol, U16, Str -> Try((Protocol, Frame), [NotOpen, InvalidCode(U16), ReasonTooLong(U64)])",
+        "docs": "Start the closing handshake: the Close frame to send. Afterwards\n`receive` still delivers messages until the peer's Close arrives, which\nends the connection with `Closed({ by: Us, .. })`.",
+        "line": 134
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "fail",
+        "modulePath": "Protocol",
+        "fullName": "Protocol.fail",
+        "signature": "Protocol, U16, Str -> (Protocol, List(Protocol.Event))",
+        "docs": "Fail the connection (RFC 6455 section 7.1.7): the Close with `code` to\nsend (unless a Close was sent already) and the `Closed` event.",
+        "line": 145
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "pending_bytes",
+        "modulePath": "Protocol",
+        "fullName": "Protocol.pending_bytes",
+        "signature": "Protocol -> List(U8)",
+        "docs": "The received bytes not yet consumed: the start of the next frame.",
+        "line": 149
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "max_message",
+        "modulePath": "Protocol",
+        "fullName": "Protocol.max_message",
+        "signature": "Protocol -> U64",
+        "docs": "The largest message accepted, in bytes.",
+        "line": 153
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "push",
+        "modulePath": "Protocol",
+        "fullName": "Protocol.push",
+        "signature": "Protocol, List(U8) -> Protocol",
+        "docs": "Add received bytes without processing them, for a driver that reads\nraw frames with `take_frame`.",
+        "line": 158
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "take_frame",
+        "modulePath": "Protocol",
+        "fullName": "Protocol.take_frame",
+        "signature": "Protocol -> Try((Protocol, Frame), [Incomplete(U64), Invalid(Str)])",
+        "docs": "The next whole frame of the received bytes as it is: no assembly, no\nreply, no state change but removing its bytes.",
+        "line": 163
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "ended",
+        "modulePath": "Protocol",
+        "fullName": "Protocol.ended",
+        "signature": "Protocol -> (Protocol, Ws.Closure)",
+        "docs": "The transport ended with no Close frame (the peer closed the TCP\nconnection, or a read failed for good): the connection is done, with\ncode 1006.",
+        "line": 172
+       }
+      ]
+     },
+     {
+      "name": "Server",
+      "imports": [],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Errors",
+        "modulePath": "Server",
+        "fullName": "Server.Errors",
+        "signature": "[NotUpgrade(Str), InvalidStatus(U16), InvalidClose(Str), ControlTooLong(U64), BadFrame(Str), ..e]",
+        "docs": "The tags the server adds to the platform's row `e`: `NotUpgrade(why)`\nfor a request that is not a valid upgrade (answered with a refusal\nalready), `InvalidStatus(status)` for a refusal status that is not a\nfinal HTTP status (200-599, so never 101), and the frame tags of\n`Client.Errors`.",
+        "line": 27,
+        "decl": ":",
+        "head": "Errors(e)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Error",
+        "modulePath": "Server",
+        "fullName": "Server.Error",
+        "signature": "Ws.Error(Server.Errors(e))",
+        "docs": "Every error of a server call: `Closed`, `Closing` and `Server.Errors(e)`.",
+        "line": 30,
+        "decl": ":",
+        "head": "Error(e)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Transport",
+        "modulePath": "Server",
+        "fullName": "Server.Transport",
+        "signature": "Ws.Bytes(b, Server.Errors(e), {})",
+        "docs": "What the server needs: a byte stream over a link value `b`, whose\nerrors are the platform's row with the server's tags. No randomness.",
+        "line": 34,
+        "decl": ":",
+        "head": "Transport(b, e)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Ops",
+        "modulePath": "Server",
+        "fullName": "Server.Ops",
+        "signature": "Ws.Core(Server.Conn(b, e), Server.Errors(e), Ws.Ping(Server.Conn(b, e), Server.Errors(e), Ws.Pong(Server.Conn(b, e), Server.Errors(e), Ws.Frames(Server.Conn(b, e), Server.Errors(e), Ws.Poll(Server.Conn(b, e), Server.Errors(e), {})))))",
+        "docs": "The operations of a server connection as a record, for code generic\nover features: the core, ping, pong, frames and poll.",
+        "line": 38,
+        "decl": ":",
+        "head": "Ops(b, e)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Conn",
+        "modulePath": "Server",
+        "fullName": "Server.Conn",
+        "signature": "{ session : Session(b, [NotUpgrade(Str), InvalidStatus(U16), ..e]) }",
+        "docs": "An open server connection over the link value `b`, from\n`Server.accept!` or `request.accept!`.",
+        "line": 42,
+        "decl": "::",
+        "head": "Conn(b, e)"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "link",
+        "modulePath": "Server.Conn",
+        "fullName": "Server.Conn.link",
+        "signature": "Server.Conn(b, e) -> b",
+        "docs": "The link value as the last call left it, for an adapter that needs\nits stream back (to close it, for example).",
+        "line": 46
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "map_link",
+        "modulePath": "Server.Conn",
+        "fullName": "Server.Conn.map_link",
+        "signature": "Server.Conn(b, e), (b -> b) -> Server.Conn(b, e)",
+        "docs": "The same connection with its link value changed by `change` (a\nread timeout for one call, for example). The protocol state is\nuntouched.",
+        "line": 52
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "send!",
+        "modulePath": "Server.Conn",
+        "fullName": "Server.Conn.send!",
+        "signature": "Server.Conn(b, e), Ws.Message => Try(Server.Conn(b, e), Server.Error(e))",
+        "docs": "Send one message, in one unmasked frame.",
+        "line": 56
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "receive!",
+        "modulePath": "Server.Conn",
+        "fullName": "Server.Conn.receive!",
+        "signature": "Server.Conn(b, e) => Try((Server.Conn(b, e), Ws.Message), Server.Error(e))",
+        "docs": "The next message. A platform read deadline passing is not reported:\n`receive!` keeps waiting (see `poll!`). After `close!`, it delivers\nthe messages on their way and ends with `Closed({ by: Us, .. })`.",
+        "line": 65
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "poll!",
+        "modulePath": "Server.Conn",
+        "fullName": "Server.Conn.poll!",
+        "signature": "Server.Conn(b, e) => Try((Server.Conn(b, e), [Message(Ws.Message), TimedOut]), Server.Error(e))",
+        "docs": "The next message, or `TimedOut` when the platform's read deadline\npassed with no message. Nothing is lost.",
+        "line": 73
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "close!",
+        "modulePath": "Server.Conn",
+        "fullName": "Server.Conn.close!",
+        "signature": "Server.Conn(b, e), U16, Str => Try(Server.Conn(b, e), Server.Error(e))",
+        "docs": "Start the closing handshake: send Close and return. A code that may\nnot be sent or a reason over 123 bytes is `InvalidClose`. Once\n`receive!` gives `Closed`, the adapter closes the stream (RFC 6455\nsection 7.1.1: the server closes the TCP connection first).",
+        "line": 83
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "ping!",
+        "modulePath": "Server.Conn",
+        "fullName": "Server.Conn.ping!",
+        "signature": "Server.Conn(b, e), List(U8) => Try(Server.Conn(b, e), Server.Error(e))",
+        "docs": "Send a Ping, payload at most 125 bytes.",
+        "line": 90
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "pong!",
+        "modulePath": "Server.Conn",
+        "fullName": "Server.Conn.pong!",
+        "signature": "Server.Conn(b, e), List(U8) => Try(Server.Conn(b, e), Server.Error(e))",
+        "docs": "Send an unsolicited Pong, payload at most 125 bytes.",
+        "line": 97
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "send_frame!",
+        "modulePath": "Server.Conn",
+        "fullName": "Server.Conn.send_frame!",
+        "signature": "Server.Conn(b, e), Frame => Try(Server.Conn(b, e), Server.Error(e))",
+        "docs": "Send any frame, unmasked. A frame that breaks RFC 6455 is `BadFrame`.",
+        "line": 104
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "receive_frame!",
+        "modulePath": "Server.Conn",
+        "fullName": "Server.Conn.receive_frame!",
+        "signature": "Server.Conn(b, e) => Try((Server.Conn(b, e), Frame), Server.Error(e))",
+        "docs": "The next frame as it arrives, unmasked: no assembly, no reply. Do\nnot mix it with `receive!` inside a fragmented message.",
+        "line": 112
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Request",
+        "modulePath": "Server",
+        "fullName": "Server.Request",
+        "signature": "{ transport : Server.Transport(b, e), link : b, upgrade : Handshake.Upgrade, rest : List(U8) }",
+        "docs": "An upgrade request read from the link and validated, not answered\nyet, from `Server.read_request!`. It keeps the bytes the client sent\nafter the request head, the start of its first frames.",
+        "line": 122,
+        "decl": "::",
+        "head": "Request(b, e)"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "map_link",
+        "modulePath": "Server.Request",
+        "fullName": "Server.Request.map_link",
+        "signature": "Server.Request(b, e), (b -> b) -> Server.Request(b, e)",
+        "docs": "The same request with its link value changed by `change`, for an\nadapter that reads the request with one deadline and runs the\nconnection with another (a short handshake timeout, for example).",
+        "line": 127
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "upgrade",
+        "modulePath": "Server.Request",
+        "fullName": "Server.Request.upgrade",
+        "signature": "Server.Request(b, e) -> Ws.Upgrade",
+        "docs": "The request: its resource, `Host`, the subprotocols the client\noffered in order, and every header (names lowercased).",
+        "line": 132
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "accept!",
+        "modulePath": "Server.Request",
+        "fullName": "Server.Request.accept!",
+        "signature": "Server.Request(b, e), Ws.AcceptOptions => Try(Ws.Opened(Server.Conn(b, e)), Server.Error(e))",
+        "docs": "Accept the upgrade: write the 101 response with the first\nsubprotocol of `options.protocols` that the client offered (the\nserver's order of preference; none when nothing matches), and\nreturn the connection. No\nextension is accepted, so `extensions` is `Reported([])`. Bytes the\nclient sent after its request are then read as frames.\n\nTo choose a subprotocol another way, pick one from\n`request.upgrade().protocols` and pass `protocols: [chosen]`.",
+        "line": 147
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "refuse!",
+        "modulePath": "Server.Request",
+        "fullName": "Server.Request.refuse!",
+        "signature": "Server.Request(b, e), Ws.Refusal => Try(b, Server.Error(e))",
+        "docs": "Refuse the upgrade: write a response with `refusal.status`, its\nheaders and body, and give the link back for the adapter to close.\nAny final status is allowed (a 3xx with a `Location` header, a 401\nwith `WWW-Authenticate`, a 4xx or 5xx). A status outside 200-599\n(a 1xx, 101 among them, which ends no exchange, or no HTTP status)\nis `InvalidStatus` and writes nothing.\n\n```roc\nlink = request.refuse!({ status: 403, body: \"no access to ${request.upgrade().resource}\" })?\n```",
+        "line": 172
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "default_max_message",
+        "modulePath": "Server",
+        "fullName": "Server.default_max_message",
+        "signature": "U64",
+        "docs": "The largest message accepted when the options do not say: 16 MiB.",
+        "line": 184
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "max_request_head",
+        "modulePath": "Server",
+        "fullName": "Server.max_request_head",
+        "signature": "U64",
+        "docs": "The largest request head accepted, `\\r\\n\\r\\n` included: 16 KiB. A\nlonger one is answered with 431.",
+        "line": 189
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "ops",
+        "modulePath": "Server",
+        "fullName": "Server.ops",
+        "signature": "{} -> Server.Ops(b, e)",
+        "docs": "The operations as a record, for code generic over features\n(`Ws.drive!`, `Ws.close_and_wait!`, `Ws.messages`).",
+        "line": 194
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "read_request!",
+        "modulePath": "Server",
+        "fullName": "Server.read_request!",
+        "signature": "Server.Transport(b, e), b => Try(Server.Request(b, e), Server.Error(e))",
+        "docs": "Read the upgrade request from a link the adapter has accepted, and\nvalidate it (RFC 6455 section 4.2.1). Each read asks for at most the\nbytes still allowed by `max_request_head`, and bytes after the head are\nkept in the request.\n\nA request that is not a valid upgrade is answered (400, 405, 426, or\n431 for a head over `max_request_head`) and gives `NotUpgrade(why)`;\nthe stream ending, or the platform's read deadline passing, before the\nend of the head gives `NotUpgrade(why)` with nothing written.",
+        "line": 215
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "accept!",
+        "modulePath": "Server",
+        "fullName": "Server.accept!",
+        "signature": "Server.Transport(b, e), b, Ws.AcceptOptions => Try(Ws.Opened(Server.Conn(b, e)), Server.Error(e))",
+        "docs": "Read the request and accept it with `options`: `read_request!`, then\n`request.accept!(options)`.",
+        "line": 243
+       }
+      ]
+     },
+     {
+      "name": "Session",
+      "imports": [],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Session",
+        "modulePath": "",
+        "fullName": "Session",
+        "signature": "{\n\tbytes : Ws.Bytes(b, Session.Errors(e), {}),\n\tmask! : b => Try((b, Frame.Masking), Ws.Error(Session.Errors(e))),\n\tlink : b,\n\tprotocol : Protocol,\n\tinbox : List(Ws.Message),\n\theld : List(Frame),\n}",
+        "docs": "Frame I/O over a byte link after the opening handshake, for either role.\n`Client.Conn` and `Server.Conn` each hold one and forward their methods to\nit. Not exposed by the package.\n\nThe roles differ only in `mask!` (a client masks each frame it sends with 4\nrandom bytes, a server does not mask) and in the `Protocol`'s role, which\nsets the masking a received frame must have.\n\nThe peer's Close is answered once the messages read with it are delivered:\nwhen one read brings messages and the Close, the echo is held (`held`)\nuntil a call finds the inbox empty, so replies to those messages are sent\nbefore it (RFC 6455 section 5.5.1 lets an endpoint delay its echo).",
+        "line": 17,
+        "decl": "::",
+        "head": "Session(b, e)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Errors",
+        "modulePath": "Session",
+        "fullName": "Session.Errors",
+        "signature": "[InvalidClose(Str), ControlTooLong(U64), BadFrame(Str), ..e]",
+        "docs": "The tags frame I/O adds to the row `e` of its role.",
+        "line": 27,
+        "decl": ":",
+        "head": "Errors(e)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Error",
+        "modulePath": "Session",
+        "fullName": "Session.Error",
+        "signature": "Ws.Error(Session.Errors(e))",
+        "docs": "Every error of a session call.",
+        "line": 30,
+        "decl": ":",
+        "head": "Error(e)"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "start!",
+        "modulePath": "Session",
+        "fullName": "Session.start!",
+        "signature": "Ws.Bytes(b, Session.Errors(e), {}), (b => Try((b, Frame.Masking), Session.Error(e))), b, Protocol, List(U8) => Try(Session(b, e), Session.Error(e))",
+        "docs": "A session over a link the handshake has just finished on, fed the\nbytes read after the handshake head. The frames those bytes provoke (a\nPong, a Close) are written.",
+        "line": 35
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "link",
+        "modulePath": "Session",
+        "fullName": "Session.link",
+        "signature": "Session(b, e) -> b",
+        "docs": "The link value as the last call left it.",
+        "line": 42
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "map_link",
+        "modulePath": "Session",
+        "fullName": "Session.map_link",
+        "signature": "Session(b, e), (b -> b) -> Session(b, e)",
+        "docs": "The same session with its link value changed by `change`.",
+        "line": 46
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "send!",
+        "modulePath": "Session",
+        "fullName": "Session.send!",
+        "signature": "Session(b, e), Ws.Message => Try(Session(b, e), Session.Error(e))",
+        "docs": "",
+        "line": 49
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "receive!",
+        "modulePath": "Session",
+        "fullName": "Session.receive!",
+        "signature": "Session(b, e) => Try((Session(b, e), Ws.Message), Session.Error(e))",
+        "docs": "",
+        "line": 61
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "poll!",
+        "modulePath": "Session",
+        "fullName": "Session.poll!",
+        "signature": "Session(b, e) => Try((Session(b, e), [Message(Ws.Message), TimedOut]), Session.Error(e))",
+        "docs": "",
+        "line": 75
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "close!",
+        "modulePath": "Session",
+        "fullName": "Session.close!",
+        "signature": "Session(b, e), U16, Str => Try(Session(b, e), Session.Error(e))",
+        "docs": "",
+        "line": 92
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "ping!",
+        "modulePath": "Session",
+        "fullName": "Session.ping!",
+        "signature": "Session(b, e), List(U8) => Try(Session(b, e), Session.Error(e))",
+        "docs": "",
+        "line": 107
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "pong!",
+        "modulePath": "Session",
+        "fullName": "Session.pong!",
+        "signature": "Session(b, e), List(U8) => Try(Session(b, e), Session.Error(e))",
+        "docs": "",
+        "line": 113
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "send_frame!",
+        "modulePath": "Session",
+        "fullName": "Session.send_frame!",
+        "signature": "Session(b, e), Frame => Try(Session(b, e), Session.Error(e))",
+        "docs": "",
+        "line": 119
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "receive_frame!",
+        "modulePath": "Session",
+        "fullName": "Session.receive_frame!",
+        "signature": "Session(b, e) => Try((Session(b, e), Frame), Session.Error(e))",
+        "docs": "",
+        "line": 125
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "default_max_message",
+        "modulePath": "Session",
+        "fullName": "Session.default_max_message",
+        "signature": "U64",
+        "docs": "The largest message accepted when the request or the options do not\nsay: 16 MiB.",
+        "line": 167
+       }
+      ]
+     },
+     {
+      "name": "Sha1",
+      "imports": [],
+      "items": [
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "hash",
+        "modulePath": "Sha1",
+        "fullName": "Sha1.hash",
+        "signature": "List(U8) -> List(U8)",
+        "docs": "The 20-byte digest of `bytes`.",
+        "line": 8
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "hex",
+        "modulePath": "Sha1",
+        "fullName": "Sha1.hex",
+        "signature": "List(U8) -> Str",
+        "docs": "The digest as 40 lowercase hex digits.",
+        "line": 21
+       }
+      ]
+     },
+     {
+      "name": "Ws",
+      "imports": [],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Error",
+        "modulePath": "Ws",
+        "fullName": "Ws.Error",
+        "signature": "[Closed(Ws.Closure), Closing, ..e]",
+        "docs": "Every error of an effectful field: the connection has ended\n(`Closed`), this endpoint can no longer send and does not know the\nclosure yet (`Closing`), or a tag of the adapter's row `e`.",
+        "line": 38,
+        "decl": ":",
+        "head": "Error(e)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Message",
+        "modulePath": "Ws",
+        "fullName": "Ws.Message",
+        "signature": "[Text(Str), Binary(List(U8))]",
+        "docs": "One whole message.",
+        "line": 41,
+        "decl": ":",
+        "head": "Message"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Closure",
+        "modulePath": "Ws",
+        "fullName": "Ws.Closure",
+        "signature": "{ code : U16, reason : Str, clean : Bool, by : [Peer, Us, Transport] }",
+        "docs": "How a connection ended (RFC 6455 section 7). `code` is 1005 when the\nClose frame had no code and 1006 when the connection dropped with no\nClose frame. `clean` is whether both Close frames were exchanged. `by`\nis who started the close: the peer, this endpoint (by `close!` or by\nfailing the connection after a protocol error), or the transport.",
+        "line": 48,
+        "decl": ":",
+        "head": "Closure"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "ConnectRequest",
+        "modulePath": "Ws",
+        "fullName": "Ws.ConnectRequest",
+        "signature": "{ url : Str, protocols ?: List(Str), headers ?: List((Str, Str)), max_message ?: U64 }",
+        "docs": "A request to open a client connection. `protocols` are the\nsubprotocols offered in order (default none), `headers` extra request\nheaders (default none), `max_message` the largest message accepted, in\nbytes. With no `max_message` the adapter's own limit applies (16 MiB\nover bytes, `Client.default_max_message`). A bigger message fails the\nconnection with 1009: `receive!` gives\n`Closed({ code: 1009, by: Us, clean: Bool.False, .. })`.",
+        "line": 57,
+        "decl": ":",
+        "head": "ConnectRequest"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Opened",
+        "modulePath": "Ws",
+        "fullName": "Ws.Opened",
+        "signature": "{ conn : c, protocol : Str, extensions : [Reported(List(Str)), NotReported] }",
+        "docs": "An open connection `conn`, with what the handshake settled: the chosen\nsubprotocol (`\"\"` for none) and the extensions, `Reported(list)` (an\nempty list for none) or `NotReported` where the platform does not tell\n(a runtime that negotiates and applies an extension by itself).",
+        "line": 63,
+        "decl": ":",
+        "head": "Opened(c)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "AcceptOptions",
+        "modulePath": "Ws",
+        "fullName": "Ws.AcceptOptions",
+        "signature": "{ protocols ?: List(Str), max_message ?: U64 }",
+        "docs": "Options of a server accepting an upgrade: the subprotocols it supports,\nin order of preference (default none), and `max_message`, the largest\nmessage accepted, in bytes. The chosen subprotocol is the first of\n`protocols` that the client offered, whatever the order of its offer;\nnone when nothing matches. With no `max_message` the adapter's own\nlimit applies (16 MiB over bytes, `Server.default_max_message`). A\nbigger message fails the connection with 1009: `receive!` gives\n`Closed({ code: 1009, by: Us, clean: Bool.False, .. })`.",
+        "line": 73,
+        "decl": ":",
+        "head": "AcceptOptions"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Upgrade",
+        "modulePath": "Ws",
+        "fullName": "Ws.Upgrade",
+        "signature": "{ resource : Str, host : Str, protocols : List(Str), headers : List((Str, Str)) }",
+        "docs": "An upgrade request as a server sees it before it accepts or refuses:\nthe resource (path and query), `Host`, the subprotocols the client\noffered in its order, and every header, its name lowercased.",
+        "line": 78,
+        "decl": ":",
+        "head": "Upgrade"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Refusal",
+        "modulePath": "Ws",
+        "fullName": "Ws.Refusal",
+        "signature": "{ status : U16, headers ?: List((Str, Str)), body ?: Str }",
+        "docs": "How a server refuses an upgrade: a final HTTP status, 200 to 599 (RFC\n6455 section 4.2.2 allows any status but 101), such as 401 with a\n`WWW-Authenticate` header or a 3xx with a `Location`; extra response\nheaders (default none); a plain-text body (default none). How a refusal is sent is the platform's: a byte\nserver writes it, a request handler returns it as its response.",
+        "line": 85,
+        "decl": ":",
+        "head": "Refusal"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Core",
+        "modulePath": "Ws",
+        "fullName": "Ws.Core",
+        "signature": "{ send! : c, Ws.Message => Try(c, Ws.Error(e)), receive! : c => Try((c, Ws.Message), Ws.Error(e)), close! : c, U16, Str => Try(c, Ws.Error(e)), ..r }",
+        "docs": "What every connection can do on every platform.\n\n- `send!` sends one message.\n- `receive!` waits for the next message. `Err(Closed(_))` once the\n  connection has ended.\n- `close!` starts the closing handshake: it sends Close and returns at\n  once. `receive!` then delivers the messages already on their way and\n  ends with `Closed({ by: Us, .. })` when the peer answers. Until then,\n  `send!` and a second `close!` give `Closing`.\n  `Ws.close_and_wait!` does both.",
+        "line": 99,
+        "decl": ":",
+        "head": "Core(c, e, r)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Sender",
+        "modulePath": "Ws",
+        "fullName": "Ws.Sender",
+        "signature": "{ send! : c, Ws.Message => Try(c, Ws.Error(e)), close! : c, U16, Str => Try(c, Ws.Error(e)), ..r }",
+        "docs": "The sending half alone, for a push-model server whose messages arrive\nas `Handlers` calls rather than by `receive!`.",
+        "line": 103,
+        "decl": ":",
+        "head": "Sender(c, e, r)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Ping",
+        "modulePath": "Ws",
+        "fullName": "Ws.Ping",
+        "signature": "{ ping! : c, List(U8) => Try(c, Ws.Error(e)), ..r }",
+        "docs": "Send a protocol-level Ping (RFC 6455 section 5.5.2), payload at most 125\nbytes. The peer's Pong is not reported by `receive!`; read it with\n`Frames`.",
+        "line": 108,
+        "decl": ":",
+        "head": "Ping(c, e, r)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Pong",
+        "modulePath": "Ws",
+        "fullName": "Ws.Pong",
+        "signature": "{ pong! : c, List(U8) => Try(c, Ws.Error(e)), ..r }",
+        "docs": "Send an unsolicited Pong, a one-way heartbeat (RFC 6455 section 5.5.3).",
+        "line": 111,
+        "decl": ":",
+        "head": "Pong(c, e, r)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Frames",
+        "modulePath": "Ws",
+        "fullName": "Ws.Frames",
+        "signature": "{ send_frame! : c, Frame => Try(c, Ws.Error(e)), receive_frame! : c => Try((c, Frame), Ws.Error(e)), ..r }",
+        "docs": "Frame-level access: send any frame (fragments, control frames) and read\nthe next frame as it arrives, with no assembly and no automatic reply.\nA received frame that breaks the protocol fails the connection.",
+        "line": 116,
+        "decl": ":",
+        "head": "Frames(c, e, r)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "ReceiveWithin",
+        "modulePath": "Ws",
+        "fullName": "Ws.ReceiveWithin",
+        "signature": "{ receive_within! : c, U64 => Try((c, [Message(Ws.Message), TimedOut]), Ws.Error(e)), ..r }",
+        "docs": "A receive that waits at most `ms` milliseconds. `TimedOut` loses\nnothing.",
+        "line": 120,
+        "decl": ":",
+        "head": "ReceiveWithin(c, e, r)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Poll",
+        "modulePath": "Ws",
+        "fullName": "Ws.Poll",
+        "signature": "{ poll! : c => Try((c, [Message(Ws.Message), TimedOut]), Ws.Error(e)), ..r }",
+        "docs": "A receive that waits only as long as the platform's own read deadline\n(a fixed time the application does not choose), then gives `TimedOut`,\nas `ReceiveWithin` does. `TimedOut` loses nothing.",
+        "line": 125,
+        "decl": ":",
+        "head": "Poll(c, e, r)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Buffered",
+        "modulePath": "Ws",
+        "fullName": "Ws.Buffered",
+        "signature": "{ buffered_amount! : c => Try(U64, Ws.Error(e)), ..r }",
+        "docs": "The bytes queued for sending and not yet handed to the network.",
+        "line": 128,
+        "decl": ":",
+        "head": "Buffered(c, e, r)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "AutoResponse",
+        "modulePath": "Ws",
+        "fullName": "Ws.AutoResponse",
+        "signature": "{ set_auto_response! : c, { request : Str, response : Str } => Try(c, Ws.Error(e)), clear_auto_response! : c => Try(c, Ws.Error(e)), ..r }",
+        "docs": "A fixed text reply that the runtime sends to a fixed text request by\nitself, without running application code (an application-level\nheartbeat that does not wake the server). `c` is the scope the runtime\nsets it for: a connection, or a whole server (every connection it\nholds) on a runtime that keeps one reply per server.",
+        "line": 135,
+        "decl": ":",
+        "head": "AutoResponse(c, e, r)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Persist",
+        "modulePath": "Ws",
+        "fullName": "Ws.Persist",
+        "signature": "{ saved! : c => Try([Saved(List(U8)), Nothing], Ws.Error(e)), save! : c, List(U8) => Try(c, Ws.Error(e)), ..r }",
+        "docs": "Per-connection state kept by the runtime, which survives the server\nleaving memory while the connection stays open (hibernation).",
+        "line": 139,
+        "decl": ":",
+        "head": "Persist(c, e, r)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Topics",
+        "modulePath": "Ws",
+        "fullName": "Ws.Topics",
+        "signature": "{ subscribe! : c, Str => Try(c, Ws.Error(e)), unsubscribe! : c, Str => Try(c, Ws.Error(e)), publish! : c, Str, Ws.Message => Try(c, Ws.Error(e)), ..r }",
+        "docs": "Named groups of connections, with one send to every member\n(publish/subscribe).",
+        "line": 143,
+        "decl": ":",
+        "head": "Topics(c, e, r)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Connect",
+        "modulePath": "Ws",
+        "fullName": "Ws.Connect",
+        "signature": "{ connect! : Ws.ConnectRequest => Try(Ws.Opened(c), Ws.Error(e)), ..r }",
+        "docs": "Open a client connection `c`. A server that refuses the upgrade is\n`Refused(Str)` in `e`.",
+        "line": 147,
+        "decl": ":",
+        "head": "Connect(c, e, r)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Accept",
+        "modulePath": "Ws",
+        "fullName": "Ws.Accept",
+        "signature": "{ accept! : q, Ws.AcceptOptions => Try({ response : p, opened : Ws.Opened(c) }, Ws.Error(e)), ..r }",
+        "docs": "Accept an upgrade of an incoming request `q` into a server connection\n`c`. `response` is the handshake response `p` that the application\nhands back to its runtime, on a platform where the request handler\nreturns the 101 response (the connection then lives in work that runs\nafter it); `{}` where `accept!` writes the response itself. A request\nthat is not a valid upgrade is `NotUpgrade(Str)` in `e`.",
+        "line": 155,
+        "decl": ":",
+        "head": "Accept(q, p, c, e, r)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Handlers",
+        "modulePath": "Ws",
+        "fullName": "Ws.Handlers",
+        "signature": "{\n\t\ton_open! : s, c => Try((s, c), Ws.Error(e)),\n\t\ton_message! : s, c, Ws.Message => Try((s, c), Ws.Error(e)),\n\t\ton_close! : s, c, Ws.Closure => Try(s, Ws.Error(e)),\n\t}",
+        "docs": "Callbacks of a push-model server, where the runtime delivers events.\n`s` is the application's state, threaded from call to call, and `c` the\nconnection, used with the adapter's `Sender` fields. On a runtime that\ndoes not keep the server in memory between events, the adapter stores\n`s` (for example through `Persist`) or the application keeps `s` as `{}`.\n\n`on_close!` gets the connection too, after it has ended: for what the\nvalue holds (an adapter's link to close, a connection id to forget, a\n`Persist` attachment to read). Sending on it gives `Closed`. It returns\nno connection, since nothing follows it.",
+        "line": 167,
+        "decl": ":",
+        "head": "Handlers(s, c, e)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Bytes",
+        "modulePath": "Ws",
+        "fullName": "Ws.Bytes",
+        "signature": "{ write_bytes! : b, List(U8) => Try(b, Ws.Error(e)), read_up_to! : b, U64 => Try((b, [Data(List(U8)), End, TimedOut]), Ws.Error(e)), ..r }",
+        "docs": "A byte stream `b`, for a platform where Roc owns the wire (TCP).\n`read_up_to!(b, n)` gives `Data` of 1 to `n` bytes, `End` at the end of\nthe stream, or `TimedOut` when a platform deadline passed with nothing\nto read (it consumes nothing).",
+        "line": 179,
+        "decl": ":",
+        "head": "Bytes(b, e, r)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Random",
+        "modulePath": "Ws",
+        "fullName": "Ws.Random",
+        "signature": "{ random_bytes! : b, U64 => Try((b, List(U8)), Ws.Error(e)), ..r }",
+        "docs": "Unpredictable bytes (RFC 6455 section 10.3) for the client's key and\nmasks: `random_bytes!(b, n)` gives exactly `n` bytes. `b` may carry a\ngenerator's state.",
+        "line": 184,
+        "decl": ":",
+        "head": "Random(b, e, r)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Basic",
+        "modulePath": "Ws",
+        "fullName": "Ws.Basic",
+        "signature": "Ws.Core(c, e, {})",
+        "docs": "A connection with only the core.",
+        "line": 189,
+        "decl": ":",
+        "head": "Basic(c, e)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Raw",
+        "modulePath": "Ws",
+        "fullName": "Ws.Raw",
+        "signature": "Ws.Core(c, e, Ws.Ping(c, e, Ws.Pong(c, e, Ws.Frames(c, e, {}))))",
+        "docs": "A connection over raw bytes: the core, ping, pong and frames.",
+        "line": 192,
+        "decl": ":",
+        "head": "Raw(c, e)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Timed",
+        "modulePath": "Ws",
+        "fullName": "Ws.Timed",
+        "signature": "Ws.Core(c, e, Ws.ReceiveWithin(c, e, {}))",
+        "docs": "A connection with the core and a receive with a deadline.",
+        "line": 195,
+        "decl": ":",
+        "head": "Timed(c, e)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Push",
+        "modulePath": "Ws",
+        "fullName": "Ws.Push",
+        "signature": "Ws.Sender(c, e, {})",
+        "docs": "A push-model server connection: sending only, events by callback.",
+        "line": 198,
+        "decl": ":",
+        "head": "Push(c, e)"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Transport",
+        "modulePath": "Ws",
+        "fullName": "Ws.Transport",
+        "signature": "Ws.Bytes(b, e, Ws.Random(b, e, {}))",
+        "docs": "What the pure client needs from a platform: a byte stream and\nrandomness over one link state `b`.",
+        "line": 202,
+        "decl": ":",
+        "head": "Transport(b, e)"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "messages",
+        "modulePath": "Ws",
+        "fullName": "Ws.messages",
+        "signature": "{ receive! : c => Try((c, Ws.Message), Ws.Error(e)), .. }, c -> Stream(Try(Ws.Message, Ws.Error(e)))",
+        "docs": "The messages of a connection as a stream. The last item is the `Err`\nthat ended it: `Err(Closed(closure))` once the connection has ended, or\nanother error of `receive!`.",
+        "line": 209
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "close_and_wait!",
+        "modulePath": "Ws",
+        "fullName": "Ws.close_and_wait!",
+        "signature": "{ close! : c, U16, Str => Try(c, Ws.Error(e)), receive! : c => Try((c, Ws.Message), Ws.Error(e)), .. }, c, U16, Str => Try(Ws.Closure, Ws.Error(e))",
+        "docs": "Close and wait for the end of the closing handshake, dropping the\nmessages that arrive meanwhile. A connection that is closing already\n(`close!` gives `Closing`) is waited for as it is.",
+        "line": 226
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "drive!",
+        "modulePath": "Ws",
+        "fullName": "Ws.drive!",
+        "signature": "{ receive! : c => Try((c, Ws.Message), Ws.Error(e)), .. }, c, s, Ws.Handlers(s, c, e) => (s, Try(Ws.Closure, Ws.Error(e)))",
+        "docs": "Run push handlers over a pull connection until it closes: `on_open!`,\n`on_message!` for each message, then `on_close!` with the connection\nas the last call left it and the closure.\n\nThe result is the state and how the run ended, both ways: `(s,\nOk(closure))` after `on_close!`, whose state it is, or `(s, Err(err))`\nwith the state as the last handler that succeeded left it (the initial\nstate when `on_open!` fails). So an error does not lose the state:\n\n```roc\n(count, ended) = Ws.drive!(ops, conn, 0, handlers)\nsave!(count)\nclosure = ended?\n```\n\nA handler that fails with `Closed` (it sent on a connection that had\nended, such as one whose stream dropped with messages still to deliver)\ndoes not end the run: the messages left are delivered from the\nconnection as it was before that call, then `on_close!` runs. Any other\nhandler error, or an error of `receive!` other than `Closed`, ends the\nrun with that error and no `on_close!`.",
+        "line": 265
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "dropped",
+        "modulePath": "Ws",
+        "fullName": "Ws.dropped",
+        "signature": "Ws.Closure",
+        "docs": "The closure of a connection that dropped with no Close frame.",
+        "line": 297
+       }
+      ]
+     },
+     {
+      "name": "main",
+      "imports": [],
+      "items": []
+     }
+    ]
+   }
+  }
+ }
+}

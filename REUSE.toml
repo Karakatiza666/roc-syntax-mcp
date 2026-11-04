@@ -169,6 +169,17 @@ precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Luke Boswell and subsequent authors"
 SPDX-License-Identifier = "UPL-1.0"
 
+# roc-websocket is UPL-1.0, and its author is also the author of this repository.
+[[annotations]]
+path = [
+  "plugins/roc-websocket/LICENSE",
+  "plugins/roc-websocket/index.json",
+  "plugins/roc-websocket/examples/**",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Heorhii Bulakh and subsequent roc-websocket authors <github.com/Karakatiza666/roc-websocket/graphs/contributors>"
+SPDX-License-Identifier = "UPL-1.0"
+
 # Joy and joy-html are Apache-2.0, so the files of this repo in plugins/joy are
 # Apache-2.0 too, and the package has one license. `precedence = "override"`
 # stops the UPL-1.0 entry for plugins/*/ above from also applying.

@@ -1,0 +1,101 @@
+# Provenance of this corpus.
+#
+# Update this file each time you repin the plugin, so that the next repin can
+# diff tag to tag.
+
+repo     https://github.com/Karakatiza666/roc-websocket
+tag      0.0.5
+commit   17c7f6f877ec4fc65bef12a014c4a8ad929eab40
+tarball  AKLgwxjBQN2XkE4G5sZtzrjPSxhwo6XmJRSPdWhpgVUN.tar.zst
+
+# The nightly every app here was checked under, and the manifest's `compiler`
+# line. It is the `.roc-version` of the tag, which is also the one the commit
+# after the tag pins for CI.
+compiler nightly-2026-11-03-34bd006
+
+# 0.0.5 over 0.0.4, breaking for code that runs handlers: `Ws.Handlers.on_close!`
+# gets the connection (`|state, conn, closure|`), `Ws.drive!` returns
+# `(state, ended)` and no longer a `Try`, a handler's `Err(Closed)` no longer
+# ends the run, and the echo of the peer's Close waits until the messages read
+# with it are delivered. Added: the `Server` module (the server driver over
+# bytes: `Server.accept!`, `Server.read_request!`, `Server.Request`,
+# `Server.Conn`, `Server.ops`, `Server.Transport`), `Ws.Upgrade`, `Ws.Refusal`,
+# `Handshake.refusal`, `Handshake.head_end` and `Protocol.expects`;
+# `Handshake.choose_protocol` picks by the server's order. 0.0.4 added
+# `Client.Conn.map_link`. 0.0.3 renamed Ws.Dial to Ws.Connect, Ws.Request to
+# Ws.ConnectRequest and Client.Link to Client.Transport, made Client.Conn opaque
+# and made `poll!` give `TimedOut`. The overview names those old spellings,
+# because a model recalls them.
+
+index.json  <- package/ (src/), parsed by `roc-syntax-mcp plugin index`. Public
+               and private modules; `package [...]` in src/main.roc is what
+               separates them. No source is vendored
+examples/   <- examples/sans_io.roc and echo_server.roc, repinned with two edits per file. Upstream pins the
+               package as `../src/main.roc`, a path that resolves only inside a
+               checkout, so the header's entry is replaced with the 0.0.5
+               tarball above under the name `ws`; and the file gains one `##`
+               line above its header, because that line is the title
+               `list_roc_index(kind: "examples")` prints. Nothing else differs.
+topics/     <- this package's own, not upstream's: programs written against
+               this pin. ws_client and ws_server use the roc-basic-cli-websocket
+               adapter (below) and were run against each other, under both
+               nightly-2026-11-03-34bd006 and nightly-2026-10-12-2664a27.
+               ws_adapters and ws_frames use no platform I/O.
+overview.md <- this package's own. Every API claim on it was compiled, and every
+               fenced block appears in verify/overview-snippets.roc.
+
+# Related packages, the platform adapters the overview documents. Changes of the
+# newest releases: roc-basic-cli-websocket 0.0.3 makes `receive_within!` a total
+# deadline (0.0.2 bounded each read, so a peer pinging every second kept it
+# waiting) and adds a `deadline` field to `WsClient.Link` and `WsServer.Link`,
+# which only code that builds a link by hand sees; roc-basic-webserver-websocket
+# 0.0.2 moves to roc-websocket 0.0.5 and documents what bounds time, with no API
+# change.
+#   roc-basic-cli-websocket 0.0.3, client and server, basic-cli 0.26.0,
+#     roc-websocket 0.0.5, built with nightly-2026-11-03-34bd006
+#     https://github.com/Karakatiza666/roc-basic-cli-websocket/releases/download/0.0.3/9c6XLWHRSREuaoELdH1a835Yopw92Jxy2b5e151X6mZj.tar.zst
+#   roc-basic-webserver-websocket 0.0.2, client only, basic-webserver 0.20.0
+#     (it refuses 1xx, so it cannot answer an upgrade), roc-websocket 0.0.5,
+#     nightly-2026-11-03-34bd006. The bundled basic-webserver of this server is
+#     0.19.0, so no program here pins this adapter's platform
+#     https://github.com/Karakatiza666/roc-basic-webserver-websocket/releases/download/0.0.2/63RHisM5dNvGRLkMFurQZd7Gp1AqWpThfd5Dvtb2CTKj.tar.zst
+#   roc-cloudflare-workers-websocket 0.0.3, client and server,
+#     cloudflare-workers 0.0.6, roc-websocket 0.0.5, nightly-2026-11-03-34bd006
+#     https://github.com/Karakatiza666/roc-cloudflare-workers-websocket/releases/download/0.0.3/FTAaUpFV8tZKVVbLUaB4SdMKykJNsC9q6MtXRwwqKTJi.tar.zst
+# Only the first is pinned by a program here. The server side of the third is
+# mentioned in the overview's table only; the cloudflare-workers plugin teaches
+# that platform's own WebSocket module.
+#
+# The platform the topics pin is basic-cli 0.26.0, the one this server bundles.
+# A program that pins it is checked with that release's nightly,
+# nightly-2026-10-12-2664a27 (scripts/nightlies.mjs), not with the manifest's
+# `compiler`, so the topics are written to compile under both.
+#
+# Two earlier findings, rechecked at this repin:
+#  - The adapter's README example (`main!` with `Try({}, _)` ending in
+#    `Stdout.line!`) compiles under nightly-2026-11-01-48d3369 and
+#    nightly-2026-11-03-34bd006, but not under nightly-2026-10-12-2664a27, where
+#    the adapter's closed `WsClient.Error` clashes with the platform's
+#    `[Exit(I32), Interrupted]`. ws_client keeps the adapter's own pattern
+#    (a function returning `WsClient.Error`, `main!` mapping it to `Exit(1)`),
+#    which compiles under all three.
+#  - Under nightly-2026-11-01-48d3369 a program on basic-cli 0.26.0 that calls
+#    Tcp `read_up_to!` twice on one connection aborts at run time ("is not a
+#    live TcpConnection handle: it has already been freed"). It runs under
+#    nightly-2026-10-12-2664a27 and under nightly-2026-11-03-34bd006, so the
+#    fault is gone with the newer nightly. The client and server topics ran
+#    against each other under both of those.
+
+# What is not bundled, and why:
+#   README.md, DESIGN.md  their content is in overview.md and the topics
+#   tests/                tests, which use scripted links, not app-facing
+#   probes/               design experiments of the author, some FAIL by design
+#   scripts/, dist/       contributor material and the release archive
+#   .github/              the same
+
+# roc-websocket is UPL-1.0 and ships a LICENSE file. LICENSE is that file, and
+# package.json names UPL-1.0.
+
+# Parsed counts at this pin, for the next repin to diff against. These are what
+# `plugin validate` reports on its `corpus` line:
+# 162 items in 13 modules: 15 host, 147 public.

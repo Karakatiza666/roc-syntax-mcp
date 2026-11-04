@@ -1,0 +1,33 @@
+{
+  "name": "@roc-syntax/roc-websocket",
+  "version": "0.0.1",
+  "description": "The roc-websocket WebSocket package, as a roc-syntax-mcp corpus.",
+  "author": "Heorhii Bulakh",
+  "license": "UPL-1.0",
+  "files": [
+    "LICENSE",
+    "README.md",
+    "UPSTREAM",
+    "examples",
+    "index.json",
+    "overview.md",
+    "plugin.json",
+    "topics",
+    "verify"
+  ],
+  "keywords": [
+    "roc",
+    "roc-syntax-mcp",
+    "roc-syntax-mcp-plugin",
+    "roc-websocket",
+    "websocket"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Karakatiza666/roc-syntax-mcp.git",
+    "directory": "plugins/roc-websocket"
+  }
+}

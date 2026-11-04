@@ -30,6 +30,7 @@ on:
           - weaver
           - joy
           - cloudflare-workers
+          - roc-websocket
       dry-run:
         description: Validate and pack, publish nothing
         type: boolean
