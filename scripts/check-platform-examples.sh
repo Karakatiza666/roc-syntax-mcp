@@ -63,8 +63,11 @@ trap 'rm -rf "$WRAPPED"' EXIT
 pass=0
 fail=0
 files=()
+# The fork that checks each file, for a plugin that names a fork as its compiler.
+declare -A FORK_OF=()
 for dir in "${PLUGINS[@]}"; do
   rows="$(manifest "$dir")" || { echo "FAIL  $dir: the manifest does not load" >&2; fail=$((fail + 1)); continue; }
+  first=${#files[@]}
   while IFS='|' read -r name scaffold sample dirs; do
     [ -n "$name" ] || continue
     # Compile every directory that a plugin declares, for every kind of plugin.
@@ -108,6 +111,10 @@ writeFileSync(process.argv[1], m.scaffold(code, process.env.SCOPE, catalog).sour
     fi
     files+=("$out")
   done <<<"$rows"
+  fork="$(node "$ROOT/scripts/nightlies.mjs" --fork "$dir")"
+  if [ -n "$fork" ]; then
+    for f in "${files[@]:$first}"; do FORK_OF[$f]="$fork"; done
+  fi
 done
 
 # Each agentic eval run starts from the eval fixture and edits it. If the
@@ -124,13 +131,23 @@ deadline=${ROC_CHECK_TIMEOUT:-300}
 # the `roc:` pin of the program, else the `compiler` line in the UPSTREAM file
 # of the platform release it pins, else the running compiler. Unpack each such
 # nightly at the repo root, as roc_nightly-<target>-<date>-<commit>/.
+#
+# A plugin whose `compiler` names a fork (`<branch>-<40-hex commit>`) has every
+# program checked with that fork, whatever the program pins, because its
+# programs do not build on a nightly. The fork is at the repo root as
+# roc_<compiler>/roc, which can be a symlink to a local build.
 RUNNING="$("$ROC" version 2>/dev/null)"
 NIGHTLIES="$(node "$ROOT/scripts/nightlies.mjs" "$@")" || { echo "FAIL  the UPSTREAM nightlies do not load" >&2; exit 1; }
 
 # Prints the compiler for file $1. Prints the reason and fails when the nightly
 # is not at the repo root.
 compiler_for() {
-  local pin release nightly dir
+  local pin release nightly dir fork="${FORK_OF[$1]:-}"
+  if [ -n "$fork" ]; then
+    [ -x "$ROOT/roc_$fork/roc" ] && { printf '%s' "$ROOT/roc_$fork/roc"; return; }
+    printf 'needs the fork %s. Build it and link the binary at %s' "$fork" "$ROOT/roc_$fork/roc"
+    return 1
+  fi
   pin=$(grep -m1 -oE '^\s*roc:\s*"nightly-[^"]+"' "$1" | grep -oE 'nightly-[^"]+')
   if [ -z "$pin" ]; then
     while IFS='|' read -r release nightly; do
@@ -218,6 +235,7 @@ for f in "${files[@]}"; do
     if ! used=$(override "$f" "$copy" "$WRAPPED/releases" 2>"$WRAPPED/override.err"); then
       out="$out"$'\n'"the override did not apply: $(tail -n 3 "$WRAPPED/override.err")"
     elif [ -n "$used" ]; then
+      FORK_OF[$copy]="${FORK_OF[$f]:-}"
       out=$(check "$copy")
       # The compiler prints the path of the copy as absolute and as relative.
       # Replace both with the path of the original file.

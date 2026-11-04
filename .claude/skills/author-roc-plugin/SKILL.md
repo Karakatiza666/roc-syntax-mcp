@@ -121,6 +121,14 @@ it, because a host update must not invalidate a plugin that a user installed.
 `validate` checks each program that pins your release with that nightly. Unpack
 it as `roc_nightly-*` at the root of the roc-syntax-mcp checkout.
 
+A package that needs a fork of the compiler names the fork instead, in the
+form of its `.roc-version`, `<branch>-<40-hex commit>`. Link your build at the
+repo root as `roc_<compiler>/roc`. `validate` checks every program of the plugin
+with it, whatever each program pins. CI cannot build a fork, so run
+`plugin validate <dir> --attest` before each commit. It writes `BUILD-PROOF`
+(the compiler and a digest of the packed files), which CI checks with
+`validate --offline --proof`. `plugins/surrealdb/` is the worked example.
+
 Then get the release that you document, at a tag, and record its tarball URL.
 Every app that you write pins that URL, so the compiler fetches the real
 platform and type-checks against it.
@@ -376,12 +384,12 @@ with the related manifest fields.
 | Site | Carries |
 |---|---|
 | `plugin.json` `release` | The platform release, not your plugin's own version |
-| `plugin.json` `compiler` | The nightly that you built against |
+| `plugin.json` `compiler` | The nightly that you built against, or the fork |
 | `plugin.json` `maintainer` | The person who answers for the corpus |
 | `package.json` `name` | The id that users install and declare. `plugin add @you/roc-ray` installs it, and `--plugin=@you/roc-ray` resolves `@you/roc-ray/plugin.json` |
 | `package.json` `version` | Your version. Increase it when the corpus changes. The manifest records the release that the plugin documents |
 | `package.json` `files` | Every path that the manifest names, plus `plugin.json`. `init` derives the list, so keep it derived |
-| CI | `roc-syntax-mcp plugin validate .`, so that each published version has passed the checks, and users do not have to trust the author |
+| CI | `roc-syntax-mcp plugin validate .`, so that each published version has passed the checks, and users do not have to trust the author. For a fork, `validate --offline --proof` |
 
 No script may run on install. Both npm and bun block a package's install
 scripts until the user passes a flag. Thus a `prepare` script that assembles

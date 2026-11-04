@@ -11,6 +11,14 @@
 //   prints `release|nightly` for each platform release, one per line.
 // Usage: node scripts/nightlies.mjs --all
 //   prints each nightly that the gates of this repo use, one per line, for CI.
+// Usage: node scripts/nightlies.mjs --fork <plugin-dir>
+//   prints the fork that the plugin names as its `compiler`, or nothing.
+//
+// A plugin can name a build of a Roc fork as its compiler, in the form of a
+// package's `.roc-version`: `<branch>-<40-hex commit>`. Nobody publishes such a
+// build, so it lives at the repo root as roc_<compiler>/roc, often a symlink.
+// Every program of that plugin is checked with the fork, because a program that
+// uses the fork's language does not build on any nightly.
 
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -38,12 +46,37 @@ export function releaseNightlies(dirs = []) {
   });
 }
 
-/** The binary of `nightly`, unpacked at the repo root as the refresh skill does, or null. */
-export function nightlyBinary(nightly) {
-  const stamp = nightly.replace(/^nightly-/, "");
+/**
+ * Whether a `compiler` value names a fork build, `<branch>-<40-hex commit>`,
+ * rather than a nightly. `isFork` in src/build_proof.ts must give the same answer.
+ */
+export const isFork = (compiler) => typeof compiler === "string" && /^(?!nightly-)[\w.-]+-[0-9a-f]{40}$/.test(compiler);
+
+const EXE = process.platform === "win32" ? "roc.exe" : "roc";
+
+/** Where the gates look for the binary of a fork. */
+export const forkPath = (fork) => path.join(ROOT, `roc_${fork}`, EXE);
+
+/**
+ * The binary of `compiler`, or null. A nightly is unpacked at the repo root as
+ * the refresh skill does. A fork is at `forkPath`.
+ */
+export function compilerBinary(compiler) {
+  if (isFork(compiler)) return fs.existsSync(forkPath(compiler)) ? forkPath(compiler) : null;
+  const stamp = compiler.replace(/^nightly-/, "");
   const dir = fs.readdirSync(ROOT).find((d) => d.startsWith("roc_nightly-") && d.endsWith(`-${stamp}`));
-  const binary = dir && path.join(ROOT, dir, process.platform === "win32" ? "roc.exe" : "roc");
+  const binary = dir && path.join(ROOT, dir, EXE);
   return binary && fs.existsSync(binary) ? binary : null;
+}
+
+/** The fork that the plugin in `dir` names as its compiler, or null. */
+export function forkOf(dir) {
+  try {
+    const compiler = JSON.parse(fs.readFileSync(path.join(dir, "plugin.json"), "utf-8")).compiler;
+    return isFork(compiler) ? compiler : null;
+  } catch {
+    return null;
+  }
 }
 
 const PIN = /^\s*roc:\s*"(nightly-[^"]+)"/m;
@@ -73,5 +106,6 @@ export function allNightlies() {
 
 if (process.argv[1] === import.meta.filename) {
   if (process.argv[2] === "--all") console.log(allNightlies().join("\n"));
+  else if (process.argv[2] === "--fork") console.log(forkOf(process.argv[3]) ?? "");
   else for (const n of releaseNightlies(process.argv.slice(2))) console.log(`${n.release}|${n.nightly}`);
 }

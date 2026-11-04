@@ -42,6 +42,8 @@ import { indexText } from "./release.ts";
 import { BARE_ENV } from "./testdata/isolate.ts";
 import { scaffold } from "./roc_check.ts";
 import { loadCatalog } from "./scopes.ts";
+// @ts-expect-error a script, with no types
+import { compilerBinary, forkOf, forkPath, isFork, nightlyFor } from "../scripts/nightlies.mjs";
 
 const ROOT = path.join(import.meta.dirname, "..");
 const TSX_LOADER = import.meta.resolve("tsx/esm");
@@ -422,6 +424,43 @@ test("a package no bundled platform declares is reported as unrefused, not as a 
   });
   assert.equal(check(dir, "packages").status, "ok");
   assert.match(check(dir, "packages").detail!, /no bundled platform declares it/);
+});
+
+// -----------------------------------------------------------------------------
+// Fork compilers
+// -----------------------------------------------------------------------------
+
+/** A fork in the form of a package's `.roc-version`, with no build at the repo root. */
+const FORK = `test-${"0123456789abcdef".repeat(3).slice(0, 40)}`;
+
+test("a compiler of the form <branch>-<40-hex commit> is a fork, and a nightly is not", () => {
+  assert.ok(isFork("reify-c1e6af27a29303f2e409b037aa1d4a32ebd68217"));
+  assert.ok(isFork(FORK));
+  assert.ok(!isFork("nightly-2026-11-03-34bd006"));
+  // The short commit of `roc version` is not enough to find a build.
+  assert.ok(!isFork("reify-c1e6af27a2"));
+  assert.ok(!isFork(undefined));
+  assert.equal(forkPath(FORK), path.join(ROOT, `roc_${FORK}`, process.platform === "win32" ? "roc.exe" : "roc"));
+  assert.equal(compilerBinary(FORK), null);
+});
+
+test("the gate checks a program of a fork plugin with the fork, not with its own roc: pin", () => {
+  const pinned = `app [main!] {\n\troc: "nightly-2026-11-03-34bd006",\n\tpf: platform "${RAY}",\n}\n`;
+  const dir = ray({ checks: ["topics"] }, { "topics/pinned.roc": pinned }, "-fork");
+  const manifest = JSON.parse(fs.readFileSync(path.join(dir, "plugin.json"), "utf-8"));
+  fs.writeFileSync(path.join(dir, "plugin.json"), JSON.stringify({ ...manifest, compiler: FORK }));
+
+  assert.equal(forkOf(dir), FORK);
+  // nightlyFor alone takes the pin. The gate takes the fork over it.
+  assert.equal(nightlyFor(pinned, []), "nightly-2026-11-03-34bd006");
+  // `true` stands in for roc. The gate stops before it runs a compiler,
+  // because the fork has no build at the repo root.
+  const run = spawnSync(path.join(ROOT, "scripts", "check-platform-examples.sh"), [dir], {
+    encoding: "utf-8",
+    env: { ...process.env, ROC: "true" },
+  });
+  assert.equal(run.status, 1, run.stdout + run.stderr);
+  assert.match(run.stdout, /FAIL {2}pinned\n\s+needs the fork test-\w+\. Build it and link the binary at .*roc_test-\w+\/roc/);
 });
 
 // -----------------------------------------------------------------------------

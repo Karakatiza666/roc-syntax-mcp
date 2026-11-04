@@ -17,7 +17,7 @@ import { spawn, execFileSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { nightlyBinary, nightlyFor, releaseNightlies } from "./nightlies.mjs";
+import { compilerBinary, forkOf, forkPath, nightlyFor, releaseNightlies } from "./nightlies.mjs";
 import { load, nodeArgs } from "./tree.mjs";
 
 const ROOT = path.join(import.meta.dirname, "..");
@@ -42,12 +42,21 @@ const GREGORIAN =
 
 // The server runs one compiler, so a session that checks code on a platform
 // runs the nightly of that platform's release, as check:platforms does. With
-// no nightly of its own, the session runs ROC.
+// no nightly of its own, the session runs ROC. A plugin that names a fork as its
+// compiler runs the fork.
 const RUNNING = execFileSync(ROC, ["version"], { encoding: "utf-8" });
 function rocFor(release, dirs = []) {
+  const fork = dirs.map(forkOf).find(Boolean);
+  if (fork) {
+    if (compilerBinary(fork)) return [`--roc=${compilerBinary(fork)}`];
+    // Exit 1, not 2. `plugin validate` reports 2 as a skip, and a fork that is
+    // not built is a failure that its author can fix.
+    console.error(`${release} needs the fork ${fork}. Build it and link the binary at ${forkPath(fork)}`);
+    process.exit(1);
+  }
   const nightly = nightlyFor(`"${release}"`, releaseNightlies(dirs));
   if (!nightly || RUNNING.includes(nightly)) return [];
-  const binary = nightlyBinary(nightly);
+  const binary = compilerBinary(nightly);
   if (!binary) {
     console.error(`${release} needs ${nightly}. Unpack that nightly at the repo root`);
     process.exit(2);

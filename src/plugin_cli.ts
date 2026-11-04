@@ -7,7 +7,8 @@
 //   this host would index from it, and explain the plugin set that a configured
 //   server would load. These commands open no network connection themselves,
 //   but `index` and `validate` run `roc deps`, which can download releases.
-//   Only `init` and `index` write, and only to the directory that they get.
+//   Only `init`, `index` and `validate --attest` write, and only to the
+//   directory that they get.
 // - The user commands `add`, `update`, `remove` and `list` manage the plugin
 //   folder of this server. They change it through npm, or through Bun when the
 //   CLI runs under Bun. `upgrade` updates the server, then runs `update` in the
@@ -26,6 +27,7 @@ import * as S from "./scopes.ts";
 import type { LoadedPlugin, PackageProvider, PluginManifest } from "./scopes.ts";
 import * as R from "./release.ts";
 import { findRoc, recordOf, rocHome } from "./roc_bin.ts";
+import * as Proof from "./build_proof.ts";
 
 const ROOT = path.join(import.meta.dirname, "..");
 /**
@@ -422,7 +424,10 @@ export function staticChecks(dir: string): Check[] {
   }
   out.push(...topicChecks(dir, manifest));
   for (const c of manifest.corpora) out.push(...overviewChecks(dir, manifest, c));
-  if (manifest.compiler && manifest.compiler !== S.BUNDLED_COMPILER) {
+  const fork = Proof.forkNote(manifest.compiler);
+  if (fork) {
+    out.push(ok("compiler", fork));
+  } else if (manifest.compiler && manifest.compiler !== S.BUNDLED_COMPILER) {
     // Reported, never failed. The end user decides if a plugin is stale, and a
     // host update must not make an install invalid.
     out.push(ok("compiler", `built against ${manifest.compiler}, this host bundles ${S.BUNDLED_COMPILER}`));
@@ -828,8 +833,13 @@ function gate(name: string, argv: readonly string[]): Check {
   return run.status === 0 ? ok(name, summary) : bad(name, `${run.stdout ?? ""}${run.stderr ?? ""}`.trim());
 }
 
-export async function validate(dir: string, opts: { offline?: boolean } = {}): Promise<Check[]> {
+export async function validate(
+  dir: string,
+  opts: { offline?: boolean; attest?: boolean; proof?: boolean } = {}
+): Promise<Check[]> {
+  if (opts.attest && opts.offline) return [bad("attest", "--attest needs the compiler checks, which --offline skips")];
   const out = staticChecks(dir);
+  if (opts.proof) out.push(Proof.proofCheck(dir));
   if (opts.offline) return out;
   out.push(await indexGate(dir));
   out.push(await budgetCheck(dir));
@@ -837,6 +847,7 @@ export async function validate(dir: string, opts: { offline?: boolean } = {}): P
   out.push(
     gate("roc_check", [process.execPath, path.join(ROOT, "scripts", "check-roc-check.mjs"), `--plugin=${dir}`])
   );
+  if (opts.attest) out.push(Proof.attest(dir, out));
   return out;
 }
 
@@ -1651,6 +1662,8 @@ init options:      --name= --repo=owner/repo --version= --url=<release tarball>
                    --platform=<url>      what a package skeleton's apps pin for I/O
 index options:     --check     compare, do not write. Exit 1 if out of date
 validate options:  --offline   skip each check that needs a compiler or a spawn
+                   --attest    write BUILD-PROOF when every check is ok
+                   --proof     check that BUILD-PROOF matches the files and the compiler
 
 index reads each release from the Roc package cache, and runs \`roc deps\` (from
 $ROC, or roc on PATH) to fetch one that is not there.
@@ -1724,7 +1737,11 @@ export async function main(argv: readonly string[]): Promise<number> {
     case "validate": {
       const dir = target();
       if (!dir) return 2;
-      const checks = await validate(dir, { offline: Boolean(opts.offline) });
+      const checks = await validate(dir, {
+        offline: Boolean(opts.offline),
+        attest: Boolean(opts.attest),
+        proof: Boolean(opts.proof),
+      });
       console.log(render(checks));
       return failed(checks) ? 1 : 0;
     }

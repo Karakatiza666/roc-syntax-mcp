@@ -5,6 +5,9 @@ dist/
 tmp/
 # Local Roc toolchain (large, install it on each machine)
 roc_nightly-*
+# A fork build that a plugin names as its compiler, roc_<branch>-<commit>/roc.
+# Anchored to root directories, so that it does not match src/roc_bin.ts.
+/roc_*/
 .zig-toolchain/
 
 # Upstream forks cloned for local fixes (not submodules, not tracked)

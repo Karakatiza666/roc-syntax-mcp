@@ -13,6 +13,12 @@
 # corpus/language/UPSTREAM. For example, roc-ray pins an older one (see
 # plugins/roc-ray/UPSTREAM).
 #
+# A plugin whose manifest names a fork of Roc as its compiler (such as
+# reify-<commit>) is not compiled here, because building a fork takes too long
+# for this job. Its author runs `plugin validate --attest` locally, which writes
+# BUILD-PROOF. This job runs the checks that need no compiler, and checks that
+# BUILD-PROOF names the same compiler and the same files (`--proof`).
+#
 # Authentication: an npm trusted publisher for this file when one is set up,
 # otherwise the NPM_TOKEN secret. npm sets up a trusted publisher only for a
 # package that already exists, so the first publish needs the token.
@@ -90,20 +96,36 @@ jobs:
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "$name@$version as $tag"
 
-      # A program of the plugin that pins a bundled platform release, such as
-      # joy's html_ssr on basic-webserver, is checked with that release's
-      # nightly, so the repo root needs those nightlies too.
+      # One of two paths validates the plugin, by its `compiler`: a nightly
+      # path that compiles everything, or a proof path for a fork.
+      - name: Choose the validation path
+        id: path
+        run: echo "fork=$(node scripts/nightlies.mjs --fork "$DIR")" >> "$GITHUB_OUTPUT"
+
+      # Path 1, a nightly. A program of the plugin that pins a bundled platform
+      # release, such as joy's html_ssr on basic-webserver, is checked with that
+      # release's nightly, so the repo root needs those nightlies too.
       - name: Read the plugin's nightlies
+        if: ${{ steps.path.outputs.fork == '' }}
         id: nightly
         run: |
           echo "tag=$(node -p "require('./$DIR/plugin.json').compiler")" >> "$GITHUB_OUTPUT"
           { echo "more<<EOF"; node scripts/nightlies.mjs "$DIR" | cut -d'|' -f2 | sort -u; echo "EOF"; } >> "$GITHUB_OUTPUT"
       - uses: ./.github/actions/roc-nightly
+        if: ${{ steps.path.outputs.fork == '' }}
         with:
           tag: ${{ steps.nightly.outputs.tag }}
           more: ${{ steps.nightly.outputs.more }}
       - name: plugin validate
+        if: ${{ steps.path.outputs.fork == '' }}
         run: node bin/roc-syntax-mcp.js plugin validate "$DIR"
+
+      # Path 2, a fork. This job cannot build it, so it runs the checks that
+      # need no compiler, and checks the BUILD-PROOF that the author's local
+      # `plugin validate --attest` wrote (src/build_proof.ts).
+      - name: Verify the build proof
+        if: ${{ steps.path.outputs.fork != '' }}
+        run: node bin/roc-syntax-mcp.js plugin validate "$DIR" --offline --proof
 
       # The last check, so that a dry run reports the result of every check above.
       - name: The package states a license

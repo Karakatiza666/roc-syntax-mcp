@@ -60,6 +60,24 @@ if a `topics` entry in the manifest names it. Then `get_roc_syntax(topic:)` can
 return the program. `validate` prints the number of programs and the number of
 topics, so that you can see the difference.
 
+## A plugin built with a Roc fork
+
+A package that needs a fork of the compiler names the fork in `compiler`, in
+the form of the package's `.roc-version`: `<branch>-<40-hex commit>`, e.g.
+`reify-c1e6af27a29303f2e409b037aa1d4a32ebd68217`. `validate` then checks every
+program of the plugin with `roc_<compiler>/roc` at the repo root, which can be
+a symlink to your build. CI cannot build a fork, so validate locally and commit
+the result:
+
+```bash
+roc-syntax-mcp plugin validate plugins/surrealdb --attest
+```
+
+When every check is ok, `--attest` writes `BUILD-PROOF`: the compiler, a
+sha256 over the files that npm packs, and the date. Add `BUILD-PROOF` to
+`files`. CI and the publish workflow run `validate --offline --proof`, which
+fails if a packed file or the compiler changed since the proof was written.
+
 ## What a plugin can add
 
 A plugin is data. It adds no tool and runs no code. No manifest field

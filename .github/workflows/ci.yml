@@ -55,6 +55,31 @@ jobs:
           echo "$out"
           grep -qF "roc-syntax-mcp: serving MCP over stdio" <<<"$out"
 
+  # The Roc gates below do not check plugins/. A plugin whose compiler is a fork
+  # is validated only on its author's machine, so this job checks that its
+  # BUILD-PROOF still matches its files. A stale proof then fails here, and not
+  # first in the publish workflow.
+  fork-plugins:
+    name: BUILD-PROOF of fork plugins
+    runs-on: ubuntu-26.04-arm
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - name: plugin validate --proof
+        run: |
+          status=0
+          for dir in plugins/*/; do
+            [ -n "$(node scripts/nightlies.mjs --fork "$dir")" ] || continue
+            echo "::group::$dir"
+            node bin/roc-syntax-mcp.js plugin validate "$dir" --offline --proof || status=1
+            echo "::endgroup::"
+          done
+          exit "$status"
+
   bun:
     name: Start under Bun ${{ matrix.bun }}
     runs-on: ubuntu-26.04-arm

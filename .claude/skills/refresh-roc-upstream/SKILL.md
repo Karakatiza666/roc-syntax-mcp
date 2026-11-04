@@ -79,6 +79,10 @@ Each program is checked with the nightly that it was written for. The gates
    `plugin.json`.
 3. The bundled nightly.
 
+A plugin whose `compiler` names a fork (`<branch>-<40-hex commit>`) is the
+exception. Every program of that plugin is checked with `roc_<compiler>/roc`
+at the repo root, and a refresh does not move it.
+
 Unpack each nightly that the gates need at the repo root. A gate that lacks one
 fails and names it. So a platform with no release for a new nightly stays on
 the nightly of its release, and the refresh of the other corpora does not fail

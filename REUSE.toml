@@ -139,6 +139,7 @@ path = [
   "plugins/*/package.json",
   "plugins/*/plugin.json",
   "plugins/*/UPSTREAM",
+  "plugins/*/BUILD-PROOF",
   "plugins/*/overview.md",
   "plugins/*/scaffold.roc",
   "plugins/*/sample.roc",
