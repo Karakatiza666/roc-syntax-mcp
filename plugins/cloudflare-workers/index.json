@@ -1,8 +1,8 @@
 {
  "format": 1,
  "releases": {
-  "GcDNxAwPR5tSzqU8T2Kdj35CK3sQMRQDB8ywwfZKdrm": {
-   "url": "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.1/GcDNxAwPR5tSzqU8T2Kdj35CK3sQMRQDB8ywwfZKdrm.tar.zst",
+  "HgUugW5V5QQbmrjdjkRhjiZ8B9D9gzpEkSwdojqJcW4p": {
+   "url": "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.6/HgUugW5V5QQbmrjdjkRhjiZ8B9D9gzpEkSwdojqJcW4p.tar.zst",
    "snapshot": {
     "kind": "platform",
     "exposes": [
@@ -48,7 +48,7 @@
     "deps": [
      {
       "alias": "cbor",
-      "url": "https://github.com/Karakatiza666/roc-cbor/releases/download/0.2.1/9jD8bxEKhNu6CzBKej1nA1hzymTedJsfhiGgiMPGA1mu.tar.zst"
+      "url": "https://github.com/Karakatiza666/roc-cbor/releases/download/0.2.3/GkHriTGSE8ww1h2HvUL3GS6x1t2keTW13KQazoUZh4Uc.tar.zst"
      },
      {
       "alias": "http",
@@ -367,12 +367,32 @@
        {
         "kind": "value",
         "tier": "public",
+        "name": "default_fill",
+        "modulePath": "Body",
+        "fullName": "Body.default_fill",
+        "signature": "U64",
+        "docs": "The fill target of `chunk!`: 64 KiB. JS adds the parts of the stream that are ready to the chunk, to this size.\nA workerd body stream gives parts of about 4 KiB, so this makes about 16 times fewer crossings (MODULES.md 4).",
+        "line": 61
+       },
+       {
+        "kind": "value",
+        "tier": "public",
         "name": "chunk!",
         "modulePath": "Body",
         "fullName": "Body.chunk!",
         "signature": "Body => Try([Chunk(List(U8)), End], [BodyErr(Io.Thrown)])",
-        "docs": "The next chunk of a stream, as JS gives it, cut to `default_max` (MC11). One wait.\n`Empty`, `Text` and `Bytes` are one chunk (none for `Empty`), with no crossing: a value is not a stream, so\neach call on the same value gives the same chunk.",
-        "line": 62
+        "docs": "The next chunk of a stream: `chunk_with!` with the defaults (`fill_bytes` 64 KiB, `max_bytes` `default_max`).\nOne wait at most. The call does not wait for 64 KiB: when the next part of the stream is not ready, it gives\nwhat it has. `Empty`, `Text` and `Bytes` are one chunk (none for `Empty`), with no crossing: a value is not a\nstream, so each call on the same value gives the same chunk.",
+        "line": 68
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "chunk_with!",
+        "modulePath": "Body",
+        "fullName": "Body.chunk_with!",
+        "signature": "Body, { fill_bytes ?: U64, max_bytes ?: U64 } => Try([Chunk(List(U8)), End], [BodyErr(Io.Thrown)])",
+        "docs": "The next chunk of a stream, with a fill target and a limit (`pf.chunk`). One wait at most: for the first part.\n`fill_bytes` (default 64 KiB): JS adds each next part that is ready (it completes before a timer of 0 ms) while\nthe chunk has fewer bytes. `fill_bytes: 1` gives each part as JS gives it, with no timer: for a proxy that\npasses each part on at once. `max_bytes` (default `default_max`, 0 is 1): a larger chunk is cut, and the rest\ncomes at the next call (MC11). `Empty`, `Text` and `Bytes`: as `chunk!`, with no cut.",
+        "line": 76
        },
        {
         "kind": "value",
@@ -382,7 +402,7 @@
         "fullName": "Body.tee!",
         "signature": "Body => Try((Body, Body), [BodyErr(Io.Thrown)])",
         "docs": "Two bodies with the same bytes. A stream: `ReadableStream.tee()`, no wait. A stream that was read is `BodyErr`.",
-        "line": 76
+        "line": 94
        },
        {
         "kind": "value",
@@ -392,7 +412,7 @@
         "fullName": "Body.sha256!",
         "signature": "Body => Try(List(U8), [BodyErr(Io.Thrown)])",
         "docs": "The SHA-256 of the body (32 bytes). A stream: `crypto.DigestStream` in JS, one wait, no copy into wasm.\n`Text` and `Bytes`: the builtin `Crypto.SHA256` in wasm, no crossing.",
-        "line": 88
+        "line": 106
        },
        {
         "kind": "value",
@@ -402,7 +422,7 @@
         "fullName": "Body.writer!",
         "signature": "() => Try({ body : Body, writer : Body.Writer }, [BodyErr(Io.Thrown)])",
         "docs": "A stream that the task writes, for example in the work of `Response.after` (API.md 10.2): `pf.writer`, a\n`TransformStream`, no wait. The 30 s limit after the response starts at `close!`.",
-        "line": 102
+        "line": 120
        },
        {
         "kind": "value",
@@ -412,7 +432,7 @@
         "fullName": "Body.compress!",
         "signature": "Body, Body.Format => Try(Body, [BodyErr(Io.Thrown)])",
         "docs": "`pipeThrough(new CompressionStream(format))`, no wait. A `Text` or `Bytes` body becomes a stream first.\nThe result is a `Stream`: the bytes stay in JS.",
-        "line": 114
+        "line": 132
        },
        {
         "kind": "value",
@@ -422,7 +442,7 @@
         "fullName": "Body.decompress!",
         "signature": "Body, Body.Format => Try(Body, [BodyErr(Io.Thrown)])",
         "docs": "`pipeThrough(new DecompressionStream(format))`, no wait. As `compress!`.",
-        "line": 118
+        "line": 136
        },
        {
         "kind": "type",
@@ -432,7 +452,7 @@
         "fullName": "Body.Writer",
         "signature": "{ writer : Js.Ref }",
         "docs": "The writable side of a `writer!` stream. It holds a ref, so it is good for one task (MC13).",
-        "line": 122,
+        "line": 140,
         "decl": "::",
         "head": "Writer"
        },
@@ -444,7 +464,7 @@
         "fullName": "Body.Writer.write",
         "signature": "Body.Writer, List(U8) -> Io({}, [BodyErr(Io.Thrown)])",
         "docs": "One wait: until the stream takes the chunk (the reader asked for it, MC3). After `close!`: `BodyErr`.\nThe twin gives an `Io`, so a write can run next to the read of the stream (`Io.race!`, `Io.start!`).",
-        "line": 126
+        "line": 144
        },
        {
         "kind": "value",
@@ -454,7 +474,7 @@
         "fullName": "Body.Writer.write!",
         "signature": "Body.Writer, List(U8) => Try({}, [BodyErr(Io.Thrown)])",
         "docs": "",
-        "line": 138
+        "line": 156
        },
        {
         "kind": "value",
@@ -464,7 +484,7 @@
         "fullName": "Body.Writer.write_text",
         "signature": "Body.Writer, Str -> Io({}, [BodyErr(Io.Thrown)])",
         "docs": "The text as UTF-8 (a stream of a response takes bytes only).",
-        "line": 142
+        "line": 160
        },
        {
         "kind": "value",
@@ -474,7 +494,7 @@
         "fullName": "Body.Writer.write_text!",
         "signature": "Body.Writer, Str => Try({}, [BodyErr(Io.Thrown)])",
         "docs": "",
-        "line": 145
+        "line": 163
        },
        {
         "kind": "value",
@@ -484,7 +504,7 @@
         "fullName": "Body.Writer.close!",
         "signature": "Body.Writer => {}",
         "docs": "No wait. The body is complete now (API.md 10.2): the 30 s limit after `respond!` starts.",
-        "line": 149
+        "line": 167
        }
       ]
      },
@@ -738,7 +758,7 @@
         "fullName": "Ctx.wait_until!",
         "signature": "Io({}, e) => {}",
         "docs": "Start the operation now (`Io.start!`) and give its promise to `ctx.waitUntil`, in one `call!`. The reader of\nthe `Io` does not run, so its result is dropped: only an `Io({}, e)` fits, and an operation with a result (for\nexample `cache.put`, which gives the response to send) is a type error. A Roc-level `Err` is not seen. A JS throw\ngoes to the log. The context of the task stays until the operation settles, or until the 30 s limit of\n`waitUntil` (API.md 6.5, RS1).",
-        "line": 14
+        "line": 15
        },
        {
         "kind": "value",
@@ -748,7 +768,7 @@
         "fullName": "Ctx.pass_through!",
         "signature": "() => Try({}, [InvalidState])",
         "docs": "`ctx.passThroughOnException()`: after it, an `Err` of the `fetch` handler makes the shim throw, so Workers\nsends the request to the origin. Only in the `Fetch` of a Worker. Elsewhere `InvalidState`.",
-        "line": 22
+        "line": 23
        }
       ]
      },
@@ -837,8 +857,8 @@
         "modulePath": "D1",
         "fullName": "D1.all_tuples",
         "signature": "D1, Str, params -> Io(rows, [Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown), BadData(Str), TooLarge])]) where [rows.Cbor.Readable(errs), params.Cbor.Writable]",
-        "docs": "`all` with the rows as tuples (D1 `raw()`): `rows : List((Str, I64))`. The tuple has one item for each column of the SELECT, in\nits order, so the caller keeps the order in the SQL. About twice as fast as `all` for 200 rows (PLAN.md 8g). The same\nlimit and integer rules as `all`; `BadData` names the column by its index (from 0), not by name. A NULL reads only into a\n`Try(a, [Null])` item.",
-        "line": 38
+        "docs": "`all` with the rows as tuples (D1 `raw()`): `rows : List((Str, I64))`. The tuple has one item for each column of the SELECT, in\nits order, so the caller keeps the order in the SQL. About twice as fast as `all` for 200 rows (PLAN.md 8g). The same\nlimit and integer rules as `all`; `BadData` names the column by its index (from 0), not by name. A NULL reads only into a\n`Try(a, [Null])` item (a tuple has no keys). In a record (`all`, `first`) a NULL is a missing key: it reads into\n`x ?: a` (absent) or `x : Try(a, [Missing])` (`Err(Missing)`), and a required field is `BadData` (roc-cbor 0.2.2).\nA `Bool` item or field reads 0 and 1.",
+        "line": 40
        },
        {
         "kind": "value",
@@ -848,7 +868,7 @@
         "fullName": "D1.all_tuples!",
         "signature": "D1, Str, params => Try(rows, [Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown), BadData(Str), TooLarge])]) where [rows.Cbor.Readable(errs), params.Cbor.Writable]",
         "docs": "",
-        "line": 41
+        "line": 43
        },
        {
         "kind": "value",
@@ -858,7 +878,7 @@
         "fullName": "D1.all_tuples_with",
         "signature": "D1, Str, params, { max_bytes : U64 } -> Io(rows, [Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown), BadData(Str), TooLarge])]) where [rows.Cbor.Readable(errs), params.Cbor.Writable]",
         "docs": "",
-        "line": 44
+        "line": 46
        },
        {
         "kind": "value",
@@ -868,7 +888,7 @@
         "fullName": "D1.all_tuples_with!",
         "signature": "D1, Str, params, { max_bytes : U64 } => Try(rows, [Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown), BadData(Str), TooLarge])]) where [rows.Cbor.Readable(errs), params.Cbor.Writable]",
         "docs": "",
-        "line": 47
+        "line": 49
        },
        {
         "kind": "value",
@@ -878,7 +898,7 @@
         "fullName": "D1.first",
         "signature": "D1, Str, params -> Io(row, [NotFound, Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown), BadData(Str), TooLarge])]) where [row.Cbor.Readable(errs), params.Cbor.Writable]",
         "docs": "The first row (D1 `first()`), or `NotFound`.",
-        "line": 51
+        "line": 53
        },
        {
         "kind": "value",
@@ -888,7 +908,7 @@
         "fullName": "D1.first!",
         "signature": "D1, Str, params => Try(row, [NotFound, Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown), BadData(Str), TooLarge])]) where [row.Cbor.Readable(errs), params.Cbor.Writable]",
         "docs": "",
-        "line": 54
+        "line": 56
        },
        {
         "kind": "value",
@@ -898,7 +918,7 @@
         "fullName": "D1.first_with",
         "signature": "D1, Str, params, { max_bytes : U64 } -> Io(row, [NotFound, Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown), BadData(Str), TooLarge])]) where [row.Cbor.Readable(errs), params.Cbor.Writable]",
         "docs": "",
-        "line": 57
+        "line": 59
        },
        {
         "kind": "value",
@@ -908,7 +928,7 @@
         "fullName": "D1.first_with!",
         "signature": "D1, Str, params, { max_bytes : U64 } => Try(row, [NotFound, Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown), BadData(Str), TooLarge])]) where [row.Cbor.Readable(errs), params.Cbor.Writable]",
         "docs": "",
-        "line": 60
+        "line": 62
        },
        {
         "kind": "value",
@@ -918,7 +938,7 @@
         "fullName": "D1.run",
         "signature": "D1, Str, params -> Io(Sql.Info, [Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown)])]) where [params.Cbor.Writable]",
         "docs": "A write: D1 `run()`, and its `meta`.",
-        "line": 64
+        "line": 66
        },
        {
         "kind": "value",
@@ -928,7 +948,7 @@
         "fullName": "D1.run!",
         "signature": "D1, Str, params => Try(Sql.Info, [Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown)])]) where [params.Cbor.Writable]",
         "docs": "",
-        "line": 67
+        "line": 69
        },
        {
         "kind": "value",
@@ -938,7 +958,7 @@
         "fullName": "D1.rows",
         "signature": "D1, Str, params -> Io(Sql.Rows, [Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown), TooLarge])]) where [params.Cbor.Writable]",
         "docs": "Rows with no types (`raw({ columnNames: true })`), for columns that are not known at compile time.",
-        "line": 71
+        "line": 73
        },
        {
         "kind": "value",
@@ -948,7 +968,7 @@
         "fullName": "D1.rows!",
         "signature": "D1, Str, params => Try(Sql.Rows, [Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown), TooLarge])]) where [params.Cbor.Writable]",
         "docs": "",
-        "line": 74
+        "line": 76
        },
        {
         "kind": "value",
@@ -958,7 +978,7 @@
         "fullName": "D1.rows_with",
         "signature": "D1, Str, params, { max_bytes : U64 } -> Io(Sql.Rows, [Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown), TooLarge])]) where [params.Cbor.Writable]",
         "docs": "",
-        "line": 77
+        "line": 79
        },
        {
         "kind": "value",
@@ -968,7 +988,7 @@
         "fullName": "D1.rows_with!",
         "signature": "D1, Str, params, { max_bytes : U64 } => Try(Sql.Rows, [Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown), TooLarge])]) where [params.Cbor.Writable]",
         "docs": "",
-        "line": 80
+        "line": 82
        },
        {
         "kind": "value",
@@ -978,7 +998,7 @@
         "fullName": "D1.batch",
         "signature": "D1, List(Sql.Stmt) -> Io(List(D1.Result), [Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown), TooLarge])])",
         "docs": "One transaction and one crossing (API.md 6.2): one `D1.Result` for each statement, in order. The rows of all\nstatements together are at most `Body.default_max` bytes.",
-        "line": 85
+        "line": 87
        },
        {
         "kind": "value",
@@ -988,7 +1008,7 @@
         "fullName": "D1.batch!",
         "signature": "D1, List(Sql.Stmt) => Try(List(D1.Result), [Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown), TooLarge])])",
         "docs": "",
-        "line": 88
+        "line": 90
        },
        {
         "kind": "value",
@@ -998,7 +1018,7 @@
         "fullName": "D1.batch_with",
         "signature": "D1, List(Sql.Stmt), { max_bytes : U64 } -> Io(List(D1.Result), [Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown), TooLarge])])",
         "docs": "",
-        "line": 91
+        "line": 93
        },
        {
         "kind": "value",
@@ -1008,7 +1028,7 @@
         "fullName": "D1.batch_with!",
         "signature": "D1, List(Sql.Stmt), { max_bytes : U64 } => Try(List(D1.Result), [Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown), TooLarge])])",
         "docs": "",
-        "line": 94
+        "line": 96
        },
        {
         "kind": "value",
@@ -1018,7 +1038,7 @@
         "fullName": "D1.exec",
         "signature": "D1, Str -> Io({}, [Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown)])])",
         "docs": "Statements with no parameters (D1 `exec`), for a schema. A constraint failure has the message\n`Error in line <n>: <sql>: <text>` (5.1).",
-        "line": 99
+        "line": 101
        },
        {
         "kind": "value",
@@ -1028,7 +1048,7 @@
         "fullName": "D1.exec!",
         "signature": "D1, Str => Try({}, [Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown)])])",
         "docs": "",
-        "line": 108
+        "line": 110
        },
        {
         "kind": "value",
@@ -1038,7 +1058,7 @@
         "fullName": "D1.with_session!",
         "signature": "D1, [Primary, Any, After(Str)] => Try(D1.Session, [Infra([D1Err(Io.Thrown)])])",
         "docs": "`withSession`, sync (one `call!`, no wait): `Primary` is `\"first-primary\"`, `Any` `\"first-unconstrained\"`,\n`After(b)` the bookmark of an earlier session. The session holds a ref: it is good for one task (MC13).",
-        "line": 113
+        "line": 115
        },
        {
         "kind": "type",
@@ -1048,7 +1068,7 @@
         "fullName": "D1.Session",
         "signature": "{ ref : Js.Ref }",
         "docs": "A D1 session (Sessions API): the query functions of `D1` (not `exec`), and `bookmark!`.",
-        "line": 128,
+        "line": 130,
         "decl": "::",
         "head": "Session"
        },
@@ -1060,7 +1080,7 @@
         "fullName": "D1.Session.all",
         "signature": "D1.Session, Str, params -> Io(rows, [Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown), BadData(Str), TooLarge])]) where [rows.Cbor.Readable(errs), params.Cbor.Writable]",
         "docs": "",
-        "line": 129
+        "line": 131
        },
        {
         "kind": "value",
@@ -1070,7 +1090,7 @@
         "fullName": "D1.Session.all!",
         "signature": "D1.Session, Str, params => Try(rows, [Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown), BadData(Str), TooLarge])]) where [rows.Cbor.Readable(errs), params.Cbor.Writable]",
         "docs": "",
-        "line": 132
+        "line": 134
        },
        {
         "kind": "value",
@@ -1080,7 +1100,7 @@
         "fullName": "D1.Session.all_with",
         "signature": "D1.Session, Str, params, { max_bytes : U64 } -> Io(rows, [Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown), BadData(Str), TooLarge])]) where [rows.Cbor.Readable(errs), params.Cbor.Writable]",
         "docs": "",
-        "line": 135
+        "line": 137
        },
        {
         "kind": "value",
@@ -1090,7 +1110,7 @@
         "fullName": "D1.Session.all_with!",
         "signature": "D1.Session, Str, params, { max_bytes : U64 } => Try(rows, [Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown), BadData(Str), TooLarge])]) where [rows.Cbor.Readable(errs), params.Cbor.Writable]",
         "docs": "",
-        "line": 138
+        "line": 140
        },
        {
         "kind": "value",
@@ -1100,7 +1120,7 @@
         "fullName": "D1.Session.all_tuples",
         "signature": "D1.Session, Str, params -> Io(rows, [Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown), BadData(Str), TooLarge])]) where [rows.Cbor.Readable(errs), params.Cbor.Writable]",
         "docs": "`all` with the rows as tuples (D1 `raw()`): `rows : List((Str, I64))`. The tuple has one item for each column of the SELECT, in\nits order, so the caller keeps the order in the SQL. About twice as fast as `all` for 200 rows (PLAN.md 8g). The same\nlimit and integer rules as `all`; `BadData` names the column by its index (from 0), not by name.",
-        "line": 144
+        "line": 146
        },
        {
         "kind": "value",
@@ -1110,7 +1130,7 @@
         "fullName": "D1.Session.all_tuples!",
         "signature": "D1.Session, Str, params => Try(rows, [Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown), BadData(Str), TooLarge])]) where [rows.Cbor.Readable(errs), params.Cbor.Writable]",
         "docs": "",
-        "line": 147
+        "line": 149
        },
        {
         "kind": "value",
@@ -1120,7 +1140,7 @@
         "fullName": "D1.Session.all_tuples_with",
         "signature": "D1.Session, Str, params, { max_bytes : U64 } -> Io(rows, [Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown), BadData(Str), TooLarge])]) where [rows.Cbor.Readable(errs), params.Cbor.Writable]",
         "docs": "",
-        "line": 150
+        "line": 152
        },
        {
         "kind": "value",
@@ -1130,7 +1150,7 @@
         "fullName": "D1.Session.all_tuples_with!",
         "signature": "D1.Session, Str, params, { max_bytes : U64 } => Try(rows, [Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown), BadData(Str), TooLarge])]) where [rows.Cbor.Readable(errs), params.Cbor.Writable]",
         "docs": "",
-        "line": 153
+        "line": 155
        },
        {
         "kind": "value",
@@ -1140,7 +1160,7 @@
         "fullName": "D1.Session.first",
         "signature": "D1.Session, Str, params -> Io(row, [NotFound, Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown), BadData(Str), TooLarge])]) where [row.Cbor.Readable(errs), params.Cbor.Writable]",
         "docs": "",
-        "line": 156
+        "line": 158
        },
        {
         "kind": "value",
@@ -1150,7 +1170,7 @@
         "fullName": "D1.Session.first!",
         "signature": "D1.Session, Str, params => Try(row, [NotFound, Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown), BadData(Str), TooLarge])]) where [row.Cbor.Readable(errs), params.Cbor.Writable]",
         "docs": "",
-        "line": 159
+        "line": 161
        },
        {
         "kind": "value",
@@ -1160,7 +1180,7 @@
         "fullName": "D1.Session.first_with",
         "signature": "D1.Session, Str, params, { max_bytes : U64 } -> Io(row, [NotFound, Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown), BadData(Str), TooLarge])]) where [row.Cbor.Readable(errs), params.Cbor.Writable]",
         "docs": "",
-        "line": 162
+        "line": 164
        },
        {
         "kind": "value",
@@ -1170,7 +1190,7 @@
         "fullName": "D1.Session.first_with!",
         "signature": "D1.Session, Str, params, { max_bytes : U64 } => Try(row, [NotFound, Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown), BadData(Str), TooLarge])]) where [row.Cbor.Readable(errs), params.Cbor.Writable]",
         "docs": "",
-        "line": 165
+        "line": 167
        },
        {
         "kind": "value",
@@ -1180,7 +1200,7 @@
         "fullName": "D1.Session.run",
         "signature": "D1.Session, Str, params -> Io(Sql.Info, [Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown)])]) where [params.Cbor.Writable]",
         "docs": "",
-        "line": 168
+        "line": 170
        },
        {
         "kind": "value",
@@ -1190,7 +1210,7 @@
         "fullName": "D1.Session.run!",
         "signature": "D1.Session, Str, params => Try(Sql.Info, [Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown)])]) where [params.Cbor.Writable]",
         "docs": "",
-        "line": 171
+        "line": 173
        },
        {
         "kind": "value",
@@ -1200,7 +1220,7 @@
         "fullName": "D1.Session.rows",
         "signature": "D1.Session, Str, params -> Io(Sql.Rows, [Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown), TooLarge])]) where [params.Cbor.Writable]",
         "docs": "",
-        "line": 174
+        "line": 176
        },
        {
         "kind": "value",
@@ -1210,7 +1230,7 @@
         "fullName": "D1.Session.rows!",
         "signature": "D1.Session, Str, params => Try(Sql.Rows, [Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown), TooLarge])]) where [params.Cbor.Writable]",
         "docs": "",
-        "line": 177
+        "line": 179
        },
        {
         "kind": "value",
@@ -1220,7 +1240,7 @@
         "fullName": "D1.Session.rows_with",
         "signature": "D1.Session, Str, params, { max_bytes : U64 } -> Io(Sql.Rows, [Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown), TooLarge])]) where [params.Cbor.Writable]",
         "docs": "",
-        "line": 180
+        "line": 182
        },
        {
         "kind": "value",
@@ -1230,7 +1250,7 @@
         "fullName": "D1.Session.rows_with!",
         "signature": "D1.Session, Str, params, { max_bytes : U64 } => Try(Sql.Rows, [Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown), TooLarge])]) where [params.Cbor.Writable]",
         "docs": "",
-        "line": 183
+        "line": 185
        },
        {
         "kind": "value",
@@ -1240,7 +1260,7 @@
         "fullName": "D1.Session.batch",
         "signature": "D1.Session, List(Sql.Stmt) -> Io(List(D1.Result), [Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown), TooLarge])])",
         "docs": "",
-        "line": 186
+        "line": 188
        },
        {
         "kind": "value",
@@ -1250,7 +1270,7 @@
         "fullName": "D1.Session.batch!",
         "signature": "D1.Session, List(Sql.Stmt) => Try(List(D1.Result), [Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown), TooLarge])])",
         "docs": "",
-        "line": 189
+        "line": 191
        },
        {
         "kind": "value",
@@ -1260,7 +1280,7 @@
         "fullName": "D1.Session.batch_with",
         "signature": "D1.Session, List(Sql.Stmt), { max_bytes : U64 } -> Io(List(D1.Result), [Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown), TooLarge])])",
         "docs": "",
-        "line": 192
+        "line": 194
        },
        {
         "kind": "value",
@@ -1270,7 +1290,7 @@
         "fullName": "D1.Session.batch_with!",
         "signature": "D1.Session, List(Sql.Stmt), { max_bytes : U64 } => Try(List(D1.Result), [Constraint(Sql.Constraint), Infra([D1Err(Io.Thrown), TooLarge])])",
         "docs": "",
-        "line": 195
+        "line": 197
        },
        {
         "kind": "value",
@@ -1280,7 +1300,7 @@
         "fullName": "D1.Session.bookmark!",
         "signature": "D1.Session => Try(Str, [NotFound])",
         "docs": "`getBookmark`, sync: `NotFound` before the first query of the session.",
-        "line": 199
+        "line": 201
        },
        {
         "kind": "type",
@@ -1290,7 +1310,7 @@
         "fullName": "D1.Result",
         "signature": "{ info : Sql.Info, rows : List(U8) }",
         "docs": "The result of one statement of `batch!`: its `meta`, and its rows as CBOR, typed at the use (MC7).",
-        "line": 209,
+        "line": 211,
         "decl": "::",
         "head": "Result"
        },
@@ -1302,7 +1322,7 @@
         "fullName": "D1.Result.info",
         "signature": "D1.Result -> Sql.Info",
         "docs": "",
-        "line": 210
+        "line": 212
        },
        {
         "kind": "value",
@@ -1312,7 +1332,7 @@
         "fullName": "D1.Result.all",
         "signature": "D1.Result -> Try(rows, [Infra([BadData(Str)])]) where [rows.Cbor.Readable(errs)]",
         "docs": "",
-        "line": 213
+        "line": 215
        },
        {
         "kind": "value",
@@ -1322,7 +1342,7 @@
         "fullName": "D1.Result.first",
         "signature": "D1.Result -> Try(row, [NotFound, Infra([BadData(Str)])]) where [row.Cbor.Readable(errs)]",
         "docs": "The first row, or `NotFound`.",
-        "line": 217
+        "line": 219
        },
        {
         "kind": "type",
@@ -1332,7 +1352,7 @@
         "fullName": "At",
         "signature": "{ ops : List(Js.Op), obj : Js.Target }",
         "docs": "Where a program starts: the binding (`env[name]`, slot 0) or a session (its ref, no op).",
-        "line": 227,
+        "line": 229,
         "decl": ":",
         "head": "At"
        },
@@ -1344,7 +1364,7 @@
         "fullName": "Meta",
         "signature": "{ changes : U64, last_row_id : F64, rows_read : U64, rows_written : U64, duration : F64 }",
         "docs": "The `meta` of D1, as `pf.pack` writes it. `last_row_id` is an F64: a rowid of size 2^53 or more is an f64, and an\ninteger field does not read it (MODULES.md 5.1).",
-        "line": 373,
+        "line": 375,
         "decl": ":",
         "head": "Meta"
        }
@@ -2270,7 +2290,7 @@
         "modulePath": "Io",
         "fullName": "Io.timeout_at",
         "signature": "Io(a, e), U64 -> Io(a, [Infra([TimedOut]), ..e])",
-        "docs": "The same as `timeout`, with a point in time: `deadline_ms` is on the clock of `Time.now_ms!` (`Date.now()`).\nOne deadline for many reads needs no sum of the time left. The wait is `max(0, deadline_ms - Date.now())` at\nthe time the program runs (`pf.waitUntil`), not when the `Io` is made. A deadline in the past waits 0 ms:\nthe operation wins only when it has a result already, else the answer is `Err(Infra(TimedOut))` at once.",
+        "docs": "The same as `timeout`, with a point in time: `deadline_ms` is on the clock of `Time.now_ms!` (the shim option `now`).\nOne deadline for many reads needs no sum of the time left. The wait is `max(0, deadline_ms - now)` at\nthe time the program runs (`pf.waitUntil`), not when the `Io` is made. A deadline in the past waits 0 ms:\nthe operation wins only when it has a result already, else the answer is `Err(Infra(TimedOut))` at once.",
         "line": 121
        },
        {
@@ -2588,7 +2608,7 @@
         "modulePath": "Kv",
         "fullName": "Kv.get_with",
         "signature": "Kv(a), Str, { cache_ttl_ms ?: U64, max_bytes ?: U64 } -> Io(a, [NotFound, Infra([KvErr(Io.Thrown), BadData(Str), TooLarge])])",
-        "docs": "`cache_ttl_ms`: 30 s or more (KV throws for less: `KvErr`). `max_bytes`: the limit of the value.",
+        "docs": "`cache_ttl_ms`: a value under 30 s is raised to 30 s (KV throws for less). `max_bytes`: the limit of the value.",
         "line": 73
        },
        {
@@ -2967,11 +2987,11 @@
         "name": "Memo",
         "modulePath": "",
         "fullName": "Memo",
-        "signature": "{ name : Str, max_age_ms : U64, load! : () => Try(a, e), write : a -> List(U8), read : List(U8) -> Try(a, Str) }",
+        "signature": "{ name : Str, max_age_ms : U64, write : a -> List(U8), read : List(U8) -> Try(a, Str) }",
         "docs": "",
-        "line": 9,
+        "line": 13,
         "decl": ":=",
-        "head": "Memo(a, e)"
+        "head": "Memo(a)"
        },
        {
         "kind": "value",
@@ -2979,9 +2999,9 @@
         "name": "new",
         "modulePath": "Memo",
         "fullName": "Memo.new",
-        "signature": "Str, { max_age_ms : U64, load! : () => Try(a, e) } -> Memo(a, e) where [a.Cbor.Writable, a.Cbor.Readable(errs)]",
-        "docs": "A constant (WR1): it does nothing until `get!`. `load!` needs a type annotation (MODULES.md 15).",
-        "line": 12
+        "signature": "Str, { max_age_ms : U64 } -> Memo(a) where [a.Cbor.Writable, a.Cbor.Readable(errs)]",
+        "docs": "A constant (WR1): it does nothing until `get!`.",
+        "line": 16
        },
        {
         "kind": "value",
@@ -2989,9 +3009,9 @@
         "name": "get!",
         "modulePath": "Memo",
         "fullName": "Memo.get!",
-        "signature": "Memo(a, e) => Try(a, e)",
-        "docs": "The pinned value, else `load!` and a pin of its value. A pinned value that does not parse (an older type of the\nsame name) loads again. A pin that fails (a full pin table) does not fail `get!`: the value is a cache.",
-        "line": 23
+        "signature": "Memo(a), (() => Try(a, e)) => Try(a, e)",
+        "docs": "The pinned value, else `load!` and a pin of its value. The error type is the one of `load!`. A pinned value that\ndoes not parse (an older type of the same name) loads again, with no log line. A pin that fails (a full pin\ntable) does not fail `get!`: the value is a cache. Give the same `load!` at each call of one `Memo`: the first\ncall in the isolate pins. `load!` needs a type annotation (MODULES.md 15).\nBefore the pin, `get!` parses the bytes that it wrote. A value that does not parse back is not pinned, and the\nshim logs one line for the name in the isolate (`pf.memoUnreadable`): each `get!` runs `load!` (MODULES.md 9).",
+        "line": 34
        },
        {
         "kind": "value",
@@ -2999,9 +3019,9 @@
         "name": "clear!",
         "modulePath": "Memo",
         "fullName": "Memo.clear!",
-        "signature": "Memo(a, e) => {}",
+        "signature": "Memo(a) => {}",
         "docs": "Drop the pinned value, so the next `get!` loads again.",
-        "line": 44
+        "line": 64
        }
       ]
      },
@@ -3064,12 +3084,22 @@
        {
         "kind": "value",
         "tier": "public",
+        "name": "feed!",
+        "modulePath": "Native.ZstdStream",
+        "fullName": "Native.ZstdStream.feed!",
+        "signature": "Native.ZstdStream, List(U8), U64 => Try({ out : List(U8), more : Bool }, [WindowTooLarge, BadFrame, Truncated, Unsupported, BadHandle, WrongTask])",
+        "docs": "The output of the chunk in parts of at most `max_bytes` (0: 16 MiB). `more` is `Bool.True` when the stream\nhas more output for the input so far: call `feed!` again with an empty chunk until it is `Bool.False`,\nthen give the next chunk. The stream keeps the input and the output that wait, so a chunk with a high\nratio (a long run of zeros) never needs more than `max_bytes` at once. `push_limit_bytes` does not apply.",
+        "line": 74
+       },
+       {
+        "kind": "value",
+        "tier": "public",
         "name": "close!",
         "modulePath": "Native.ZstdStream",
         "fullName": "Native.ZstdStream.close!",
         "signature": "Native.ZstdStream => Try({}, [OutputLimit, WindowTooLarge, BadFrame, Truncated, Unsupported, BadHandle, WrongTask])",
-        "docs": "End the input and free the stream, with an error or not. `Truncated`: the input stopped inside a frame.",
-        "line": 71
+        "docs": "End the input and free the stream, with an error or not. `Truncated`: the input stopped inside a frame,\nor `feed!` still had output (`more` was `Bool.True`).",
+        "line": 94
        },
        {
         "kind": "type",
@@ -3079,7 +3109,7 @@
         "fullName": "Native.Blake3",
         "signature": "{ handle : U32 }",
         "docs": "BLAKE3 with state. `final!` frees the state, so a second `final!` or `update!` is `BadHandle`.",
-        "line": 89,
+        "line": 112,
         "decl": "::",
         "head": "Blake3"
        },
@@ -3091,7 +3121,7 @@
         "fullName": "Native.Blake3.new!",
         "signature": "() => Try(Native.Blake3, [TooManyHandles, NoTask])",
         "docs": "",
-        "line": 90
+        "line": 113
        },
        {
         "kind": "value",
@@ -3101,7 +3131,7 @@
         "fullName": "Native.Blake3.update!",
         "signature": "Native.Blake3, List(U8) => Try({}, [BadHandle, WrongTask])",
         "docs": "",
-        "line": 100
+        "line": 123
        },
        {
         "kind": "value",
@@ -3111,7 +3141,7 @@
         "fullName": "Native.Blake3.final!",
         "signature": "Native.Blake3 => Try(List(U8), [BadHandle, WrongTask])",
         "docs": "The 32 bytes of the digest.",
-        "line": 112
+        "line": 135
        },
        {
         "kind": "type",
@@ -3121,7 +3151,7 @@
         "fullName": "Native.Sha256",
         "signature": "{ handle : U32 }",
         "docs": "SHA-256 with state. The same rules as `Blake3`.",
-        "line": 125,
+        "line": 148,
         "decl": "::",
         "head": "Sha256"
        },
@@ -3133,7 +3163,7 @@
         "fullName": "Native.Sha256.new!",
         "signature": "() => Try(Native.Sha256, [TooManyHandles, NoTask])",
         "docs": "",
-        "line": 126
+        "line": 149
        },
        {
         "kind": "value",
@@ -3143,7 +3173,7 @@
         "fullName": "Native.Sha256.update!",
         "signature": "Native.Sha256, List(U8) => Try({}, [BadHandle, WrongTask])",
         "docs": "",
-        "line": 136
+        "line": 159
        },
        {
         "kind": "value",
@@ -3153,7 +3183,7 @@
         "fullName": "Native.Sha256.final!",
         "signature": "Native.Sha256 => Try(List(U8), [BadHandle, WrongTask])",
         "docs": "The 32 bytes of the digest.",
-        "line": 148
+        "line": 171
        }
       ]
      },
@@ -3411,9 +3441,9 @@
         "name": "send!",
         "modulePath": "Object.Socket",
         "fullName": "Object.Socket.send!",
-        "signature": "Object.Socket, WebSocket.Message => Try({}, [Closed])",
-        "docs": "",
-        "line": 155
+        "signature": "Object.Socket, WebSocket.Message => Try({}, [Closed, Infra([SocketErr(Io.Thrown)])])",
+        "docs": "As `WebSocket.send!`: `Closed` when this side or the peer closed the socket, `SocketErr` for another throw.",
+        "line": 156
        },
        {
         "kind": "value",
@@ -3421,9 +3451,9 @@
         "name": "send_json!",
         "modulePath": "Object.Socket",
         "fullName": "Object.Socket.send_json!",
-        "signature": "Object.Socket, a => Try({}, [Closed, Infra([BadData(Str)])]) where [a.Json.Encodable(enc)]",
+        "signature": "Object.Socket, a => Try({}, [Closed, Infra([BadData(Str), SocketErr(Io.Thrown)])]) where [a.Json.Encodable(enc)]",
         "docs": "A value that JSON cannot show (a `NaN` in an `F64`) is `BadData`, and nothing is sent.",
-        "line": 159
+        "line": 160
        },
        {
         "kind": "value",
@@ -3431,9 +3461,9 @@
         "name": "close!",
         "modulePath": "Object.Socket",
         "fullName": "Object.Socket.close!",
-        "signature": "Object.Socket, U16, Str => {}",
-        "docs": "",
-        "line": 165
+        "signature": "Object.Socket, U16, Str => Try({}, [BadCode, TooLarge])",
+        "docs": "As `WebSocket.close!`: `BadCode` (1000 to 4999 only, not 1004 to 1006 or 1015), `TooLarge` (a reason of more than\n123 bytes). In `web_socket_close!`, the code of the peer can be 1005 or 1006, which the app cannot send.",
+        "line": 172
        },
        {
         "kind": "value",
@@ -3443,7 +3473,7 @@
         "fullName": "Object.Socket.tags!",
         "signature": "Object.Socket => List(Str)",
         "docs": "`ctx.getTags(ws)`: the tags of `accept_with!`.",
-        "line": 169
+        "line": 176
        },
        {
         "kind": "value",
@@ -3453,7 +3483,7 @@
         "fullName": "Object.Socket.auto_response_ms!",
         "signature": "Object.Socket => Try(U64, [NotFound])",
         "docs": "`ctx.getWebSocketAutoResponseTimestamp(ws)`: the time of the last auto response, or `NotFound`.",
-        "line": 182
+        "line": 189
        },
        {
         "kind": "type",
@@ -3463,7 +3493,7 @@
         "fullName": "Object.Self",
         "signature": "{ class : Str, id : Str }",
         "docs": "The object that runs: its class and its id. Each storage function reaches `ctx.storage` of the task.",
-        "line": 192,
+        "line": 199,
         "decl": "::",
         "head": "Self"
        },
@@ -3475,7 +3505,7 @@
         "fullName": "Object.Self.id",
         "signature": "Object.Self -> Str",
         "docs": "`ctx.id.toString()`: pure, the event carries it.",
-        "line": 195
+        "line": 202
        },
        {
         "kind": "value",
@@ -3485,7 +3515,7 @@
         "fullName": "Object.Self.sql!",
         "signature": "Object.Self, Str, params => Try(rows, [Constraint(Sql.Constraint), Infra([SqlErr(Io.Thrown), BadData(Str), TooLarge])]) where [rows.Cbor.Readable(errs), params.Cbor.Writable]",
         "docs": "Rows as the type of the call (`rows : List(Row)`), to `Body.default_max` bytes of CBOR: `sql.exec(...).toArray()`,\nthen `pf.pack`. The integer rules of `D1.all!` (MODULES.md 5.1): `CAST(x AS TEXT)` reads into an `I64`.",
-        "line": 200
+        "line": 207
        },
        {
         "kind": "value",
@@ -3495,7 +3525,7 @@
         "fullName": "Object.Self.sql_with!",
         "signature": "Object.Self, Str, params, { max_bytes : U64 } => Try(rows, [Constraint(Sql.Constraint), Infra([SqlErr(Io.Thrown), BadData(Str), TooLarge])]) where [rows.Cbor.Readable(errs), params.Cbor.Writable]",
         "docs": "",
-        "line": 203
+        "line": 210
        },
        {
         "kind": "value",
@@ -3505,7 +3535,7 @@
         "fullName": "Object.Self.sql_run!",
         "signature": "Object.Self, Str, params => Try(Object.SqlInfo, [Constraint(Sql.Constraint), Infra([SqlErr(Io.Thrown)])]) where [params.Cbor.Writable]",
         "docs": "A write: `rowsRead` and `rowsWritten` of the cursor (an object cursor has no `changes` and no last row id).",
-        "line": 207
+        "line": 214
        },
        {
         "kind": "value",
@@ -3515,7 +3545,7 @@
         "fullName": "Object.Self.sql_rows!",
         "signature": "Object.Self, Str, params => Try(Sql.Rows, [Constraint(Sql.Constraint), Infra([SqlErr(Io.Thrown), TooLarge])]) where [params.Cbor.Writable]",
         "docs": "Rows with no types: the column names, then the values (`raw()`), to `Body.default_max` bytes.",
-        "line": 222
+        "line": 229
        },
        {
         "kind": "value",
@@ -3525,7 +3555,7 @@
         "fullName": "Object.Self.sql_rows_with!",
         "signature": "Object.Self, Str, params, { max_bytes : U64 } => Try(Sql.Rows, [Constraint(Sql.Constraint), Infra([SqlErr(Io.Thrown), TooLarge])]) where [params.Cbor.Writable]",
         "docs": "",
-        "line": 225
+        "line": 232
        },
        {
         "kind": "value",
@@ -3535,7 +3565,7 @@
         "fullName": "Object.Self.set_alarm_at",
         "signature": "Object.Self, U64 -> Io({}, [Infra([StorageErr(Io.Thrown)])])",
         "docs": "`storage.setAlarm(epoch_ms)`: a promise, one wait. `epoch_ms` is a time of the clock (`Time.now_ms!`), not a\ndelay: use `set_alarm_in!` for a delay. A class with no `alarm!` has no `alarm` method in JS, so Workers\nthrows: `StorageErr`.",
-        "line": 231
+        "line": 238
        },
        {
         "kind": "value",
@@ -3545,7 +3575,7 @@
         "fullName": "Object.Self.set_alarm_at!",
         "signature": "Object.Self, U64 => Try({}, [Infra([StorageErr(Io.Thrown)])])",
         "docs": "",
-        "line": 237
+        "line": 244
        },
        {
         "kind": "value",
@@ -3554,8 +3584,8 @@
         "modulePath": "Object.Self",
         "fullName": "Object.Self.set_alarm_in",
         "signature": "Object.Self, U64 -> Io({}, [Infra([StorageErr(Io.Thrown)])])",
-        "docs": "`storage.setAlarm(Date.now() + delay_ms)`: the alarm fires `delay_ms` after the call. `pf.alarmIn` reads the\nclock in the same program.",
-        "line": 242
+        "docs": "`storage.setAlarm(now + delay_ms)`: the alarm fires `delay_ms` after the call. `pf.alarmIn` reads the clock of\n`Time.now_ms!` (the shim option `now`) in the same program.",
+        "line": 249
        },
        {
         "kind": "value",
@@ -3565,7 +3595,7 @@
         "fullName": "Object.Self.set_alarm_in!",
         "signature": "Object.Self, U64 => Try({}, [Infra([StorageErr(Io.Thrown)])])",
         "docs": "",
-        "line": 248
+        "line": 255
        },
        {
         "kind": "value",
@@ -3575,7 +3605,7 @@
         "fullName": "Object.Self.get_alarm",
         "signature": "Object.Self -> Io(U64, [NotFound, Infra([StorageErr(Io.Thrown)])])",
         "docs": "`storage.getAlarm()`: the time in ms (absolute, like `set_alarm_at!`), or `NotFound`.",
-        "line": 252
+        "line": 259
        },
        {
         "kind": "value",
@@ -3585,7 +3615,7 @@
         "fullName": "Object.Self.get_alarm!",
         "signature": "Object.Self => Try(U64, [NotFound, Infra([StorageErr(Io.Thrown)])])",
         "docs": "",
-        "line": 263
+        "line": 270
        },
        {
         "kind": "value",
@@ -3595,7 +3625,7 @@
         "fullName": "Object.Self.delete_alarm",
         "signature": "Object.Self -> Io({}, [Infra([StorageErr(Io.Thrown)])])",
         "docs": "",
-        "line": 266
+        "line": 273
        },
        {
         "kind": "value",
@@ -3605,7 +3635,7 @@
         "fullName": "Object.Self.delete_alarm!",
         "signature": "Object.Self => Try({}, [Infra([StorageErr(Io.Thrown)])])",
         "docs": "",
-        "line": 269
+        "line": 276
        },
        {
         "kind": "value",
@@ -3615,7 +3645,7 @@
         "fullName": "Object.Self.delete_all",
         "signature": "Object.Self -> Io({}, [Infra([StorageErr(Io.Thrown)])])",
         "docs": "All storage of the object: the SQL tables, the cells and the alarm. `deleteAlarm`, then `deleteAll`, in one\nprogram: with a compatibility date before 2026-02-24, `deleteAll` keeps the alarm (Cloudflare docs).",
-        "line": 274
+        "line": 281
        },
        {
         "kind": "value",
@@ -3625,7 +3655,7 @@
         "fullName": "Object.Self.delete_all!",
         "signature": "Object.Self => Try({}, [Infra([StorageErr(Io.Thrown)])])",
         "docs": "",
-        "line": 280
+        "line": 287
        },
        {
         "kind": "value",
@@ -3635,7 +3665,7 @@
         "fullName": "Object.Self.list!",
         "signature": "Object.Self => Try(List(Str), [Infra([TooLarge, StorageErr(Io.Thrown)])])",
         "docs": "The keys of the sync KV storage (the cells), in UTF-8 order: `storage.kv.list()`. The values stay in JS. All keys\nto `Body.default_max` bytes (MC11): `TooLarge` past it.",
-        "line": 285
+        "line": 292
        },
        {
         "kind": "value",
@@ -3645,7 +3675,7 @@
         "fullName": "Object.Self.list_with!",
         "signature": "Object.Self, { prefix ?: Str, start ?: Str, start_after ?: Str, end ?: Str, limit ?: U32, reverse ?: Bool } => Try(List(Str), [Infra([TooLarge, StorageErr(Io.Thrown)])])",
         "docs": "",
-        "line": 288
+        "line": 295
        },
        {
         "kind": "value",
@@ -3655,7 +3685,7 @@
         "fullName": "Object.Self.accept!",
         "signature": "Object.Self, Request => Try({ socket : Object.Socket, response : Response }, [NotUpgrade])",
         "docs": "The hibernation API (MODULES.md 12.1): `new WebSocketPair()`, `ctx.acceptWebSocket(server)` and a 101 response\nwith the client end, in one `call!`. The object can leave memory while the socket is open: its messages come\nas events. `NotUpgrade` when the request has no `Upgrade: websocket`.",
-        "line": 330
+        "line": 337
        },
        {
         "kind": "value",
@@ -3663,9 +3693,9 @@
         "name": "accept_with!",
         "modulePath": "Object.Self",
         "fullName": "Object.Self.accept_with!",
-        "signature": "Object.Self, Request, { tags ?: List(Str) } => Try({ socket : Object.Socket, response : Response }, [NotUpgrade, TooLarge])",
-        "docs": "`tags`: 10 or less, 256 characters or less each (Workers), else `TooLarge`. `sockets_with!` finds them.",
-        "line": 338
+        "signature": "Object.Self, Request, { tags ?: List(Str), protocols ?: List(Str) } => Try({ socket : Object.Socket, response : Response }, [NotUpgrade, TooLarge])",
+        "docs": "`tags`: 10 or less, 256 characters or less each (Workers), else `TooLarge`. `sockets_with!` finds them.\n`protocols`: the subprotocols of the object, in its order. The 101 response has the first that the client asks\nfor in `Sec-WebSocket-Protocol` (`WebSocket.pick_protocol(req, protocols)` gives it; keep it in the attachment\nif a later event needs it).",
+        "line": 348
        },
        {
         "kind": "value",
@@ -3675,7 +3705,7 @@
         "fullName": "Object.Self.sockets!",
         "signature": "Object.Self => List(Object.Socket)",
         "docs": "`ctx.getWebSockets()`: the open sockets of the object.",
-        "line": 342
+        "line": 352
        },
        {
         "kind": "value",
@@ -3685,7 +3715,7 @@
         "fullName": "Object.Self.sockets_with!",
         "signature": "Object.Self, { tag : Str } => List(Object.Socket)",
         "docs": "`ctx.getWebSockets(tag)`: the open sockets with the tag.",
-        "line": 346
+        "line": 356
        },
        {
         "kind": "value",
@@ -3695,7 +3725,7 @@
         "fullName": "Object.Self.broadcast!",
         "signature": "Object.Self, WebSocket.Message => {}",
         "docs": "Sends the message to each open socket of the object. A closed socket is skipped. Use `broadcast_with!` for the\nnumber of sockets that got it.",
-        "line": 351
+        "line": 361
        },
        {
         "kind": "value",
@@ -3705,7 +3735,7 @@
         "fullName": "Object.Self.broadcast_json!",
         "signature": "Object.Self, a => Try({}, [Infra([BadData(Str)])]) where [a.Json.Encodable(enc)]",
         "docs": "`broadcast!` of a value as JSON text, like `Object.Socket.send_json!`. A value that JSON cannot show (a `NaN`\nin an `F64`) is `BadData`, and nothing is sent.",
-        "line": 359
+        "line": 369
        },
        {
         "kind": "value",
@@ -3715,7 +3745,7 @@
         "fullName": "Object.Self.broadcast_with!",
         "signature": "Object.Self, { tag ?: Str }, WebSocket.Message => U64",
         "docs": "`broadcast!` that gives the number of sockets that got the message. `tag`: the sockets with the tag only,\nelse all open sockets (`broadcast_with!({}, msg)`).",
-        "line": 367
+        "line": 377
        },
        {
         "kind": "value",
@@ -3725,7 +3755,7 @@
         "fullName": "Object.Self.broadcast_json_with!",
         "signature": "Object.Self, { tag ?: Str }, a => Try(U64, [Infra([BadData(Str)])]) where [a.Json.Encodable(enc)]",
         "docs": "`broadcast_with!` of a value as JSON text. `BadData` as for `broadcast_json!`: nothing is sent.",
-        "line": 377
+        "line": 387
        },
        {
         "kind": "value",
@@ -3735,7 +3765,7 @@
         "fullName": "Object.Self.set_auto_response!",
         "signature": "Object.Self, { request : Str, response : Str } => Try({}, [TooLarge])",
         "docs": "`ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair(request, response))`: Workers answers the text\n`request` with `response` and sends no event, so the object can stay asleep. 2,048 characters or less each\n(Workers), else `TooLarge`.",
-        "line": 386
+        "line": 396
        },
        {
         "kind": "value",
@@ -3745,7 +3775,7 @@
         "fullName": "Object.Self.clear_auto_response!",
         "signature": "Object.Self => {}",
         "docs": "`ctx.setWebSocketAutoResponse()`: no auto response.",
-        "line": 393
+        "line": 403
        },
        {
         "kind": "type",
@@ -3755,7 +3785,7 @@
         "fullName": "Object.SqlInfo",
         "signature": "{ rows_read : U64, rows_written : U64 }",
         "docs": "What a SQL cursor of a Durable Object gives (rowsRead, rowsWritten). D1 also gives changes and last_row_id (Sql.Info).",
-        "line": 401,
+        "line": 411,
         "decl": ":",
         "head": "SqlInfo"
        },
@@ -3767,7 +3797,7 @@
         "fullName": "Object.class",
         "signature": "Str,\n\t{\n\t\tinit! ?: Object.Self => Try({}, e1),\n\t\tfetch! ?: Object.Self, Request => Try(Response, e2),\n\t\trpc ?: List(Rpc.Serves(iface, Object.Self)),\n\t\talarm! ?: Object.Self, { retry_count : U32, is_retry : Bool } => Try({}, e3),\n\t\tweb_socket_message! ?: Object.Self, Object.Socket, WebSocket.Message => Try({}, e4),\n\t\tweb_socket_close! ?: Object.Self, Object.Socket, WebSocket.Closed => Try({}, e5),\n\t\tweb_socket_error! ?: Object.Self, Object.Socket, Io.Thrown => Try({}, e6),\n\t} -> Object.Class(iface)",
         "docs": "A class of Durable Objects: a record of handlers, all optional (MODULES.md 7). Each handler has its own error\ntype: an `Err(e)` becomes a log line with `Str.inspect(e)` (the outcome `Failed`). The name is the name of the JS\nexport (`export const Counter = objectClass(\"Counter\")`) and of the Wrangler config.",
-        "line": 406
+        "line": 416
        },
        {
         "kind": "type",
@@ -3777,7 +3807,7 @@
         "fullName": "Object.Class",
         "signature": "{ name : Str, iface_names : List(Str), handlers : List(Str), methods : List(Str), run! : Str, Object.Event => [Respond(Response), Reply(Js), Done, Failed(Str), Unhandled] }",
         "docs": "A class with its types erased, but not its interface: the handlers that its JS class has (`init`, `fetch`, `alarm`, `webSocketMessage`,\n`webSocketClose`, `webSocketError`) and its RPC methods\n(the manifest, API.md AQ10), and the function that runs an event for the object of an id.",
-        "line": 479,
+        "line": 489,
         "decl": ":=",
         "head": "Class(iface)"
        },
@@ -3789,7 +3819,7 @@
         "fullName": "Object.Class.name",
         "signature": "Object.Class(iface) -> Str",
         "docs": "",
-        "line": 480
+        "line": 490
        },
        {
         "kind": "value",
@@ -3799,7 +3829,7 @@
         "fullName": "Object.Class.iface_name",
         "signature": "Object.Class(iface) -> Str",
         "docs": "The name of the interface of its Rpc methods (\"\" for a class with none). Two names are an error at load.",
-        "line": 484
+        "line": 494
        },
        {
         "kind": "value",
@@ -3809,7 +3839,7 @@
         "fullName": "Object.Class.erase",
         "signature": "Object.Class(iface) -> Object.AnyClass",
         "docs": "For `Worker.new({ objects })`: a list has one type, and two classes have two interfaces.",
-        "line": 491
+        "line": 501
        },
        {
         "kind": "type",
@@ -3819,7 +3849,7 @@
         "fullName": "Object.AnyClass",
         "signature": "{ name : Str, iface_names : List(Str), handlers : List(Str), methods : List(Str), run! : Str, Object.Event => [Respond(Response), Reply(Js), Done, Failed(Str), Unhandled] }",
         "docs": "A class with its interface erased.",
-        "line": 496,
+        "line": 506,
         "decl": ":",
         "head": "AnyClass"
        },
@@ -3831,7 +3861,7 @@
         "fullName": "Object.cell",
         "signature": "Str -> Object.Cell(a) where [a.Cbor.Writable, a.Cbor.Readable(errs)]",
         "docs": "A typed value in the sync KV storage of the object (MODULES.md 9): CBOR bytes under one key. A constant (WR1).",
-        "line": 499
+        "line": 509
        },
        {
         "kind": "type",
@@ -3841,7 +3871,7 @@
         "fullName": "Object.Cell",
         "signature": "{ key : Str, write : a -> List(U8), read : List(U8) -> Try(a, Str) }",
         "docs": "Each function takes the `Object.Self` and is one `call!` (no wait).",
-        "line": 503,
+        "line": 513,
         "decl": "::",
         "head": "Cell(a)"
        },
@@ -3853,7 +3883,7 @@
         "fullName": "Object.Cell.get!",
         "signature": "Object.Cell(a), Object.Self => Try(a, [NotFound, Infra([BadData(Str), StorageErr(Io.Thrown)])])",
         "docs": "`storage.kv.get(key)`: `NotFound` when there is no value.",
-        "line": 506
+        "line": 516
        },
        {
         "kind": "value",
@@ -3863,7 +3893,7 @@
         "fullName": "Object.Cell.get_or!",
         "signature": "Object.Cell(a), Object.Self, a => Try(a, [Infra([BadData(Str), StorageErr(Io.Thrown)])])",
         "docs": "`get!`, and `default` for a cell that has no value. The other errors stay.",
-        "line": 518
+        "line": 528
        },
        {
         "kind": "value",
@@ -3873,7 +3903,7 @@
         "fullName": "Object.Cell.find!",
         "signature": "Object.Cell(a), Object.Self => Try(Try(a, [NotFound]), [Infra([BadData(Str), StorageErr(Io.Thrown)])])",
         "docs": "`get!` that gives a missing value as `Ok(Err(NotFound))`, so the error type of the caller has no `NotFound`:\n`match c.find!(self)? { Ok(v) => ..., Err(NotFound) => ... }`.",
-        "line": 527
+        "line": 537
        },
        {
         "kind": "value",
@@ -3883,7 +3913,7 @@
         "fullName": "Object.Cell.set!",
         "signature": "Object.Cell(a), Object.Self, a => Try({}, [Infra([StorageErr(Io.Thrown)])])",
         "docs": "`storage.kv.put(key, bytes)`.",
-        "line": 535
+        "line": 545
        },
        {
         "kind": "value",
@@ -3893,7 +3923,7 @@
         "fullName": "Object.Cell.delete!",
         "signature": "Object.Cell(a), Object.Self => Try({}, [Infra([StorageErr(Io.Thrown)])])",
         "docs": "`storage.kv.delete(key)`. A key with no value is `Ok` too.",
-        "line": 542
+        "line": 552
        },
        {
         "kind": "value",
@@ -3903,7 +3933,7 @@
         "fullName": "Object.attachment",
         "signature": "Str -> Object.Attachment(a) where [a.Cbor.Writable, a.Cbor.Readable(errs)]",
         "docs": "A typed attachment of a socket (MODULES.md 12.1): CBOR bytes in `ws.serializeAttachment`. A constant (WR1), like\n`Object.Cell`: the same constant writes and reads, so the stored type and the read type are one. A socket has one\nattachment slot: two constants on one socket share it. `name` shows in the `BadData` text only.",
-        "line": 549
+        "line": 559
        },
        {
         "kind": "type",
@@ -3913,7 +3943,7 @@
         "fullName": "Object.Attachment",
         "signature": "{ name : Str, write : a -> List(U8), read : List(U8) -> Try(a, Str) }",
         "docs": "",
-        "line": 552,
+        "line": 562,
         "decl": "::",
         "head": "Attachment(a)"
        },
@@ -3925,7 +3955,7 @@
         "fullName": "Object.Attachment.set!",
         "signature": "Object.Attachment(a), Object.Socket, a => Try({}, [TooLarge])",
         "docs": "`ws.serializeAttachment(bytes)`: it stays while the object sleeps. Workers refuses more than 16,384 bytes:\n`TooLarge`.",
-        "line": 556
+        "line": 566
        },
        {
         "kind": "value",
@@ -3935,7 +3965,7 @@
         "fullName": "Object.Attachment.get!",
         "signature": "Object.Attachment(a), Object.Socket => Try(a, [NotFound, Infra([BadData(Str)])])",
         "docs": "`ws.deserializeAttachment()`. `NotFound` when there is none.",
-        "line": 566
+        "line": 576
        }
       ]
      },
@@ -4327,7 +4357,7 @@
         "name": "get_with",
         "modulePath": "R2",
         "fullName": "R2.get_with",
-        "signature": "R2, Str, { range ?: R2.Range, only_if ?: R2.Cond } -> Io(R2.Object, [NotFound, PreconditionFailed, Infra([R2Err(Io.Thrown)])])",
+        "signature": "R2, Str, { range ?: R2.ByteRange, only_if ?: R2.Cond } -> Io(R2.Object, [NotFound, PreconditionFailed, Infra([R2Err(Io.Thrown)])])",
         "docs": "`range`: the bytes to read. `only_if`: a failed condition is `PreconditionFailed` (R2 gives the object with no body).",
         "line": 44
        },
@@ -4337,7 +4367,7 @@
         "name": "get_with!",
         "modulePath": "R2",
         "fullName": "R2.get_with!",
-        "signature": "R2, Str, { range ?: R2.Range, only_if ?: R2.Cond } => Try(R2.Object, [NotFound, PreconditionFailed, Infra([R2Err(Io.Thrown)])])",
+        "signature": "R2, Str, { range ?: R2.ByteRange, only_if ?: R2.Cond } => Try(R2.Object, [NotFound, PreconditionFailed, Infra([R2Err(Io.Thrown)])])",
         "docs": "",
         "line": 58
        },
@@ -4661,7 +4691,7 @@
         "name": "Object",
         "modulePath": "R2",
         "fullName": "R2.Object",
-        "signature": "{ meta : R2.Meta, body : Body, range ?: R2.Range }",
+        "signature": "{ meta : R2.Meta, body : Body, range ?: R2.ByteRange }",
         "docs": "`range`: the bytes that R2 read, only for a call with a `range` option (the edge and Miniflare give a range\nalso for a read of the whole object).",
         "line": 293,
         "decl": ":",
@@ -4750,14 +4780,14 @@
        {
         "kind": "type",
         "tier": "public",
-        "name": "Range",
+        "name": "ByteRange",
         "modulePath": "R2",
-        "fullName": "R2.Range",
+        "fullName": "R2.ByteRange",
         "signature": "[From({ offset_bytes : U64, length_bytes ?: U64 }), Suffix(U64)]",
         "docs": "",
         "line": 318,
         "decl": ":",
-        "head": "Range"
+        "head": "ByteRange"
        },
        {
         "kind": "type",
@@ -4888,8 +4918,8 @@
         "name": "socket_send!",
         "modulePath": "Remote",
         "fullName": "Remote.socket_send!",
-        "signature": "Js.Ref, Js => Try({}, [Closed])",
-        "docs": "`ws.send(data)` on a socket of `WebSocket` or `Object.Socket` (MODULES.md 12, \"One API\"), one `call!`. A throw (the\nsocket is closed) is `Closed`.",
+        "signature": "Js.Ref, Js => Try({}, [Closed, Infra([SocketErr(Io.Thrown)])])",
+        "docs": "`send!` on a socket of `WebSocket` or `Object.Socket` (MODULES.md 12, \"One API\"), one `call!` of `pf.wsSend`:\n\"closed\" when the socket is closing or closed (`readyState` 2 or 3) is `Closed`, a throw of `send` is `SocketErr`.",
         "line": 46
        },
        {
@@ -4898,9 +4928,9 @@
         "name": "socket_close!",
         "modulePath": "Remote",
         "fullName": "Remote.socket_close!",
-        "signature": "Js.Ref, U16, Str => {}",
-        "docs": "`ws.close(code, reason)`, one `call!`. A throw (a code that the app cannot send, a closed socket) is dropped.",
-        "line": 53
+        "signature": "Js.Ref, U16, Str => Try({}, [BadCode, TooLarge])",
+        "docs": "`close!` on a socket, one `call!` of `pf.wsClose`: `ws.close(code, reason)` and the mark that this side closed\nfirst. Workers checks the code (`InvalidAccessError`: `BadCode`) and the length of the reason (`SyntaxError`:\n`TooLarge`, more than 123 bytes). A close of a closed socket does not throw (research/ws-gaps-probe/out.txt).",
+        "line": 56
        },
        {
         "kind": "value",
@@ -4910,7 +4940,7 @@
         "fullName": "Remote.rpc_max",
         "signature": "U64",
         "docs": "The limit of one RPC call of Workers (32 MiB, Cloudflare docs): the limit of a reply that crosses into wasm.",
-        "line": 60
+        "line": 65
        }
       ]
      },
@@ -5111,8 +5141,28 @@
         "modulePath": "Request",
         "fullName": "Request.query",
         "signature": "Request, Str -> Try(Str, [NotFound])",
-        "docs": "The first value of a query parameter, percent-decoded (\"+\" is a space).",
+        "docs": "The first value of a query parameter: `query_all(r, name).first()`, with `NotFound` for an empty list.",
         "line": 107
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "query_all",
+        "modulePath": "Request",
+        "fullName": "Request.query_all",
+        "signature": "Request, Str -> List(Str)",
+        "docs": "Each value of a query parameter, in URL order (`URLSearchParams.getAll`). `?short=a&short=b` gives [\"a\", \"b\"].",
+        "line": 114
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "query_pairs",
+        "modulePath": "Request",
+        "fullName": "Request.query_pairs",
+        "signature": "Request -> List((Str, Str))",
+        "docs": "Each (name, value) pair of the query, in URL order. The parse is application/x-www-form-urlencoded of the WHATWG\nURL standard, the same as `new URL(url).searchParams` (MODULES.md 4, \"Query parameters\").",
+        "line": 119
        },
        {
         "kind": "value",
@@ -5122,7 +5172,7 @@
         "fullName": "Request.header",
         "signature": "Request, Str -> Try(Str, [NotFound])",
         "docs": "The value of a header. The name is caseless, as in Workers `Headers.get`.",
-        "line": 129
+        "line": 123
        },
        {
         "kind": "value",
@@ -5132,7 +5182,7 @@
         "fullName": "Request.cookie",
         "signature": "Request, Str -> Try(Str, [NotFound])",
         "docs": "The value of a cookie of the `Cookie` header.",
-        "line": 133
+        "line": 127
        },
        {
         "kind": "value",
@@ -5142,7 +5192,7 @@
         "fullName": "Request.text!",
         "signature": "Request => Try(Str, [TooLarge, BadData(Str), BodyErr(Io.Thrown)])",
         "docs": "",
-        "line": 145
+        "line": 139
        },
        {
         "kind": "value",
@@ -5152,7 +5202,7 @@
         "fullName": "Request.json!",
         "signature": "Request => Try(a, [TooLarge, BadData(Str), BodyErr(Io.Thrown)]) where [a.Json.Parseable([InvalidJson(Str), ..errs])]",
         "docs": "",
-        "line": 148
+        "line": 142
        },
        {
         "kind": "value",
@@ -5162,7 +5212,7 @@
         "fullName": "Request.bytes!",
         "signature": "Request => Try(List(U8), [TooLarge, BodyErr(Io.Thrown)])",
         "docs": "",
-        "line": 151
+        "line": 145
        },
        {
         "kind": "value",
@@ -5172,7 +5222,7 @@
         "fullName": "Request.bytes_with!",
         "signature": "Request, { max_bytes : U64 } => Try(List(U8), [TooLarge, BodyErr(Io.Thrown)])",
         "docs": "",
-        "line": 154
+        "line": 148
        }
       ]
      },
@@ -5361,8 +5411,8 @@
         "modulePath": "Response",
         "fullName": "Response.after",
         "signature": "Response, (() => Try({}, e)) -> Response",
-        "docs": "Respond now, work after (API.md 10.2): when a `fetch!` handler gives this response, the platform sends it, and\nthen runs `work!` in the same task. The client has its response already, so an `Err(e)` of `work!` cannot reach it:\nit is the log line `fetch: after respond: failed: <Str.inspect(e)>` (`<name>.fetch: ...` in an object or a named entry point).\nA second `after` runs after the first. Only the response of a `fetch!` handler runs its work.",
-        "line": 75
+        "docs": "Respond now, work after (API.md 10.2): when a `fetch!` handler gives this response, the platform sends it, and\nthen runs `work!` in the same task. The client has its response already, so an `Err(e)` of `work!` cannot reach it:\nit is the log line `fetch: after respond: failed: <Str.inspect(e)>` (`<name>.fetch: ...` in an object or a named entry point).\nA second `after` runs after the first. Only the response of a `fetch!` handler runs its work. The work has 30 s\nafter the response body is complete (the shim option `afterRespondMs`, the `waitUntil` limit of Workers).",
+        "line": 76
        },
        {
         "kind": "value",
@@ -5372,7 +5422,7 @@
         "fullName": "Response.header",
         "signature": "Response, Str -> Try(Str, [NotFound])",
         "docs": "The value of a header. The name is caseless.",
-        "line": 91
+        "line": 92
        },
        {
         "kind": "value",
@@ -5382,7 +5432,7 @@
         "fullName": "Response.text!",
         "signature": "Response => Try(Str, [Infra([TooLarge, BadData(Str), BodyErr(Io.Thrown)])])",
         "docs": "",
-        "line": 100
+        "line": 101
        },
        {
         "kind": "value",
@@ -5392,7 +5442,7 @@
         "fullName": "Response.json!",
         "signature": "Response => Try(a, [Infra([TooLarge, BadData(Str), BodyErr(Io.Thrown)])]) where [a.Json.Parseable([InvalidJson(Str), ..errs])]",
         "docs": "",
-        "line": 103
+        "line": 104
        },
        {
         "kind": "value",
@@ -5402,7 +5452,7 @@
         "fullName": "Response.bytes!",
         "signature": "Response => Try(List(U8), [Infra([TooLarge, BodyErr(Io.Thrown)])])",
         "docs": "",
-        "line": 106
+        "line": 107
        },
        {
         "kind": "value",
@@ -5412,7 +5462,7 @@
         "fullName": "Response.bytes_with!",
         "signature": "Response, { max_bytes : U64 } => Try(List(U8), [Infra([TooLarge, BodyErr(Io.Thrown)])])",
         "docs": "",
-        "line": 109
+        "line": 110
        }
       ]
      },
@@ -5981,8 +6031,8 @@
         "modulePath": "Sql",
         "fullName": "Sql.or_null",
         "signature": "Try(a, _) -> Sql.OrNull(a)",
-        "docs": "A parameter that can be NULL: `Ok(x)` encodes as `x`, `Err(_)` as NULL, for any error type. A bare `Err(Null)` of\nan annotated `Try(a, [Null])` also encodes as CBOR null (NULL). A tag with a payload encodes as a map: `BadParam`.",
-        "line": 59
+        "docs": "A parameter that can be NULL: `Ok(x)` encodes as `x`, `Err(_)` as NULL, for any error type. A bare `Err(Null)` of\nan annotated `Try(a, [Null])` also encodes as CBOR null (NULL). A tag with a payload encodes as a map: `BadParam`.\nThe parameters are an array (a list or a tuple), so a NULL item stays. In a record that crosses as CBOR (an RPC\nargument or reply, a queue message, a cell, a `Memo` value, an attachment) a field of `Sql.null`, of `Sql.or_null` or of\n`Err(Null)` writes no key (roc-cbor 0.2.2). The record reads back only into `x ?: a` or `x : Try(a, [Missing])`, not\ninto `x : Try(a, [Null])` (`MissingRequiredField`). Use `?:` or `Try(a, [Missing])` for a field that can be empty.",
+        "line": 63
        },
        {
         "kind": "type",
@@ -5992,7 +6042,7 @@
         "fullName": "Sql.OrNull",
         "signature": "[Some(a), None]",
         "docs": "The type of `Sql.or_null`.",
-        "line": 66,
+        "line": 70,
         "decl": ":=",
         "head": "OrNull(a)"
        },
@@ -6004,7 +6054,7 @@
         "fullName": "Sql.OrNull.encoder_for",
         "signature": "encoding -> (Sql.OrNull(a), state -> Try(state, err))\n\t\t\twhere [encoding.encode_null : state -> Try(state, err), a.encoder_for : encoding -> (a, state -> Try(state, err))]",
         "docs": "",
-        "line": 67
+        "line": 71
        },
        {
         "kind": "value",
@@ -6014,7 +6064,7 @@
         "fullName": "Sql.blob",
         "signature": "List(U8) -> Cbor.Bytes",
         "docs": "A blob as a parameter: a CBOR byte string, bound as a `Uint8Array`.",
-        "line": 81
+        "line": 85
        },
        {
         "kind": "type",
@@ -6024,7 +6074,7 @@
         "fullName": "Sql.Info",
         "signature": "{ changes : U64, last_row_id : Try(I64, [Rounded]), rows_read : U64, rows_written : U64, duration_ms : F64 }",
         "docs": "The `meta` of a query. `last_row_id` is `Err(Rounded)` when D1 gave it with a size of 2^53 or more: D1 gives each\nnumber as a JS `Number`, so a larger rowid is rounded (MODULES.md 5.1, \"Integers in rows\").",
-        "line": 86,
+        "line": 90,
         "decl": ":",
         "head": "Info"
        },
@@ -6036,7 +6086,7 @@
         "fullName": "Sql.Rows",
         "signature": "{ columns : List(Str), rows : List(List(Sql)) }",
         "docs": "Rows with no types: the column names, then one list of values for each row.",
-        "line": 89,
+        "line": 93,
         "decl": ":",
         "head": "Rows"
        },
@@ -6048,7 +6098,7 @@
         "fullName": "Sql.Constraint",
         "signature": "{ kind : [PrimaryKey, Unique, ForeignKey, Check, NotNull, Trigger, Datatype, Other], message : Str }",
         "docs": "A constraint failure (MC9): the kind from the extended code in the message text, and the SQLite text\n(5.1, table \"Constraint kinds\"). A flat domain tag `Constraint(Sql.Constraint)`, not in `Infra`.",
-        "line": 93,
+        "line": 97,
         "decl": ":",
         "head": "Constraint"
        }
@@ -6273,8 +6323,8 @@
         "modulePath": "Time",
         "fullName": "Time.now_ms!",
         "signature": "() => U64",
-        "docs": "`Date.now()`: one `call!`, no wait. On the edge it is coarse: it moves only at I/O.",
-        "line": 8
+        "docs": "The clock of the shim (`pf.now`: the `makeHandler` option `now`, default `Date.now()`): one `call!`, no wait. It\nis also the clock of `Memo` expiry and of the task deadlines. On the edge it is coarse: it moves only at I/O.",
+        "line": 9
        },
        {
         "kind": "value",
@@ -6284,7 +6334,7 @@
         "fullName": "Time.sleep",
         "signature": "U64 -> Io({}, e)",
         "docs": "`scheduler.wait(ms)`: one wait. The timer stops when the signal of the task aborts (the end of the task, or a\nlost branch of `Io.race!`, OP8). The error type is open, so the twin joins the errors of the other branches.",
-        "line": 18
+        "line": 19
        },
        {
         "kind": "value",
@@ -6294,7 +6344,7 @@
         "fullName": "Time.sleep!",
         "signature": "U64 => {}",
         "docs": "",
-        "line": 29
+        "line": 30
        },
        {
         "kind": "value",
@@ -6304,7 +6354,7 @@
         "fullName": "Time.seconds_up",
         "signature": "U64 -> U64",
         "docs": "Milliseconds to whole seconds, rounded up (MC10), for a Workers option in seconds: 1 ms gives 1 s, so a\nduration never becomes shorter (KV `expirationTtl`, Queues `delaySeconds`, a `max-age`).",
-        "line": 37
+        "line": 38
        }
       ]
      },
@@ -6940,7 +6990,7 @@
         "name": "WebSocket",
         "modulePath": "",
         "fullName": "WebSocket",
-        "signature": "{ ref : Js.Ref }",
+        "signature": "{ ref : Js.Ref, protocol : Str, extensions : Try(List(Str), [NotReported]) }",
         "docs": "",
         "line": 13,
         "decl": "::",
@@ -6957,6 +7007,26 @@
         "line": 16
        },
        {
+        "kind": "value",
+        "tier": "public",
+        "name": "protocol",
+        "modulePath": "WebSocket",
+        "fullName": "WebSocket.protocol",
+        "signature": "WebSocket -> Str",
+        "docs": "The subprotocol of the socket: of a client, the `Sec-WebSocket-Protocol` header of the 101 response of the server;\nof `accept_with!`, the one that it picked. \"\" when there is none.",
+        "line": 20
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "extensions",
+        "modulePath": "WebSocket",
+        "fullName": "WebSocket.extensions",
+        "signature": "WebSocket -> Try(List(Str), [NotReported])",
+        "docs": "The extensions of a client socket: the `Sec-WebSocket-Extensions` header of the 101 response, split at the commas\n(each with its parameters, as `permessage-deflate; client_max_window_bits=15`). `[]` when the server agreed to none.\nA socket of `accept!` is `NotReported`: workerd agrees on the extensions with the client and does not tell the\nWorker (the server end has `extensions` \"\" also when the client got `permessage-deflate`, research/ws-close-probe).",
+        "line": 27
+       },
+       {
         "kind": "type",
         "tier": "public",
         "name": "Message",
@@ -6964,7 +7034,7 @@
         "fullName": "WebSocket.Message",
         "signature": "[Text(Str), Bytes(List(U8))]",
         "docs": "One frame. `json` parses a text frame as JSON, the format of most WebSocket clients.",
-        "line": 19,
+        "line": 31,
         "decl": ":=",
         "head": "Message"
        },
@@ -6976,7 +7046,7 @@
         "fullName": "WebSocket.Message.is_eq",
         "signature": "_",
         "docs": "",
-        "line": 20
+        "line": 32
        },
        {
         "kind": "value",
@@ -6986,7 +7056,7 @@
         "fullName": "WebSocket.Message.json",
         "signature": "WebSocket.Message -> Try(a, [BadData(Str)]) where [a.Json.Parseable([InvalidJson(Str), ..errs])]",
         "docs": "",
-        "line": 22
+        "line": 34
        },
        {
         "kind": "type",
@@ -6994,11 +7064,41 @@
         "name": "Closed",
         "modulePath": "WebSocket",
         "fullName": "WebSocket.Closed",
-        "signature": "{ code : U16, reason : Str, clean : Bool }",
-        "docs": "The close of a socket: the code and the reason of the close frame, and `clean` (`wasClean`).",
-        "line": 30,
+        "signature": "{ code : U16, reason : Str, clean : Bool, by : [Peer, Us, Transport] }",
+        "docs": "The close of a socket: the code and the reason of the close frame, `clean` (`wasClean`), and who closed first\n(`by`): `Transport` for the code 1006 (no close frame: the connection dropped, RFC 6455 7.1.5), `Us` when this\nside called `close!` first (also the close of a full receive queue, 1008), else `Peer`. When `Us` closed, the code\nand the reason are the ones of the reply of the peer (local workerd: the code, with an empty reason).",
+        "line": 45,
         "decl": ":",
         "head": "Closed"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "default_max_queued_bytes",
+        "modulePath": "WebSocket",
+        "fullName": "WebSocket.default_max_queued_bytes",
+        "signature": "U64",
+        "docs": "The default limit of the receive queue of a socket: 4 MiB (`max_queued_bytes`).",
+        "line": 48
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "protocols",
+        "modulePath": "WebSocket",
+        "fullName": "WebSocket.protocols",
+        "signature": "Request -> List(Str)",
+        "docs": "The subprotocols that the client asks for: the `Sec-WebSocket-Protocol` headers of the request, split at the\ncommas, in their order.",
+        "line": 53
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "pick_protocol",
+        "modulePath": "WebSocket",
+        "fullName": "WebSocket.pick_protocol",
+        "signature": "Request, List(Str) -> Try(Str, [NotFound])",
+        "docs": "The subprotocol that a server picks: the first of `supported` (the order of the server) that the client asks for.\n`NotFound` when there is none: the 101 response then has no `Sec-WebSocket-Protocol`, and a client that asked\nfor one fails the connection (RFC 6455 4.1).",
+        "line": 62
        },
        {
         "kind": "value",
@@ -7008,7 +7108,7 @@
         "fullName": "WebSocket.is_upgrade",
         "signature": "Request -> Bool",
         "docs": "The request asks for a WebSocket: its `Upgrade` header is `websocket` (the case does not matter).",
-        "line": 33
+        "line": 69
        },
        {
         "kind": "value",
@@ -7018,7 +7118,17 @@
         "fullName": "WebSocket.accept!",
         "signature": "Request => Try({ socket : WebSocket, response : Response }, [NotUpgrade])",
         "docs": "`new WebSocketPair()`, `accept()` of the server end, and a 101 response with the client end, in one `call!`.\nGive `response.after(work!)` with a `receive!` loop in the work: a 101 response keeps the task until the socket\ncloses (API.md 10.2). `NotUpgrade` when the request has no `Upgrade: websocket`.",
-        "line": 42
+        "line": 78
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "accept_with!",
+        "modulePath": "WebSocket",
+        "fullName": "WebSocket.accept_with!",
+        "signature": "Request, { protocols ?: List(Str), max_queued_bytes ?: U64 } => Try({ socket : WebSocket, response : Response }, [NotUpgrade])",
+        "docs": "`protocols`: the subprotocols of the server, in its order. The socket gets the first that the client asks for\n(`pick_protocol`), and the 101 response has it in `Sec-WebSocket-Protocol`. `max_queued_bytes`: the limit of the\nreceive queue (default `default_max_queued_bytes`). Workers has no backpressure on a WebSocket: a message that\ncomes while the queue holds that many bytes or more closes the socket with 1008 \"receive queue full\", and it and\nthe later messages are dropped. The messages in the queue stay for `receive!`, then `Closed` with `by: Us`.",
+        "line": 86
        },
        {
         "kind": "value",
@@ -7028,7 +7138,7 @@
         "fullName": "WebSocket.connect",
         "signature": "Str -> Io(WebSocket, [NotUpgrade, Infra([SocketErr(Io.Thrown)])])",
         "docs": "A client: `fetch(url)` with `Upgrade: websocket`, then `accept()` of the `webSocket` of the response, in one\nprogram with one wait. A `ws://` or `wss://` URL is sent as `http://` or `https://` (the `fetch` of Workers takes\nonly these). `NotUpgrade` when the server does not answer 101. A throw of `fetch` is `SocketErr`.",
-        "line": 57
+        "line": 108
        },
        {
         "kind": "value",
@@ -7038,7 +7148,7 @@
         "fullName": "WebSocket.connect!",
         "signature": "Str => Try(WebSocket, [NotUpgrade, Infra([SocketErr(Io.Thrown)])])",
         "docs": "",
-        "line": 60
+        "line": 111
        },
        {
         "kind": "value",
@@ -7046,9 +7156,9 @@
         "name": "connect_with",
         "modulePath": "WebSocket",
         "fullName": "WebSocket.connect_with",
-        "signature": "Str, { headers ?: List(Header), protocols ?: List(Str) } -> Io(WebSocket, [NotUpgrade, Infra([SocketErr(Io.Thrown)])])",
-        "docs": "`headers`: more request headers. `protocols`: the header `Sec-WebSocket-Protocol`.",
-        "line": 64
+        "signature": "Str, { headers ?: List(Header), protocols ?: List(Str), max_queued_bytes ?: U64 } -> Io(WebSocket, [NotUpgrade, Infra([SocketErr(Io.Thrown)])])",
+        "docs": "`headers`: more request headers (an offer of extensions is the header `Sec-WebSocket-Extensions`: `ws.extensions()`\ngives the ones that the server agreed to). `protocols`: the header `Sec-WebSocket-Protocol` (`ws.protocol()` gives\nthe one that the server picked). `max_queued_bytes`: the limit of the receive queue, as for `accept_with!`.",
+        "line": 117
        },
        {
         "kind": "value",
@@ -7056,9 +7166,9 @@
         "name": "connect_with!",
         "modulePath": "WebSocket",
         "fullName": "WebSocket.connect_with!",
-        "signature": "Str, { headers ?: List(Header), protocols ?: List(Str) } => Try(WebSocket, [NotUpgrade, Infra([SocketErr(Io.Thrown)])])",
+        "signature": "Str, { headers ?: List(Header), protocols ?: List(Str), max_queued_bytes ?: U64 } => Try(WebSocket, [NotUpgrade, Infra([SocketErr(Io.Thrown)])])",
         "docs": "",
-        "line": 86
+        "line": 139
        },
        {
         "kind": "value",
@@ -7066,9 +7176,9 @@
         "name": "send!",
         "modulePath": "WebSocket",
         "fullName": "WebSocket.send!",
-        "signature": "WebSocket, WebSocket.Message => Try({}, [Closed])",
-        "docs": "`ws.send(data)`, one `call!`. A throw (the socket is closed) is `Closed`.",
-        "line": 90
+        "signature": "WebSocket, WebSocket.Message => Try({}, [Closed, Infra([SocketErr(Io.Thrown)])])",
+        "docs": "`ws.send(data)`, one `call!`. `Closed` when this side or the peer closed the socket (`readyState` 2 or 3): `closed!`\ngives the close record once the close event came. Another throw of `send` is `SocketErr` (none is known locally: a\nsend of 64 MiB works).",
+        "line": 145
        },
        {
         "kind": "value",
@@ -7076,9 +7186,9 @@
         "name": "send_json!",
         "modulePath": "WebSocket",
         "fullName": "WebSocket.send_json!",
-        "signature": "WebSocket, a => Try({}, [Closed, Infra([BadData(Str)])]) where [a.Json.Encodable(enc)]",
+        "signature": "WebSocket, a => Try({}, [Closed, Infra([BadData(Str), SocketErr(Io.Thrown)])]) where [a.Json.Encodable(enc)]",
         "docs": "The value as JSON text, in a text frame. A value that JSON cannot show (a `NaN` in an `F64`) is `BadData`, and\nnothing is sent.",
-        "line": 95
+        "line": 150
        },
        {
         "kind": "value",
@@ -7088,7 +7198,7 @@
         "fullName": "WebSocket.receive",
         "signature": "WebSocket -> Io(WebSocket.Message, [Closed(WebSocket.Closed)])",
         "docs": "The next message: one wait (`pf.wsReceive`), with no deadline (API.md 10.2). After the close, each call gives\n`Closed`. In `Io.race!`, a branch that lost takes no message: it stays for the next call (OP8).",
-        "line": 103
+        "line": 162
        },
        {
         "kind": "value",
@@ -7098,7 +7208,17 @@
         "fullName": "WebSocket.receive!",
         "signature": "WebSocket => Try(WebSocket.Message, [Closed(WebSocket.Closed)])",
         "docs": "",
-        "line": 115
+        "line": 174
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "closed!",
+        "modulePath": "WebSocket",
+        "fullName": "WebSocket.closed!",
+        "signature": "WebSocket => Try(WebSocket.Closed, [NotClosed])",
+        "docs": "The close record once the close event came, with no wait and no message taken: the messages in the queue stay for\n`receive!`, whose `Closed` at the end is this record. `NotClosed` before the close event, also while the socket is\nclosing (after `close!`, until the reply of the peer: `send!` is `Closed` then). One `call!` of `pf.wsClosed`.",
+        "line": 180
        },
        {
         "kind": "value",
@@ -7106,16 +7226,17 @@
         "name": "close!",
         "modulePath": "WebSocket",
         "fullName": "WebSocket.close!",
-        "signature": "WebSocket, U16, Str => {}",
-        "docs": "`ws.close(code, reason)`, one `call!`. A throw (a code that the app cannot send, a closed socket) is dropped.",
-        "line": 119
+        "signature": "WebSocket, U16, Str => Try({}, [BadCode, TooLarge])",
+        "docs": "`ws.close(code, reason)`, one `call!`. `BadCode`: a code that the app cannot send (1000 to 4999 only, not 1004\nto 1006 or 1015: Workers checks it). `TooLarge`: a reason of more than 123 bytes (UTF-8). A close of a socket that\nis closed already is `Ok`.",
+        "line": 191
        }
       ]
      },
      {
       "name": "Worker",
       "imports": [
-       "cbor"
+       "cbor",
+       "http"
       ],
       "items": [
        {
@@ -7124,9 +7245,9 @@
         "name": "Worker",
         "modulePath": "",
         "fullName": "Worker",
-        "signature": "{\n\thandlers : List(Str),\n\town! : Worker.Event => Worker.Outcome,\n\trpc : List(Rpc.Handler({})),\n\tentrypoints : List(Rpc.Entrypoint),\n\tobjects : List(Object.AnyClass),\n\tbindings : List(Worker.Binding),\n\tcrons : List(Str),\n}",
-        "docs": "`handlers`: the handlers of the default export that the app gives (the manifest). `own!`: runs the events of those\nhandlers (`Fetch`, `Scheduled`, `Queue`, `Email`, `Tail`, `Other`). `bindings` and `crons`: for the manifest only.",
-        "line": 20,
+        "signature": "{\n\thandlers : List(Str),\n\town! : Worker.Event => Worker.Outcome,\n\trpc : List(Rpc.Handler({})),\n\tentrypoints : List(Rpc.Entrypoint),\n\tobjects : List(Object.AnyClass),\n\tbindings : List(Worker.Binding),\n\tcrons : List(Str),\n\ttraps : Try(List((Str, Worker.Fixed)), [NoTraps]),\n}",
+        "docs": "`handlers`: the handlers of the default export that the app gives (the manifest). `own!`: runs the events of those\nhandlers (`Fetch`, `Scheduled`, `Queue`, `Email`, `Tail`, `Other`). `bindings`, `crons` and `traps`: for the manifest\nonly. `traps`: the fixed responses of `on_trap` (MODULES.md 3), with the name of each cause, `default` first.",
+        "line": 22,
         "decl": "::",
         "head": "Worker"
        },
@@ -7136,9 +7257,33 @@
         "name": "new",
         "modulePath": "Worker",
         "fullName": "Worker.new",
-        "signature": "{\n\t\tfetch! ?: Request => Try(Response, e1),\n\t\tscheduled! ?: Worker.Scheduled => Try({}, e2),\n\t\tqueue! ?: Queue.Batch => Try({}, e3),\n\t\temail! ?: Email.Mail => Try({}, e4),\n\t\ttail! ?: List(Worker.TraceItem) => Try({}, e5),\n\t\tother! ?: Str, Js => Try(Js, e6),\n\t\trpc ?: List(Rpc.Serves(iface, {})),\n\t\tentrypoints ?: List(Rpc.Entrypoint),\n\t\tobjects ?: List(Object.AnyClass),\n\t\tbindings ?: List(Worker.Binding),\n\t\tcrons ?: List(Worker.Cron),\n\t} -> Worker",
-        "docs": "The handlers of the app. A function, not a record literal: each handler keeps its own error type until here.",
-        "line": 31
+        "signature": "{\n\t\tfetch! ?: Request => Try(Response, e1),\n\t\tscheduled! ?: Worker.Scheduled => Try({}, e2),\n\t\tqueue! ?: Queue.Batch => Try({}, e3),\n\t\temail! ?: Email.Mail => Try({}, e4),\n\t\ttail! ?: List(Worker.TraceItem) => Try({}, e5),\n\t\tother! ?: Str, Js => Try(Js, e6),\n\t\trpc ?: List(Rpc.Serves(iface, {})),\n\t\tentrypoints ?: List(Rpc.Entrypoint),\n\t\tobjects ?: List(Object.AnyClass),\n\t\tbindings ?: List(Worker.Binding),\n\t\tcrons ?: List(Worker.Cron),\n\t\ton_trap ?: Worker.OnTrap,\n\t} -> Worker",
+        "docs": "The handlers of the app. A function, not a record literal: each handler keeps its own error type until here.\n`on_trap`: the fixed responses of `fetch` for a trap and other failures (MODULES.md 3). Write the record literal in\nthe call (`on_trap: { default: internal, crashed: internal }`): the compiler accepts a record with optional fields\nthat are absent only as a literal there.",
+        "line": 37
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Fixed",
+        "modulePath": "Worker",
+        "fullName": "Worker.Fixed",
+        "signature": "{ status : U16, headers : List(Header), body : List(U8) }",
+        "docs": "A fixed response (MODULES.md 3, `on_trap`): the shim sends a new copy of it with no Roc code. The shim checks it at\nload: `status` 400 to 599, at most 16 headers, a header value of at most 1,024 bytes, a body of at most 4,096 bytes.",
+        "line": 110,
+        "decl": ":",
+        "head": "Fixed"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "OnTrap",
+        "modulePath": "Worker",
+        "fullName": "Worker.OnTrap",
+        "signature": "{\n\t\tdefault : Worker.Fixed,\n\t\t## A Roc `crash` or another clean trap. The manifest name of the cause is `crash` (`crash` is a keyword of Roc).\n\t\tcrashed ?: Worker.Fixed,\n\t\talarm ?: Worker.Fixed,\n\t\tcpu ?: Worker.Fixed,\n\t\toom ?: Worker.Fixed,\n\t\tshed ?: Worker.Fixed,\n\t\tdeadline ?: Worker.Fixed,\n\t\tcancelled ?: Worker.Fixed,\n\t\tevent ?: Worker.Fixed,\n\t\tfailed ?: Worker.Fixed,\n\t}",
+        "docs": "The fixed responses of `fetch` for a trap and other failures (MODULES.md 3). `default`: each cause that has no\nfield. A new cause later is a new optional field (API.md 10.1).",
+        "line": 114,
+        "decl": ":",
+        "head": "OnTrap"
        },
        {
         "kind": "value",
@@ -7148,7 +7293,7 @@
         "fullName": "Worker.cron",
         "signature": "Str, (Worker.Scheduled => Try({}, e)) -> Worker.Cron",
         "docs": "A handler for one cron expression (`triggers.crons` of the Wrangler config). A run of another cron goes to\n`scheduled!`. The expression is in the manifest, so `roc-cloudflare-workers sync` checks the config.",
-        "line": 99
+        "line": 131
        },
        {
         "kind": "type",
@@ -7158,7 +7303,7 @@
         "fullName": "Worker.Cron",
         "signature": "{ cron : Str, run! : Worker.Scheduled => Worker.Outcome }",
         "docs": "A cron handler with its error type erased.",
-        "line": 103,
+        "line": 135,
         "decl": ":",
         "head": "Cron"
        },
@@ -7170,7 +7315,7 @@
         "fullName": "Worker.Binding",
         "signature": "{ name : Str, kind : Str, props : List((Str, Str)) }",
         "docs": "A binding that the app uses (`db.declare()`, `rooms.declare()`, ...), for the manifest: the name in `env`, the\nkind, and the settings of the kind (`class` and `script` of an object namespace, `service` and `entrypoint` of a\nservice). The shim checks at load that `env` has each one with its kind.",
-        "line": 108,
+        "line": 140,
         "decl": ":",
         "head": "Binding"
        },
@@ -7182,7 +7327,7 @@
         "fullName": "Worker.Event",
         "signature": "[\n\t\tFetch(Request),\n\t\tScheduled(Worker.Scheduled),\n\t\tQueue(Queue.Batch),\n\t\tEmail(Email.Mail),\n\t\tRpc({ entrypoint : Str, method : Str, arg : List(U8) }),\n\t\tEntrypointFetch({ entrypoint : Str, request : Request }),\n\t\tObject({ class : Str, id : Str, event : Object.Event }),\n\t\tTail(List(Worker.TraceItem)),\n\t\tOther({ kind : Str, payload : Js }),\n\t\tManifest,\n\t]",
         "docs": "One event of Workers (API.md 10.1). Phase A has all tags. The shim sends `Fetch`, `Scheduled`, `Other`, and since\nPLAN.md 8f `Rpc`, `EntrypointFetch`, `Object` and `Manifest`.",
-        "line": 112,
+        "line": 144,
         "decl": ":",
         "head": "Event"
        },
@@ -7194,7 +7339,7 @@
         "fullName": "Worker.Outcome",
         "signature": "[\n\t\tRespond(Response),\n\t\tReply(Js),\n\t\tDone,\n\t\tFailed(Str),\n\t\tUnhandled,\n\t]",
         "docs": "What the app gives back for an event (API.md 10.1).",
-        "line": 126,
+        "line": 158,
         "decl": ":",
         "head": "Outcome"
        },
@@ -7206,7 +7351,7 @@
         "fullName": "Worker.Scheduled",
         "signature": "{ cron : Str, time_ms : U64 }",
         "docs": "The payload of a cron run (MODULES.md 3). `time_ms` is `controller.scheduledTime`, the planned time.",
-        "line": 135,
+        "line": 167,
         "decl": "::",
         "head": "Scheduled"
        },
@@ -7218,7 +7363,7 @@
         "fullName": "Worker.Scheduled.new",
         "signature": "{ cron : Str, time_ms : U64 } -> Worker.Scheduled",
         "docs": "Plain data (MC13): a test can make one.",
-        "line": 138
+        "line": 170
        },
        {
         "kind": "value",
@@ -7228,7 +7373,7 @@
         "fullName": "Worker.Scheduled.cron",
         "signature": "Worker.Scheduled -> Str",
         "docs": "",
-        "line": 141
+        "line": 173
        },
        {
         "kind": "value",
@@ -7238,7 +7383,7 @@
         "fullName": "Worker.Scheduled.time_ms",
         "signature": "Worker.Scheduled -> U64",
         "docs": "",
-        "line": 144
+        "line": 176
        },
        {
         "kind": "value",
@@ -7248,7 +7393,7 @@
         "fullName": "Worker.Scheduled.no_retry!",
         "signature": "Worker.Scheduled => {}",
         "docs": "`controller.noRetry()`, one `call!` with no wait. The shim never calls it by itself (MODULES.md 3).\nA throw is dropped: only a `Worker.Scheduled` of a `Scheduled` event has a controller.",
-        "line": 149
+        "line": 181
        },
        {
         "kind": "type",
@@ -7258,7 +7403,7 @@
         "fullName": "Worker.TraceItem",
         "signature": "{\n\t\tscript_name : Try(Str, [Missing]),\n\t\toutcome : Str,\n\t\tevent_timestamp_ms : Try(U64, [Missing]),\n\t\tevent : Try({ request : { method : Str, url : Str, headers : List({ name : Str, value : Str }), cf : Try(Request.Cf, [Missing]) }, response : Try({ status : U16 }, [Missing]) }, [Missing]),\n\t\tlogs : List({ timestamp_ms : U64, level : Str, message : Str }),\n\t\texceptions : List({ timestamp_ms : U64, name : Str, message : Str }),\n\t}",
         "docs": "One item of the batch of a Tail Worker (MODULES.md 3): plain data, read as CBOR (MC5, PLAN.md 8f).\n`parser_for : _`: a nominal type opts in to the derived parser (MODULES.md 15). The request headers are records of\n`name` and `value`, not `Header` of `roc-lang/http`: that type has no `parser_for` (PLAN.md 8b O1).",
-        "line": 159,
+        "line": 191,
         "decl": "::",
         "head": "TraceItem"
        },
@@ -7270,7 +7415,7 @@
         "fullName": "Worker.TraceItem.parser_for",
         "signature": "_",
         "docs": "",
-        "line": 167
+        "line": 199
        },
        {
         "kind": "value",
@@ -7280,7 +7425,7 @@
         "fullName": "Worker.TraceItem.script_name",
         "signature": "Worker.TraceItem -> Try(Str, [Missing])",
         "docs": "",
-        "line": 169
+        "line": 201
        },
        {
         "kind": "value",
@@ -7290,7 +7435,7 @@
         "fullName": "Worker.TraceItem.outcome",
         "signature": "Worker.TraceItem -> Str",
         "docs": "",
-        "line": 172
+        "line": 204
        },
        {
         "kind": "value",
@@ -7300,7 +7445,7 @@
         "fullName": "Worker.TraceItem.event_timestamp_ms",
         "signature": "Worker.TraceItem -> Try(U64, [Missing])",
         "docs": "",
-        "line": 175
+        "line": 207
        },
        {
         "kind": "value",
@@ -7310,7 +7455,7 @@
         "fullName": "Worker.TraceItem.event",
         "signature": "Worker.TraceItem -> Try({ request : { method : Str, url : Str, headers : List({ name : Str, value : Str }), cf : Try(Request.Cf, [Missing]) }, response : Try({ status : U16 }, [Missing]) }, [Missing])",
         "docs": "",
-        "line": 178
+        "line": 210
        },
        {
         "kind": "value",
@@ -7320,7 +7465,7 @@
         "fullName": "Worker.TraceItem.logs",
         "signature": "Worker.TraceItem -> List({ timestamp_ms : U64, level : Str, message : Str })",
         "docs": "",
-        "line": 181
+        "line": 213
        },
        {
         "kind": "value",
@@ -7330,7 +7475,7 @@
         "fullName": "Worker.TraceItem.exceptions",
         "signature": "Worker.TraceItem -> List({ timestamp_ms : U64, name : Str, message : Str })",
         "docs": "",
-        "line": 184
+        "line": 216
        },
        {
         "kind": "value",
@@ -7340,7 +7485,7 @@
         "fullName": "Worker.event!",
         "signature": "Worker, Worker.Event => Worker.Outcome",
         "docs": "The one entry, made from the handlers that the app gives (`event! = |e| worker.event!(e)`).\nA missing handler gives `Unhandled`. An `Err(e)` gives `Failed` with `Str.inspect(e)`.",
-        "line": 190
+        "line": 222
        }
       ]
      },

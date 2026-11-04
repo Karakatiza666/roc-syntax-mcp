@@ -1,7 +1,7 @@
-## HTTP in a Worker: routing, JSON in and out, outbound `fetch` with
+## HTTP in a Worker: routing, repeated query parameters, JSON in and out, outbound `fetch` with
 ## `Http.send!`, two calls at the same time, a timeout, a streamed response
 ## with `Response.after`, and a webhook signature check with a secret.
-app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.1/GcDNxAwPR5tSzqU8T2Kdj35CK3sQMRQDB8ywwfZKdrm.tar.zst" }
+app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.6/HgUugW5V5QQbmrjdjkRhjiZ8B9D9gzpEkSwdojqJcW4p.tar.zst" }
 
 import pf.Worker
 import pf.Request
@@ -28,12 +28,20 @@ fetch! = |req| match (req.method(), req.segments()) {
 		Ok(Response.from_json(200, { greeting: "hello ${ask.name}" }))
 	}
 	(GET, ["repo", owner, name]) => repo!(owner, name)
+	(GET, ["search"]) => {
+		# `?tag=a&tag=b`: `query_all` gives each value in URL order, `query` only the first
+		# (`Err(NotFound)` for none), `query_pairs` each (name, value). They parse as
+		# `URLSearchParams`: `+` is a space, an empty part (`&&`) is skipped, bad UTF-8 is U+FFFD.
+		tags = req.query_all("tag")
+		q = req.query("q") ?? ""
+		Ok(Response.from_json(200, { q, tags }))
+	}
 	(GET, ["two"]) => two!()
 	(GET, ["slow"]) => slow!()
 	(GET, ["events"]) => events!()
 	(POST, ["webhook"]) => webhook!(req)
 	(GET, ["config"]) => {
-		cfg = config.get!()?
+		cfg = config.get!(load_config!)?
 		Ok(Response.from_text(200, cfg.motd))
 	}
 	_ => Ok(Response.from_status(404))
@@ -130,8 +138,18 @@ load_config! = || {
 
 # A value kept in the isolate across requests, as CBOR bytes: a cache, not
 # state. The first `get!` in an isolate, and the first after `max_age_ms`,
-# runs `load!`. Two tasks can both run `load!`.
-config = Memo.new("config", { max_age_ms: 60_000, load!: load_config! })
+# runs the loader of that call. Two tasks can both run the loader.
+# A `Memo` is a top-level constant. It has no error type: the loader is an
+# argument of `get!`, and the error type of `get!` is the one of the loader at
+# that call. So each caller, in this module or in an importer, joins the errors
+# of the loader with its own errors. Give the same loader at each `get!` of one
+# `Memo`: the first call in the isolate pins the value, and the other calls get
+# that value. The loader needs a type annotation (`load_config!` above).
+# A value pinned at time t expires when `Time.now_ms!()` is t + `max_age_ms` or
+# later. The clock of `Time.now_ms!`, `Memo` and alarms is the shim option `now`
+# (default `Date.now`), so a test that sets it moves all three.
+config : Memo(Config)
+config = Memo.new("config", { max_age_ms: 60_000 })
 
 worker = Worker.new({ fetch!: fetch! })
 

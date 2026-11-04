@@ -1,6 +1,6 @@
 ## Every snippet that the overview page shows, in one app, so that the page
 ## cannot drift from code that compiles.
-app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.1/GcDNxAwPR5tSzqU8T2Kdj35CK3sQMRQDB8ywwfZKdrm.tar.zst" }
+app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.6/HgUugW5V5QQbmrjdjkRhjiZ8B9D9gzpEkSwdojqJcW4p.tar.zst" }
 
 import pf.Worker
 import pf.Request
@@ -18,6 +18,15 @@ Item : { id : I64, name : Str }
 
 Ask : { name : Str }
 
+Row : { id : I64, nick ?: Str, bio : Try(Str, [Missing]), admin : Bool }
+
+rows! : () => Try(List(Row), _)
+rows! = || {
+	rows : List(Row)
+	rows = db.all!("SELECT id, nick, bio, admin FROM profiles", Sql.none)?
+	Ok(rows)
+}
+
 fetch! : Request => Try(Response, _)
 fetch! = |req| match (req.method(), req.segments()) {
 	(GET, []) => Ok(Response.from_text(200, "hello from Roc"))
@@ -33,6 +42,7 @@ fetch! = |req| match (req.method(), req.segments()) {
 		item = db.first!("SELECT id, name FROM items WHERE id = ?", id)?
 		Ok(Response.from_json(200, item))
 	}
+	(GET, ["rows"]) => Ok(Response.from_json(200, rows!()?.map(|r| r.id)))
 	(POST, ["count"]) => {
 		n = counters.named("main").call!(increment, 1)?
 		Ok(Response.from_text(200, n.to_str()))

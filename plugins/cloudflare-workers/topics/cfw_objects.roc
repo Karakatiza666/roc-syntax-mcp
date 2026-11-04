@@ -2,7 +2,7 @@
 ##
 ## Project files (a model cannot find them in the index). See cfw_worker for the others.
 ##
-##   worker.js     `node .roc-cfw/cli.mjs sync` writes it from the manifest of the built app. It has one line for
+##   worker.js     `roc-cfw sync` writes it from the manifest of the built app. It has one line for
 ##                 each class, BEFORE `export default makeHandler(app);`:
 ##                 export const Counter = objectClass("Counter");
 ##   wrangler.toml [[durable_objects.bindings]]
@@ -15,7 +15,7 @@
 ## `sync` also checks the Wrangler config against `Worker.new` (`objects`, `bindings`). A class with no export line, or
 ## an export line with no class, stops the load. The error names the class. A class in `new_classes` (KV-backed) fails
 ## at its first event.
-app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.1/GcDNxAwPR5tSzqU8T2Kdj35CK3sQMRQDB8ywwfZKdrm.tar.zst" }
+app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.6/HgUugW5V5QQbmrjdjkRhjiZ8B9D9gzpEkSwdojqJcW4p.tar.zst" }
 
 import pf.Worker
 import pf.Request
@@ -49,6 +49,8 @@ add_hit = counter_api.method("add_hit")
 
 ## A typed value in the storage of one object: strong consistency, and no wait. Workers keeps the value across deploys.
 ## A value that does not parse as the new type is `BadData` (there is no fallback), so change the type with care.
+## A cell is CBOR. In a record type of a cell, write a field that can be empty as `x ?: a` or `x : Try(a, [Missing])`, not
+## as `Try(a, [Null])` (roc-cbor 0.2.2 and later: the writer writes no key for `Err(Null)`, and the read is `BadData`).
 count : Object.Cell(I64)
 count = Object.cell("count")
 

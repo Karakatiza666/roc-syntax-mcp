@@ -1,6 +1,6 @@
 {
   "name": "@roc-syntax/cloudflare-workers",
-  "version": "0.0.1",
+  "version": "0.0.6",
   "description": "The cloudflare-workers platform: Cloudflare Workers apps in Roc, with typed modules for fetch, D1, KV, R2, Cache, Queues, Durable Objects, WebSockets, RPC and WebCrypto.",
   "license": "UPL-1.0",
   "files": [

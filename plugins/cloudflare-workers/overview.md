@@ -10,34 +10,51 @@ programs, `get_roc_syntax topic="cfw_worker"` for the contract with comments.
 ## Starting a project
 
 There is no npm package and no `package.json`. The shim is the `js/` directory
-of the platform bundle. The helper `roc-cfw` (`tln x roc-cfw -- init`) would
-write the files, but it is not released. Write them by hand:
+of the platform bundle. The helper `roc-cfw` (release 0.0.1, repository
+`Karakatiza666/roc-cloudflare-workers-cli`) copies it to `.roc-cfw/` and runs
+`sync`. Talon (`tln`) installs the helper and runs the scripts:
+
+```sh
+tln init --platform Karakatiza666/roc-cloudflare-workers
+tln add --tool Karakatiza666/roc-cloudflare-workers-cli --as roc-cfw
+tln x roc-cfw -- init
+tln run build
+tln run dev
+```
+
+| Step | Result |
+| --- | --- |
+| `tln init --platform ...` | `main.roc` with the platform line and a stub body |
+| `tln add --tool ... --as roc-cfw` | The entry `roc-cfw` in `[tools]` of `talon.toml`. Talon builds the helper. `--as roc-cfw` sets the key that the scripts use |
+| `tln x roc-cfw -- init` | The app body in `main.roc`, `wrangler.toml`, the `[scripts]` of `talon.toml` and `.gitignore`. It refuses to write over a `wrangler.toml` |
+| `tln run build` | `roc build`, then `roc-cfw sync` |
+| `tln run dev` | `build`, then `wrangler dev --local` (Wrangler is a program on the machine, not a file of the project) |
 
 | File | Content |
 | --- | --- |
 | `main.roc` | The app. The header is `app [event!] { pf: platform "<bundle URL>" }` |
-| `talon.toml` | `[scripts]`: `build` is the two commands below, `dev` is `["@build", "wrangler dev --local"]`, `deploy` is `["@build", "wrangler deploy"]` |
+| `talon.toml` | `[tools]` with `roc-cfw`, and `[scripts]`: `build`, `check`, `dev`, `deploy` (below) |
 | `worker.js` | Written by `sync`. It imports `./.roc-cfw/index.js` and has `export default makeHandler(app)`, with one `objectClass("Room")` line before it for each Durable Object class |
 | `wrangler.toml` | `main = "worker.js"`, `compatibility_flags = ["enable_request_signal"]`, one binding for each `X.binding("NAME")`, each Durable Object class in `new_sqlite_classes` |
-| `.roc-cfw/` | A copy of `js/` of the bundle. Put it, `app.wasm` and `.wrangler/` in `.gitignore` |
+| `.roc-cfw/` | A copy of `js/` of the bundle. `roc-cfw sync` makes it and copies it again when the platform in the header changes. It is in `.gitignore`, with `app.wasm` and `.wrangler/` |
 
 ```toml
 [scripts]
-build = ["roc build --target=wasm32 --no-cache --output=app.wasm main.roc", "node .roc-cfw/cli.mjs sync"]
+build = ["roc build --target=wasm32 --no-cache --output=app.wasm main.roc", "roc-cfw sync"]
+check = ["roc build --target=wasm32 --no-cache --output=app.wasm main.roc", "roc-cfw sync --check"]
+dev = ["@build", "wrangler dev --local"]
+deploy = ["@check", "wrangler deploy"]
 ```
 
-Run `roc check main.roc` once: it unpacks the bundle into the Roc package
-cache. Copy the shim from there: `cp -r ~/.cache/roc/packages/<hash>/js
-.roc-cfw` (`<hash>` is the file name in the URL, and the cache is under
-`$XDG_CACHE_HOME` when that is set). Copy it again after each repin: the shim
-and the host must come from the same release. `sync` reads `app.wasm`, writes
-`worker.js`, and checks `wrangler.toml` (bindings, crons, classes). It exits 1
-and prints the missing lines. `--no-cache` makes the same source give the same
-bytes. A `roc build` with type errors still writes `app.wasm` and exits 1.
+To update the platform, write the new URL in `main.roc`: the next `sync`
+copies the new shim. `sync` (`node .roc-cfw/cli.mjs sync`) reads `app.wasm`,
+writes `worker.js`, and checks `wrangler.toml` (bindings, crons, classes). It
+exits 1 and prints the missing lines. A `roc build` with type errors still
+writes `app.wasm` and exits 1.
 `roc main.roc` does not run a Worker. `sync` also warns of a handler that
-`main.roc` defines and `Worker.new` does not list (`--file` names another source
-file). `sync --check` writes nothing and exits 1 for such a handler. An app with
-`makeHandler` options (`ops`) puts them in `worker.options.js` next to
+`main.roc` defines and `Worker.new` does not list (`roc-cfw` passes `--file
+main.roc`). `sync --check` writes nothing and exits 1 for such a handler. An
+app with `makeHandler` options (`ops`) puts them in `worker.options.js` next to
 `worker.js`: `export default { ops: { ... } }`. `sync` imports that file and keeps
 writing `worker.js`, so `sync` stays in the build script.
 
@@ -63,7 +80,9 @@ event! = |e| worker.event!(e)
 
 The platform requires `event!`, not `main!`. `Worker.new` takes one optional
 field for each event kind: `fetch!`, `scheduled!`, `queue!`, `email!`, `tail!`,
-`other!`, `rpc`, `entrypoints`, `objects`, `bindings`, `crons`. Each handler has
+`other!`, `rpc`, `entrypoints`, `objects`, `bindings`, `crons`, and `on_trap`
+(fixed responses after a trap, topic `cfw_worker`). Write the record as a
+literal in the call: a record in a name is "missing these fields". Each handler has
 its own error type. A kind with no field gives `Unhandled` (a 500 for fetch). A
 handler that you define and do not list is never called, and the compiler does
 not warn. `sync` warns, and `sync --check` exits 1. An `Err` of a handler is a
@@ -123,6 +142,7 @@ or ask `Http.cloudflare_error(res)`. `send!` reads the body in the same
 crossing, so `res.json!()` after it does not wait. `Http.open!` keeps the body a
 stream. Each read into wasm stops at 1 MiB (`TooLarge`), and the `_with` form
 takes `max_bytes`. A body is a tag: `Text("hi")`, `Bytes(b)`, not a bare `Str`.
+`req.query_all(name)` gives each value of a repeated query parameter.
 
 There is no `Ctx.respond!`. The handler gives the response, and
 `Response.after` runs work once Workers has it:
@@ -148,12 +168,18 @@ item : Item
 item = db.first!("SELECT id, name FROM items WHERE id = ?", id)?
 ```
 
+In a row record, a NULL is the same as no key. Read a nullable column into
+`x ?: a` or `x : Try(a, [Missing])`. A `Bool` field reads 0 and 1:
+
+```roc
+Row : { id : I64, nick ?: Str, bio : Try(Str, [Missing]), admin : Bool }
+```
+
 One bare value is one SQL parameter (`id`, `"ann"`), the same as `[id]`. Write
 a tuple for two or more (`(a, b)`), of any encodable value, also a `U64`.
 `Sql.none` is no parameter: a bare `[]` does not compile. The old `Sql` tag
 form (`Text("ann")`) is a `BadParam` at run time, and its text names the new
-form. A NULL in a field that is not `Try(a, [Null])`, and a 0/1 in a `Bool`
-field, are `BadData`. The text names the fix (read an `I64` for a `Bool`). Annotate each row type: a row that goes only to
+form. Annotate each row type: a row that goes only to
 `Response.from_json` is "type not determined" at the call. D1 rounds an
 INTEGER of 2^53 or more, and a typed read of it is `BadData`: read it as
 `CAST(x AS TEXT)`. A BLOB reads into `List(U8)` or `Cbor.Bytes`.
@@ -163,7 +189,8 @@ INTEGER of 2^53 or more, and a typed read of it is `BadData`: read it as
 R2 takes a stream with no known length (multipart above 5 MiB, with no
 `only_if` or `checksum`). KV raises a `ttl_ms` under 60 s to 60 s. `Cache.put!`
 tees a stream body and gives the response to send. `Cache` is local to one data
-center.
+center. The type of a byte range is `R2.ByteRange` (`From({ offset_bytes,
+length_bytes })`, `Suffix(n)`).
 
 ## Durable Objects, RPC, queues
 
@@ -232,7 +259,40 @@ queue! = |batch| {
 ## Traps
 
 - `{ name }` with one field is a block, not a record. Write `{ name: name }`.
+- A required row field `x : Try(a, [Null])` does not read a NULL: the row is
+  `BadData("column x: missing or NULL, ...")`. Write `x ?: a` (read it with
+  `row.?x`) or `x : Try(a, [Missing])`. Only a tuple item (`all_tuples!`), a
+  list item or a root value reads a NULL into `Try(a, [Null])`.
+- A record that crosses as CBOR has no `Try(a, [Null])` field: RPC arguments and
+  replies, queue messages, `Object.Cell`, `Object.attachment` and `Memo` values.
+  The writer writes no key for `Err(Null)`, so the read is `MissingRequiredField`.
+  Use `x ?: a` or `x : Try(a, [Missing])`. A record literal that leaves out an
+  optional field needs an annotated function (the error is at `on_worker`).
+- A `Memo` is a top-level constant with no error type:
+  `config = Memo.new("config", { max_age_ms: 60_000 })`, then
+  `config.get!(load_config!)?`. Give the same annotated loader at each `get!`:
+  the first call in the isolate pins the value.
+- An `Io` value holds its error type, which closes in its module, so a
+  top-level `Io` that a `?` joins with other `Infra(...)` errors is a "type
+  mismatch" at the `?`. Make it a function: `cfg = || cell.get_or(default)`,
+  then `cfg()`. `Memo`, cells and bindings hold no error type: constants.
 - `Object.Cell`, `Object.attachment` and `Memo` values are CBOR. A changed type
   under the same name reads as `BadData` (`Memo` loads again).
 - `Http.send_with!(req, { timeout_ms })` gives `Network` with the name
   `TimeoutError`.
+- WebSocket `close!` gives `Try({}, [BadCode, TooLarge])`: write
+  `_ = socket.close!(code, reason)`. A bare call is an error that can be
+  reported at the `accept!` line. A peer's close code can be 1005 or 1006,
+  which is `BadCode`. `send!` fails with `Closed` or `Infra(SocketErr(t))`. A
+  pattern on `WebSocket.Closed` names `by` (`Peer`, `Us`, `Transport`) or ends
+  in `..`.
+- A header is a plain record `{ name: "x", value: "y" }`. No `Header` module is
+  importable.
+
+## Testing
+
+`startApp` of `.roc-cfw/test.mjs` (copied by `sync`) runs `app.wasm` in
+Miniflare from a `node --test` file, with seeds, an outbound table, call
+counts and a clock (topic `cfw_testing`). It makes only the bindings of
+`Worker.new({ bindings })`. Its clock drives `Time.now_ms!`, `Memo` and
+`set_alarm_in!`, not `Date.now()` or timers.

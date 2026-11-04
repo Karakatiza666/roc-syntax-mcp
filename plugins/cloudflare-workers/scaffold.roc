@@ -5,7 +5,7 @@
 ## `@default` block below it only when the submitted code does not define
 ## that name. So a bare `fetch!` gets a Worker and an `event!`, and code that
 ## defines its own `worker` or `event!` keeps them.
-app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.1/GcDNxAwPR5tSzqU8T2Kdj35CK3sQMRQDB8ywwfZKdrm.tar.zst" }
+app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.6/HgUugW5V5QQbmrjdjkRhjiZ8B9D9gzpEkSwdojqJcW4p.tar.zst" }
 
 # The compiler does not warn about an unused import. The scaffold imports each
 # exposed module, so a snippet that uses D1 or Object compiles as submitted.

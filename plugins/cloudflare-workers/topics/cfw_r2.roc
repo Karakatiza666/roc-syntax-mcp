@@ -5,7 +5,7 @@
 ## object. A `Body` is a tag: write `Text("hello")` or `Bytes(list)`, never a bare string ("used where a non-string
 ## type is needed ... Body"). `req.body` without the call is a field read, and `Request` is opaque: use the methods.
 ## Every platform error is inside `Infra(R2Err(..))`. `NotFound` and `PreconditionFailed` are flat.
-app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.1/GcDNxAwPR5tSzqU8T2Kdj35CK3sQMRQDB8ywwfZKdrm.tar.zst" }
+app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.6/HgUugW5V5QQbmrjdjkRhjiZ8B9D9gzpEkSwdojqJcW4p.tar.zst" }
 
 import pf.Worker
 import pf.Request
@@ -28,6 +28,12 @@ upload! = |key, req| {
 download! : Str, Request => Try(Response, _)
 download! = |key, req| Ok(files.respond!(key, req)?)
 
+## The type of a range is `R2.ByteRange` (platform 0.0.2). In 0.0.1 it was `R2.Range`, which shadows a builtin of the nightly
+## 2026-10-26, so `roc build` printed a warning and exited with code 2. The values are the same in both: `From({ offset_bytes,
+## length_bytes })` and `Suffix(n)`. `length_bytes` is optional.
+tail_range : U64 -> R2.ByteRange
+tail_range = |n| Suffix(n)
+
 ## `Suffix(n)` reads the last n bytes. `obj.?range` is the range that R2 read, for the Content-Range header. It is there
 ## only for a call with `range`.
 ## Each field of `R2.Http` is optional: read it with `.?`, never with `.` ("The content_type field is optional").
@@ -41,6 +47,14 @@ first_kib! = |key| match files.get_with!(key, { range: From({ offset_bytes: 0, l
 		# `R2.to_response` is always status 200. For a range, make the 206 response from the body.
 		Ok(Response.from_body(206, obj.meta.http.?content_type ?? "application/octet-stream", obj.body).with_header("content-range", range))
 	}
+	Err(NotFound) => Ok(Response.from_status(404))
+	Err(e) => Err(e)
+}
+
+## The last n bytes, with the range value made by a typed function.
+tail! : Str, U64 => Try(Response, _)
+tail! = |key, n| match files.get_with!(key, { range: tail_range(n) }) {
+	Ok(obj) => Ok(Response.from_body(206, "application/octet-stream", obj.body))
 	Err(NotFound) => Ok(Response.from_status(404))
 	Err(e) => Err(e)
 }
@@ -134,6 +148,7 @@ fetch! = |req| match (req.method(), req.segments()) {
 	(PUT, ["files", key]) => upload!(key, req)
 	(GET, ["files", key]) => download!(key, req)
 	(GET, ["head", key]) => first_kib!(key)
+	(GET, ["tail", key]) => tail!(key, 512)
 	(POST, ["replace", key]) => replace!(key, req)
 	(POST, ["create", key]) => create_only!(key)
 	(POST, ["generated", key]) => generated!(key)

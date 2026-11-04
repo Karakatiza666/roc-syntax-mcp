@@ -1,4 +1,4 @@
-app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.1/GcDNxAwPR5tSzqU8T2Kdj35CK3sQMRQDB8ywwfZKdrm.tar.zst" }
+app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.6/HgUugW5V5QQbmrjdjkRhjiZ8B9D9gzpEkSwdojqJcW4p.tar.zst" }
 
 ## The example Worker (PLAN.md 11b). It has no `cbor` and no `http` entry: the platform brings both.
 ## The platform line is a path so that the repo can test it. In your project, write the release URL (README.md).
@@ -58,7 +58,7 @@ fetch_url! = |url| match Http.get!(url) {
 	Err(e) => Response.from_text(502, "Err ${Str.inspect(e)}")
 }
 
-## `bindings`: the manifest lists the D1 binding, so the shim checks `env.DB` at load, and `roc-cloudflare-workers sync`
+## `bindings`: the manifest lists the D1 binding, so the shim checks `env.DB` at load, and `roc-cfw sync`
 ## checks `wrangler.toml`.
 worker = Worker.new({ fetch!: fetch!, bindings: [db.declare()] })
 

@@ -7,7 +7,7 @@
 ##
 ## KV is eventual: a write can take 60 s or more to show in other places. Use a Durable Object (`Object.Cell`) for a
 ## value that must be consistent. Every platform error is inside `Infra(KvErr(..))`. `NotFound` is flat.
-app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.1/GcDNxAwPR5tSzqU8T2Kdj35CK3sQMRQDB8ywwfZKdrm.tar.zst" }
+app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.6/HgUugW5V5QQbmrjdjkRhjiZ8B9D9gzpEkSwdojqJcW4p.tar.zst" }
 
 import pf.Worker
 import pf.Request
@@ -64,7 +64,7 @@ owner_of! = |user| {
 }
 
 ## `list!` cannot take a type, so each `Kv.Key` holds its metadata as CBOR: parse it with the type of the use.
-## `cache_ttl_ms` of `get_with!` must be 30 s or more, else `KvErr`. The module does not raise it.
+## `cache_ttl_ms` of `get_with!` under 30 s is raised to 30 s (KV refuses less), as `put_with!` raises `ttl_ms`.
 ## `list!` gives one page (1,000 keys or less). `page.next` is `More(cursor)` until the last page: pass the cursor in
 ## the next call.
 owners! : Str => Try(List(Str), _)

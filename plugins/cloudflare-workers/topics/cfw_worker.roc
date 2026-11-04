@@ -2,21 +2,23 @@
 ## record of handlers with one error type for each handler, a cron handler,
 ## and the files of a project.
 ##
-## A project (no npm, no package.json):
+## A project (no npm, no package.json). Start it with Talon and the helper `roc-cfw`:
+## `tln init --platform Karakatiza666/roc-cloudflare-workers`, `tln add --tool Karakatiza666/roc-cloudflare-workers-cli --as roc-cfw`,
+## `tln x roc-cfw -- init` (it writes the files below), then `tln run build` and `tln run dev`.
 ##
 ## | File | Content |
 ## | --- | --- |
 ## | main.roc | This file. Build: `roc build --target=wasm32 --no-cache --output=app.wasm main.roc` |
-## | talon.toml | `[scripts]`: `build` is that command, then `node .roc-cfw/cli.mjs sync`. `dev` is `["@build", "wrangler dev --local"]` |
+## | talon.toml | `[scripts]`: `build` is that command, then `roc-cfw sync`. `check` has `roc-cfw sync --check`. `dev` is `["@build", "wrangler dev --local"]` |
 ## | worker.js | Written by `sync` from the app. Do not write it by hand |
 ## | worker.options.js | Optional. Your file: `export default { ops, other, ... }`, the options of `makeHandler`. `sync` imports it |
 ## | wrangler.toml | `main = "worker.js"`, `compatibility_flags = ["enable_request_signal"]`, one binding for each `X.binding("NAME")` |
-## | .roc-cfw/ | A copy of `js/` of the platform bundle (the shim). Put it in .gitignore. `sync` is `node .roc-cfw/cli.mjs sync` |
+## | .roc-cfw/ | A copy of `js/` of the platform bundle (the shim). `roc-cfw sync` copies it and runs `node .roc-cfw/cli.mjs sync`. Put it in .gitignore |
 ##
 ## `--no-cache` makes the same source give the same bytes. A `roc build` with
 ## type errors still writes app.wasm and exits with 1: check the exit code.
 ## Without `enable_request_signal`, a task does not stop when the client goes away.
-app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.1/GcDNxAwPR5tSzqU8T2Kdj35CK3sQMRQDB8ywwfZKdrm.tar.zst" }
+app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.6/HgUugW5V5QQbmrjdjkRhjiZ8B9D9gzpEkSwdojqJcW4p.tar.zst" }
 
 import pf.Worker
 import pf.Request
@@ -88,9 +90,24 @@ purge! = |s| {
 scheduled! : Worker.Scheduled => Try({}, [UnknownCron(Str)])
 scheduled! = |s| Err(UnknownCron(s.cron()))
 
+# `on_trap`: the response of `fetch` after a trap (a Roc `crash`, out of memory, the CPU limit, a deadline) and for an
+# `Err` of `fetch!`. No Roc code can run after a trap, so the response is fixed data that the shim copies. Without
+# `on_trap` the client gets `trap <error>` as text/plain (500, or 503), which shows the wasm error text. `default`
+# is required; the other causes are optional fields: `crashed`, `alarm`, `cpu`, `oom`, `shed`, `deadline`,
+# `cancelled`, `event`, `failed`. The body is bytes: a `Str` is "string literal used where List(U8) is needed".
+# A header is a plain record `{ name, value }`: the app has no `Header` module to import (`pf.Http` exposes none).
+# The shim checks the table at load: status 400 to 599, 16 headers or fewer, a body of 4,096 bytes or less, and no
+# `content-length` or `set-cookie`. On `shed` and `oom` it adds `retry-after: 1` when the entry has none.
+problem : U16, Str -> Worker.Fixed
+problem = |status, title| {
+	status,
+	headers: [{ name: "content-type", value: "application/problem+json" }, { name: "cache-control", value: "no-store" }],
+	body: Str.to_utf8("{\"title\":\"${title}\",\"status\":${status.to_str()}}"),
+}
+
 # `Worker.new` takes one optional field for each event kind: `fetch!`,
 # `scheduled!`, `queue!`, `email!`, `tail!`, `other!`, and `rpc`, `entrypoints`,
-# `objects`. A kind with no field gives `Unhandled` (for fetch, a 500 and a log
+# `objects`, `bindings`, `crons`, `on_trap`. A kind with no field gives `Unhandled` (for fetch, a 500 and a log
 # line). A handler that you define and do not list is never called. The
 # compiler does not warn, but `sync` does (`sync: main.roc:12: scheduled! is
 # defined but Worker.new does not list it; it never runs`). `sync` exits 0 with
@@ -100,6 +117,11 @@ scheduled! = |s| Err(UnknownCron(s.cron()))
 # `scheduled!`. `bindings`: `declare()` of each binding. The shim checks `env` at
 # load, and `sync` checks wrangler.toml.
 #
+# Trap: write the record of `Worker.new` as a literal in the call. A record in a
+# name (`opts = { fetch!: fetch!, ... }`, then `Worker.new(opts)`) is "This record
+# is missing these fields": the compiler leaves out optional fields only for a
+# literal at the call.
+#
 # Trap: with one field, write `Worker.new({ fetch!: fetch! })`. `{ fetch! }` alone
 # is a block, not a record. `Worker.{ fetch! }` (the old form) is "opaque type".
 worker = Worker.new({
@@ -107,6 +129,7 @@ worker = Worker.new({
 	scheduled!: scheduled!,
 	crons: [Worker.cron("*/5 * * * *", purge!)],
 	bindings: [db.declare()],
+	on_trap: { default: problem(500, "Internal error"), oom: problem(503, "Busy"), shed: problem(503, "Busy") },
 })
 
 # The platform requires `event!`, not `main!`. It takes each event.

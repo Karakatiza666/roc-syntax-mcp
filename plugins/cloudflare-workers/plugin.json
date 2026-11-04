@@ -1,11 +1,11 @@
 {
   "schema": 1,
   "maintainer": "Heorhii Bulakh (Karakatiza666), the platform author",
-  "compiler": "nightly-2026-10-19-601b54c",
+  "compiler": "nightly-2026-11-03-34bd006",
   "corpora": [
     {
       "name": "cloudflare-workers",
-      "release": "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.1/GcDNxAwPR5tSzqU8T2Kdj35CK3sQMRQDB8ywwfZKdrm.tar.zst",
+      "release": "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.6/HgUugW5V5QQbmrjdjkRhjiZ8B9D9gzpEkSwdojqJcW4p.tar.zst",
       "description": "The cloudflare-workers platform: Cloudflare Workers in Roc, one event! with Worker.new and a handler record, and typed modules for fetch, D1, KV, R2, Cache, Queues, Durable Objects, WebSockets, RPC, WebCrypto and the other bindings.",
       "purpose": "Cloudflare Workers: HTTP, storage, Durable Objects",
       "overview": "overview.md",
@@ -20,7 +20,7 @@
         {
           "name": "cfw_worker",
           "file": "topics/cfw_worker.roc",
-          "description": "What a cloudflare-workers app looks like: the event! entry, Worker.new with one error type for each handler, scheduled runs and crons, bindings, and the main.roc, talon.toml, worker.js, wrangler.toml and .roc-cfw files of a project with no npm.",
+          "description": "What a cloudflare-workers app looks like: the event! entry, Worker.new with one error type for each handler, scheduled runs and crons, bindings, fixed on_trap responses, and the main.roc, talon.toml, worker.js, wrangler.toml and .roc-cfw files of a project with no npm.",
           "keywords": [
             "worker",
             "event!",
@@ -62,13 +62,35 @@
             "worker.options.js",
             "options file",
             "not listed",
-            "handler not listed"
+            "handler not listed",
+            "tln init",
+            "tln add",
+            "tln x",
+            "tln run build",
+            "tln run dev",
+            "roc-cfw init",
+            "roc-cfw sync",
+            "--platform",
+            "on_trap",
+            "Worker.Fixed",
+            "Worker.OnTrap",
+            "trap response",
+            "crash response",
+            "problem+json",
+            "error page",
+            "retry-after",
+            "missing these fields",
+            "crash",
+            "custom error response",
+            "error response",
+            "500 page",
+            "503"
           ]
         },
         {
           "name": "cfw_http",
           "file": "topics/cfw_http.roc",
-          "description": "HTTP in a Worker: JSON in and out, an outbound fetch with Http.send! and its status, two requests at once, a timeout, a streamed response with Response.after, a webhook HMAC check with a secret, and a Memo cache.",
+          "description": "HTTP in a Worker: JSON in and out, repeated query parameters, an outbound fetch with Http.send! and its status, two requests at once, a timeout, a streamed response with Response.after, a webhook HMAC check with a secret, and a Memo cache (a constant, with the loader at get!).",
           "keywords": [
             "http",
             "Http.send!",
@@ -105,7 +127,18 @@
             "reveal",
             "Memo",
             "Memo.new",
-            "now_ms!"
+            "now_ms!",
+            "Memo constant",
+            "Memo.get!",
+            "loader",
+            "closed Infra",
+            "query",
+            "query_all",
+            "query_pairs",
+            "query parameters",
+            "repeated query parameter",
+            "URLSearchParams",
+            "Memo expiry"
           ]
         },
         {
@@ -148,7 +181,7 @@
         {
           "name": "cfw_websockets",
           "file": "topics/cfw_websockets.roc",
-          "description": "How do I serve WebSockets: a hibernating chat room in a Durable Object with accept!, typed attachments, sockets! broadcast and auto response, the Worker that forwards the upgrade, and a Worker-side echo?",
+          "description": "How do I serve WebSockets: a hibernating chat room in a Durable Object with accept!, typed attachments, sockets! broadcast and auto response, the Worker that forwards the upgrade, and a Worker-side echo with a subprotocol, send! and close! errors and the close record?",
           "keywords": [
             "websocket",
             "web socket",
@@ -179,7 +212,24 @@
             "broadcast_json!",
             "Response.after",
             "Io.timeout",
-            "sockets_with!"
+            "sockets_with!",
+            "accept_with!",
+            "subprotocol",
+            "Sec-WebSocket-Protocol",
+            "protocol",
+            "pick_protocol",
+            "close!",
+            "BadCode",
+            "1005",
+            "1006",
+            "by",
+            "Peer",
+            "Transport",
+            "SocketErr",
+            "max_queued_bytes",
+            "1008",
+            "close record",
+            "WebSocket.Closed"
           ]
         },
         {
@@ -215,13 +265,16 @@
             "Remote",
             "on_worker",
             "Service.binding_with",
-            "Infra"
+            "Infra",
+            "optional field",
+            "Try(a, [Missing])",
+            "MissingRequiredField"
           ]
         },
         {
           "name": "cfw_d1",
           "file": "topics/cfw_d1.roc",
-          "description": "How do I read typed rows from D1, pass parameters and NULL columns and parameters, run a batch transaction, match a constraint error, use sessions and bookmarks, and handle integers above 2^53?",
+          "description": "How do I read typed rows from D1 (nullable columns, Bool columns), pass parameters and NULL parameters, run a batch transaction, match a constraint error, use sessions and bookmarks, and handle integers above 2^53?",
           "keywords": [
             "d1",
             "database",
@@ -261,7 +314,17 @@
             "snake_case",
             "Sql.null",
             "bare parameter",
-            "old Sql tag form"
+            "old Sql tag form",
+            "nullable column",
+            "nullable",
+            "optional field",
+            "?:",
+            "Missing",
+            "MissingRequiredField",
+            "Try(a, [Missing])",
+            "Try(a, [Null])",
+            "Bool field",
+            "boolean column"
           ]
         },
         {
@@ -301,7 +364,10 @@
             "R2.from_headers",
             "R2.to_response",
             "Response.after",
-            "Body.writer!"
+            "Body.writer!",
+            "R2.ByteRange",
+            "ByteRange",
+            "Suffix"
           ]
         },
         {
@@ -404,6 +470,41 @@
             "Io.Thrown",
             "worker.options.js",
             "options file"
+          ]
+        },
+        {
+          "name": "cfw_testing",
+          "file": "topics/cfw_testing.roc",
+          "description": "How do I test a cloudflare-workers app: startApp of .roc-cfw/test.mjs runs app.wasm in Miniflare with node --test, seeded D1, an outbound table, call counts, a clock that the test moves, and reset.",
+          "keywords": [
+            "test",
+            "tests",
+            "testing",
+            "unit test",
+            "integration test",
+            "startApp",
+            "test.mjs",
+            "node --test",
+            "miniflare",
+            "seed",
+            "fixture",
+            "mock fetch",
+            "outbound",
+            "clock",
+            "fake time",
+            "now",
+            "advance",
+            "setNow",
+            "Time.now_ms!",
+            "reset",
+            "calls",
+            "count",
+            "app.fetch",
+            "app.queue",
+            "app.scheduled",
+            "declare",
+            "test my worker",
+            "test a worker"
           ]
         }
       ]

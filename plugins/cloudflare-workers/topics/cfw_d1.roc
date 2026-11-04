@@ -17,12 +17,15 @@
 ##   Str, I64, F64 ...  A TEXT column reads into `Str`. An INTEGER column reads into an integer type, and also into `F64`.
 ##                      A REAL column reads into an integer type only when it has no fraction (`2.0` yes, `2.5` is BadData).
 ##                      An INTEGER column does not read into `Str`.
-##   NULL               Only a field of the type `Try(Str, [Null])` reads a NULL. Every other type is `BadData`, and
-##                      its text names the fix ("NULL, read it into a Try(a, [Null]) item"): `Str`,
-##                      `Try(Str, [Missing])`, `[Null, Some(Str)]` and an optional field `name ?: Str` too.
-##   Bool               A Bool field is `BadData` for 0 and for 1. The text says to read an `I64` or `U8` item. SQLite
-##                      has no Bool: read an `I64` and compare it with 0.
-app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.1/GcDNxAwPR5tSzqU8T2Kdj35CK3sQMRQDB8ywwfZKdrm.tar.zst" }
+##   NULL in a record   A NULL is the same as no key (roc-cbor 0.2.2 and later). Read a nullable column into an optional field
+##                      `nick ?: Str` (absent, and `row.?nick` is `Err(MissingField)`) or into `bio : Try(Str, [Missing])`
+##                      (`Err(Missing)`). A required field is `BadData("column x: missing or NULL, read a nullable column
+##                      into x ?: a or Try(a, [Missing])")`. This holds also for `Try(Str, [Null])`: that field is
+##                      required, so it no longer reads a NULL. `[Null, Some(Str)]` is `BadData` too.
+##   NULL in a tuple    A tuple item (`all_tuples!`) is not a key. Only an item of the type `Try(a, [Null])` reads a NULL.
+##   Bool               A `Bool` field or item reads 0 and 1. SQLite has no boolean: a comparison or a boolean column is 0
+##                      or 1. Another integer is `BadData("column x: the value does not fit the type")`.
+app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.6/HgUugW5V5QQbmrjdjkRhjiZ8B9D9gzpEkSwdojqJcW4p.tar.zst" }
 
 import pf.Worker
 import pf.Request
@@ -35,6 +38,27 @@ db = D1.binding("DB")
 
 ## A BLOB column reads into a `List(U8)` field or a `Cbor.Bytes` field (D1 gives a BLOB as an array of numbers).
 User : { id : I64, name : Str, avatar : List(U8) }
+
+## Nullable columns and a boolean column. `nick` and `bio` can be NULL: `?:` and `Try(a, [Missing])` are the two ways to read
+## it. A `bio : Try(Str, [Null])` field compiles, but each NULL row is `BadData`.
+Profile : { id : I64, nick ?: Str, bio : Try(Str, [Missing]), admin : Bool }
+
+profile! : I64 => Try(Str, _)
+profile! = |id| {
+	p : Profile
+	p = db.first!("SELECT id, nick, bio, admin = 1 AS admin FROM profiles WHERE id = ?", id)?
+	nick = p.?nick ?? "anon"
+	role = if p.admin "admin" else "user"
+	Ok("${nick} ${p.bio ?? "-"} ${role}")
+}
+
+## In a tuple, a NULL item reads only into `Try(a, [Null])`. Here `Err(Null)` is a NULL `bio`.
+bios! : () => Try(List((I64, Try(Str, [Null]))), _)
+bios! = || {
+	rows : List((I64, Try(Str, [Null])))
+	rows = db.all_tuples!("SELECT id, bio FROM profiles", Sql.none)?
+	Ok(rows)
+}
 
 list_users! : () => Try(List(User), _)
 list_users! = || {
@@ -173,6 +197,14 @@ fetch! = |req| match (req.method(), req.segments()) {
 	(GET, ["events"]) => {
 		es = events!()?
 		Ok(Response.from_json(200, es.map(|e| { id: e.id.to_web(), kind: e.kind })))
+	}
+	(GET, ["profile", id]) => {
+		text = profile!(I64.from_str(id) ?? 0)?
+		Ok(Response.from_text(200, text))
+	}
+	(GET, ["bios"]) => {
+		rows = bios!()?
+		Ok(Response.from_text(200, rows.len().to_str()))
 	}
 	(GET, ["session"]) => session_read!(req)
 	(GET, ["columns", table]) => columns!(table)

@@ -19,7 +19,7 @@
 ## constructors), `ops` (the functions of the app), `signal`. The root `pf` is the helpers of the platform: an app does not call it.
 ## The op and value tags (`Get`, `Slot`, `Lit`, `Text`, `Int`) need no import:
 ## the type of `Io.new` gives them their type. Import `pf.Js` to name `Js`.
-app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.1/GcDNxAwPR5tSzqU8T2Kdj35CK3sQMRQDB8ywwfZKdrm.tar.zst" }
+app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.6/HgUugW5V5QQbmrjdjkRhjiZ8B9D9gzpEkSwdojqJcW4p.tar.zst" }
 
 import pf.Worker
 import pf.Request

@@ -8,7 +8,7 @@
 ##   wrangler.toml [[queues.producers]]  binding = "JOBS", queue = "crawl-jobs"
 ##                 [[queues.consumers]]  queue = "crawl-jobs", max_batch_size = 10, max_retries = 5
 ##                 Set `max_batch_size` small: a batch crosses into wasm memory whole.
-app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.1/GcDNxAwPR5tSzqU8T2Kdj35CK3sQMRQDB8ywwfZKdrm.tar.zst" }
+app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.6/HgUugW5V5QQbmrjdjkRhjiZ8B9D9gzpEkSwdojqJcW4p.tar.zst" }
 
 import pf.Worker
 import pf.Request
@@ -16,6 +16,9 @@ import pf.Response
 import pf.Queue
 import pf.Http
 
+## A message crosses as CBOR. A field that can be empty is `x ?: a` or `x : Try(a, [Missing])`. The writer writes no key for
+## `Err(Null)` (roc-cbor 0.2.2 and later), so an `x : Try(a, [Null])` field is `MissingRequiredField` when the message is read, and
+## `each!` retries it.
 Job : { url : Str }
 
 jobs : Queue(Job)

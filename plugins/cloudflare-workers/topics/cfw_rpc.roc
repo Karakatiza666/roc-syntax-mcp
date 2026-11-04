@@ -5,11 +5,11 @@
 ## Put the interface types, the interface values and the `Rpc` constants in one module that both Workers import
 ## (here they are in one file). Then the caller and the callee have the same types.
 ##
-## Project files. `node .roc-cfw/cli.mjs sync` writes worker.js with `export const Admin = entrypointClass("Admin");`
+## Project files. `roc-cfw sync` writes worker.js with `export const Admin = entrypointClass("Admin");`
 ## before `export default makeHandler(app);`, and it checks the link to the other Worker of the repo by the interface name.
 ##   wrangler.toml [[services]] binding = "LEDGER", service = "ledger-worker"
 ##                 [[services]] binding = "ADMIN", service = "front-worker", entrypoint = "Admin"
-app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.1/GcDNxAwPR5tSzqU8T2Kdj35CK3sQMRQDB8ywwfZKdrm.tar.zst" }
+app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.6/HgUugW5V5QQbmrjdjkRhjiZ8B9D9gzpEkSwdojqJcW4p.tar.zst" }
 
 import pf.Worker
 import pf.Request
@@ -54,6 +54,20 @@ total = front_api.method("total")
 
 balance : Rpc(Ledger, { who : Str }, U64, [NoAccount, Infra(Rpc.Infra)])
 balance = ledger_api.method("balance")
+
+## An argument and a reply cross as CBOR. A field that can be empty is `tag ?: Str` or `seen_by : Try(Str, [Missing])`.
+## The writer writes no key for an `Err(Null)` (roc-cbor 0.2.2 and later), and a NULL is the same as no key. A field
+## `x : Try(Str, [Null])` is required, so a reply that holds `Err(Null)` there is `Infra(BadData(..))` for the caller
+## (`MissingRequiredField`). The same rule holds for a queue message, a cell, a `Memo` value and an attachment.
+Note : { text : Str, tag ?: Str, seen_by : Try(Str, [Missing]) }
+
+note : Rpc(Front, { id : U64 }, Note, [Unknown])
+note = front_api.method("note")
+
+## A lambda in `on_worker` that gives a record literal with no `tag` does not type-check: the error is at `on_worker`
+## ("needs the first argument to be ... `tag ?: Str`"). Put the literal in an annotated function.
+note_of : U64 -> Try(Note, [Unknown])
+note_of = |id| if (id == 0) Err(Unknown) else Ok({ text: "n", seen_by: Err(Missing) })
 
 ## A method with no argument takes `{}` as its argument: `call!(m, {})`. `()` is for functions, and `call!(m, ())` is a
 ## parse error. A JS caller that sends no argument (`stub.ping()`) sends `{}`.
@@ -114,6 +128,7 @@ worker = Worker.new({
 	rpc: [
 		lookup.on_worker(|{ key }| if (key == "a") Ok("alpha") else Err(Unknown)),
 		total.on_worker(total!),
+		note.on_worker(|{ id }| note_of(id)),
 		ping(front_api).on_worker(|{}| Ok("pong")),
 	],
 	entrypoints: [admin_entrypoint],
