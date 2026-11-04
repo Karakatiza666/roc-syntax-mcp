@@ -37,6 +37,7 @@ on:
           - joy
           - cloudflare-workers
           - roc-websocket
+          - surrealdb
       dry-run:
         description: Validate and pack, publish nothing
         type: boolean

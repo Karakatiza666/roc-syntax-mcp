@@ -1,0 +1,90 @@
+# Provenance of this corpus.
+#
+# Update this file each time you repin the plugin, so that the next repin can
+# diff tag to tag.
+
+repo     https://github.com/Karakatiza666/roc-reify-surrealdb
+tag      0.0.1
+commit   ba5e2cb28ead322971d7ec16a0aed7c22d5f023a "Prepare 0.0.1", the commit of the tag
+bundle   7MmdAaAt5bThg6ih3nR9ewVgw4CtNGvuK5HNQhEgZoSV.tar.zst
+url      https://github.com/Karakatiza666/roc-reify-surrealdb/releases/download/0.0.1/7MmdAaAt5bThg6ih3nR9ewVgw4CtNGvuK5HNQhEgZoSV.tar.zst
+# The plugin was first written against a local bundle of ba5e2cb, made with
+# the package's scripts/bundle.sh. The release asset has the same hash, and the
+# tag is that commit.
+
+# Repin to a new release:
+#  1. Take the asset URL from the release notes and replace the url in
+#     plugin.json, in each surreal: line of examples/, topics/ and verify/, and
+#     in the snippets of overview.md. Copy the examples again from the tag with
+#     the sed of the "examples/" line below.
+#  2. If the new `.roc-version` names another commit of the fork, update
+#     `compiler` in plugin.json and link that build at roc_<compiler>/roc.
+#  3. Run `roc-syntax-mcp plugin index plugins/surrealdb`, then
+#     `plugin validate plugins/surrealdb --attest`.
+#  4. Redo the findings of the overview, and update this file.
+
+# The compiler is NOT a nightly. The package needs the reify fork of Roc
+# (`Karakatiza666/roc`, branch reify, commit c1e6af27a29303f2e409b037aa1d4a32ebd68217
+# = the package's .roc-version, based on nightly-2026-11-03-34bd006). Stock Roc
+# has no `Code` type. Build it with Zig 0.17.0 (`zig build roc`, a debug build
+# whose `roc version` prints debug-c1e6af27). The `compiler` of plugin.json
+# names the fork in the .roc-version form, and the gates check every program of
+# this plugin with roc_<compiler>/roc at the repo root, so link the build there:
+#
+#   mkdir roc_reify-c1e6af27a29303f2e409b037aa1d4a32ebd68217
+#   ln -s <fork>/zig-out/bin/roc roc_reify-c1e6af27a29303f2e409b037aa1d4a32ebd68217/roc
+#
+# CI builds no fork. Run `plugin validate plugins/surrealdb --attest` locally
+# after every change, and commit the BUILD-PROOF it writes. CI and the publish
+# workflow check that file with `plugin validate --offline --proof`.
+compiler reify-c1e6af27a29303f2e409b037aa1d4a32ebd68217
+
+BUILD-PROOF <- written by `plugin validate --attest` (see above), not upstream's
+index.json  <- the bundle's modules (src/Surreal.roc and the modules it imports),
+               parsed by `roc-syntax-mcp plugin index`. Public: Surreal only
+               (src/main.roc exposes nothing else); the rest are host tier. No
+               source is vendored
+examples/   <- monitoring.roc, search.roc, client.roc, watch.roc and server.roc
+               of the repo's examples/, repinned with two edits per file:
+               `surreal: "../src/main.roc"` is the url above (the sed
+               `s#"\.\./src/main\.roc"#"<url>"#`), and the file gains one `##`
+               title line above everything, which `list_roc_index(kind:
+               "examples")` prints. Nothing else differs
+topics/     <- this package's own: programs written against this pin and
+               declared in plugin.json. surreal_session and surreal_live were
+               run against SurrealDB 3.3.4 (docker image
+               surrealdb/surrealdb:v3.3.4, memory) with the port changed to a
+               free one; the rest print SurrealQL and need no server.
+overview.md <- this package's own. Each snippet is in verify/overview-snippets.roc
+
+# What examples/ leaves out, and why:
+#   main.roc  the best place to learn the query API, but `app [main!]
+#             { surreal: ..., clinic: "clinic/main.roc" }` imports the sibling
+#             package examples/clinic/, and the gate compiles one file at a time
+#             (`examples/*.roc`, each one an app). topics/surreal_queries.roc
+#             and surreal_schema.roc teach the same calls in single files
+#   clinic/   the package that main.roc imports (helpers over open rows)
+#   README.md of examples/ is prose for contributors
+
+# What else the repo has and this package does not ship:
+#   README.md      2500 lines. The overview and the topics give what an app
+#                  author needs; the README stays the reference for the
+#                  builtin table, the SurrealQL of each call and the design
+#                  limits
+#   tests/, scripts/, .github/, dist/, src/internal.roc  contributor material
+#                  (internal.roc is a second header that exposes every module for
+#                  the tests)
+
+# Compiler findings of this pin (the overview has the ones an app author needs):
+#  - `rows = read.result.map_err(Str.inspect)?` on the `result` of `Session.run!`,
+#    when `rows` holds a list, stops the debug fork with "ARC: use of unbound
+#    refcounted local" (post-check arc). Matching on `result` compiles.
+#  - The stock nightly 2026-11-03-34bd006 rejects every builder call
+#    with "missing method" and give no hint about `Code`.
+#  - The warning "unconditional condition" appears when a `match` runs on a
+#    value that is known at compile time (a `Try` from a top-level `prepare`);
+#    the topics match inside a function to avoid it.
+
+# roc-reify-surrealdb is UPL-1.0 and ships a LICENSE file (its copyright line
+# is Roc's, which the author kept). LICENSE is that file, and package.json names
+# UPL-1.0.

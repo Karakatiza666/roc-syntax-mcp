@@ -181,6 +181,18 @@ precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Heorhii Bulakh and subsequent roc-websocket authors <github.com/Karakatiza666/roc-websocket/graphs/contributors>"
 SPDX-License-Identifier = "UPL-1.0"
 
+# roc-reify-surrealdb is UPL-1.0, and its author is also the author of this
+# repository. Its LICENSE keeps the Roc copyright line.
+[[annotations]]
+path = [
+  "plugins/surrealdb/LICENSE",
+  "plugins/surrealdb/index.json",
+  "plugins/surrealdb/examples/**",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Heorhii Bulakh and subsequent roc-reify-surrealdb authors <github.com/Karakatiza666/roc-reify-surrealdb/graphs/contributors>"
+SPDX-License-Identifier = "UPL-1.0"
+
 # Joy and joy-html are Apache-2.0, so the files of this repo in plugins/joy are
 # Apache-2.0 too, and the package has one license. `precedence = "override"`
 # stops the UPL-1.0 entry for plugins/*/ above from also applying.

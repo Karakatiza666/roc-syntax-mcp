@@ -116,6 +116,7 @@ fails a plugin that goes over the limit when it is the only installed plugin.
 | `roc-ray/` | `@roc-syntax/roc-ray` | The RocRay platform |
 | `weaver/` | `@roc-syntax/weaver` | The Weaver argument parser, as a page and as the `lukewilliamboswell/weaver` namespace |
 | `roc-websocket/` | `@roc-syntax/roc-websocket` | The roc-websocket package, a page and the `Karakatiza666/roc-websocket` namespace: WebSocket frames, handshake, protocol, a client and a server over bytes, and the platform adapters |
+| `surrealdb/` | `@roc-syntax/surrealdb` | The roc-reify-surrealdb package, a page and the `Karakatiza666/roc-reify-surrealdb` namespace: a SurrealDB ORM where queries and constraints are Roc functions. It needs the reify fork of the compiler |
 | `cloudflare-workers/` | `@roc-syntax/cloudflare-workers` | The cloudflare-workers platform, for Cloudflare Workers in Roc (HTTP, D1, KV, R2, Queues, Durable Objects, RPC) |
 
 ## Starting one

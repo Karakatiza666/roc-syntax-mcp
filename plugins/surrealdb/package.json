@@ -1,0 +1,34 @@
+{
+  "name": "@roc-syntax/surrealdb",
+  "version": "0.0.1",
+  "description": "The roc-reify-surrealdb SurrealDB ORM, as a roc-syntax-mcp corpus.",
+  "license": "UPL-1.0",
+  "files": [
+    "BUILD-PROOF",
+    "LICENSE",
+    "README.md",
+    "UPSTREAM",
+    "examples",
+    "index.json",
+    "overview.md",
+    "plugin.json",
+    "topics",
+    "verify"
+  ],
+  "keywords": [
+    "roc",
+    "roc-syntax-mcp",
+    "roc-syntax-mcp-plugin",
+    "surrealdb",
+    "roc-reify-surrealdb"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "author": "Heorhii Bulakh",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Karakatiza666/roc-syntax-mcp.git",
+    "directory": "plugins/surrealdb"
+  }
+}
