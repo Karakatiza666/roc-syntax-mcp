@@ -1,11 +1,11 @@
 {
   "schema": 1,
   "maintainer": "roc-syntax-mcp, from the Karakatiza666/roc-reify-surrealdb releases",
-  "compiler": "reify-c1e6af27a29303f2e409b037aa1d4a32ebd68217",
+  "compiler": "reify-76ed44249ac086e593325c58f56d96d8dc4ffd47",
   "corpora": [
     {
       "name": "surrealdb",
-      "release": "https://github.com/Karakatiza666/roc-reify-surrealdb/releases/download/0.0.1/7MmdAaAt5bThg6ih3nR9ewVgw4CtNGvuK5HNQhEgZoSV.tar.zst",
+      "release": "https://github.com/Karakatiza666/roc-reify-surrealdb/releases/download/0.0.4/CkLUeGcqAc6kNLaDf5rMbQEaZAE7nxapCE4EsHnqh5HY.tar.zst",
       "description": "The roc-reify-surrealdb package: a SurrealDB ORM where row types are Roc records and queries, clauses and constraints are Roc functions taken as Code(f) and translated to SurrealQL. Needs the reify fork of the Roc compiler.",
       "purpose": "SurrealDB queries and schema as Roc functions",
       "overview": "overview.md",

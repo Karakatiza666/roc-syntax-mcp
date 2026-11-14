@@ -4,13 +4,27 @@
 # diff tag to tag.
 
 repo     https://github.com/Karakatiza666/roc-reify-surrealdb
-tag      0.0.1
-commit   ba5e2cb28ead322971d7ec16a0aed7c22d5f023a "Prepare 0.0.1", the commit of the tag
-bundle   7MmdAaAt5bThg6ih3nR9ewVgw4CtNGvuK5HNQhEgZoSV.tar.zst
-url      https://github.com/Karakatiza666/roc-reify-surrealdb/releases/download/0.0.1/7MmdAaAt5bThg6ih3nR9ewVgw4CtNGvuK5HNQhEgZoSV.tar.zst
-# The plugin was first written against a local bundle of ba5e2cb, made with
-# the package's scripts/bundle.sh. The release asset has the same hash, and the
-# tag is that commit.
+tag      0.0.4
+commit   c0fe6b020bbd6db5cbc971f110ea1625844f853d "Prepare 0.0.4", the commit of the tag
+bundle   CkLUeGcqAc6kNLaDf5rMbQEaZAE7nxapCE4EsHnqh5HY.tar.zst
+url      https://github.com/Karakatiza666/roc-reify-surrealdb/releases/download/0.0.4/CkLUeGcqAc6kNLaDf5rMbQEaZAE7nxapCE4EsHnqh5HY.tar.zst
+
+# 0.0.1 to 0.0.4, from "Changes" in the README at the tag. What the plugin
+# changed for it:
+#   0.0.2  `ready` for a query with no parameter; migrations as reviewed files
+#          (`Surreal.plan`, `Session.migrate!`). The topics end parameterless
+#          chains with `ready()`; the overview names the migration calls.
+#   0.0.3  compiler 76ed442; roc-websocket 0.0.6 and roc-basic-cli-websocket
+#          0.0.4 (basic-cli 0.27.0). A clause reads the values of the function
+#          around a chain that gives a `Prepared` (`$_1` slots), and
+#          `select_where`/`bind_captured` are gone: the first trap of the
+#          overview is reversed, and surreal_queries uses `filter` in a
+#          function. Keys are `Code(Id(row))`: surreal_queries writes its keys
+#          in top-level values. `Prepared` and `Watch` hold their error, so no
+#          program wraps them in a `Try`.
+#   0.0.4  SurrealDB 4.0.1 or later only, CBOR v2 and roc-cbor 0.5.0, sized
+#          number field types, values sent as `vars` (`Request`,
+#          `Unchecked.send!`). The overview and the topics name SurrealDB 4.0.1.
 
 # Repin to a new release:
 #  1. Take the asset URL from the release notes and replace the url in
@@ -24,20 +38,22 @@ url      https://github.com/Karakatiza666/roc-reify-surrealdb/releases/download/
 #  4. Redo the findings of the overview, and update this file.
 
 # The compiler is NOT a nightly. The package needs the reify fork of Roc
-# (`Karakatiza666/roc`, branch reify, commit c1e6af27a29303f2e409b037aa1d4a32ebd68217
-# = the package's .roc-version, based on nightly-2026-11-03-34bd006). Stock Roc
-# has no `Code` type. Build it with Zig 0.17.0 (`zig build roc`, a debug build
-# whose `roc version` prints debug-c1e6af27). The `compiler` of plugin.json
-# names the fork in the .roc-version form, and the gates check every program of
-# this plugin with roc_<compiler>/roc at the repo root, so link the build there:
+# (`Karakatiza666/roc`, branch reify, commit 76ed44249ac086e593325c58f56d96d8dc4ffd47
+# = the package's .roc-version, based on nightly-2026-11-07-ad3a5d2). Stock Roc
+# has no `Code` type. The release nightly-reify-2026-11-07-76ed442 of
+# Karakatiza666/roc-reify-nightlies is a release build of that commit (`roc
+# version` prints its name), and this repin used it. The `compiler` of
+# plugin.json names the fork in the .roc-version form, and the gates check every
+# program of this plugin with roc_<compiler>/roc at the repo root, so unpack the
+# build there:
 #
-#   mkdir roc_reify-c1e6af27a29303f2e409b037aa1d4a32ebd68217
-#   ln -s <fork>/zig-out/bin/roc roc_reify-c1e6af27a29303f2e409b037aa1d4a32ebd68217/roc
+#   tar -xzf roc_nightly-reify-linux_x86_64-2026-11-07-76ed442.tar.gz
+#   mv roc_nightly-reify-linux_x86_64-2026-11-07-76ed442 roc_reify-76ed44249ac086e593325c58f56d96d8dc4ffd47
 #
 # CI builds no fork. Run `plugin validate plugins/surrealdb --attest` locally
 # after every change, and commit the BUILD-PROOF it writes. CI and the publish
 # workflow check that file with `plugin validate --offline --proof`.
-compiler reify-c1e6af27a29303f2e409b037aa1d4a32ebd68217
+compiler reify-76ed44249ac086e593325c58f56d96d8dc4ffd47
 
 BUILD-PROOF <- written by `plugin validate --attest` (see above), not upstream's
 index.json  <- the bundle's modules (src/Surreal.roc and the modules it imports),
@@ -49,12 +65,14 @@ examples/   <- monitoring.roc, search.roc, client.roc, watch.roc and server.roc
                `surreal: "../src/main.roc"` is the url above (the sed
                `s#"\.\./src/main\.roc"#"<url>"#`), and the file gains one `##`
                title line above everything, which `list_roc_index(kind:
-               "examples")` prints. Nothing else differs
+               "examples")` prints. Nothing else differs. At 0.0.4 the five
+               were copied again from the tag, keeping the title lines
 topics/     <- this package's own: programs written against this pin and
-               declared in plugin.json. surreal_session and surreal_live were
-               run against SurrealDB 3.3.4 (docker image
-               surrealdb/surrealdb:v3.3.4, memory) with the port changed to a
-               free one; the rest print SurrealQL and need no server.
+               declared in plugin.json. At 0.0.4 surreal_session and
+               surreal_live were run against SurrealDB 4.0.1 (docker image
+               surrealdb/surrealdb:v4.0.1, memory) with the port changed to a
+               free one, and surreal_queries was run for its SurrealQL; the
+               rest print SurrealQL and need no server.
 overview.md <- this package's own. Each snippet is in verify/overview-snippets.roc
 
 # What examples/ leaves out, and why:
@@ -64,6 +82,9 @@ overview.md <- this package's own. Each snippet is in verify/overview-snippets.r
 #             (`examples/*.roc`, each one an app). topics/surreal_queries.roc
 #             and surreal_schema.roc teach the same calls in single files
 #   clinic/   the package that main.roc imports (helpers over open rows)
+#   migrate.roc  (0.0.2 and later) imports the .surql files of examples/db/ as
+#             assets, so it cannot be flattened into one file
+#   db/       those .surql files
 #   README.md of examples/ is prose for contributors
 
 # What else the repo has and this package does not ship:
@@ -76,9 +97,10 @@ overview.md <- this package's own. Each snippet is in verify/overview-snippets.r
 #                  the tests)
 
 # Compiler findings of this pin (the overview has the ones an app author needs):
-#  - `rows = read.result.map_err(Str.inspect)?` on the `result` of `Session.run!`,
-#    when `rows` holds a list, stops the debug fork with "ARC: use of unbound
-#    refcounted local" (post-check arc). Matching on `result` compiles.
+#  - At 0.0.1, `rows = read.result.map_err(Str.inspect)?` on the `result` of
+#    `Session.run!` stopped the debug build of c1e6af27 with "ARC: use of
+#    unbound refcounted local". At 0.0.4 it checks and builds with the release
+#    build of 76ed442, so the overview no longer names it.
 #  - The stock nightly 2026-11-03-34bd006 rejects every builder call
 #    with "missing method" and give no hint about `Code`.
 #  - The warning "unconditional condition" appears when a `match` runs on a

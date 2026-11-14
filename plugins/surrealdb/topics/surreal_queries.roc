@@ -1,9 +1,10 @@
 ## Queries and writes: every clause is a Roc function over the row, taken as a
 ## `Code(f)` and translated to SurrealQL. This app has no platform and prints
-## the statement of each call. `prepare` gives a `Surreal.Prepared(out)` that
-## knows the type of its result (topic `surreal_session` runs it).
+## the statement of each call. `prepare` and `ready` give a `Surreal.Prepared(out)`
+## that knows the type of its result and holds any error of the statement (topic
+## `surreal_session` runs it).
 app [main!] {
-	surreal: "https://github.com/Karakatiza666/roc-reify-surrealdb/releases/download/0.0.1/7MmdAaAt5bThg6ih3nR9ewVgw4CtNGvuK5HNQhEgZoSV.tar.zst",
+	surreal: "https://github.com/Karakatiza666/roc-reify-surrealdb/releases/download/0.0.4/CkLUeGcqAc6kNLaDf5rMbQEaZAE7nxapCE4EsHnqh5HY.tar.zst",
 }
 
 import surreal.Surreal
@@ -21,21 +22,22 @@ pets = Surreal.table("pet")
 visits : Surreal.Table(Visit)
 visits = Surreal.table("visit")
 
-# A call that has no SurrealQL form is not a compile error. `prepare` returns
-# `Err(Unsupported("in `select`: ..."))` that names the clause, so read the
-# `Try`. `show` prints either side.
-show : Try(Surreal.Prepared(out), Surreal.Error) -> Str
-show = |prepared| match prepared {
-	Ok(p) => p.statement().to_script()
+# A call that has no SurrealQL form is not a compile error. The `Prepared` holds
+# `Err(Unsupported("in `select`: ..."))`, which names the clause. There is no
+# `Try` around a `Prepared`: `checked()`, `statement()` and `request()` give
+# the error, and `run!` puts it in its result. `show` prints either side.
+# `to_script()` is the readable form with `LET` lines; the server gets the values
+# as the `vars` of the request.
+show : Surreal.Prepared(out) -> Str
+show = |prepared| match prepared.statement() {
+	Ok(statement) => statement.to_script()
 	Err(e) => "refused: ${Str.inspect(e)}"
 }
 
-# A value from the program's scope cannot be read inside a clause. A function
-# that does it is the compile error "reified function captures a value".
-# Pass the value in a parameter record instead: the record is the first
-# argument of the clause (`filter_by`), and `prepare` takes its value. Write the
-# field out, `prepare({ city: city })`: `{ city }` is a block that returns the
-# `Str`, so the compiler says it is not a record.
+# A parameter record is the first argument of the clause (`filter_by`), and
+# `prepare` takes its value. Write the field out, `prepare({ city: city })`:
+# `{ city }` is a block that returns the `Str`, so the compiler says it is not a
+# record. A query with no parameter ends with `ready()`.
 CityParam : { city : Str }
 
 in_city : CityParam, Owner -> Bool
@@ -61,43 +63,44 @@ pet_line = |p| { id: p.id, owner: p.owner.get().name, city: p.owner.get().city }
 # then start, then limit. A chain in another order, such as
 # `.limit(2).order_by(..)`, is a compile error: `Surreal.Limited` has no
 # `order_by`. `live` has the same rule, for `Limited` and `Started`.
-by_city : Try(Surreal.Prepared(List(OwnerCard)), Surreal.Error)
+by_city : Surreal.Prepared(List(OwnerCard))
 by_city = Surreal.from(owners).filter_by(in_city).select(owner_card).order_by(|r| r.id, Asc).start(2).limit(2).prepare({ city: "Oslo" })
 
 # `select` of a bare value is refused ("a result row is a record"). Use
 # `select_value`.
-pet_names : Try(Surreal.Prepared(List(Str)), Surreal.Error)
-pet_names = Surreal.from(pets).select_value(|p| p.name).prepare({})
+pet_names : Surreal.Prepared(List(Str))
+pet_names = Surreal.from(pets).select_value(|p| p.name).ready()
 
 # Reading through a link keeps the query in one statement.
-lines : Try(Surreal.Prepared(List(PetLine)), Surreal.Error)
-lines = Surreal.from(pets).select(pet_line).prepare({})
+lines : Surreal.Prepared(List(PetLine))
+lines = Surreal.from(pets).select(pet_line).ready()
 
 # A group is a key and an aggregate. `totals` is `GROUP ALL`: one row, also
-# for no rows.
-Ledger : { pet : Str, visits : I64, revenue : Dec }
+# for no rows. A count is `rows.len()`, a `U64`.
+Ledger : { pet : Str, visits : U64, revenue : Dec }
 
 ledger_line : Str, List(Visit) -> Ledger
-ledger_line = |pet, rows| { pet, visits: rows.len().to_i64_wrap(), revenue: rows.map(|v| v.fee).sum() }
+ledger_line = |pet, rows| { pet, visits: rows.len(), revenue: rows.map(|v| v.fee).sum() }
 
-ledger : Try(Surreal.Prepared(List(Ledger)), Surreal.Error)
-ledger = Surreal.from(visits).group_by(|v| v.pet.get().name).aggregate(ledger_line).order_by(|r| r.revenue, Desc).prepare({})
+ledger : Surreal.Prepared(List(Ledger))
+ledger = Surreal.from(visits).group_by(|v| v.pet.get().name).aggregate(ledger_line).order_by(|r| r.revenue, Desc).ready()
 
-Totals : { visits : I64, revenue : Dec }
+Totals : { visits : U64, revenue : Dec }
 
-totals : Try(Surreal.Prepared(Totals), Surreal.Error)
-totals = Surreal.from(visits).totals(|rows| { visits: rows.len().to_i64_wrap(), revenue: rows.map(|v| v.fee).sum() }).prepare({})
+totals : Surreal.Prepared(Totals)
+totals = Surreal.from(visits).totals(|rows| { visits: rows.len(), revenue: rows.map(|v| v.fee).sum() }).ready()
 
-# A value that exists only at run time goes in with `select_where` and
-# `bind_captured`: it becomes a `LET` variable. Only these two take a captured
-# value; every other clause takes a parameter record.
-dearer_than : Dec -> Try(Surreal.Prepared(List(Visit)), Surreal.Error)
-dearer_than = |limit| Surreal.bind_captured(Surreal.select_where(visits, |v| v.fee > limit))
+# A chain inside a function whose result is a `Prepared` (or a `Watch`) reads
+# the values of that function in any clause. Each one is a `$_1`, `$_2`, ..
+# slot, sent in the `vars` of the request.
+dearer_than : Dec -> Surreal.Prepared(List(Visit))
+dearer_than = |limit| Surreal.from(visits).filter(|v| v.fee > limit).ready()
 
-# Writes. `create` and `insert` return the `Try(Prepared(..), Error)` of their
-# statement, but `update_at`, `set_at` and `delete_at` return a `Write` with no
-# `Try`: its `prepare` gives the `Try`. A key is an `Id` of the table, made with
-# `owners.id("ann")`.
+# Writes. `create` and `insert` return the `Prepared` of their statement, but
+# `update_at`, `set_at` and `delete_at` return a `Write`: its `ready` (or
+# `prepare` with a parameter record) gives the `Prepared`. A key is a
+# `Code(Id(row))`, made with `owners.id("ann")`: a constant written in a
+# top-level value, as below, or a value of the function around the chain.
 renamed : Owner -> Owner
 renamed = |o| { ..o, name: "Ann B." }
 
@@ -112,6 +115,18 @@ ann = { id: "ann", name: "Ann", city: "Oslo" }
 moved : Owner -> { city : Str }
 moved = |_| { city: "Rome" }
 
+create_ann : Surreal.Prepared(List(Owner))
+create_ann = owners.create(ann)
+
+rename_ann : Surreal.Prepared(List(Owner))
+rename_ann = owners.update_at(owners.id("ann"), renamed).ready()
+
+move_ann : Surreal.Prepared(List(Owner))
+move_ann = owners.set_at(owners.id("ann"), moved).ready()
+
+delete_ann : Surreal.Prepared(List(Owner))
+delete_ann = owners.delete_at(owners.id("ann")).ready()
+
 main! = |_args| {
 	statements = [
 		show(by_city),
@@ -120,10 +135,10 @@ main! = |_args| {
 		show(ledger),
 		show(totals),
 		show(dearer_than(12.5)),
-		show(owners.create(ann)),
-		show(owners.update_at(owners.id("ann"), renamed).prepare({})),
-		show(owners.set_at(owners.id("ann"), moved).prepare({})),
-		show(owners.delete_at(owners.id("ann")).prepare({})),
+		show(create_ann),
+		show(rename_ann),
+		show(move_ann),
+		show(delete_ann),
 	]
 	echo!(Str.join_with(statements, "\n"))
 	Ok({})

@@ -3,7 +3,7 @@
 ## type and from constraint functions. This app has no platform (it runs with
 ## `roc file.roc` on the reify compiler) and prints the schema.
 app [main!] {
-	surreal: "https://github.com/Karakatiza666/roc-reify-surrealdb/releases/download/0.0.1/7MmdAaAt5bThg6ih3nR9ewVgw4CtNGvuK5HNQhEgZoSV.tar.zst",
+	surreal: "https://github.com/Karakatiza666/roc-reify-surrealdb/releases/download/0.0.4/CkLUeGcqAc6kNLaDf5rMbQEaZAE7nxapCE4EsHnqh5HY.tar.zst",
 }
 
 import surreal.Surreal

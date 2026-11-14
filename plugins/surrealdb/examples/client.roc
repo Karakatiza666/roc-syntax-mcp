@@ -22,11 +22,11 @@
 # links to, are the app's own: it defines them, and removes them at the end. With `-- --record DIR`, the app saves
 # the reply to each request as `DIR/<name>.cbor` (`check.py --record`).
 app [main!] {
-	cbor: "https://github.com/Karakatiza666/roc-cbor/releases/download/0.4.0/EnfRKFT7uPHmd3zT5PcwAiBWUtGmBXapJqFK5166U33J.tar.zst",
+	cbor: "https://github.com/Karakatiza666/roc-cbor/releases/download/0.5.0/B5U2mPsWTtuxfCRMzqQxio2ecDv7CAzCoyEMENMh4FNF.tar.zst",
 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
-	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst",
-	cli_ws: "https://github.com/Karakatiza666/roc-basic-cli-websocket/releases/download/0.0.3/9c6XLWHRSREuaoELdH1a835Yopw92Jxy2b5e151X6mZj.tar.zst",
-	surreal: "https://github.com/Karakatiza666/roc-reify-surrealdb/releases/download/0.0.1/7MmdAaAt5bThg6ih3nR9ewVgw4CtNGvuK5HNQhEgZoSV.tar.zst",
+	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.27.0/9yjxqdGTP4xSpSEmDazwTmRsehfRZzA19pwEKkR6fj1g.tar.zst",
+	cli_ws: "https://github.com/Karakatiza666/roc-basic-cli-websocket/releases/download/0.0.4/B5j45zNdyW8Qxq6GpQ6ZVNmcPC5hwx3TxPRW4cq8wiLV.tar.zst",
+	surreal: "https://github.com/Karakatiza666/roc-reify-surrealdb/releases/download/0.0.4/CkLUeGcqAc6kNLaDf5rMbQEaZAE7nxapCE4EsHnqh5HY.tar.zst",
 }
 
 import pf.Http
@@ -116,7 +116,7 @@ ida = { id: "ida", name: "Ida" }
 
 ## The kennels, their sites, and the carers: the block `unattended`
 ## deletes the carer `jon`.
-seed_kennels : List({ kennel : Kennel, site : Str, carers : List(Carer), leads : I64 })
+seed_kennels : List({ kennel : Kennel, site : Str, carers : List(Carer), leads : U64 })
 seed_kennels = [
 	{ kennel: { id: "a", label: "North", site: sites.link("oslo") }, site: "Oslo", carers: [ida], leads: 1 },
 	{ kennel: { id: "b", label: "South", site: sites.link("bergen") }, site: "Bergen", carers: [], leads: 0 },
@@ -148,10 +148,10 @@ DayKey : { kennel : Surreal.Id(Kennel), day : Surreal.Datetime }
 day_of : Vital -> DayKey
 day_of = |v| { kennel: v.id.series(), day: Surreal.Time.floor(v.id.time(), Surreal.Time.days(1)) }
 
-Daily : { kennel : Surreal.Id(Kennel), day : Surreal.Datetime, readings : I64, fevers : I64 }
+Daily : { kennel : Surreal.Id(Kennel), day : Surreal.Datetime, readings : U64, fevers : U64 }
 
 day_line : DayKey, List(Vital) -> Daily
-day_line = |k, rows| { kennel: k.kennel, day: k.day, readings: rows.len().to_i64_wrap(), fevers: rows.keep_if(|v| fever_fn.call2(v.temp_c, v.pulse)).len().to_i64_wrap() }
+day_line = |k, rows| { kennel: k.kennel, day: k.day, readings: rows.len(), fevers: rows.keep_if(|v| fever_fn.call2(v.temp_c, v.pulse)).len() }
 
 ## One result row for each kennel and day, in Roc.
 rollup : List(Vital) -> List(Daily)
@@ -160,46 +160,46 @@ rollup = |rows| {
 	keys.map(|k| day_line(k, rows.keep_if(|v| day_of(v) == k)))
 }
 
-fevers : Try(Surreal.Prepared(List(VitalLine)), Surreal.Error)
-fevers = Surreal.from(vitals).filter(|v| fever_fn.call2(v.temp_c, v.pulse)).select(vital_line).prepare({})
+fevers : Surreal.Prepared(List(VitalLine))
+fevers = Surreal.from(vitals).filter(|v| fever_fn.call2(v.temp_c, v.pulse)).select(vital_line).ready()
 
 ## The whole rows, with the key as the array `[kennel, time]`.
-kennel_a_rows : Try(Surreal.Prepared(List(Vital)), Surreal.Error)
-kennel_a_rows = Surreal.from(vitals).between(kennel_a, day_start, day_end).select(|r| r).prepare({})
+kennel_a_rows : Surreal.Prepared(List(Vital))
+kennel_a_rows = Surreal.from(vitals).between(kennel_a, day_start, day_end).ready()
 
-daily : Try(Surreal.Prepared(List(Daily)), Surreal.Error)
-daily = Surreal.from(vitals).group_by(day_of).aggregate(day_line).prepare({})
+daily : Surreal.Prepared(List(Daily))
+daily = Surreal.from(vitals).group_by(day_of).aggregate(day_line).ready()
 
 ## A `LET` and a query: the result of the `LET` is not read.
-busy_days : Try(Surreal.Prepared(List(Daily)), Surreal.Error)
-busy_days = Surreal.from(vitals).group_by(day_of).aggregate(day_line).query().filter_by(|p, d| d.readings >= p.least).select(|r| r).prepare({ least: 2 })
+busy_days : Surreal.Prepared(List(Daily))
+busy_days = Surreal.from(vitals).group_by(day_of).aggregate(day_line).query().filter_by(|p, d| d.readings >= p.least).prepare({ least: 2 })
 
-fastest_pulses : Try(Surreal.Prepared(List(I64)), Surreal.Error)
-fastest_pulses = Surreal.from(vitals).select_value(|v| v.pulse).order_by(|n| n, Desc).limit(3).filter(|n| n < 130).prepare({})
+fastest_pulses : Surreal.Prepared(List(I64))
+fastest_pulses = Surreal.from(vitals).select_value(|v| v.pulse).order_by(|n| n, Desc).limit(3).filter(|n| n < 130).ready()
 
-sites_covering : Try(Surreal.Prepared(List(Str)), Surreal.Error)
+sites_covering : Surreal.Prepared(List(Str))
 sites_covering = Surreal.from(sites).filter_by(|p, s| Surreal.Geo.inside(p.here.to_geometry(), s.area.to_geometry())).select_value(|s| s.id).prepare({ here: here })
 
 ## The whole row of a site by its key: a point and a polygon (tags 88
 ## and 90).
-oslo_site : Try(Surreal.Prepared(Try(Site, [NotFound])), Surreal.Error)
-oslo_site = sites.at(sites.id("oslo")).select(|r| r).prepare_one({})
+oslo_site : Surreal.Prepared(Try(Site, [NotFound]))
+oslo_site = sites.at(sites.id("oslo")).ready_one()
 
 ## The same row as one value: `SELECT VALUE { id: record::id(id), .. }`,
 ## so that `id` is the key, as `Site` has it.
-oslo_value : Try(Surreal.Prepared(Try(Site, [NotFound])), Surreal.Error)
-oslo_value = sites.at(sites.id("oslo")).select_value(|r| r).prepare_one({})
+oslo_value : Surreal.Prepared(Try(Site, [NotFound]))
+oslo_value = sites.at(sites.id("oslo")).select_value(|r| r).ready_one()
 
 ## A key with no row.
-no_site : Try(Surreal.Prepared(Try(Site, [NotFound])), Surreal.Error)
-no_site = sites.at(sites.id("nowhere")).select(|r| r).prepare_one({})
+no_site : Surreal.Prepared(Try(Site, [NotFound]))
+no_site = sites.at(sites.id("nowhere")).ready_one()
 
-KennelCarers : { label : Str, site : Str, carers : List(Surreal.Linked(Carer)), leads : I64 }
+KennelCarers : { label : Str, site : Str, carers : List(Surreal.Linked(Carer)), leads : U64 }
 
 ## The read row: a linked site, and the edges that end at the kennel, each
 ## with its linked carer as a whole row.
-kennel_carers : Try(Surreal.Prepared(List(KennelCarers)), Surreal.Error)
-kennel_carers = Surreal.from(kennel_reads).select(|k| { label: k.label, site: k.site.name, carers: k.cares_for.list().map(|e| e.from), leads: k.cares_for.list().keep_if(|e| e.lead).len().to_i64_wrap() }).prepare({})
+kennel_carers : Surreal.Prepared(List(KennelCarers))
+kennel_carers = Surreal.from(kennel_reads).select(|k| { label: k.label, site: k.site.name, carers: k.cares_for.list().map(|e| e.from), leads: k.cares_for.list().keep_if(|e| e.lead).len() }).ready()
 
 # --------------------------------------------------------------- the writes
 
@@ -227,27 +227,24 @@ kept_carers = [kim_b, { id: "lea", name: "Lea" }]
 noon : Vital
 noon = { ..reading("a", "2026-03-10T12:00:00Z", 85, 39.4), fevered: Bool.False }
 
-KennelLine : { label : Str, carers : I64 }
+KennelLine : { label : Str, carers : U64 }
 
 ## A new label for a kennel, then the kennel read back: two `LET`s, an
 ## update and a query, in one request.
-relabel : Try(Surreal.Prepared((Try(List(Kennel), Surreal.Error), Try(List(KennelLine), Surreal.Error))), Surreal.Error)
-relabel = match (relabel_write, relabel_read) {
-	(Ok(write), Ok(read)) => write.then(read)
-	(Err(e), _) | (_, Err(e)) => Err(e)
-}
+relabel : Surreal.Prepared((Try(List(Kennel), Surreal.Error), Try(List(KennelLine), Surreal.Error)))
+relabel = relabel_write.then(relabel_read)
 
-relabel_write : Try(Surreal.Prepared(List(Kennel)), Surreal.Error)
+relabel_write : Surreal.Prepared(List(Kennel))
 relabel_write = kennels.update_by(|p, k| k.id == p.key, |p, k| { ..k, label: p.label }).prepare({ key: "q", label: "Quay wing" })
 
-relabel_read : Try(Surreal.Prepared(List(KennelLine)), Surreal.Error)
-relabel_read = Surreal.from(kennel_reads).filter_by(|p, k| k.id == p.key).select(|k| { label: k.label, carers: k.cares_for.list().len().to_i64_wrap() }).prepare({ key: "q" })
+relabel_read : Surreal.Prepared(List(KennelLine))
+relabel_read = Surreal.from(kennel_reads).filter_by(|p, k| k.id == p.key).select(|k| { label: k.label, carers: k.cares_for.list().len() }).prepare({ key: "q" })
 
-remove_carers : Try(Surreal.Prepared(List(Carer)), Surreal.Error)
-remove_carers = carers.delete(|c| c.id == "kim" or c.id == "lea").prepare({})
+remove_carers : Surreal.Prepared(List(Carer))
+remove_carers = carers.delete(|c| c.id == "kim" or c.id == "lea").ready()
 
-remove_quay : Try(Surreal.Prepared(List(Kennel)), Surreal.Error)
-remove_quay = kennels.delete_at(kennels.id("q")).prepare({})
+remove_quay : Surreal.Prepared(List(Kennel))
+remove_quay = kennels.delete_at(kennels.id("q")).ready()
 
 # ------------------------------------------------- a table with a tag union
 
@@ -284,14 +281,96 @@ payment_line = |p| {
 	},
 }
 
-insert_payments : Try(Surreal.Prepared(List(Payment)), Surreal.Error)
+insert_payments : Surreal.Prepared(List(Payment))
 insert_payments = payments.insert(paid)
 
-payment_rows : Try(Surreal.Prepared(List(Payment)), Surreal.Error)
-payment_rows = Surreal.from(payments).select(|r| r).prepare({})
+payment_rows : Surreal.Prepared(List(Payment))
+payment_rows = Surreal.from(payments).ready()
 
-payment_lines : Try(Surreal.Prepared(List(PaymentLine)), Surreal.Error)
-payment_lines = Surreal.from(payments).select(payment_line).prepare({})
+payment_lines : Surreal.Prepared(List(PaymentLine))
+payment_lines = Surreal.from(payments).select(payment_line).ready()
+
+# ------------------------------- the types of SurrealDB that CBOR v2 tags
+
+## A field of each type that Roc has no type for: CBOR v2 tags each one
+## (193, 192, 100, 189, 190, 191).
+Kinds : { id : Str, re : Surreal.Regex, big : Surreal.BigDecimal, day : Surreal.Date, at : Surreal.TimeOfDay, stamp : Surreal.Timestamp, span : Surreal.Interval }
+
+kinds : Surreal.Table(Kinds)
+kinds = Surreal.table("kinds")
+
+kind_schema : Try(Str, Surreal.Error)
+kind_schema = Surreal.schema([kinds.define().done()])
+
+## A value of a constructor that cannot fail here.
+sure : Try(a, e) -> a
+sure = |got| match got {
+	Ok(v) => v
+	Err(_) => crash "a constant of the app is valid"
+}
+
+kind_one : Kinds
+kind_one = {
+	id: "one",
+	re: Surreal.Regex.from_pattern("^a'b/c$"),
+	big: sure(Surreal.BigDecimal.from_str("123456789012345678901234567890.50")),
+	day: sure(Surreal.date("2026-11-13")),
+	at: sure(Surreal.TimeOfDay.from_nanos(45000500000000)),
+	stamp: sure(Surreal.Timestamp.from_parts({ secs: 1794573000, nanos: 5 })),
+	span: Surreal.Interval.from_parts({ months: 1, days: -2, micros: 3000001 }),
+}
+
+kind_two : Kinds
+kind_two = {
+	id: "two",
+	re: Surreal.Regex.from_pattern("x+"),
+	big: Surreal.BigDecimal.from_dec(-1.5),
+	day: Surreal.Date.from_days(-719893),
+	at: sure(Surreal.TimeOfDay.from_nanos(0)),
+	stamp: sure(Surreal.Timestamp.from_parts({ secs: -1, nanos: 500000000 })),
+	span: Surreal.Interval.from_parts({ months: 0, days: 0, micros: 0 }),
+}
+
+## A captured date in a clause, a time of day as a parameter, and a date
+## written in the clause: `<` on two dates compares the dates.
+kinds_on_day : Surreal.Date -> Surreal.Prepared(List(Kinds))
+kinds_on_day = |day| Surreal.from(kinds).filter(|k| k.day == day).ready()
+
+kinds_at : Surreal.Prepared(List(Str))
+kinds_at = Surreal.from(kinds).filter_by(|p, k| k.at == p.at).select_value(|k| k.id).prepare({ at: kind_two.at })
+
+kinds_before : Surreal.Prepared(List(Str))
+kinds_before = Surreal.from(kinds).filter(|k| k.day < Surreal.Date.from_days(0)).select_value(|k| k.id).ready()
+
+# ------------------------------------ sized numbers in a table with no schema
+
+## Each Roc number type. With no schema, the stored value has the type of
+## the literal: the package writes `5u8` for a `U8`.
+Loose : { id : Str, tiny : I8, small : U8, mid : I16, word : U16, wide : I32, dword : U32, n : I64, big : U64, f : F32, d : F64, dec : Dec }
+
+looses : Surreal.Table(Loose)
+looses = Surreal.table("loose")
+
+loose_row : Loose
+loose_row = { id: "l", tiny: -128, small: 255, mid: -300, word: 65535, wide: -70000, dword: 4000000000, n: -1, big: 18446744073709551615, f: 1.5, d: 0.25, dec: 2.5 }
+
+## The SurrealQL types of the stored values of a table, as text.
+types_of! : Run, Str, Str, List(Str) => Try(Run, Str)
+types_of! = |run, name, query, want| {
+	done = Surreal.Unchecked.query!(run.session, query).map_err(Str.inspect)?
+	got : Try({ result : List({ result : List(List(Str)) }) }, Surreal.Error)
+	got = Surreal.Unchecked.decode(done.reply)
+	match got.map_ok(|r| r.result.map(|s| s.result)) {
+		Ok([[types]]) if types == want => {
+			say!("ok   ${name}: ${Str.inspect(types)}")?
+			Ok({ ..run, session: done.session })
+		}
+		other => {
+			say!("FAIL ${name}: ${Str.inspect(other)}, Roc writes ${Str.inspect(want)}")?
+			Ok({ ..run, session: done.session, failures: run.failures + 1 })
+		}
+	}
+}
 
 # --------------------------------- a table with a union of nominal payloads
 
@@ -341,35 +420,69 @@ side_bin = { id: "b3", label: "Side" }
 low_bin : Bin
 low_bin = { id: "b4", label: "Low" }
 
-bin_rows : Try(Surreal.Prepared(List(Bin)), Surreal.Error)
-bin_rows = Surreal.from(bins).select(|r| r).prepare({})
+bin_rows : Surreal.Prepared(List(Bin))
+bin_rows = Surreal.from(bins).ready()
 
 ## Two prepared statements in one request, each on its own (`then`).
-batch : Try(Surreal.Prepared(a), Surreal.Error), Try(Surreal.Prepared(b), Surreal.Error) -> Try(Surreal.Prepared((Try(a, Surreal.Error), Try(b, Surreal.Error))), Surreal.Error)
-batch = |first, second| first?.then(second?)
+batch : Surreal.Prepared(a), Surreal.Prepared(b) -> Surreal.Prepared((Try(a, Surreal.Error), Try(b, Surreal.Error)))
+batch = |first, second| first.then(second)
 
 ## Two prepared statements in one transaction.
-atomic : Try(Surreal.Prepared(a), Surreal.Error), Try(Surreal.Prepared(b), Surreal.Error) -> Try(Surreal.Prepared((a, b)), Surreal.Error)
-atomic = |first, second| Ok(first?.begin().then(second?)?.commit())
+atomic : Surreal.Prepared(a), Surreal.Prepared(b) -> Surreal.Prepared((a, b))
+atomic = |first, second| first.begin().then(second).commit()
 
 ## Three prepared statements in one transaction: each `then` nests the pair.
-atomic3 : Try(Surreal.Prepared(a), Surreal.Error), Try(Surreal.Prepared(b), Surreal.Error), Try(Surreal.Prepared(c), Surreal.Error) -> Try(Surreal.Prepared(((a, b), c)), Surreal.Error)
-atomic3 = |first, second, third| Ok(first?.begin().then(second?)?.then(third?)?.commit())
+atomic3 : Surreal.Prepared(a), Surreal.Prepared(b), Surreal.Prepared(c) -> Surreal.Prepared(((a, b), c))
+atomic3 = |first, second, third| first.begin().then(second).then(third).commit()
 
 ## A create, then an insert whose second row has the label of `b1`, in
 ## one transaction: the unique index fails the insert, the second part,
 ## and the create is rolled back.
-twin_in_transaction : Try(Surreal.Prepared((List(Bin), List(Bin))), Surreal.Error)
+twin_in_transaction : Surreal.Prepared((List(Bin), List(Bin)))
 twin_in_transaction = atomic(bins.create(side_bin), bins.insert([low_bin, twin_bin]))
 
 ## The same create of a twin, then the bins, on their own: the create
 ## fails, and the read has its rows.
-twin_then_rows : Try(Surreal.Prepared((Try(List(Bin), Surreal.Error), Try(List(Bin), Surreal.Error))), Surreal.Error)
+twin_then_rows : Surreal.Prepared((Try(List(Bin), Surreal.Error), Try(List(Bin), Surreal.Error)))
 twin_then_rows = batch(bins.create(twin_bin), bin_rows)
 
 ## A create, an insert and the bins after them, in one transaction.
-stock_up : Try(Surreal.Prepared(((List(Bin), List(Bin)), List(Bin))), Surreal.Error)
+stock_up : Surreal.Prepared(((List(Bin), List(Bin)), List(Bin)))
 stock_up = atomic3(bins.create(side_bin), bins.insert([low_bin]), bin_rows)
+
+## Writes of one type in one transaction (`Surreal.transaction`).
+all_of : List(Surreal.Prepared(a)) -> Surreal.Prepared(List(a))
+all_of = |writes| Surreal.transaction(writes)
+
+spare_bin : Bin
+spare_bin = { id: "b5", label: "Spare" }
+
+rack_bin : Bin
+rack_bin = { id: "b6", label: "Rack" }
+
+## A create, then the create of a twin of `b1`: the second fails, and the
+## first is rolled back.
+twins_in_list : Surreal.Prepared(List(List(Bin)))
+twins_in_list = all_of([bins.create(spare_bin), bins.create(twin_bin)])
+
+## Two creates that commit: the rows of each, in order.
+spares_in_list : Surreal.Prepared(List(List(Bin)))
+spares_in_list = all_of([bins.create(spare_bin), bins.create(rack_bin)])
+
+## The schema of `place_defs` without the unique label: a migration to it
+## removes the index, and one back defines it again.
+loose_defs : List(Surreal.Defined)
+loose_defs = [bins.define().done(), placements.define().done()]
+
+## The migration from one schema to the other, as one transaction: the
+## plan from the snapshot of `old` (its `Surreal.schema` text) to `new`
+## has one section here. An app runs migration files with
+## `Session.migrate!` (see `migrate.roc`); a test runs a plan directly.
+migrate : List(Surreal.Defined), List(Surreal.Defined) -> Try(Surreal.Prepared({}), Surreal.Error)
+migrate = |old, new| match Surreal.plan(Surreal.schema(old)?, new)?.prepare(DropData)? {
+	[one] => Ok(one)
+	_ => Err(Unsupported("this migration is not one section"))
+}
 
 ## A row at bin `b1`, aisle `d`, slot 2, since the start of the day.
 placement : Str, Place -> Placement
@@ -385,15 +498,15 @@ placed = [
 	placement("stacked", Stacked("e", 5)),
 ]
 
-place_rows : Try(Surreal.Prepared(List(Placement)), Surreal.Error)
-place_rows = Surreal.from(placements).select(|r| r).prepare({})
+place_rows : Surreal.Prepared(List(Placement))
+place_rows = Surreal.from(placements).ready()
 
 ## A union value written in the clause.
-place_literal : Try(Surreal.Prepared(List(Placement)), Surreal.Error)
-place_literal = placements.update_at(placements.id("away"), |p| { ..p, place: At(Surreal.point(5, 6)) }).prepare({})
+place_literal : Surreal.Prepared(List(Placement))
+place_literal = placements.update_at(placements.id("away"), |p| { ..p, place: At(Surreal.point(5, 6)) }).ready()
 
 ## A union value bound as a parameter.
-place_bound : Place -> Try(Surreal.Prepared(List(Placement)), Surreal.Error)
+place_bound : Place -> Surreal.Prepared(List(Placement))
 place_bound = |to| placements.update_at_by(placements.id("away"), |b, p| { ..p, place: b.to }).prepare({ to: to })
 
 ## A union value whose payload reads fields of the row: one patch for each
@@ -410,10 +523,17 @@ shelved_slot = |p| { ..p, place: Shelved(Shelf.({ aisle: p.aisle, bin: p.slot })
 stacked_slot : Placement -> Placement
 stacked_slot = |p| { ..p, place: Stacked(p.aisle, p.slot) }
 
-place_from_row : Code(Placement -> Placement) -> Try(Surreal.Prepared(List(Placement)), Surreal.Error)
-place_from_row = |patch| placements.update_at(placements.id("away"), patch).prepare({})
+place_from_row : Code(Placement -> Placement) -> Surreal.Prepared(List(Placement))
+place_from_row = |patch| placements.update_at(placements.id("away"), patch).ready()
 
 # ------------------------------------------- tables whose keys the server makes
+
+## A shift by a key that the server made: the key is an input slot.
+shift_at : Surreal.Id(Shift) -> Surreal.Prepared(Try(Shift, [NotFound]))
+shift_at = |key| shifts.at(key).ready_one()
+
+delete_shift : Surreal.Id(Shift) -> Surreal.Prepared(List(Shift))
+delete_shift = |key| shifts.delete_at(key).ready()
 
 ## A shift, written without its `id`: the server makes the key, a ULID
 ## (`default_by` on `id`).
@@ -456,13 +576,13 @@ NewTask : { title : Str, shift : Surreal.Link(Shift) }
 
 TaskLine : { title : Str, shift : Str }
 
-task_lines : Try(Surreal.Prepared(List(TaskLine)), Surreal.Error)
-task_lines = Surreal.from(task_reads).select(|t| { title: t.title, shift: t.shift.label }).prepare({})
+task_lines : Surreal.Prepared(List(TaskLine))
+task_lines = Surreal.from(task_reads).select(|t| { title: t.title, shift: t.shift.label }).ready()
 
 HandoverLine : { label : Str, to : List(Str) }
 
-handover_lines : Try(Surreal.Prepared(List(HandoverLine)), Surreal.Error)
-handover_lines = Surreal.from(shifts).outgoing(handovers).select(|(s, out)| { label: s.label, to: out.map(|h| h.to.get().label) }).prepare({})
+handover_lines : Surreal.Prepared(List(HandoverLine))
+handover_lines = Surreal.from(shifts).outgoing(handovers).select(|(s, out)| { label: s.label, to: out.map(|h| h.to.get().label) }).ready()
 
 ## Whether the bytes of a key are `count` of `allowed`, with a `-` at each
 ## place of `dashes`.
@@ -581,6 +701,13 @@ aborted = |at, expected, what| |got| match got {
 	other => { agrees: Bool.False, text: "${Str.inspect(other)}, Roc expects `Aborted` at ${at.to_str()} with ${what}" }
 }
 
+## A statement with no result ran.
+applied : Try({}, Surreal.Error) -> Verdict
+applied = |got| match got {
+	Ok({}) => { agrees: Bool.True, text: "applied" }
+	Err(e) => { agrees: Bool.False, text: Str.inspect(e) }
+}
+
 ## The record `kennel:q` exists.
 quay_exists : Surreal.ServerError -> Bool
 quay_exists = |e| match e {
@@ -631,7 +758,7 @@ login = Root({ ns: "roc", db: "roc_surreal", user: "root", pass: "root" })
 Run : { session : Surreal.Session, failures : U64, record : [Keep(Str), Drop] }
 
 ## Sends one prepared statement and reads its result. When the app
-## records, it sends the request with `query!` and saves the reply before
+## records, it sends the request with `send!` and saves the reply before
 ## it reads it; else it runs it with `run!`. A statement that fails is an
 ## error in the result, and the session goes on; a `Transport` or
 ## `WebSocket` error ends
@@ -639,9 +766,14 @@ Run : { session : Surreal.Session, failures : U64, record : [Keep(Str), Drop] }
 send! : Run, Str, Surreal.Prepared(out) => Try({ session : Surreal.Session, result : Try(out, Surreal.Error) }, Str)
 send! = |run, name, prepared| match run.record {
 	Keep(folder) => {
-		done = Surreal.Unchecked.query!(run.session, prepared.request()).map_err(Str.inspect)?
-		Path.unix("${folder}/${name}.cbor").write_bytes!(done.reply).map_err(Str.inspect)?
-		Ok({ session: done.session, result: Surreal.Unchecked.result(done.session, prepared, done.reply) })
+		match prepared.request() {
+			Ok(request) => {
+				done = Surreal.Unchecked.send!(run.session, request).map_err(Str.inspect)?
+				Path.unix("${folder}/${name}.cbor").write_bytes!(done.reply).map_err(Str.inspect)?
+				Ok({ session: done.session, result: Surreal.Unchecked.result(done.session, prepared, done.reply) })
+			}
+			Err(e) => Ok({ session: run.session, result: Err(e) })
+		}
 	}
 	Drop => going(run.session.run!(prepared))
 }
@@ -655,17 +787,22 @@ going = |done| match done.result {
 }
 
 ## Runs one prepared statement, and prints its result with the verdict.
-check! : Run, Str, Try(Surreal.Prepared(out), Surreal.Error), (Try(out, Surreal.Error) -> Verdict) => Try(Run, Str)
+check! : Run, Str, Surreal.Prepared(out), (Try(out, Surreal.Error) -> Verdict) => Try(Run, Str)
 check! = |run, name, prepared, verdict| kept!(run, name, prepared, verdict).map_ok(|done| done.run)
 
 ## [check!] that also gives the result to the steps after it.
-kept! : Run, Str, Try(Surreal.Prepared(out), Surreal.Error), (Try(out, Surreal.Error) -> Verdict) => Try({ run : Run, result : Try(out, Surreal.Error) }, Str)
+kept! : Run, Str, Surreal.Prepared(out), (Try(out, Surreal.Error) -> Verdict) => Try({ run : Run, result : Try(out, Surreal.Error) }, Str)
 kept! = |run, name, prepared, verdict| {
-	sent = match prepared {
-		Ok(one) => send!(run, name, one)?
-		Err(e) => { session: run.session, result: Err(e) }
-	}
+	sent = send!(run, name, prepared)?
 	Ok({ run: tell!(run, sent.session, name, verdict(sent.result))?, result: sent.result })
+}
+
+## [check!] of a statement that may not be built, such as a section of a
+## migration plan.
+check_try! : Run, Str, Try(Surreal.Prepared(out), Surreal.Error), (Try(out, Surreal.Error) -> Verdict) => Try(Run, Str)
+check_try! = |run, name, built, verdict| match built {
+	Ok(prepared) => check!(run, name, prepared, verdict)
+	Err(e) => tell!(run, run.session, name, verdict(Err(e)))
 }
 
 ## The tables whose keys the server makes. Each write gives the rows it
@@ -687,12 +824,12 @@ server_keys! = |run| {
 			handover = { from: shifts.link(first.id.key()), to: shifts.link(second.id.key()), notes: "keys" }
 			$run = check!($run, "insert_tasks", tasks.insert_new([feed, walk]), made_rows("task", [feed, walk], is_uuid, "UUID"))?
 			$run = check!($run, "relate_handover", handovers.create_new(handover), made_rows("handover", [handover], is_random, "random"))?
-			$run = check!($run, "shift_at_key", shifts.at(first.id).select(|r| r).prepare_one({}), same_one(Ok({ id: first.id.key(), label: "Early" })))?
+			$run = check!($run, "shift_at_key", shift_at(first.id), same_one(Ok({ id: first.id.key(), label: "Early" })))?
 			$run = check!($run, "task_lines", task_lines, same_rows([{ title: "Feed", shift: "Early" }, { title: "Walk", shift: "Late" }]))?
 			$run = check!($run, "handover_lines", handover_lines, same_rows([{ label: "Early", to: ["Late"] }, { label: "Late", to: [] }, { label: "Night", to: [] }]))?
 			# The delete of the shift cascades to its task, and SurrealDB
 			# deletes the edge at it.
-			$run = check!($run, "delete_shift", shifts.delete_at(first.id).prepare({}), same_rows([{ id: first.id.key(), label: "Early" }]))?
+			$run = check!($run, "delete_shift", delete_shift(first.id), same_rows([{ id: first.id.key(), label: "Early" }]))?
 			$run = check!($run, "task_lines_after", task_lines, same_rows([{ title: "Walk", shift: "Late" }]))?
 		}
 		_ => {}
@@ -715,22 +852,21 @@ tell! = |run, session, name, judged|
 ## Two requests sent before either reply is read, and their replies read
 ## the last first. Over a WebSocket both are in flight together; over
 ## HTTP, `send!` waits for each reply and keeps it in the inbox.
-pipelined! : Run, Try(Surreal.Prepared(a), Surreal.Error), (Try(a, Surreal.Error) -> Verdict), Try(Surreal.Prepared(b), Surreal.Error), (Try(b, Surreal.Error) -> Verdict) => Try(Run, Str)
-pipelined! = |run, first, first_verdict, second, second_verdict| match (first, second) {
-	(Ok(one), Ok(two)) => {
-		sent_one = run.session.send!(one).map_err(Str.inspect)?
-		sent_two = sent_one.session.send!(two).map_err(Str.inspect)?
-		got_two = going(sent_two.session.await!(sent_two.ticket, two))?
-		got_one = going(got_two.session.await!(sent_one.ticket, one))?
-		judged_one = first_verdict(got_one.result)
-		judged_two = second_verdict(got_two.result)
-		tell!(run, got_one.session, "pipelined", { agrees: judged_one.agrees and judged_two.agrees, text: "${judged_two.text}, then ${judged_one.text}" })
-	}
-	(Err(e), _) | (_, Err(e)) => tell!(run, run.session, "pipelined", { agrees: Bool.False, text: Str.inspect(e) })
+pipelined! : Run, Surreal.Prepared(a), (Try(a, Surreal.Error) -> Verdict), Surreal.Prepared(b), (Try(b, Surreal.Error) -> Verdict) => Try(Run, Str)
+pipelined! = |run, first, first_verdict, second, second_verdict| {
+	sent_one = run.session.send!(first).map_err(Str.inspect)?
+	sent_two = sent_one.session.send!(second).map_err(Str.inspect)?
+	got_two = going(sent_two.session.await!(sent_two.ticket, second))?
+	got_one = going(got_two.session.await!(sent_one.ticket, first))?
+	judged_one = first_verdict(got_one.result)
+	judged_two = second_verdict(got_two.result)
+	tell!(run, got_one.session, "pipelined", { agrees: judged_one.agrees and judged_two.agrees, text: "${judged_two.text}, then ${judged_one.text}" })
 }
 
-## A watch of the carers.
-carer_watch : Try(Surreal.Watch(Carer), Surreal.Error)
+## A watch of the carers. `Surreal.from(carers).ready_live([])` is the short
+## form. Here `select(|r| r)` stays, because the short form is a constant,
+## and a `match` on a constant is a compiler warning.
+carer_watch : Surreal.Watch(Carer)
 carer_watch = Surreal.from(carers).select(|r| r).live({}, [])
 
 ## A watch on a session over HTTP is an `Unsupported` error, and the
@@ -740,14 +876,10 @@ watch_over_http! = |run|
 	if run.session.pushes() {
 		Ok(run)
 	} else {
-		judged = match carer_watch {
-			Ok(watch) =>
-				match run.session.live!(watch) {
-					Err(Unsupported(why)) => { agrees: Bool.True, text: "Unsupported(${why})" }
-					Ok(_) => { agrees: Bool.False, text: "a watch started on a session over HTTP" }
-					Err(e) => { agrees: Bool.False, text: "${Str.inspect(e)}, Roc expects an `Unsupported` error" }
-				}
-			Err(e) => { agrees: Bool.False, text: Str.inspect(e) }
+		judged = match run.session.live!(carer_watch) {
+			Err(Unsupported(why)) => { agrees: Bool.True, text: "Unsupported(${why})" }
+			Ok(_) => { agrees: Bool.False, text: "a watch started on a session over HTTP" }
+			Err(e) => { agrees: Bool.False, text: "${Str.inspect(e)}, Roc expects an `Unsupported` error" }
 		}
 		tell!(run, run.session, "watch_over_http", judged)
 	}
@@ -758,21 +890,16 @@ watch_over_http! = |run|
 watch_idle! : Run => Try(Run, Str)
 watch_idle! = |run|
 	if run.session.pushes() {
-		match carer_watch {
-			Ok(watch) => {
-				started = run.session.live!(watch).map_err(Str.inspect)?
-				waited = started.session.next_within!(started.live, 300).map_err(Str.inspect)?
-				killed = waited.session.kill!(waited.live.lives()).map_err(Str.inspect)?
-				judged = match waited.next {
-					TimedOut => { agrees: Bool.True, text: "TimedOut after 300 ms, no change" }
-					Got(changes) => { agrees: Bool.False, text: "${changes.len().to_str()} change(s) of a watch nothing writes to" }
-					Ended => { agrees: Bool.False, text: "the watch ended" }
-					Unread(e) => { agrees: Bool.False, text: Str.inspect(e) }
-				}
-				tell!(run, killed, "watch_idle", judged)
-			}
-			Err(e) => tell!(run, run.session, "watch_idle", { agrees: Bool.False, text: Str.inspect(e) })
+		started = run.session.live!(carer_watch).map_err(Str.inspect)?
+		waited = started.session.next_within!(started.live, 300).map_err(Str.inspect)?
+		killed = waited.session.kill!(waited.live.lives()).map_err(Str.inspect)?
+		judged = match waited.next {
+			TimedOut => { agrees: Bool.True, text: "TimedOut after 300 ms, no change" }
+			Got(changes) => { agrees: Bool.False, text: "${changes.len().to_str()} change(s) of a watch nothing writes to" }
+			Ended => { agrees: Bool.False, text: "the watch ended" }
+			Unread(e) => { agrees: Bool.False, text: Str.inspect(e) }
 		}
+		tell!(run, killed, "watch_idle", judged)
 	} else {
 		Ok(run)
 	}
@@ -832,7 +959,7 @@ run! = |record, over| {
 	$run = check!($run, "upsert_carer", carers.upsert(kim_b), same_rows([kim_b]))?
 	$run = check!($run, "create_reading", vitals.create(noon), same_readings([{ ..noon, fevered: Bool.True }]))?
 	$run = check!($run, "delete_reading", vitals.edit(Delete(noon)), same_readings([{ ..noon, fevered: Bool.True }]))?
-	$run = check!($run, "unrelate_carer", cares_for.delete_at(cares_for.id(ida_quay.id)).prepare({}), same_rows([ida_quay]))?
+	$run = check!($run, "unrelate_carer", cares_for.delete_at(cares_for.id(ida_quay.id)).ready(), same_rows([ida_quay]))?
 	$run = check!($run, "delete_carers", remove_carers, same_rows(kept_carers))?
 	$run = check!($run, "delete_kennel", remove_quay, same_rows([quay_wing]))?
 	# A table of its own with a tag union: each form of an arm is written,
@@ -842,6 +969,20 @@ run! = |record, over| {
 	$run = check!($run, "payment_rows", payment_rows, same_rows(paid))?
 	$run = check!($run, "payment_lines", payment_lines, same_rows(paid.map(payment_line)))?
 	$run = script!($run, "remove_payments", Ok("REMOVE TABLE payment;"))?
+	# A table of its own with the types of CBOR v2: written, read back,
+	# and read with a captured value and a parameter.
+	$run = script!($run, "define_kinds", kind_schema)?
+	$run = check!($run, "insert_kinds", kinds.insert([kind_one, kind_two]), same_rows([kind_one, kind_two]))?
+	$run = check!($run, "kind_rows", Surreal.from(kinds).ready(), same_rows([kind_one, kind_two]))?
+	$run = check!($run, "kinds_on_day", kinds_on_day(kind_one.day), same_rows([kind_one]))?
+	$run = check!($run, "kinds_at", kinds_at, same_rows(["two"]))?
+	$run = check!($run, "kinds_before", kinds_before, same_rows(["two"]))?
+	$run = script!($run, "remove_kinds", Ok("REMOVE TABLE kinds;"))?
+	# A table with no schema keeps the type of each number that Roc writes.
+	$run = script!($run, "define_loose", Ok("DEFINE TABLE loose SCHEMALESS;"))?
+	$run = check!($run, "insert_loose", looses.insert([loose_row]), same_rows([loose_row]))?
+	$run = types_of!($run, "loose_types", "SELECT VALUE [type::of(tiny), type::of(small), type::of(mid), type::of(word), type::of(wide), type::of(dword), type::of(n), type::of(big), type::of(f), type::of(d), type::of(dec)] FROM loose", ["i8", "u8", "i16", "u16", "i32", "u32", "int", "u64", "f32", "float", "decimal"])?
+	$run = script!($run, "remove_loose", Ok("REMOVE TABLE loose;"))?
 	# A table of its own with a union of nominal payloads: each arm is
 	# written, read back, and written in a clause and as a parameter.
 	$run = script!($run, "define_places", place_schema)?
@@ -854,6 +995,9 @@ run! = |record, over| {
 	$run = check!($run, "bins_after_abort", bin_rows, same_rows(stock))?
 	$run = check!($run, "twin_then_rows", twin_then_rows, each_of(refused(label_taken, "`Unique` on `bin.label`"), same_rows(stock)))?
 	$run = check!($run, "stock_up", stock_up, pair_of(pair_of(same_rows([side_bin]), same_rows([low_bin])), same_rows(List.concat(stock, [side_bin, low_bin]))))?
+	# A list of writes as one transaction: all or none.
+	$run = check!($run, "twins_in_list", twins_in_list, aborted(1, label_taken, "`Unique` on `bin.label`"))?
+	$run = check!($run, "spares_in_list", spares_in_list, |got| judge(got, [[spare_bin], [rack_bin]], |x, y| Str.inspect(x) == Str.inspect(y), |_| "2 parts"))?
 	$run = check!($run, "insert_places", placements.insert(placed), same_rows(placed))?
 	$run = check!($run, "place_rows", place_rows, same_rows(placed))?
 	$run = check!($run, "place_literal", place_literal, same_rows([placement("away", At(Surreal.point(5, 6)))]))?
@@ -868,6 +1012,11 @@ run! = |record, over| {
 	$run = check!($run, "place_row_shelf", place_from_row(shelved_slot), same_rows([shelved_slot(placement("away", Away))]))?
 	$run = check!($run, "place_row_stack", place_from_row(stacked_slot), same_rows([stacked_slot(placement("away", Away))]))?
 	$run = check!($run, "place_rows_after", place_rows, same_rows(placed.map(|p| if (p.id == "away") stacked_slot(p) else p)))?
+	# A migration removes the unique index, so a twin of `b1` is written.
+	# The migration back fails at the index, and nothing of it stays.
+	$run = check_try!($run, "unpin_labels", migrate(place_defs, loose_defs), applied)?
+	$run = check!($run, "twin_after_unpin", bins.create(twin_bin), same_rows([twin_bin]))?
+	$run = check_try!($run, "pin_labels_again", migrate(loose_defs, place_defs), refused(label_taken, "`Unique` on `bin.label`"))?
 	$run = script!($run, "remove_places", Ok("REMOVE TABLE placement; REMOVE TABLE bin;"))?
 	# Tables of its own whose keys the server makes.
 	$run = write_forms!(searches!(record_users!(totals!(server_keys!($run)?)?, over)?)?)?
@@ -915,19 +1064,19 @@ main! = |args| match run!(record_of(texts_of(args)), over_of(texts_of(args))) {
 
 # ---------------------------------------------------------- GROUP ALL
 
-VitalTotals : { readings : I64, pulses : I64, heat : Dec, mean_pulse : F64 }
+VitalTotals : { readings : U64, pulses : I64, heat : Dec, mean_pulse : F64 }
 
 ## The totals of readings in Roc. For no readings they are the values that
 ## SurrealDB gives: 0, 0, 0 and `NaN`.
 vital_totals : List(Vital) -> VitalTotals
-vital_totals = |rows| { readings: rows.len().to_i64_wrap(), pulses: rows.map(|v| v.pulse).sum(), heat: rows.map(|v| v.temp_c).sum(), mean_pulse: Surreal.Math.mean(rows.map(|v| v.pulse.to_f64())) }
+vital_totals = |rows| { readings: rows.len(), pulses: rows.map(|v| v.pulse).sum(), heat: rows.map(|v| v.temp_c).sum(), mean_pulse: Surreal.Math.mean(rows.map(|v| v.pulse.to_f64())) }
 
 ## `GROUP ALL`: one row of totals, also for a filter that no reading passes.
-all_totals : Try(Surreal.Prepared(VitalTotals), Surreal.Error)
-all_totals = Surreal.from(vitals).totals(vital_totals).prepare({})
+all_totals : Surreal.Prepared(VitalTotals)
+all_totals = Surreal.from(vitals).totals(vital_totals).ready()
 
-no_totals : Try(Surreal.Prepared(VitalTotals), Surreal.Error)
-no_totals = Surreal.from(vitals).filter(|v| v.pulse > 1000).totals(vital_totals).prepare({})
+no_totals : Surreal.Prepared(VitalTotals)
+no_totals = Surreal.from(vitals).filter(|v| v.pulse > 1000).totals(vital_totals).ready()
 
 ## The one row of totals agrees, compared as text (`NaN` is not `NaN`).
 same_total : a -> (Try(a, Surreal.Error) -> Verdict)
@@ -991,18 +1140,18 @@ bob = { email: "bob@roc", pass: "bob's secret" }
 
 ## The key of the user of the session: the one row of `user` that its
 ## permission lets it read.
-whoami : Try(Surreal.Prepared(List(Str)), Surreal.Error)
-whoami = Surreal.from(users).select_value(|u| u.id).prepare({})
+whoami : Surreal.Prepared(List(Str))
+whoami = Surreal.from(users).select_value(|u| u.id).ready()
 
-memo_rows : Try(Surreal.Prepared(List(Memo)), Surreal.Error)
-memo_rows = Surreal.from(memos).select(|r| r).prepare({})
+memo_rows : Surreal.Prepared(List(Memo))
+memo_rows = Surreal.from(memos).ready()
 
 ## The memos of the user of the session, a clause that reads `$auth`.
-mine : Try(Surreal.Prepared(List(Str)), Surreal.Error)
-mine = Surreal.from(memos).filter(|m| m.owner.id() == users.auth()).select_value(|m| m.id).prepare({})
+mine : Surreal.Prepared(List(Str))
+mine = Surreal.from(memos).filter(|m| m.owner.id() == users.auth()).select_value(|m| m.id).ready()
 
-retext : Str, Str -> Try(Surreal.Prepared(List(Memo)), Surreal.Error)
-retext = |key, text| memos.update_at_by(memos.id(key), |p, m| { ..m, text: p.text }).prepare({ text: text })
+retext : Str, Str -> Surreal.Prepared(List(Memo))
+retext = |key, text| memos.update_at(memos.id(key), |m| { ..m, text: text }).ready()
 
 ## One row, a key of a user.
 one_key : Try(List(Str), Surreal.Error) -> Verdict
@@ -1054,7 +1203,7 @@ refused_login! = |run, name, over, as_who| {
 
 ## [kept!] in the session of a user: the run goes on in its own session,
 ## and the user's session after the step comes back.
-as! : Run, Surreal.Session, Str, Try(Surreal.Prepared(out), Surreal.Error), (Try(out, Surreal.Error) -> Verdict) => Try({ run : Run, user : Surreal.Session, result : Try(out, Surreal.Error) }, Str)
+as! : Run, Surreal.Session, Str, Surreal.Prepared(out), (Try(out, Surreal.Error) -> Verdict) => Try({ run : Run, user : Surreal.Session, result : Try(out, Surreal.Error) }, Str)
 as! = |run, user, name, prepared, verdict| {
 	done = kept!({ ..run, session: user }, name, prepared, verdict)?
 	Ok({ run: { ..done.run, session: run.session }, user: done.run.session, result: done.result })
@@ -1124,7 +1273,7 @@ memo_users! = |run, over| {
 	# Writes of a memo that Bob reads and may not write: no row.
 	$step = as!($step.run, $bob, "bob_updates_ann", retext("ann_board", "Bob was here"), same_rows([]))?
 	$bob = $step.user
-	$step = as!($step.run, $bob, "bob_deletes_ann", memos.delete_at(memos.id("ann_board")).prepare({}), same_rows([]))?
+	$step = as!($step.run, $bob, "bob_deletes_ann", memos.delete_at(memos.id("ann_board")).ready(), same_rows([]))?
 	# The text of a shared memo stays: the field permission leaves it out
 	# of the update, which returns the row.
 	$step = as!($step.run, $ann, "ann_retexts_board", retext("ann_board", "New board"), same_rows([board]))?
@@ -1186,18 +1335,18 @@ cough = [0.1, 0.8]
 Ranked : { id : Str, score : F64, marked : Str }
 
 ## The notes of a fever, the best first, with the term marked.
-ranked_notes : Try(Surreal.Prepared(List(Ranked)), Surreal.Error)
-ranked_notes = Surreal.from(case_notes).search(case_text, "fever").select(|(n, hit)| { id: n.id, score: hit.score(), marked: hit.highlight("*", "*") }).order_by(|r| r.score, Desc).prepare({})
+ranked_notes : Surreal.Prepared(List(Ranked))
+ranked_notes = Surreal.from(case_notes).search(case_text, "fever").select(|(n, hit)| { id: n.id, score: hit.score(), marked: hit.highlight("*", "*") }).order_by(|r| r.score, Desc).ready()
 
 Close : { id : Str, distance : F64 }
 
 ## The two notes nearest a cough, every row measured, the nearest first.
-close_notes : Try(Surreal.Prepared(List(Close)), Surreal.Error)
-close_notes = Surreal.from(case_notes).nearest(case_vectors, cough, Exact(2)).select(|(n, near)| { id: n.id, distance: near.distance() }).order_by(|r| r.distance, Asc).prepare({})
+close_notes : Surreal.Prepared(List(Close))
+close_notes = Surreal.from(case_notes).nearest(case_vectors, cough, Exact(2)).select(|(n, near)| { id: n.id, distance: near.distance() }).order_by(|r| r.distance, Asc).ready()
 
 ## The same through the HNSW graph, with a filter of the text.
-close_coughs : Try(Surreal.Prepared(List(Str)), Surreal.Error)
-close_coughs = Surreal.from(case_notes).filter(|n| n.id != "n3").nearest(case_vectors, cough, Approx({ k: 1, ef: 40 })).select_value(|(n, _)| n.id).prepare({})
+close_coughs : Surreal.Prepared(List(Str))
+close_coughs = Surreal.from(case_notes).filter(|n| n.id != "n3").nearest(case_vectors, cough, Approx({ k: 1, ef: 40 })).select_value(|(n, _)| n.id).ready()
 
 ## The Roc meaning of `nearest` by the euclidean distance: the rows
 ## sorted by their distance from the probe, the first `k`.
@@ -1274,8 +1423,8 @@ bumped = seed_tallies.map(|old| match incoming.find_first(|n| n.id == old.id) {
 with_tally : List(Tally), Str, (Tally -> Tally) -> List(Tally)
 with_tally = |rows, id, change| rows.map(|t| if (t.id == id) change(t) else t)
 
-tally_rows : Try(Surreal.Prepared(List(Tally)), Surreal.Error)
-tally_rows = Surreal.from(tallies).select(|r| r).prepare({})
+tally_rows : Surreal.Prepared(List(Tally))
+tally_rows = Surreal.from(tallies).ready()
 
 ## `MERGE`: a record of only the fields to change. `meta` is merged into
 ## the stored object, so `b` stays.
@@ -1320,5 +1469,7 @@ write_forms! = |run| {
 	$run = check!($run, "merge_where", tallies.merge(|t| t.hits > 10, { tags: ["hot"] }), same_rows(hot))?
 	$run = check!($run, "patch_ops_at", tallies.patch_ops_at(tallies.id("t3"), patch_ops), same_rows(bumped.keep_if(|t| t.id == "t3").map(patched_three)))?
 	$run = check!($run, "patch_no_such_field", tallies.patch_ops_at(tallies.id("t3"), [Replace(["nope"], Cbor.Value.Int(1))]), refused(no_such_field, "a server error about `nope`"))?
+	# The path of a key with a `/` is escaped: the server names the key `a/b`, not `a`.
+	$run = check!($run, "patch_slash_key", tallies.patch_ops_at(tallies.id("t3"), [Replace(["a/b"], Cbor.Value.Int(1))]), refused(|e| e.message().contains("`a/b`"), "a server error about `a/b`"))?
 	script!($run, "remove_tallies", Ok("REMOVE TABLE tally;"))
 }

@@ -1,11 +1,11 @@
 ## A live query on basic-cli: `live` builds a `Watch`, `Session.live!` starts it,
 ## and `next_within!` waits for the next change with a deadline. The session
-## writes and watches on one connection. It needs SurrealDB 3.3.4 on
+## writes and watches on one connection. It needs SurrealDB 4.0.1 or later on
 ## 127.0.0.1:8000, as the topic `surreal_session` does.
 app [main!] {
-	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst",
-	cli_ws: "https://github.com/Karakatiza666/roc-basic-cli-websocket/releases/download/0.0.3/9c6XLWHRSREuaoELdH1a835Yopw92Jxy2b5e151X6mZj.tar.zst",
-	surreal: "https://github.com/Karakatiza666/roc-reify-surrealdb/releases/download/0.0.1/7MmdAaAt5bThg6ih3nR9ewVgw4CtNGvuK5HNQhEgZoSV.tar.zst",
+	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.27.0/9yjxqdGTP4xSpSEmDazwTmRsehfRZzA19pwEKkR6fj1g.tar.zst",
+	cli_ws: "https://github.com/Karakatiza666/roc-basic-cli-websocket/releases/download/0.0.4/B5j45zNdyW8Qxq6GpQ6ZVNmcPC5hwx3TxPRW4cq8wiLV.tar.zst",
+	surreal: "https://github.com/Karakatiza666/roc-reify-surrealdb/releases/download/0.0.4/CkLUeGcqAc6kNLaDf5rMbQEaZAE7nxapCE4EsHnqh5HY.tar.zst",
 }
 
 import pf.Stdout
@@ -34,7 +34,7 @@ hot_line = |r| { id: r.id, temp_c: r.temp_c }
 # `limit`, `start`, `order_by`, `group_by`, `between` and a subquery have no
 # live form: after `limit` or `start` there is no `live` method (a compile
 # error), and the others are an `Unsupported` value. Watch a view for a group.
-hot_watch : Try(Surreal.Watch(HotLine), Surreal.Error)
+hot_watch : Surreal.Watch(HotLine)
 hot_watch = Surreal.from(readings).filter(hot).select(hot_line).live({}, definitions)
 
 transport : Surreal.Transport
@@ -48,11 +48,9 @@ watch! = |{}| {
 
 	# `started.live` is the state of the watch, pure data. `started.view` is the
 	# snapshot of the rows that match now.
-	started = defined.session.live!(hot_watch.map_err(Str.inspect)?).map_err(Str.inspect)?
-	written = started.session.run!(readings.create({ id: "r1", temp_c: 40 }).map_err(Str.inspect)?)
-	# `written.result` holds the stored rows. Match on it: `.map_err(Str.inspect)?`
-	# on a `result` that holds a list stops the debug compiler of the reify fork
-	# with an internal error (ARC).
+	started = defined.session.live!(hot_watch).map_err(Str.inspect)?
+	written = started.session.run!(readings.create({ id: "r1", temp_c: 40 }))
+	# `written.result` holds the stored rows, or the failure of the write.
 	match written.result {
 		Ok(_) => {}
 		Err(e) => return Err(Str.inspect(e))

@@ -19,8 +19,9 @@
 #
 # A read row of a kennel reads its site through a `Linked` field and its
 # carers through an `In` field named for the edge table, with no `.get()`
-# and no `incoming`. A query of kennels reads the rows of the readings in a
-# clause: a count per kennel, and a semi join.
+# and no `incoming`. It is for a query that wants whole linked rows in one
+# statement; `.get()` and `incoming` do the rest. A query of kennels reads
+# the rows of the readings in a clause: a count per kennel, and a semi join.
 #
 # Live queries keep a result current: the fevered readings, the readings
 # above a parameter, the daily view, and the kennels with no carer, whose
@@ -36,7 +37,7 @@
 # that check. Skip them when reading. Its tables are the ones that
 # `watch.roc`, `client.roc` and `server.roc` use.
 
-app [main!] { surreal: "https://github.com/Karakatiza666/roc-reify-surrealdb/releases/download/0.0.1/7MmdAaAt5bThg6ih3nR9ewVgw4CtNGvuK5HNQhEgZoSV.tar.zst" }
+app [main!] { surreal: "https://github.com/Karakatiza666/roc-reify-surrealdb/releases/download/0.0.4/CkLUeGcqAc6kNLaDf5rMbQEaZAE7nxapCE4EsHnqh5HY.tar.zst" }
 
 import surreal.Surreal
 
@@ -47,6 +48,12 @@ Kennel : { id : Str, label : Str, site : Surreal.Link(Site) }
 Vital : { id : Surreal.TimeKey(Surreal.Id(Kennel)), pulse : I64, temp_c : Dec, fevered : Bool }
 
 Carer : { id : Str, name : Str }
+
+## One stop of a round: a kennel, and the minutes there.
+Stop : { kennel : Surreal.Link(Kennel), minutes : I64 }
+
+## A round of a carer: the kennels it stops at, in order.
+Round : { id : Str, stops : List(Stop) }
 
 ## A carer looks after a kennel: an edge from the carer to the kennel.
 CaresFor : { id : Str, from : Surreal.Link(Carer), to : Surreal.Link(Kennel), lead : Bool }
@@ -65,6 +72,9 @@ vitals = Surreal.table("vital")
 
 carers : Surreal.Table(Carer)
 carers = Surreal.table("carer")
+
+rounds : Surreal.Table(Round)
+rounds = Surreal.table("round")
 
 cares_for : Surreal.Table(CaresFor)
 cares_for = Surreal.relation("cares_for", carers, kennels)
@@ -110,6 +120,9 @@ kennel_def = kennels.define().done()
 carer_def : Surreal.Defined
 carer_def = carers.define().done()
 
+round_def : Surreal.Defined
+round_def = rounds.define().done()
+
 cares_for_def : Surreal.Defined
 cares_for_def = cares_for.define().done()
 
@@ -134,10 +147,10 @@ DayKey : { kennel : Surreal.Id(Kennel), day : Surreal.Datetime }
 day_of : Vital -> DayKey
 day_of = |v| { kennel: v.id.series(), day: Surreal.Time.floor(v.id.time(), Surreal.Time.days(1)) }
 
-Daily : { kennel : Surreal.Id(Kennel), day : Surreal.Datetime, readings : I64, fevers : I64 }
+Daily : { kennel : Surreal.Id(Kennel), day : Surreal.Datetime, readings : U64, fevers : U64 }
 
 day_line : DayKey, List(Vital) -> Daily
-day_line = |k, rows| { kennel: k.kennel, day: k.day, readings: rows.len().to_i64_wrap(), fevers: rows.keep_if(|v| fever_fn.call2(v.temp_c, v.pulse)).len().to_i64_wrap() }
+day_line = |k, rows| { kennel: k.kennel, day: k.day, readings: rows.len(), fevers: rows.keep_if(|v| fever_fn.call2(v.temp_c, v.pulse)).len() }
 
 ## The same rollup that SurrealDB keeps, as a table to read from.
 daily : Surreal.Table(Daily)
@@ -175,6 +188,10 @@ jon = { id: "jon", name: "Jon" }
 
 seed_carers : List(Carer)
 seed_carers = [{ id: "ida", name: "Ida" }, jon]
+
+## Kennel `a` is on the morning round.
+seed_rounds : List(Round)
+seed_rounds = [{ id: "morning", stops: [{ kennel: kennels.link("a"), minutes: 10 }] }]
 
 ## Kennel `a` has a carer, and kennel `b` has none.
 seed_cares_for : List(CaresFor)
@@ -232,10 +249,10 @@ HotLine : { kennel : Surreal.Id(Kennel), hot : Bool }
 hot_line : Vital -> HotLine
 hot_line = |v| { kennel: v.id.series(), hot: fever_fn.call2(v.temp_c, v.pulse) }
 
-KennelFevers : { kennel : Surreal.Id(Kennel), fevers : I64 }
+KennelFevers : { kennel : Surreal.Id(Kennel), fevers : U64 }
 
 kennel_fevers : Surreal.Id(Kennel), List(HotLine) -> KennelFevers
-kennel_fevers = |k, rows| { kennel: k, fevers: rows.len().to_i64_wrap() }
+kennel_fevers = |k, rows| { kennel: k, fevers: rows.len() }
 
 ## The rows with the highest pulse first, in Roc.
 fastest : List(Vital), U64 -> List(Vital)
@@ -243,7 +260,7 @@ fastest = |rows, n| rows.sort_by_reversed(|v| v.pulse).take_first(n)
 
 # --------------------------------------------------------------- the script
 
-KennelCarers : { label : Str, site : Str, carers : List(Carer), leads : I64 }
+KennelCarers : { label : Str, site : Str, carers : List(Carer), leads : U64 }
 
 ## A kennel, its site and its carers, in Roc from the stored rows.
 kennel_carers : Kennel -> KennelCarers
@@ -254,11 +271,11 @@ kennel_carers = |k| {
 		label: k.label,
 		site: Str.join_with(site, ""),
 		carers: edges.join_map(|e| seed_carers.keep_if(|c| carers.id(c.id) == e.from.id())),
-		leads: edges.keep_if(|e| e.lead).len().to_i64_wrap(),
+		leads: edges.keep_if(|e| e.lead).len(),
 	}
 }
 
-KennelReadings : { label : Str, readings : I64 }
+KennelReadings : { label : Str, readings : U64 }
 
 ## The readings of a kennel, in Roc.
 readings_of : List(Vital), Kennel -> List(Vital)
@@ -278,9 +295,9 @@ site_lat : Site -> SiteLat
 site_lat = |s| { id: s.id, lat: s.location.lat() }
 
 ## One block: the statement, then the Roc result for the same question.
-block : Str, Try(Surreal.Prepared(out), Surreal.Error), Try(Str, Surreal.Error) -> Str
-block = |header, prepared, reference| match (prepared, reference) {
-	(Ok(p), Ok(literal)) => p.statement().block(header, ["-- roc: ${literal}"])
+block : Str, Surreal.Prepared(out), Try(Str, Surreal.Error) -> Str
+block = |header, prepared, reference| match (prepared.statement(), reference) {
+	(Ok(st), Ok(literal)) => st.block(header, ["-- roc: ${literal}"])
 	(Err(e), _) | (_, Err(e)) => "-- unsupported ${header}: ${Str.inspect(e)}"
 }
 
@@ -292,11 +309,8 @@ rollup = |rows| {
 }
 
 ## One write block: the write, then the read whose result is compared.
-then_read : Try(Surreal.Prepared(a), Surreal.Error), Try(Surreal.Prepared(b), Surreal.Error) -> Try(Surreal.Prepared((Try(a, Surreal.Error), Try(b, Surreal.Error))), Surreal.Error)
-then_read = |write, read| match (write, read) {
-	(Ok(a), Ok(b)) => a.then(b)
-	(Err(e), _) | (_, Err(e)) => Err(e)
-}
+then_read : Surreal.Prepared(a), Surreal.Prepared(b) -> Surreal.Prepared((Try(a, Surreal.Error), Try(b, Surreal.Error)))
+then_read = |write, read| write.then(read)
 
 day_start : Surreal.Datetime
 day_start = moment("2026-03-01T00:00:00Z")
@@ -307,7 +321,7 @@ day_end = moment("2026-03-02T00:00:00Z")
 ## The definitions of the schema. A live query takes them too: a link of
 ## a watched row finds its table here.
 definitions : List(Surreal.Defined)
-definitions = [Surreal.function(|_| fever_fn), site_def, kennel_def, carer_def, cares_for_def, checks_def, vital_def, daily_def, kennel_read_def]
+definitions = [Surreal.function(|_| fever_fn), site_def, kennel_def, carer_def, round_def, cares_for_def, checks_def, vital_def, daily_def, kennel_read_def]
 
 schema_block : Str
 schema_block = match Surreal.schema(definitions) {
@@ -316,9 +330,9 @@ schema_block = match Surreal.schema(definitions) {
 }
 
 ## One seed block for a table, in the block format of `check.py`.
-seed : Str, Try(Surreal.Prepared(List(row)), Surreal.Error) -> Str
-seed = |name, prepared| match prepared {
-	Ok(p) => p.statement().block("-- seed: ${name}", [])
+seed : Str, Surreal.Prepared(List(row)) -> Str
+seed = |name, prepared| match prepared.statement() {
+	Ok(st) => st.block("-- seed: ${name}", [])
 	Err(e) => "-- unsupported -- seed: ${name}: ${Str.inspect(e)}"
 }
 
@@ -327,6 +341,7 @@ seed_blocks = [
 	seed("site", sites.insert(seed_sites)),
 	seed("kennel", kennels.insert(seed_kennels)),
 	seed("carer", carers.insert(seed_carers)),
+	seed("round", rounds.insert(seed_rounds)),
 	seed("cares_for", cares_for.insert(seed_cares_for)),
 	seed("vital", vitals.insert(seed_vitals)),
 ]
@@ -335,72 +350,78 @@ queries : List(Str)
 queries = [
 	block(
 		"-- query: fevers",
-		Surreal.from(vitals).filter(|v| fever_fn.call2(v.temp_c, v.pulse)).select(vital_line).prepare({}),
+		Surreal.from(vitals).filter(|v| fever_fn.call2(v.temp_c, v.pulse)).select(vital_line).ready(),
 		Surreal.Mirror.literal(seed_vitals.keep_if(|v| fever(v.temp_c, v.pulse)).map(vital_line)),
 	),
-	block("-- query: fever_flags", Surreal.from(vitals).select(flag_line).prepare({}), Surreal.Mirror.literal(seed_vitals.map(|v| flag_line(stored(v))))),
+	block("-- query: fever_flags", Surreal.from(vitals).select(flag_line).ready(), Surreal.Mirror.literal(seed_vitals.map(|v| flag_line(stored(v))))),
 	block(
 		"-- query: kennel_a_day",
-		Surreal.from(vitals).between(kennel_a, day_start, day_end).select(vital_line).prepare({}),
+		Surreal.from(vitals).between(kennel_a, day_start, day_end).select(vital_line).ready(),
 		Surreal.Mirror.literal(seed_vitals.keep_if(|v| v.id.within(kennel_a, day_start, day_end)).map(vital_line)),
 	),
 	# The whole rows, with the key as the array `[kennel, time]`.
 	block(
 		"-- query: kennel_a_rows",
-		Surreal.from(vitals).between(kennel_a, day_start, day_end).select(|r| r).prepare({}),
+		Surreal.from(vitals).between(kennel_a, day_start, day_end).ready(),
 		Surreal.Mirror.literal(seed_vitals.keep_if(|v| v.id.within(kennel_a, day_start, day_end)).map(stored)),
 	),
-	block("-- query: daily", Surreal.from(vitals).group_by(day_of).aggregate(day_line).prepare({}), Surreal.Mirror.literal(rollup(seed_vitals))),
+	block("-- query: daily", Surreal.from(vitals).group_by(day_of).aggregate(day_line).ready(), Surreal.Mirror.literal(rollup(seed_vitals))),
 	# A filter of the result rows. After a projection it is in the same
 	# `WHERE`, and reads the projection's fields over the row.
 	block(
 		"-- query: fever_lines",
-		Surreal.from(vitals).select(vital_line).filter(|l| fever_fn.call2(l.temp_c, l.pulse)).prepare({}),
+		Surreal.from(vitals).select(vital_line).filter(|l| fever_fn.call2(l.temp_c, l.pulse)).ready(),
 		Surreal.Mirror.literal(seed_vitals.map(vital_line).keep_if(|l| fever(l.temp_c, l.pulse))),
 	),
 	# After a group it reads a subquery: SQL's `HAVING`. The days with a
 	# reading that is not a fever.
 	block(
 		"-- query: mixed_days",
-		Surreal.from(vitals).group_by(day_of).aggregate(day_line).filter(|d| d.fevers < d.readings).prepare({}),
+		Surreal.from(vitals).group_by(day_of).aggregate(day_line).filter(|d| d.fevers < d.readings).ready(),
 		Surreal.Mirror.literal(rollup(seed_vitals).keep_if(|d| d.fevers < d.readings)),
 	),
 	# After an order and a limit it reads a subquery, and keeps the order.
 	block(
 		"-- query: fastest_cool",
-		Surreal.from(vitals).select(vital_line).order_by(|l| l.pulse, Desc).limit(3).filter(|l| l.temp_c < 39).prepare({}),
+		Surreal.from(vitals).select(vital_line).order_by(|l| l.pulse, Desc).limit(3).filter(|l| l.temp_c < 39).ready(),
 		Surreal.Mirror.literal(fastest(seed_vitals, 3).map(vital_line).keep_if(|l| l.temp_c < 39)),
 	),
 	block(
 		"-- query: fastest_pulses",
-		Surreal.from(vitals).select_value(|v| v.pulse).order_by(|n| n, Desc).limit(3).filter(|n| n < 130).prepare({}),
+		Surreal.from(vitals).select_value(|v| v.pulse).order_by(|n| n, Desc).limit(3).filter(|n| n < 130).ready(),
 		Surreal.Mirror.literal(fastest(seed_vitals, 3).map(|v| v.pulse).keep_if(|n| n < 130)),
 	),
 	# The result rows of a projection as the rows of a new query: one `SELECT`.
 	block(
 		"-- query: kennel_fevers",
-		Surreal.from(vitals).select(hot_line).query().filter(|r| r.hot).group_by(|r| r.kennel).aggregate(kennel_fevers).prepare({}),
+		Surreal.from(vitals).select(hot_line).query().filter(|r| r.hot).group_by(|r| r.kennel).aggregate(kennel_fevers).ready(),
 		Surreal.Mirror.literal([kennels.id("a"), kennels.id("b")].map(|k| kennel_fevers(k, seed_vitals.map(hot_line).keep_if(|r| r.hot and r.kennel == k)))),
 	),
 	# A parameter of a filter over a subquery.
 	block(
 		"-- query: busy_days",
-		Surreal.from(vitals).group_by(day_of).aggregate(day_line).query().filter_by(|p, d| d.readings >= p.least).select(|r| r).prepare({ least: 2 }),
+		Surreal.from(vitals).group_by(day_of).aggregate(day_line).query().filter_by(|p, d| d.readings >= p.least).prepare({ least: 2 }),
 		Surreal.Mirror.literal(rollup(seed_vitals).keep_if(|d| d.readings >= 2)),
+	),
+	# A `U64` above the range of an `int` is sent as a decimal and still compares.
+	block(
+		"-- query: busy_days_never",
+		Surreal.from(vitals).group_by(day_of).aggregate(day_line).query().filter_by(|p, d| d.readings >= p.least).prepare({ least: 18446744073709551615 }),
+		Surreal.Mirror.literal(rollup(seed_vitals).keep_if(|d| d.readings >= 18446744073709551615)),
 	),
 	block(
 		"-- query: daily_view",
-		Surreal.from(daily).select(|d| { kennel: d.kennel, day: d.day, readings: d.readings, fevers: d.fevers }).prepare({}),
+		Surreal.from(daily).ready(),
 		Surreal.Mirror.literal(rollup(seed_vitals)),
 	),
 	# The table line has the changefeed, which SurrealDB prints in its own unit.
 	"-- query: changefeed\n-- roc: true\nRETURN string::contains((INFO FOR DB).tables.vital, 'CHANGEFEED 1w');",
 	block(
 		"-- write: vital_retention",
-		then_read(vitals.delete_by(|p, v| v.id.time() < p.before).prepare({ before: day_start }), Surreal.from(vitals).select(vital_line).prepare({})),
+		then_read(vitals.delete_by(|p, v| v.id.time() < p.cutoff).prepare({ cutoff: day_start }), Surreal.from(vitals).select(vital_line).ready()),
 		Surreal.Mirror.literal(seed_vitals.keep_if(|v| v.id.time() >= day_start).map(vital_line)),
 	),
-	block("-- query: site_lat", Surreal.from(sites).select(site_lat).prepare({}), Surreal.Mirror.literal(seed_sites.map(site_lat))),
+	block("-- query: site_lat", Surreal.from(sites).select(site_lat).ready(), Surreal.Mirror.literal(seed_sites.map(site_lat))),
 	# `Geo.inside` and `Geo.distance` run in the database only, so the references are by hand.
 	block(
 		"-- query: sites_covering",
@@ -416,23 +437,23 @@ queries = [
 	# each with its linked carer as a whole row.
 	block(
 		"-- query: kennel_carers",
-		Surreal.from(kennel_reads).select(|k| { label: k.label, site: k.site.name, carers: k.cares_for.list().map(|e| e.from), leads: k.cares_for.list().keep_if(|e| e.lead).len().to_i64_wrap() }).prepare({}),
+		Surreal.from(kennel_reads).select(|k| { label: k.label, site: k.site.name, carers: k.cares_for.list().map(|e| e.from), leads: k.cares_for.list().keep_if(|e| e.lead).len() }).ready(),
 		Surreal.Mirror.literal(seed_kennels.map(kennel_carers)),
 	),
 	# The rows of another table in a clause: a correlated count, and a semi join.
 	block(
 		"-- query: kennel_readings",
-		Surreal.from(kennels).select(|k| { label: k.label, readings: readings_of(vitals.rows(), k).len().to_i64_wrap() }).prepare({}),
-		Surreal.Mirror.literal(seed_kennels.map(|k| { label: k.label, readings: readings_of(kept_vitals, k).len().to_i64_wrap() })),
+		Surreal.from(kennels).select(|k| { label: k.label, readings: readings_of(vitals.rows(), k).len() }).ready(),
+		Surreal.Mirror.literal(seed_kennels.map(|k| { label: k.label, readings: readings_of(kept_vitals, k).len() })),
 	),
 	block(
 		"-- query: kennels_fevered",
-		Surreal.from(kennels).filter(|k| has_fever(vitals.rows(), k)).select_value(|k| k.label).prepare({}),
+		Surreal.from(kennels).filter(|k| has_fever(vitals.rows(), k)).select_value(|k| k.label).ready(),
 		Surreal.Mirror.literal(seed_kennels.keep_if(|k| has_fever(kept_vitals, k)).map(|k| k.label)),
 	),
 	# A point out of range: the field asserts `geo::is_valid`.
-	match sites.create({ id: "nowhere", name: "Nowhere", location: Surreal.point(200, 2), area: rectangle(Surreal.point(0, 0), Surreal.point(1, 1)) }) {
-		Ok(p) => p.statement().block("-- rejects: bad_point", ["-- error: field `location`"])
+	match sites.create({ id: "nowhere", name: "Nowhere", location: Surreal.point(200, 2), area: rectangle(Surreal.point(0, 0), Surreal.point(1, 1)) }).statement() {
+		Ok(st) => st.block("-- rejects: bad_point", ["-- error: field `location`"])
 		Err(e) => "-- unsupported -- rejects: bad_point: ${Str.inspect(e)}"
 	},
 ]
@@ -440,69 +461,88 @@ queries = [
 # ------------------------------------------------------------- live queries
 
 ## The fevered readings, kept current.
-fevered : Try(Surreal.Watch(VitalLine), Surreal.Error)
-fevered = Surreal.from(vitals).filter(|v| fever_fn.call2(v.temp_c, v.pulse)).select(vital_line).live({}, definitions)
+fevered : Surreal.Watch(VitalLine)
+fevered = Surreal.from(vitals).filter(|v| fever_fn.call2(v.temp_c, v.pulse)).select(vital_line).ready_live(definitions)
 
 ## The readings above a temperature given when the watch starts. The `LET`
 ## is read once, so a new limit needs a new watch.
-hotter_than : Dec -> Try(Surreal.Watch(VitalLine), Surreal.Error)
+hotter_than : Dec -> Surreal.Watch(VitalLine)
 hotter_than = |limit| Surreal.from(vitals).filter_by(|p, v| v.temp_c > p.limit).select(vital_line).live({ limit: limit }, definitions)
 
 ## The daily rollup, kept current by the database: watch the view.
-daily_live : Try(Surreal.Watch(Daily), Surreal.Error)
-daily_live = Surreal.from(daily).select(|d| { kennel: d.kennel, day: d.day, readings: d.readings, fevers: d.fevers }).live({}, definitions)
+daily_live : Surreal.Watch(Daily)
+daily_live = Surreal.from(daily).ready_live(definitions)
 
-Unattended : { label : Str, carers : I64 }
+Unattended : { label : Str, carers : U64 }
 
 ## A kennel with no carer.
 no_carer : (Kennel, List(CaresFor)) -> Bool
 no_carer = |(_, edges)| edges.len() == 0
 
 unattended_line : (Kennel, List(CaresFor)) -> Unattended
-unattended_line = |(k, edges)| { label: k.label, carers: edges.len().to_i64_wrap() }
+unattended_line = |(k, edges)| { label: k.label, carers: edges.len() }
 
 ## The kennels with no carer. A kennel enters when its last carer goes, and
 ## leaves when one comes: a second `LIVE` on `cares_for` reports each edge.
-unattended : Try(Surreal.Watch(Unattended), Surreal.Error)
-unattended = Surreal.from(kennels).incoming(cares_for).filter(no_carer).select(unattended_line).live({}, definitions)
+unattended : Surreal.Watch(Unattended)
+unattended = Surreal.from(kennels).incoming(cares_for).filter(no_carer).select(unattended_line).ready_live(definitions)
 
 ## The same watch through the read row: the `In` field `cares_for` gives the
 ## second `LIVE` on `cares_for`, as `incoming` does.
-unattended_read : Try(Surreal.Watch(Unattended), Surreal.Error)
-unattended_read = Surreal.from(kennel_reads).filter(|k| k.cares_for.list().len() == 0).select(|k| { label: k.label, carers: k.cares_for.list().len().to_i64_wrap() }).live({}, definitions)
+unattended_read : Surreal.Watch(Unattended)
+unattended_read = Surreal.from(kennel_reads).filter(|k| k.cares_for.list().len() == 0).select(|k| { label: k.label, carers: k.cares_for.list().len() }).ready_live(definitions)
 
-## The kennels with a fevered reading. The filter reads the readings with
-## `rows()`, so a write to a reading sends a notice for each kennel.
-fevered_kennels : Try(Surreal.Watch(Str), Surreal.Error)
-fevered_kennels = Surreal.from(kennels).filter(|k| has_fever(vitals.rows(), k)).select_value(|k| k.label).live({}, definitions)
+## The kennels with a fevered reading. The filter reads the readings of a
+## kennel with `rows()` and the key of the kennel, so a write to a reading
+## sends a notice for its own kennel only.
+fevered_kennels : Surreal.Watch(Str)
+fevered_kennels = Surreal.from(kennels).filter(|k| has_fever(vitals.rows(), k)).select_value(|k| k.label).ready_live(definitions)
 
-Neglected : { label : Str, carers : I64, checks : I64 }
+Neglected : { label : Str, carers : U64, checks : U64 }
 
 ## A kennel with no carer and no check: two edge tables of the kennel.
 no_one : (Kennel, List(CaresFor), List(Checks)) -> Bool
 no_one = |(_, cares, seen)| cares.len() == 0 and seen.len() == 0
 
 neglected_line : (Kennel, List(CaresFor), List(Checks)) -> Neglected
-neglected_line = |(k, cares, seen)| { label: k.label, carers: cares.len().to_i64_wrap(), checks: seen.len().to_i64_wrap() }
+neglected_line = |(k, cares, seen)| { label: k.label, carers: cares.len(), checks: seen.len() }
 
 ## The kennels that no carer looks after and no carer checks: a `LIVE` on
 ## each of the two edge tables.
-neglected : Try(Surreal.Watch(Neglected), Surreal.Error)
-neglected = Surreal.from(kennels).incoming(cares_for).and_incoming(checks).filter(no_one).select(neglected_line).live({}, definitions)
+neglected : Surreal.Watch(Neglected)
+neglected = Surreal.from(kennels).incoming(cares_for).and_incoming(checks).filter(no_one).select(neglected_line).ready_live(definitions)
 
 KennelSite : { label : Str, site : Str }
 
-## Each kennel with the name of its site, through the `Linked` site of
-## the read row. A new name of a site is an update of each kennel at it:
-## a `LIVE` on `site` reads the kennels that link to the site.
-kennel_sites : Try(Surreal.Watch(KennelSite), Surreal.Error)
-kennel_sites = Surreal.from(kennel_reads).select(|k| { label: k.label, site: k.site.name }).live({}, definitions)
+## Each kennel with the name of its site, through the link with `.get()`. A
+## new name of a site is an update of each kennel at it: a `LIVE` on `site`
+## reads the kennels that link to the site.
+kennel_sites : Surreal.Watch(KennelSite)
+kennel_sites = Surreal.from(kennels).select(|k| { label: k.label, site: k.site.get().name }).ready_live(definitions)
+
+SiteKennels : { name : Str, kennels : U64 }
+
+## Each site with the number of its kennels. The count reads the kennels
+## with `rows()` and their link to the site, so a write to a kennel sends a
+## notice for its site only, and a kennel that moves sends one for the old
+## site and one for the new.
+site_kennels : Surreal.Watch(SiteKennels)
+site_kennels = Surreal.from(sites).select(|s| { name: s.name, kennels: kennels.rows().count_if(|k| k.site.id() == sites.id(s.id)) }).ready_live(definitions)
+
+KennelRounds : { label : Str, rounds : U64 }
+
+## Each kennel with the number of rounds that stop at it. The count reads
+## the rounds with `rows()` and the links in their list of stops, so a
+## write to a round sends a notice for each kennel it stops at, before
+## and after the write.
+kennel_rounds : Surreal.Watch(KennelRounds)
+kennel_rounds = Surreal.from(kennels).select(|k| { label: k.label, rounds: rounds.rows().count_if(|r| r.stops.any(|st| st.kennel.id() == kennels.id(k.id))) }).ready_live(definitions)
 
 ## The kennels at the site named Oslo, through the link with `.get()`. A
 ## new name of the site makes its kennels leave, and the old name brings
 ## them back.
-oslo_kennels : Try(Surreal.Watch(Str), Surreal.Error)
-oslo_kennels = Surreal.from(kennels).filter(|k| k.site.get().name == "Oslo").select_value(|k| k.label).live({}, definitions)
+oslo_kennels : Surreal.Watch(Str)
+oslo_kennels = Surreal.from(kennels).filter(|k| k.site.get().name == "Oslo").select_value(|k| k.label).ready_live(definitions)
 
 ## Escape hatch: the server's own events for the fevered readings.
 fever_events : Try(Surreal.RawWatch(VitalLine), Surreal.Error)
@@ -544,8 +584,8 @@ vital_notices : List(Surreal.Edit(Vital)), (Vital -> Bool) -> Try(Str, Surreal.E
 vital_notices = |edits, keep| Surreal.Mirror.notices_literal(edits.map_try(|e| Surreal.Mirror.notices(vitals, e, keep, vital_line))?)
 
 ## The text of a write, for a `-- live:` block.
-text_of : Try(Surreal.Prepared(out), Surreal.Error) -> Try(Surreal.Statement, Surreal.Error)
-text_of = |prepared| prepared.map_ok(|p| p.statement())
+text_of : Surreal.Prepared(out) -> Try(Surreal.Statement, Surreal.Error)
+text_of = |prepared| prepared.statement()
 
 ## The statements of the writes.
 vital_writes : List(Surreal.Edit(Vital)) -> Try(List(Surreal.Statement), Surreal.Error)
@@ -553,10 +593,16 @@ vital_writes = |edits| edits.map_try(|e| text_of(vitals.edit(e)))
 
 ## One `-- live:` block: the watch, the rows of its snapshot and the notices
 ## of its writes in Roc, and the writes.
-live_block : Str, Try(Surreal.Watch(out), Surreal.Error), Try(Str, Surreal.Error), Try(Str, Surreal.Error), Try(List(Surreal.Statement), Surreal.Error) -> Str
-live_block = |header, watch, snapshot, notices, writes| match (watch, snapshot, notices, writes) {
-	(Ok(w), Ok(rows), Ok(literal), Ok(statements)) => w.block(header, ["-- snapshot: ${rows}", "-- roc: ${literal}"], statements)
-	(Err(e), _, _, _) | (_, Err(e), _, _) | (_, _, Err(e), _) | (_, _, _, Err(e)) => "-- unsupported ${header}: ${Str.inspect(e)}"
+live_block : Str, Surreal.Watch(out), Try(Str, Surreal.Error), Try(Str, Surreal.Error), Try(List(Surreal.Statement), Surreal.Error) -> Str
+live_block = |header, watch, snapshot, notices, writes| {
+	written = match (snapshot, notices, writes) {
+		(Ok(rows), Ok(literal), Ok(statements)) => watch.block(header, ["-- snapshot: ${rows}", "-- roc: ${literal}"], statements)
+		(Err(e), _, _) | (_, Err(e), _) | (_, _, Err(e)) => Err(e)
+	}
+	match written {
+		Ok(text) => text
+		Err(e) => "-- unsupported ${header}: ${Str.inspect(e)}"
+	}
 }
 
 ## A reading late on the first day, a fever: it changes one row of the view.
@@ -667,10 +713,12 @@ south_fever : Vital
 south_fever = stored(reading("b", "2026-03-07T08:00:00Z", 140, 38.0))
 
 ## The notices of a write of a reading to the watch of the kennels with a
-## fever: one for each kennel, with the readings `after` the write.
+## fever: one for the kennel of the reading, with the readings `after` the
+## write.
 fever_reach : Surreal.Edit(Vital), List(Vital) -> Try(List(Surreal.Notice(Str)), Surreal.Error)
 fever_reach = |edit, after| {
-	reached = seed_kennels.map_try(|k| kennels.ref(k).map_ok(|ref| { ref, row: k }))?
+	every = seed_kennels.map_try(|k| kennels.ref(k).map_ok(|ref| { ref, row: k }))?
+	reached = Surreal.Mirror.related(edit, every, |v, k| v.id.series() == kennels.id(k.id))
 	Surreal.Mirror.read_notices(vitals, edit, reached, |k| has_fever(after, k), |k| k.label)
 }
 
@@ -818,6 +866,84 @@ is_oslo = |(_, site)| site.name == "Oslo"
 kennel_label : KennelAt -> Str
 kennel_label = |(k, _)| k.label
 
+## The writes of the block `site_kennels`, each with the kennels after it:
+## a kennel comes to Oslo, moves to Drammen, gets a new label, and goes.
+site_kennel_writes : List({ edit : Surreal.Edit(Kennel), after : List(Kennel) })
+site_kennel_writes = {
+	wanderer = { id: "w", label: "West", site: sites.link("oslo") }
+	moved = { ..wanderer, site: sites.link("drammen") }
+	renamed = { ..moved, label: "West wing" }
+	[
+		{ edit: Create(wanderer), after: seed_kennels.append(wanderer) },
+		# case: the kennel moves, so the old site and the new one are reached
+		{ edit: Replace(wanderer, moved), after: seed_kennels.append(moved) },
+		# case: a field that the relation does not read changes: its one site is reached
+		{ edit: Replace(moved, renamed), after: seed_kennels.append(renamed) },
+		{ edit: Delete(renamed), after: seed_kennels },
+	]
+}
+
+## A site with the number of its kennels in `after`.
+site_count : List(Kennel), Site -> SiteKennels
+site_count = |after, site| { name: site.name, kennels: after.keep_if(|k| k.site.id() == sites.id(site.id)).len() }
+
+site_kennels_block : Str
+site_kennels_block = {
+	every = seed_sites.map_try(|site| sites.ref(site).map_ok(|ref| { ref, row: site }))
+	snapshot = every.map_ok(|rows| rows.map(|r| { ref: r.ref, row: site_count(seed_kennels, r.row) }))
+	notices = site_kennel_writes.map_try(
+		|w| {
+			reached = Surreal.Mirror.related(w.edit, every?, |k, site| k.site.id() == sites.id(site.id))
+			Surreal.Mirror.read_notices(kennels, w.edit, reached, |_| Bool.True, |site| site_count(w.after, site))
+		},
+	)
+	match (snapshot, notices) {
+		(Ok(rows), Ok(lists)) => live_block("-- live: site_kennels", site_kennels, Surreal.Mirror.literal(rows), Surreal.Mirror.notices_literal(lists), site_kennel_writes.map_try(|w| text_of(kennels.edit(w.edit))))
+		(Err(e), _) | (_, Err(e)) => "-- unsupported -- live: site_kennels: ${Str.inspect(e)}"
+	}
+}
+
+## The writes of the block `kennel_rounds`, each with the rounds after it:
+## a round stops at `a` and `b`, leaves `a`, changes its minutes, and goes.
+round_writes : List({ edit : Surreal.Edit(Round), after : List(Round) })
+round_writes = {
+	evening = { id: "evening", stops: [{ kennel: kennels.link("a"), minutes: 5 }, { kennel: kennels.link("b"), minutes: 5 }] }
+	shorter = { ..evening, stops: [{ kennel: kennels.link("b"), minutes: 5 }] }
+	slower = { ..shorter, stops: [{ kennel: kennels.link("b"), minutes: 20 }] }
+	[
+		{ edit: Create(evening), after: seed_rounds.append(evening) },
+		# case: the round leaves `a`, so `a` (before) and `b` (after) are reached
+		{ edit: Replace(evening, shorter), after: seed_rounds.append(shorter) },
+		# case: a field of a stop that the relation does not read changes: `b` is reached
+		{ edit: Replace(shorter, slower), after: seed_rounds.append(slower) },
+		{ edit: Delete(slower), after: seed_rounds },
+	]
+}
+
+## Whether a round stops at a kennel.
+stops_at : Round, Kennel -> Bool
+stops_at = |r, k| r.stops.any(|st| st.kennel.id() == kennels.id(k.id))
+
+## A kennel with the number of rounds in `after` that stop at it.
+round_count : List(Round), Kennel -> KennelRounds
+round_count = |after, k| { label: k.label, rounds: after.keep_if(|r| stops_at(r, k)).len() }
+
+kennel_rounds_block : Str
+kennel_rounds_block = {
+	every = seed_kennels.map_try(|k| kennels.ref(k).map_ok(|ref| { ref, row: k }))
+	snapshot = every.map_ok(|rows| rows.map(|r| { ref: r.ref, row: round_count(seed_rounds, r.row) }))
+	notices = round_writes.map_try(
+		|w| {
+			reached = Surreal.Mirror.related(w.edit, every?, stops_at)
+			Surreal.Mirror.read_notices(rounds, w.edit, reached, |_| Bool.True, |k| round_count(w.after, k))
+		},
+	)
+	match (snapshot, notices) {
+		(Ok(rows), Ok(lists)) => live_block("-- live: kennel_rounds", kennel_rounds, Surreal.Mirror.literal(rows), Surreal.Mirror.notices_literal(lists), round_writes.map_try(|w| text_of(rounds.edit(w.edit))))
+		(Err(e), _) | (_, Err(e)) => "-- unsupported -- live: kennel_rounds: ${Str.inspect(e)}"
+	}
+}
+
 kennel_sites_block : Str
 kennel_sites_block = match (site_snapshot(|_| Bool.True, site_label), site_notices(|_| Bool.True, site_label)) {
 	(Ok(rows), Ok(lists)) => live_block("-- live: kennel_sites", kennel_sites, Surreal.Mirror.literal(rows), Surreal.Mirror.notices_literal(lists), site_writes.map_try(|w| text_of(sites.edit(w.edit))))
@@ -890,6 +1016,8 @@ live_blocks = [
 		read_steps.map_try(|step| step.write),
 	),
 	live_block("-- live: fevered_kennels", fevered_kennels, fevered_kennels_snapshot, fevered_kennels_notices, fevered_kennels_writes),
+	site_kennels_block,
+	kennel_rounds_block,
 	kennel_sites_block,
 	oslo_kennels_block,
 	live_block(
