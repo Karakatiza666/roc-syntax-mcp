@@ -28,12 +28,12 @@ byte_range = 0.U8..<16
 every_third : Range(U64)
 every_third = (0..<30).step_by(3)
 
-# `size_hint` returns `Known(count)` when the exact count fits in a `U64`, and
-# `Unknown` otherwise.
-#   Range.size_hint : Range(num) -> [Known(U64), Unknown]
-hint = (0..<30).size_hint()
+# `len_if_known` returns `Ok(count)` when the exact count fits in a `U64`, and
+# `Err(Unknown)` otherwise.
+#   Range.len_if_known : Range(num) -> Try(U64, [Unknown])
+hint = (0..<30).len_if_known()
 
-expect every_third.size_hint() == Known(10)
+expect every_third.len_if_known() == Ok(10)
 
 # `iter` walks forwards. `iter_rev` walks the same lower-anchored members
 # backwards, so `(5.I64..=12).step_by(2).iter_rev()` yields 11, 9, 7, 5.
@@ -82,7 +82,7 @@ PageNum := { num : U32 }.{
 			step: PageNum.{ num: 1 },
 			upper_bound: Exclusive,
 			direction: To,
-			len_if_known: Unknown,
+			len_if_known: Err(Unknown),
 		})
 }
 

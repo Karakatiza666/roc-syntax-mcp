@@ -59,8 +59,8 @@ test("every scope in the registry has the content it declares", () => {
 
 test("the corpora are the sizes the plan was written against", () => {
   const builtin = registry.index("builtin");
-  assert.equal(builtin.items.filter((i) => i.kind === "value").length, 2297);
-  assert.equal(builtin.items.filter((i) => i.kind === "type").length, 30);
+  assert.equal(builtin.items.filter((i) => i.kind === "value").length, 2301);
+  assert.equal(builtin.items.filter((i) => i.kind === "type").length, 33);
 
   const bws = registry.index("basic-webserver");
   assert.equal(bws.items.filter((i) => i.tier === "host").length, 141);

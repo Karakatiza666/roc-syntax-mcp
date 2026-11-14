@@ -358,12 +358,12 @@ test("an exact type counts the functions that take it and return it", async () =
   }
 });
 
-// `Str.Utf8Problem.is_eq` writes `Utf8Problem` and `Str.from_utf8` writes
+// `Crypto.SHA256.Digest.to_hex` writes `Digest` and `Str.from_utf8` writes
 // `Str.Utf8Problem`. Each query form finds both, as roc-ray's `Frame` and `Draw.Frame`.
 test("a type query reads a type that its own module writes without the module", async () => {
   const s = await inProcess([]);
   try {
-    assert.match(await s.call("search_symbols", { query: ["Str.Utf8Problem ->"] }), /^\*\*Str\.Utf8Problem\.is_eq\*\* \(args_prefix, score 50\)/);
+    assert.match(await s.call("search_symbols", { query: ["Crypto.SHA256.Digest -> Str"] }), /^\*\*Crypto\.SHA256\.Digest\.to_hex\*\* \(exact, score 100\)/);
     const from = "-> Try(Str, [BadUtf8({ problem : Utf8Problem, index : U64 })])";
     assert.match(await s.call("search_symbols", { query: [from] }), /^\*\*Str\.from_utf8\*\* \(return_type, score 90\)/);
   } finally {

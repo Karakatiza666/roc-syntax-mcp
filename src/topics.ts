@@ -44,12 +44,12 @@ const BUILTIN_TOPICS: Record<string, TopicMeta> = {
     file: "iterators.roc",
     description: "`Iter` (pure) and `Stream` (effectful) iterators, the `iter`/`next` methods behind `for ... in`, `for!` over a `Stream`, and the adapters.",
     keywords: ["iterator", "iter", "Iter", "Stream", "next", "for", "for!", "map", "keep_if", "fold",
-      "collect", "iter_rev", "size_hint", "custom", "unfold", "lazy"],
+      "collect", "iter_rev", "len_if_known", "custom", "unfold", "lazy"],
   },
   ranges: {
     file: "ranges.roc",
     description: "Range operators `..<` and `..=`, the `Range(num)` value, `step_by`, `iter_rev`, and custom numeric ranges.",
-    keywords: ["range", "..<", "..=", "Range", "step_by", "iter_rev", "size_hint",
+    keywords: ["range", "..<", "..=", "Range", "step_by", "iter_rev", "len_if_known",
       "exclusive", "inclusive", "range_exclusive_to", "range_inclusive_to"],
   },
   record_fields: {
@@ -67,10 +67,10 @@ const BUILTIN_TOPICS: Record<string, TopicMeta> = {
   },
   json: {
     file: "json.roc",
-    description: "`Json` (`Encoding.Json`) parse/encode, the `parser_for`/`encoder_for` codec protocol, its `Encodable`/`Parseable` where aliases, the `Default`/`CamelCase`/`TrailingCommas` dialects, and missing fields.",
+    description: "`Json` (`Encoding.Json`) parse/encode, the `parser_for`/`encoder_for` codec protocol, its `Encodable`/`Parseable` where aliases, the `Default`/`CamelCase`/`TrailingCommas` dialects, missing fields, and the one `InvalidJson` error that every parser returns.",
     keywords: ["json", "Json", "encoding", "Encoding", "parse", "to_str", "parser_for",
       "encoder_for", "Encodable", "Parseable", "codec", "serialize", "deserialize",
-      "camelCase", "trailing comma"],
+      "camelCase", "trailing comma", "InvalidJson", "validate", "MissingHeader"],
   },
   hashing: {
     file: "hashing.roc",
@@ -183,9 +183,9 @@ const BUILTIN_TOPICS: Record<string, TopicMeta> = {
   },
   functions: {
     file: "functions.roc",
-    description: "Function literals `|args| body`, blocks, `return` and the unreachable code after it, `...`, recursion, top-level cycles, and tail calls (accumulators, modulo cons).",
+    description: "Function literals `|args| body`, blocks, `return` and the unreachable code after it, `...`, recursion and its no-polymorphic-recursion rule, top-level cycles, and tail calls (accumulators, modulo cons).",
     keywords: ["function", "lambda", "anonymous", "return", "placeholder", "...", "recursion", "recursive",
-      "tail call", "stack overflow", "accumulator", "unreachable"],
+      "tail call", "stack overflow", "accumulator", "unreachable", "polymorphic recursion"],
   },
   static_dispatch: {
     file: "static_dispatch.roc",

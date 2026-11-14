@@ -3,6 +3,7 @@ dist/
 *.log
 .DS_Store
 tmp/
+.tmp/
 # Local Roc toolchain (large, install it on each machine)
 roc_nightly-*
 # A fork build that a plugin names as its compiler, roc_<branch>-<commit>/roc.

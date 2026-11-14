@@ -114,3 +114,23 @@ length = |lst, acc| match lst {
 }
 
 expect length(count_up(0, 10), 0) == 10
+
+# A function with type variables passes them to itself unchanged. A self-call
+# with a bigger type, such as `List(a)` where the function takes `a`, is
+# polymorphic recursion, and Roc rejects it: the compiler must know every type a
+# function is used with before the program runs. A self-call that swaps two type
+# variables is rejected too, and so is a call that comes back through other
+# functions. A call to another function with a bigger type, such as
+# `List.len([x])`, is fine.
+#
+# @rejects polymorphic recursion
+# depth : U64, a -> U64
+# depth = |n, x| if n == 0 0 else 1 + depth(n - 1, [x])
+#
+# @rejects polymorphic recursion
+# swap : U64, a, b -> U64
+# swap = |n, x, y| if n == 0 0 else 1 + swap(n - 1, y, x)
+keep : U64, a -> a
+keep = |count, x| if count == 0 x else keep(count - 1, x)
+
+expect keep(3, "hi") == "hi"

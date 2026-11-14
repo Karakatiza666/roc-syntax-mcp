@@ -242,8 +242,25 @@ expect double(21) == 42
 ```
 
 Top-level `expect`s are run by the `roc test` command, which reports how many passed and failed.
-When one fails, the report shows the failing expression, along with the values of any top-level
-names it referenced.
+When one fails, the report shows the failing expression, along with the definition of referenced
+top-level (non-function) values. Ideally, the actual values would be shown, that is a planned feature.
+For now you can achieve that with a helper function:
+
+```roc
+check = |received, expected| {
+    equal = received == expected
+
+    if !equal {
+        dbg { expected, received }
+    }
+    
+    equal
+}
+
+double = |n| n * 3 # intentionally incorrect to see output on failure
+
+expect check(double(21), 42)
+```
 
 `roc test` runs the top-level `expect`s in the given module and in every module it imports (including
 modules in packages that are imported through a filesystem path, but not packages downloaded
@@ -362,7 +379,7 @@ The `break` statement immediately exits the innermost `for` or `while` loop. See
 
 ## [`continue`](#continue) {#continue}
 
-⚠️️ `continue` has not been implemented yet. It is intended to skip to the next iteration of a `for` or `while` loop.
+⚠️ `continue` is planned for after 0.1.0 and has not been implemented yet. It is intended to skip to the next iteration of a `for` or `while` loop.
 
 ## [`crash`](#crash) {#crash}
 

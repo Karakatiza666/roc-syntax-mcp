@@ -49,6 +49,11 @@ Builtin :: [].{
 	# parse_dict_after_key between a key and its value, and
 	# parse_dict_after_entry.
 	#
+	# Every fallible operation, including custom nested parsers and tag
+	# payload callbacks, uses the same format-owned err type. A required
+	# field that was not read calls missing_field : encoding, Str -> err.
+	# Optional and defaulted fields retain their absent-field values.
+	#
 	# A dict key that the format renders as a key string—a Str, a Bool, a
 	# number, or a tag union whose tags all lack payloads—is read and written
 	# by the parse_key_* and encode_key_* methods. Any other key is read and
@@ -76,13 +81,13 @@ Builtin :: [].{
 			name : FieldName(_shape) -> Str
 		}
 
-		ParseTagUnionSpec(_shape) :: {}.{
+		ParseTagUnionSpec(_shape, _encoding, _state, _err) :: {}.{
 
 			## After a format reads the tag name, the generated parser calls
 			## start_payloads once, next_payload before each payload after the
 			## first (with its zero-based index and the total count), and
 			## finish_payloads once after the final payload.
-			parse : ParseTagUnionSpec(_shape),
+			parse : ParseTagUnionSpec(_shape, _encoding, _state, _err),
 			{
 				tag : Str,
 				encoding : _encoding,
@@ -267,8 +272,8 @@ Builtin :: [].{
 				Ok(Str.from_utf8_lossy(encoded.output))
 			}
 
-			parse : Str -> Try(a, [InvalidJson(Str), ..errs])
-				where [a.Parseable([InvalidJson(Str), ..errs])]
+			parse : Str -> Try(a, [InvalidJson(Str)])
+				where [a.Parseable([InvalidJson(Str)])]
 			parse = |json| {
 				Shape : a
 				parse_shape = Shape.parser_for(JsonEncoding.Default)
@@ -284,8 +289,8 @@ Builtin :: [].{
 				}
 			}
 
-			parse_trailing_commas : Str -> Try(a, [InvalidJson(Str), ..errs])
-				where [a.Parseable([InvalidJson(Str), ..errs])]
+			parse_trailing_commas : Str -> Try(a, [InvalidJson(Str)])
+				where [a.Parseable([InvalidJson(Str)])]
 			parse_trailing_commas = |json| {
 				Shape : a
 				parse_shape = Shape.parser_for(JsonEncoding.TrailingCommas)
@@ -301,8 +306,8 @@ Builtin :: [].{
 				}
 			}
 
-			parser_camel : () -> (Str -> Try(a, [InvalidJson(Str), ..errs]))
-				where [a.Parseable([InvalidJson(Str), ..errs])]
+			parser_camel : () -> (Str -> Try(a, [InvalidJson(Str)]))
+				where [a.Parseable([InvalidJson(Str)])]
 			parser_camel = || {
 				Shape : a
 				parse_shape = Shape.parser_for(JsonEncoding.CamelCase)
@@ -1073,7 +1078,7 @@ Builtin :: [].{
 				}
 			}
 
-			parse_tag_union_from_json : Str, JsonEncoding, ParseTagUnionSpec(a) -> Try({ value : a, rest : JsonState }, [InvalidJson(Str)])
+			parse_tag_union_from_json : Str, JsonEncoding, ParseTagUnionSpec(a, JsonEncoding, JsonState, [InvalidJson(Str)]) -> Try({ value : a, rest : JsonState }, [InvalidJson(Str)])
 			parse_tag_union_from_json = |raw, encoding, spec| {
 				remaining = json_trim_start(raw)
 
@@ -1725,7 +1730,10 @@ Builtin :: [].{
 			invalid_value : JsonEncoding, JsonState -> [InvalidJson(Str)]
 			invalid_value = |_, _| Json.invalid_json({})
 
-			parse_tag_union : JsonEncoding, ParseTagUnionSpec(a), JsonState -> Try({ value : a, rest : JsonState }, [InvalidJson(Str)])
+			missing_field : JsonEncoding, Str -> [InvalidJson(Str)]
+			missing_field = |_, name| InvalidJson("Missing field: ${name}")
+
+			parse_tag_union : JsonEncoding, ParseTagUnionSpec(a, JsonEncoding, JsonState, [InvalidJson(Str)]), JsonState -> Try({ value : a, rest : JsonState }, [InvalidJson(Str)])
 			parse_tag_union = |encoding, spec, state|
 				match state {
 					Input(value) => Json.parse_tag_union_from_json(value, encoding, spec)
@@ -2059,13 +2067,16 @@ Builtin :: [].{
 			rename_field : HttpHeaderEncoding, Str -> Str
 			rename_field = |_, name| HttpHeader.underscores_to_dashes(name)
 
-			parse_str : HttpHeaderEncoding, HttpHeaderState -> Try({ value : Str, rest : HttpHeaderState }, [BadHeader])
+			missing_field : HttpHeaderEncoding, Str -> [BadHeader, MissingHeader(Str)]
+			missing_field = |_, name| MissingHeader(name)
+
+			parse_str : HttpHeaderEncoding, HttpHeaderState -> Try({ value : Str, rest : HttpHeaderState }, [BadHeader, MissingHeader(Str)])
 			parse_str = |_, state| {
 				value_parts = HttpHeader.take_header_value(state.raw)?
 				Ok({ value: value_parts.value, rest: HttpHeaderState.{ raw: value_parts.after } })
 			}
 
-			parse_u64 : HttpHeaderEncoding, HttpHeaderState -> Try({ value : U64, rest : HttpHeaderState }, [BadHeader])
+			parse_u64 : HttpHeaderEncoding, HttpHeaderState -> Try({ value : U64, rest : HttpHeaderState }, [BadHeader, MissingHeader(Str)])
 			parse_u64 = |_, state| {
 				value_parts = HttpHeader.take_header_value(state.raw)?
 
@@ -2078,7 +2089,7 @@ Builtin :: [].{
 			## Header sequences have no opening delimiter and no way to declare a
 			## header count up front, so parsing always starts in Uncounted mode
 			## on the unchanged input.
-			parse_record_start : HttpHeaderEncoding, HttpHeaderState -> Try([Counted({ len : U64, rest : HttpHeaderState }), Uncounted(HttpHeaderState)], [BadHeader])
+			parse_record_start : HttpHeaderEncoding, HttpHeaderState -> Try([Counted({ len : U64, rest : HttpHeaderState }), Uncounted(HttpHeaderState)], [BadHeader, MissingHeader(Str)])
 			parse_record_start = |_, state| Ok(Uncounted(state))
 
 			parse_record_field : HttpHeaderEncoding,
@@ -2091,17 +2102,17 @@ Builtin :: [].{
 					Continue(HttpHeaderState),
 					Done(HttpHeaderState),
 				],
-				[BadHeader],
+				[BadHeader, MissingHeader(Str)],
 			)
 			parse_record_field = |_, fields, state|
 				HttpHeader.parse_record_field_from_headers(fields, state.raw)
 
 			## Each header value consumes its own CRLF terminator, so the cursor
 			## is already at the next entry boundary after every field.
-			parse_record_after_field : HttpHeaderEncoding, HttpHeaderState -> Try([Continue(HttpHeaderState), Done(HttpHeaderState)], [BadHeader])
+			parse_record_after_field : HttpHeaderEncoding, HttpHeaderState -> Try([Continue(HttpHeaderState), Done(HttpHeaderState)], [BadHeader, MissingHeader(Str)])
 			parse_record_after_field = |_, state| Ok(Continue(state))
 
-			skip_record_field : HttpHeaderEncoding, HttpHeaderState -> Try(HttpHeaderState, [BadHeader])
+			skip_record_field : HttpHeaderEncoding, HttpHeaderState -> Try(HttpHeaderState, [BadHeader, MissingHeader(Str)])
 			skip_record_field = |_, state| {
 				parts = HttpHeader.take_header_value(state.raw)?
 				Ok(HttpHeaderState.{ raw: parts.after })
@@ -2119,8 +2130,8 @@ Builtin :: [].{
 					output.parser_for : HttpHeaderEncoding -> (HttpHeaderState -> Try({ value : output, rest : HttpHeaderState }, errs)),
 				]
 
-			parser_for : () -> (Str -> Try(output, [BadHeader, ..errs]))
-				where [output.Parseable([BadHeader, ..errs])]
+			parser_for : () -> (Str -> Try(output, [BadHeader, MissingHeader(Str)]))
+				where [output.Parseable([BadHeader, MissingHeader(Str)])]
 			parser_for = || {
 				Output : output
 				parse_output = Output.parser_for(HttpHeaderEncoding.Caseless)
@@ -2131,8 +2142,8 @@ Builtin :: [].{
 				}
 			}
 
-			parse : Str -> Try(output, [BadHeader, ..errs])
-				where [output.Parseable([BadHeader, ..errs])]
+			parse : Str -> Try(output, [BadHeader, MissingHeader(Str)])
+				where [output.Parseable([BadHeader, MissingHeader(Str)])]
 			parse = |raw| {
 				Output : output
 
@@ -2142,10 +2153,10 @@ Builtin :: [].{
 				Ok(parsed.value)
 			}
 
-			parse_str : HttpHeaderEncoding, HttpHeaderState -> Try({ value : Str, rest : HttpHeaderState }, [BadHeader])
+			parse_str : HttpHeaderEncoding, HttpHeaderState -> Try({ value : Str, rest : HttpHeaderState }, [BadHeader, MissingHeader(Str)])
 			parse_str = |encoding, state| HttpHeaderEncoding.parse_str(encoding, state)
 
-			parse_u64 : HttpHeaderEncoding, HttpHeaderState -> Try({ value : U64, rest : HttpHeaderState }, [BadHeader])
+			parse_u64 : HttpHeaderEncoding, HttpHeaderState -> Try({ value : U64, rest : HttpHeaderState }, [BadHeader, MissingHeader(Str)])
 			parse_u64 = |encoding, state| HttpHeaderEncoding.parse_u64(encoding, state)
 
 			parse_record_field_from_headers : FieldName.FieldNames(_shape),
@@ -2223,24 +2234,9 @@ Builtin :: [].{
 		parser_for : _
 		encoder_for : _
 
-		Utf8Problem := [
-			InvalidStartByte,
-			UnexpectedEndOfSequence,
-			ExpectedContinuation,
-			OverlongEncoding,
-			CodepointTooLarge,
-			EncodesSurrogateHalf,
-		].{
-			is_eq : Utf8Problem, Utf8Problem -> Bool
-		}
-
-		Utf16Problem := [UnpairedHighSurrogate, UnpairedLowSurrogate, UnexpectedEndOfSequence].{
-			is_eq : Utf16Problem, Utf16Problem -> Bool
-		}
-
-		Utf32Problem := [CodePointTooLarge, SurrogateCodePoint, UnexpectedEndOfSequence].{
-			is_eq : Utf32Problem, Utf32Problem -> Bool
-		}
+		Utf8Problem : StrUtf8Problem
+		Utf16Problem : StrUtf16Problem
+		Utf32Problem : StrUtf32Problem
 
 		## Returns guidance about string length instead of a number.
 		##
@@ -2551,7 +2547,7 @@ Builtin :: [].{
 				byte_count = Str.count_utf8_bytes(str)
 
 				iter_from_step(
-					Known(byte_count - index),
+					Ok(byte_count - index),
 					||
 						if index == byte_count {
 							Done
@@ -2899,17 +2895,17 @@ Builtin :: [].{
 		##
 		## The compiler calls this at compile time with the literal's segments: the
 		## text before the first interpolation, then the text after each one. It
-		## returns the function the compiler calls at runtime with the interpolated
-		## values, in order, to assemble the string.
+		## returns the function the compiler calls at runtime with an iterator over
+		## the interpolated values, in order, to assemble the string.
 		## ```roc
-		## expect Str.from_interpolation(["a", "c"]).map_ok(|assemble| assemble(["b"])) == Ok("abc")
+		## expect Str.from_interpolation(["a", "c"]).map_ok(|assemble| assemble(["b"].iter())) == Ok("abc")
 		## ```
-		from_interpolation : List(Str) -> Try((List(Str) -> Str), [InvalidInterpolation(Str)])
+		from_interpolation : List(Str) -> Try((Iter(Str) -> Str), [InvalidInterpolation(Str)])
 		from_interpolation = |segments|
 			Ok(
 				|values| {
 					first = List.first(segments).ok_or("")
-					List.fold_with_index(values, first, |acc, value, index| acc.concat(value).concat(List.get(segments, index + 1).ok_or("")))
+					values.with_index().fold(first, |acc, (index, value)| acc.concat(value).concat(List.get(segments, index + 1).ok_or("")))
 				},
 			)
 
@@ -3203,17 +3199,17 @@ Builtin :: [].{
 
 	Iter(item) :: {
 		# The sequence being iterated, or e.g. a range, is captured in the step thunk.
-		len_if_known : [Known(U64), Unknown],
+		len_if_known : Try(U64, [Unknown]),
 		step : () -> [One({ item : item, rest : Iter(item) }), Skip({ rest : Iter(item) }), Done],
 	}.{
 		# The general unfold. `advance` maps a seed to either the next item paired with the
 		# next seed, or `NoMore`. `custom` owns rebuilding the rest from the new seed, so the
 		# seed type stays hidden inside the step closure and never appears in `Iter(item)`.
-		# `Known(n)` is a promise: yielding more than n items crashes. Fewer is allowed.
-		custom : state, [Known(U64), Unknown], (state -> Try((item, state), [NoMore])) -> Iter(item)
-		custom = |seed, len_if_known, advance|
+		# `Ok(n)` is a promise: yielding more than n items crashes. Fewer is allowed.
+		custom : state, Try(U64, [Unknown]), (state -> Try((item, state), [NoMore])) -> Iter(item)
+		custom = |seed, known_len, advance|
 			iter_from_step(
-				len_if_known,
+				known_len,
 				||
 					match advance(seed) {
 						Ok((item, next_seed)) =>
@@ -3221,14 +3217,14 @@ Builtin :: [].{
 								item,
 								rest: Iter.custom(
 									next_seed,
-									# A source that outlives its `Known` count crashes on this
+									# A source that outlives its `Ok` count crashes on this
 									# subtraction, before the extra item reaches the unchecked
 									# append in `List.from_iter`. No extra branch here: ranges
 									# are built on `custom`, and loops rely on this step
 									# optimizing away completely.
-									match len_if_known {
-										Known(l) => Known(l - 1)
-										Unknown => Unknown
+									match known_len {
+										Ok(l) => Ok(l - 1)
+										Err(Unknown) => Err(Unknown)
 									},
 									advance,
 								),
@@ -3252,9 +3248,9 @@ Builtin :: [].{
 			make = |pending|
 				iter_from_step(
 					if pending {
-						Known(1)
+						Ok(1)
 					} else {
-						Known(0)
+						Ok(0)
 					},
 					||
 						if pending {
@@ -3269,9 +3265,6 @@ Builtin :: [].{
 
 		## Returns an iterator that yields the given item first, followed by
 		## everything the given iterator yields.
-		##
-		## The compiler uses this to assemble the iterator it passes to
-		## `from_interpolation` when checking an interpolated string literal.
 		## ```roc
 		## expect Iter.fold([2, 3].iter().prepended(1), [], |acc, item| acc.append(item)) == [1, 2, 3]
 		## ```
@@ -3279,8 +3272,8 @@ Builtin :: [].{
 		prepended = |rest, item|
 			iter_from_step(
 				match rest.len_if_known {
-					Known(n) => Known(n + 1)
-					Unknown => Unknown
+					Ok(n) => Ok(n + 1)
+					Err(Unknown) => Err(Unknown)
 				},
 				|| One({ item, rest }),
 			)
@@ -3295,15 +3288,15 @@ Builtin :: [].{
 			make = |remaining_first, remaining_second|
 				iter_from_step(
 					match remaining_first.len_if_known {
-						Known(first_len) => match remaining_second.len_if_known {
-							Known(second_len) => if second_len > 18446744073709551615 - first_len {
-								Unknown
+						Ok(first_len) => match remaining_second.len_if_known {
+							Ok(second_len) => if second_len > 18446744073709551615 - first_len {
+								Err(Unknown)
 							} else {
-								Known(first_len + second_len)
+								Ok(first_len + second_len)
 							}
-							Unknown => Unknown
+							Err(Unknown) => Err(Unknown)
 						}
-						Unknown => Unknown
+						Err(Unknown) => Err(Unknown)
 					},
 					||
 						# Once `remaining_first` is exhausted it is kept (not swapped
@@ -3328,6 +3321,9 @@ Builtin :: [].{
 
 		## Returns an iterator that yields everything from the given iterator,
 		## followed by the given item.
+		##
+		## The compiler builds the iterator it passes to a `from_interpolation`
+		## assembler with this, appending each interpolated value in order.
 		## ```roc
 		## expect Iter.fold([1.I64, 2].iter().append(3), [], |acc, item| acc.append(item)) == [1, 2, 3]
 		## ```
@@ -3337,16 +3333,16 @@ Builtin :: [].{
 				iter_from_step(
 					if pending_last {
 						match current.len_if_known {
-							Known(len) =>
+							Ok(len) =>
 								if len == 18446744073709551615 {
-									Unknown
+									Err(Unknown)
 								} else {
-									Known(len + 1)
+									Ok(len + 1)
 								}
-							Unknown => Unknown
+							Err(Unknown) => Err(Unknown)
 						}
 					} else {
-						Known(0)
+						Ok(0)
 					},
 					||
 						if pending_last {
@@ -3369,9 +3365,9 @@ Builtin :: [].{
 		map : Iter(a), (a -> b) -> Iter(b)
 		map = |iterator, transform|
 			match iterator {
-				{ len_if_known, .. } =>
+				{ len_if_known: known_len, .. } =>
 					iter_from_step(
-						len_if_known,
+						known_len,
 						||
 							match Iter.next(iterator) {
 								Done => Done
@@ -3395,7 +3391,7 @@ Builtin :: [].{
 		keep_if : Iter(a), (a -> Bool) -> Iter(a)
 		keep_if = |iterator, predicate|
 			iter_from_step(
-				Unknown,
+				Err(Unknown),
 				||
 					match Iter.next(iterator) {
 						Done => Done
@@ -3412,7 +3408,7 @@ Builtin :: [].{
 		drop_if : Iter(a), (a -> Bool) -> Iter(a)
 		drop_if = |iterator, predicate|
 			iter_from_step(
-				Unknown,
+				Err(Unknown),
 				||
 					match Iter.next(iterator) {
 						Done => Done
@@ -3520,9 +3516,9 @@ Builtin :: [].{
 
 		## Returns the iterator's length if it is known up front, so collections
 		## can pre-size their allocation.
-		size_hint : Iter(item) -> [Known(U64), Unknown]
-		size_hint = |iterator| match iterator {
-			{ len_if_known, .. } => len_if_known
+		len_if_known : Iter(item) -> Try(U64, [Unknown])
+		len_if_known = |iterator| match iterator {
+			{ len_if_known: known_len, .. } => known_len
 		}
 
 		## Collect this iterator into any output type that provides `from_iter`.
@@ -3549,20 +3545,20 @@ Builtin :: [].{
 		take_first : Iter(item), U64 -> Iter(item)
 		take_first = |iterator, n|
 			match iterator {
-				{ len_if_known, .. } =>
+				{ len_if_known: known_len, .. } =>
 					iter_from_step(
-						match len_if_known {
-							Known(len) => Known(
+						match known_len {
+							Ok(len) => Ok(
 								if len < n {
 									len
 								} else {
 									n
 								},
 							)
-							Unknown => if n == 0 {
-								Known(0)
+							Err(Unknown) => if n == 0 {
+								Ok(0)
 							} else {
-								Unknown
+								Err(Unknown)
 							}
 						},
 						||
@@ -3588,17 +3584,17 @@ Builtin :: [].{
 		drop_first : Iter(item), U64 -> Iter(item)
 		drop_first = |iterator, n|
 			match iterator {
-				{ len_if_known, .. } =>
+				{ len_if_known: known_len, .. } =>
 					iter_from_step(
-						match len_if_known {
-							Known(len) => Known(
+						match known_len {
+							Ok(len) => Ok(
 								if len < n {
 									0
 								} else {
 									len - n
 								},
 							)
-							Unknown => Unknown
+							Err(Unknown) => Err(Unknown)
 						},
 						||
 							match Iter.next(iterator) {
@@ -3632,7 +3628,7 @@ Builtin :: [].{
 	## source via [Stream.custom], and consumed by a `for!` loop, [Stream.fold!],
 	## [Stream.for_each!], or [Stream.collect!].
 	Stream(item) :: {
-		len_if_known : [Known(U64), Unknown],
+		len_if_known : Try(U64, [Unknown]),
 		step! : () => [One({ item : item, rest : Stream(item) }), Skip({ rest : Stream(item) }), Done],
 	}.{
 
@@ -3642,7 +3638,7 @@ Builtin :: [].{
 		from_iter : Iter(item) -> Stream(item)
 		from_iter = |iterator|
 			stream_from_step(
-				Iter.size_hint(iterator),
+				Iter.len_if_known(iterator),
 				||
 					match Iter.next(iterator) {
 						Done => Done
@@ -3654,17 +3650,17 @@ Builtin :: [].{
 		## Build a lazy, effectful stream from a seed; the effectful counterpart of [Iter.custom].
 		## Each pull runs `advance!` exactly once: `Ok((item, next_state))` yields `item` and
 		## continues from `next_state`, while `Err(NoMore)` ends the stream. Building the
-		## stream runs no effects. `Known(n)` promises exactly n items; sources whose length
-		## is only discovered by reading (files, stdin, sockets) use `Unknown`. A source that
-		## yields more items than its `Known` count reports `Unknown` from then on.
+		## stream runs no effects. `Ok(n)` promises exactly n items; sources whose length
+		## is only discovered by reading (files, stdin, sockets) use `Err(Unknown)`. A source that
+		## yields more items than its `Ok` count reports `Err(Unknown)` from then on.
 		##
 		## Source errors belong in `item` (e.g. `Try(List(U8), ReadErr)`). To stop after an
 		## error, yield it paired with a terminal state that holds no resource, so the
 		## resource is released rather than retained by the rest of the stream.
-		custom : state, [Known(U64), Unknown], (state => Try((item, state), [NoMore])) -> Stream(item)
-		custom = |seed, len_if_known, advance!|
+		custom : state, Try(U64, [Unknown]), (state => Try((item, state), [NoMore])) -> Stream(item)
+		custom = |seed, known_len, advance!|
 			stream_from_step(
-				len_if_known,
+				known_len,
 				||
 					match advance!(seed) {
 						Ok((item, next_seed)) =>
@@ -3672,12 +3668,12 @@ Builtin :: [].{
 								item,
 								rest: Stream.custom(
 									next_seed,
-									# A source that outlives its `Known` count degrades to
-									# `Unknown` instead of underflowing the countdown.
-									match len_if_known {
-										Known(0) => Unknown
-										Known(l) => Known(l - 1)
-										Unknown => Unknown
+									# A source that outlives its `Ok` count degrades to
+									# `Err(Unknown)` instead of underflowing the countdown.
+									match known_len {
+										Ok(0) => Err(Unknown)
+										Ok(l) => Ok(l - 1)
+										Err(Unknown) => Err(Unknown)
 									},
 									advance!,
 								),
@@ -3692,9 +3688,9 @@ Builtin :: [].{
 		map : Stream(a), (a => b) -> Stream(b)
 		map = |source, transform!|
 			match source {
-				{ len_if_known, .. } =>
+				{ len_if_known: known_len, .. } =>
 					stream_from_step(
-						len_if_known,
+						known_len,
 						||
 							match Stream.next!(source) {
 								Done => Done
@@ -3706,7 +3702,7 @@ Builtin :: [].{
 
 		## Transform each item of this stream with an effectful function.
 		map! : Stream(a), (a => b) => Stream(b)
-		map! = |stream, transform!| Stream.map(stream, transform!)
+		map! = |source, transform!| Stream.map(source, transform!)
 
 		## Returns a stream that pairs each item with its position among the items
 		## this stream yields. The first yielded item gets index `0`, and the index
@@ -3719,7 +3715,7 @@ Builtin :: [].{
 		keep_if : Stream(a), (a => Bool) -> Stream(a)
 		keep_if = |source, predicate!|
 			stream_from_step(
-				Unknown,
+				Err(Unknown),
 				||
 					match Stream.next!(source) {
 						Done => Done
@@ -3738,7 +3734,7 @@ Builtin :: [].{
 		drop_if : Stream(a), (a => Bool) -> Stream(a)
 		drop_if = |source, predicate!|
 			stream_from_step(
-				Unknown,
+				Err(Unknown),
 				||
 					match Stream.next!(source) {
 						Done => Done
@@ -3757,19 +3753,19 @@ Builtin :: [].{
 		take_first : Stream(item), U64 -> Stream(item)
 		take_first = |source, n|
 			match source {
-				{ len_if_known, .. } => stream_from_step(
-					match len_if_known {
-						Known(len) => Known(
+				{ len_if_known: known_len, .. } => stream_from_step(
+					match known_len {
+						Ok(len) => Ok(
 							if len < n {
 								len
 							} else {
 								n
 							},
 						)
-						Unknown => if n == 0 {
-							Known(0)
+						Err(Unknown) => if n == 0 {
+							Ok(0)
 						} else {
-							Unknown
+							Err(Unknown)
 						}
 					},
 					||
@@ -3790,16 +3786,16 @@ Builtin :: [].{
 		drop_first : Stream(item), U64 -> Stream(item)
 		drop_first = |source, n|
 			match source {
-				{ len_if_known, .. } => stream_from_step(
-					match len_if_known {
-						Known(len) => Known(
+				{ len_if_known: known_len, .. } => stream_from_step(
+					match known_len {
+						Ok(len) => Ok(
 							if len < n {
 								0
 							} else {
 								len - n
 							},
 						)
-						Unknown => Unknown
+						Err(Unknown) => Err(Unknown)
 					},
 					||
 						match Stream.next!(source) {
@@ -3844,24 +3840,24 @@ Builtin :: [].{
 		}
 
 		## Returns the stream's length if it is known up front.
-		size_hint : Stream(item) -> [Known(U64), Unknown]
-		size_hint = |source| match source {
-			{ len_if_known, .. } => len_if_known
+		len_if_known : Stream(item) -> Try(U64, [Unknown])
+		len_if_known = |source| match source {
+			{ len_if_known: known_len, .. } => known_len
 		}
 
 		## Drive the stream to completion with an explicit loop, collecting its items
 		## into a [List] (pre-sized from `len_if_known` when known).
 		collect! : Stream(item) => List(item)
 		collect! = |source| {
-			# `Known(n)` promises n items (count-changing combinators report
-			# `Unknown`), so reserve up front and use the unchecked append while
+			# `Ok(n)` promises n items (count-changing combinators report
+			# `Err(Unknown)`), so reserve up front and use the unchecked append while
 			# the reservation lasts. `Stream.custom` hints come from the caller and
 			# may undercount, so past `cap` use the reserving append instead: the
 			# unchecked append would write past the list's capacity.
-			length = Stream.size_hint(source)
+			length = Stream.len_if_known(source)
 			cap = match length {
-				Known(n) => n
-				Unknown => 0
+				Ok(n) => n
+				Err(Unknown) => 0
 			}
 			var $list = List.with_capacity(cap)
 			var $rest = source
@@ -3903,9 +3899,9 @@ Builtin :: [].{
 		len : List(_item) -> U64
 
 		## Returns the number of items the list can hold without triggering a memory allocation.
-		## The capacity is always greater than or equal to the [List.len], with one exception:
-		## a list of zero-sized items, such as `{}`, never allocates at all, so its capacity is
-		## always 0 no matter how many items it holds.
+		## The capacity is always greater than or equal to the [List.len]. A list of zero-sized
+		## items, such as `{}`, never allocates at all: its capacity is the number of items
+		## reserved for it, or its length when that is larger.
 		capacity : List(_item) -> U64
 
 		##  Check if the list is empty.
@@ -3921,12 +3917,12 @@ Builtin :: [].{
 		iter : List(item) -> Iter(item)
 		iter = |list| {
 			make = |index| {
-				len = List.len(list)
+				length = List.len(list)
 
 				iter_from_step(
-					Known(len - index),
+					Ok(length - index),
 					||
-						if index == len {
+						if index == length {
 							Done
 						} else {
 							One({ item: list_get_unsafe(list, index), rest: make(index + 1) })
@@ -3952,7 +3948,7 @@ Builtin :: [].{
 			# just past the next one, so the length stays exact as it counts down.
 			make = |remaining|
 				iter_from_step(
-					Known(remaining),
+					Ok(remaining),
 					||
 						if remaining == 0 {
 							Done
@@ -3969,15 +3965,15 @@ Builtin :: [].{
 		## that [Iter.collect] dispatches to.
 		from_iter : Iter(item) -> List(item)
 		from_iter = |iterator| {
-			# `Known(n)` guarantees the iterator yields exactly n items: every
-			# combinator that can change the count (e.g. keep_if) reports `Unknown`.
+			# `Ok(n)` guarantees the iterator yields exactly n items: every
+			# combinator that can change the count (e.g. keep_if) reports `Err(Unknown)`.
 			# So when the length is known we reserve the whole allocation up front
 			# and write each item with the unchecked append; when it is unknown we
 			# start empty and grow with the reserving append instead.
 			length = iterator.len_if_known
 			cap = match length {
-				Known(n) => n
-				Unknown => 0
+				Ok(n) => n
+				Err(Unknown) => 0
 			}
 
 			var $list = List.with_capacity(cap)
@@ -3993,8 +3989,8 @@ Builtin :: [].{
 					}
 					One({ item, rest }) => {
 						$list = match length {
-							Known(_) => list_append_unsafe($list, item)
-							Unknown => List.append($list, item)
+							Ok(_) => list_append_unsafe($list, item)
+							Err(Unknown) => List.append($list, item)
 						}
 						$rest = rest
 					}
@@ -4060,14 +4056,14 @@ Builtin :: [].{
 		## ```
 		intersperse : List(a), a -> List(a)
 		intersperse = |list, separator| {
-			len = List.len(list)
+			length = List.len(list)
 
-			if len < 2 {
+			if length < 2 {
 				list
 			} else {
-				# `2 * len - 1` counts exactly the items appended below, so every
+				# `2 * length - 1` counts exactly the items appended below, so every
 				# unchecked append stays in bounds.
-				var $new_list = List.with_capacity(2 * len - 1)
+				var $new_list = List.with_capacity(2 * length - 1)
 				var $index = 0
 				for item in list {
 					if $index > 0 {
@@ -4326,13 +4322,13 @@ Builtin :: [].{
 		## ```
 		copy_range_within : List(a), U64, U64, U64 -> Try(List(a), [OutOfBounds])
 		copy_range_within = |list, dest_index, src_index, count| {
-			len = List.len(list)
+			length = List.len(list)
 			# Compare each start against a limit rather than subtracting from it;
 			# wrapping is safe because the first check has already ruled out
-			# `count > len`.
+			# `count > length`.
 			if count == 0 {
 				Ok(list)
-			} else if count > len or dest_index > len.minus_wrap(count) or src_index > len.minus_wrap(count) {
+			} else if count > length or dest_index > length.minus_wrap(count) or src_index > length.minus_wrap(count) {
 				Err(OutOfBounds)
 			} else {
 				Ok(list_copy_range_within(list, dest_index, src_index, count))
@@ -4457,11 +4453,11 @@ Builtin :: [].{
 		## ```
 		get_wrap : List(item), U64 -> Try(item, [ListWasEmpty])
 		get_wrap = |list, index| {
-			len = List.len(list)
-			if len == 0 {
+			length = List.len(list)
+			if length == 0 {
 				Try.Err(ListWasEmpty)
 			} else {
-				Try.Ok(list_get_unsafe(list, index % len))
+				Try.Ok(list_get_unsafe(list, index % length))
 			}
 		}
 
@@ -4505,7 +4501,7 @@ Builtin :: [].{
 				prepared_list = list_map_prepare_reuse(list)
 				match list_map_can_reuse(prepared_list, func) {
 					1 => {
-						item = list_map_extract_unsafe(prepared_list, index)
+						item = list_move_out_unsafe(prepared_list, index)
 						Ok(list_map_write_unsafe(prepared_list, index, func(item)))
 					}
 					_ => Ok(list_replace_unsafe(prepared_list, index, func(list_get_unsafe(prepared_list, index))).list)
@@ -4523,8 +4519,8 @@ Builtin :: [].{
 		## ```
 		swap : List(a), U64, U64 -> Try(List(a), [OutOfBounds])
 		swap = |list, index_1, index_2| {
-			len = List.len(list)
-			if index_1 < len and index_2 < len {
+			length = List.len(list)
+			if index_1 < length and index_2 < length {
 				Ok(list_swap_unsafe(list, index_1, index_2))
 			} else {
 				Err(OutOfBounds)
@@ -4540,20 +4536,20 @@ Builtin :: [].{
 		## ```
 		insert : List(a), U64, a -> Try(List(a), [OutOfBounds])
 		insert = |list, index, item| {
-			len = List.len(list)
-			if index > len {
+			length = List.len(list)
+			if index > length {
 				Err(OutOfBounds)
 			} else {
-				# The two loops append exactly `index` then `len - index` items plus
-				# the inserted one, so every unchecked append stays within `len + 1`.
-				var $result = List.with_capacity(len + 1)
+				# The two loops append exactly `index` then `length - index` items plus
+				# the inserted one, so every unchecked append stays within `length + 1`.
+				var $result = List.with_capacity(length + 1)
 				var $i = 0
 				while $i < index {
 					$result = list_append_unsafe($result, list_get_unsafe(list, $i))
 					$i = $i + 1
 				}
 				$result = list_append_unsafe($result, item)
-				while $i < len {
+				while $i < length {
 					$result = list_append_unsafe($result, list_get_unsafe(list, $i))
 					$i = $i + 1
 				}
@@ -4590,11 +4586,11 @@ Builtin :: [].{
 			prepared_list = list_map_prepare_reuse(list)
 			match list_map_can_reuse(prepared_list, transform) {
 				1 => {
-					len = prepared_list.len()
+					length = prepared_list.len()
 					var $out = list_map_cast_unsafe(prepared_list)
 					var $index = 0
-					while $index < len {
-						item = list_map_extract_unsafe($out, $index)
+					while $index < length {
+						item = list_map_extract_unsafe($out, $index, transform)
 						$out = list_map_write_unsafe($out, $index, transform(item))
 						$index = $index + 1
 					}
@@ -4723,7 +4719,7 @@ Builtin :: [].{
 		keep_if : List(a), (a -> Bool) -> List(a)
 		keep_if = |list, predicate| {
 			prepared = list_map_prepare_reuse(list)
-			len = prepared.len()
+			length = prepared.len()
 			match list_owned_unique(prepared) {
 				1 => {
 					# Swap each kept item down to the end of the kept prefix, so the
@@ -4732,7 +4728,7 @@ Builtin :: [].{
 					var $out = prepared
 					var $kept = 0
 					var $index = 0
-					while $index < len {
+					while $index < length {
 						if predicate(list_get_unsafe($out, $index)) {
 							if $kept != $index {
 								$out = list_swap_unsafe($out, $kept, $index)
@@ -4741,22 +4737,22 @@ Builtin :: [].{
 						}
 						$index = $index + 1
 					}
-					List.drop_last($out, len - $kept)
+					List.drop_last($out, length - $kept)
 				}
 				_ => {
 					# A shared list is returned as it is when every item is kept.
 					var $first_dropped = 0
-					while $first_dropped < len and predicate(list_get_unsafe(prepared, $first_dropped)) {
+					while $first_dropped < length and predicate(list_get_unsafe(prepared, $first_dropped)) {
 						$first_dropped = $first_dropped + 1
 					}
-					if $first_dropped == len {
+					if $first_dropped == length {
 						prepared
 					} else {
 						# The items before $first_dropped were already tested and kept,
 						# so copy them in one step and test only the items after it.
-						var $new_list = list_append_sublist(List.with_capacity(len), prepared, 0, $first_dropped)
+						var $new_list = list_append_sublist(List.with_capacity(length), prepared, 0, $first_dropped)
 						var $index = $first_dropped + 1
-						while $index < len {
+						while $index < length {
 							item = list_get_unsafe(prepared, $index)
 							if predicate(item) {
 								$new_list = list_append_unsafe($new_list, item)
@@ -4780,6 +4776,51 @@ Builtin :: [].{
 		## See its documentation for details on those characteristics!
 		drop_if : List(a), (a -> Bool) -> List(a)
 		drop_if = |list, predicate| List.keep_if(list, |item| !predicate(item))
+
+		## Return the items before the first one for which the given function
+		## returns `Bool.True`, or the whole list if it never does.
+		##
+		## The function isn't called on any item after that one, so those items are
+		## dropped even if it would have returned `Bool.False` for them. Use
+		## [List.drop_if] to test every item instead.
+		## ```roc
+		## expect [1, 2, 3].keep_until(|item| item == 2) == [1]
+		## expect [1, 5, 2].keep_until(|item| item > 3) == [1]
+		## expect [1, 2, 3].keep_until(|item| item > 3) == [1, 2, 3]
+		## expect [1, 2, 3].keep_until(|item| item > 0) == []
+		## ```
+		## ## Performance Details
+		##
+		## The result is a prefix of the original list, so no items are copied and
+		## no new list is allocated. Because the result uses the original list's
+		## memory, that memory stays allocated for as long as the result is alive,
+		## even if the result is much shorter.
+		keep_until : List(item), (item -> Bool) -> List(item)
+		keep_until = |items, predicate| {
+			match List.find_first_index(items, predicate) {
+				Ok(index) => List.take_first(items, index)
+				Err(NotFound) => items
+			}
+		}
+
+		## Return the items before the first one for which the given function
+		## returns `Bool.False`, or the whole list if it never does.
+		##
+		## The function isn't called on any item after that one, so those items are
+		## dropped even if it would have returned `Bool.True` for them. Use
+		## [List.keep_if] to test every item instead.
+		## ```roc
+		## expect [1, 2, 3].keep_while(|item| item == 1) == [1]
+		## expect [1, 5, 2].keep_while(|item| item < 3) == [1]
+		## expect [1, 2, 3].keep_while(|item| item < 4) == [1, 2, 3]
+		## expect [1, 2, 3].keep_while(|item| item < 1) == []
+		## ```
+		## ## Performance Details
+		##
+		## `List.keep_while` has the same performance characteristics as [List.keep_until].
+		## See its documentation for details on those characteristics!
+		keep_while : List(item), (item -> Bool) -> List(item)
+		keep_while = |items, predicate| List.keep_until(items, |item| !predicate(item))
 
 		## Run the given function on each item of a list, and return a list of
 		## the values it wrapped in `Ok`. Items the function maps to `Err` are
@@ -4890,15 +4931,59 @@ Builtin :: [].{
 		## ```roc
 		## expect [1.I64, 2, 3].keep_if_try(|n| Ok(n > 1)) == Ok([2, 3])
 		## ```
+		##
+		## If given a unique list, [List.keep_if_try] will mutate it in place, and will
+		## not allocate any new memory on the heap. If all items in a shared list end
+		## up being kept, Roc will return the original list unaltered. Otherwise, a
+		## shared list is copied into one new list with the original's length as its
+		## capacity.
 		keep_if_try : List(a), (a -> Try(Bool, err)) -> Try(List(a), err)
 		keep_if_try = |list, predicate| {
-			var $out = []
-			for item in list {
-				if predicate(item)? {
-					$out = List.concat($out, [item])
+			prepared = list_map_prepare_reuse(list)
+			prepared_len = prepared.len()
+			match list_owned_unique(prepared) {
+				1 => {
+					# Swap each kept item down to the end of the kept prefix. A swap
+					# leaves every slot holding an item, so stopping at an Err
+					# releases the whole list like any other list.
+					var $out = prepared
+					var $kept = 0
+					var $index = 0
+					while $index < prepared_len {
+						if predicate(list_get_unsafe($out, $index))? {
+							if $kept != $index {
+								$out = list_swap_unsafe($out, $kept, $index)
+							}
+							$kept = $kept + 1
+						}
+						$index = $index + 1
+					}
+					Ok(List.drop_last($out, prepared_len - $kept))
+				}
+				_ => {
+					# A shared list is returned as it is when every item is kept.
+					var $first_dropped = 0
+					while $first_dropped < prepared_len and predicate(list_get_unsafe(prepared, $first_dropped))? {
+						$first_dropped = $first_dropped + 1
+					}
+					if $first_dropped == prepared_len {
+						Ok(prepared)
+					} else {
+						# The items before $first_dropped were already tested and kept,
+						# so copy them in one step and test only the items after it.
+						var $new_list = list_append_sublist(List.with_capacity(prepared_len), prepared, 0, $first_dropped)
+						var $index = $first_dropped + 1
+						while $index < prepared_len {
+							item = list_get_unsafe(prepared, $index)
+							if predicate(item)? {
+								$new_list = list_append_unsafe($new_list, item)
+							}
+							$index = $index + 1
+						}
+						Ok($new_list)
+					}
 				}
 			}
-			Ok($out)
 		}
 
 		## Like [List.keep_if_try], but the predicate is effectful. It runs on each
@@ -4908,13 +4993,51 @@ Builtin :: [].{
 		## ```
 		keep_if_try! : List(a), (a => Try(Bool, err)) => Try(List(a), err)
 		keep_if_try! = |list, predicate!| {
-			var $out = []
-			for item in list {
-				if predicate!(item)? {
-					$out = List.concat($out, [item])
+			prepared = list_map_prepare_reuse(list)
+			prepared_len = prepared.len()
+			match list_owned_unique(prepared) {
+				1 => {
+					# Swap each kept item down to the end of the kept prefix. A swap
+					# leaves every slot holding an item, so stopping at an Err
+					# releases the whole list like any other list.
+					var $out = prepared
+					var $kept = 0
+					var $index = 0
+					while $index < prepared_len {
+						if predicate!(list_get_unsafe($out, $index))? {
+							if $kept != $index {
+								$out = list_swap_unsafe($out, $kept, $index)
+							}
+							$kept = $kept + 1
+						}
+						$index = $index + 1
+					}
+					Ok(List.drop_last($out, prepared_len - $kept))
+				}
+				_ => {
+					# A shared list is returned as it is when every item is kept.
+					var $first_dropped = 0
+					while $first_dropped < prepared_len and predicate!(list_get_unsafe(prepared, $first_dropped))? {
+						$first_dropped = $first_dropped + 1
+					}
+					if $first_dropped == prepared_len {
+						Ok(prepared)
+					} else {
+						# The items before $first_dropped were already tested and kept,
+						# so copy them in one step and test only the items after it.
+						var $new_list = list_append_sublist(List.with_capacity(prepared_len), prepared, 0, $first_dropped)
+						var $index = $first_dropped + 1
+						while $index < prepared_len {
+							item = list_get_unsafe(prepared, $index)
+							if predicate!(item)? {
+								$new_list = list_append_unsafe($new_list, item)
+							}
+							$index = $index + 1
+						}
+						Ok($new_list)
+					}
 				}
 			}
-			Ok($out)
 		}
 
 		## Like [List.fold], but the step function can fail. Threads `state` through
@@ -5187,9 +5310,9 @@ Builtin :: [].{
 		## ```
 		drop_swap : List(a), U64 -> List(a)
 		drop_swap = |list, index| {
-			len = List.len(list)
-			if index < len {
-				List.drop_last(list_swap_unsafe(list, index, len - 1), 1)
+			length = List.len(list)
+			if index < length {
+				List.drop_last(list_swap_unsafe(list, index, length - 1), 1)
 			} else {
 				list
 			}
@@ -5216,17 +5339,17 @@ Builtin :: [].{
 		## ```
 		chunks_of : List(a), U64 -> List(List(a))
 		chunks_of = |list, chunk_size| {
-			len = List.len(list)
+			length = List.len(list)
 
-			if chunk_size == 0 or len == 0 {
+			if chunk_size == 0 or length == 0 {
 				[]
 			} else {
-				# `(len - 1) / chunk_size + 1` is an overflow-safe ceil of `len / chunk_size`,
+				# `(length - 1) / chunk_size + 1` is an overflow-safe ceil of `length / chunk_size`,
 				# counting exactly the chunks appended below so every unchecked append stays
 				# in bounds.
-				var $chunks = List.with_capacity((len - 1) / chunk_size + 1)
+				var $chunks = List.with_capacity((length - 1) / chunk_size + 1)
 				var $start = 0
-				while ($start < len) {
+				while ($start < length) {
 					$chunks = list_append_unsafe($chunks, List.sublist(list, { start: $start, len: chunk_size }))
 					$start = $start + chunk_size
 				}
@@ -5269,9 +5392,9 @@ Builtin :: [].{
 		##
 		take_last : List(a), U64 -> List(a)
 		take_last = |list, n| {
-			len = List.len(list)
-			start = if (len <= n) 0 else len - n
-			List.sublist(list, { start: start, len: len })
+			length = List.len(list)
+			start = if (length <= n) 0 else length - n
+			List.sublist(list, { start: start, len: length })
 		}
 
 		## Drops n items from the beginning of the list. If `n` is larger than the
@@ -5283,8 +5406,8 @@ Builtin :: [].{
 		## ```
 		drop_first : List(a), U64 -> List(a)
 		drop_first = |list, n| {
-			len = List.len(list)
-			List.sublist(list, { start: n, len: len })
+			length = List.len(list)
+			List.sublist(list, { start: n, len: length })
 		}
 
 		## Drops n items from the end of the list. If `n` is larger than the
@@ -5296,8 +5419,8 @@ Builtin :: [].{
 		## ```
 		drop_last : List(a), U64 -> List(a)
 		drop_last = |list, n| {
-			len = List.len(list)
-			take_len = if (len <= n) 0 else len - n
+			length = List.len(list)
+			take_len = if (length <= n) 0 else length - n
 			List.sublist(list, { start: 0, len: take_len })
 		}
 
@@ -5366,11 +5489,11 @@ Builtin :: [].{
 		split_at : List(a), U64 -> { before : List(a), others : List(a) }
 		split_at = |list, idx| {
 			before = list.sublist({ start: 0, len: idx })
-			len = list.len()
-			others = if (idx > len)
+			length = list.len()
+			others = if (idx > length)
 				[]
 			else
-				list.sublist({ start: idx, len: len - idx })
+				list.sublist({ start: idx, len: length - idx })
 			{ before, others }
 		}
 
@@ -6090,8 +6213,8 @@ Builtin :: [].{
 			where [k.to_hash : k, Hasher -> Hasher]
 		reserve = |dict, additional| match dict {
 			HashMap(data) => {
-				len = List.len(data.entries)
-				desired = dict_add_capacity(len, additional)
+				length = List.len(data.entries)
+				desired = dict_add_capacity(length, additional)
 				prepared = dict_ensure_capacity(data, desired)
 				entries = List.reserve(prepared.entries, additional)
 				HashMap({ entries, buckets: prepared.buckets, max_entries_before_grow: prepared.max_entries_before_grow, shifts: prepared.shifts })
@@ -6306,8 +6429,8 @@ Builtin :: [].{
 			where [k.is_eq : k, k -> Bool, k.to_hash : k, Hasher -> Hasher]
 		from_iter = |iterator| {
 			var $dict = match iterator.len_if_known {
-				Known(n) => Dict.with_capacity(n)
-				Unknown => Dict.empty()
+				Ok(n) => Dict.with_capacity(n)
+				Err(Unknown) => Dict.empty()
 			}
 			var $rest = iterator
 			while Bool.True {
@@ -6825,8 +6948,8 @@ Builtin :: [].{
 			where [item.is_eq : item, item -> Bool, item.to_hash : item, Hasher -> Hasher]
 		from_iter = |iterator| {
 			initial = match iterator.len_if_known {
-				Known(n) => Set.with_capacity(n)
-				Unknown => Set.empty()
+				Ok(n) => Set.with_capacity(n)
+				Err(Unknown) => Set.empty()
 			}
 			Iter.fold(iterator, initial, |set, item| Set.insert(set, item))
 		}
@@ -6862,18 +6985,18 @@ Builtin :: [].{
 			step : num,
 			upper_bound : [Exclusive, Inclusive],
 			direction : [To, From],
-			len_if_known : [Known(U64), Unknown],
+			len_if_known : Try(U64, [Unknown]),
 		}.{
 
 			## Construct a range description for a builtin or third-party numeric type.
-			## A `Known` length must be the exact number of values the range will yield.
+			## An `Ok` length must be the exact number of values the range will yield.
 			custom : {
 				lower : num,
 				upper : num,
 				step : num,
 				upper_bound : [Exclusive, Inclusive],
 				direction : [To, From],
-				len_if_known : [Known(U64), Unknown],
+				len_if_known : Try(U64, [Unknown]),
 			} -> Range(num)
 			custom = |config|
 				Range.{
@@ -6886,13 +7009,13 @@ Builtin :: [].{
 				}
 
 			## Return the exact range length when it fits in a [U64].
-			size_hint : Range(num) -> [Known(U64), Unknown]
-			size_hint = |Range.{ len_if_known, .. }| len_if_known
+			len_if_known : Range(num) -> Try(U64, [Unknown])
+			len_if_known = |Range.{ len_if_known: known_len, .. }| known_len
 
 			## Replace this range's absolute step. The new step is expressed in the
 			## range's numeric type so third-party numbers need no [U64] conversion.
 			step_by : Range(num), num -> Range(num)
-				where [num.range_len_if_known : num, num, num, [Exclusive, Inclusive] -> [Known(U64), Unknown]]
+				where [num.range_len_if_known : num, num, num, [Exclusive, Inclusive] -> Try(U64, [Unknown])]
 			step_by = |Range.{ lower, upper, upper_bound, direction, .. }, new_step|
 				Range.{
 					lower,
@@ -6905,9 +7028,9 @@ Builtin :: [].{
 
 			## Iterate this range in its stored direction.
 			iter : Range(num) -> Iter(num)
-				where [num.range_iter : num, num, num, [Exclusive, Inclusive], [To, From], [Known(U64), Unknown] -> Iter(num)]
-			iter = |Range.{ lower, upper, step, upper_bound, direction, len_if_known }|
-				lower.range_iter(upper, step, upper_bound, direction, len_if_known)
+				where [num.range_iter : num, num, num, [Exclusive, Inclusive], [To, From], Try(U64, [Unknown]) -> Iter(num)]
+			iter = |Range.{ lower, upper, step, upper_bound, direction, len_if_known: known_len }|
+				lower.range_iter(upper, step, upper_bound, direction, known_len)
 
 			## Iterate this range in the opposite direction. Reversal reconstructs the
 			## corresponding range through the numeric type's `_to`/`_from` methods,
@@ -6919,8 +7042,8 @@ Builtin :: [].{
 					num.range_inclusive_to : num, num -> Range(num),
 					num.range_exclusive_from : num, num -> Range(num),
 					num.range_inclusive_from : num, num -> Range(num),
-					num.range_len_if_known : num, num, num, [Exclusive, Inclusive] -> [Known(U64), Unknown],
-					num.range_iter : num, num, num, [Exclusive, Inclusive], [To, From], [Known(U64), Unknown] -> Iter(num),
+					num.range_len_if_known : num, num, num, [Exclusive, Inclusive] -> Try(U64, [Unknown]),
+					num.range_iter : num, num, num, [Exclusive, Inclusive], [To, From], Try(U64, [Unknown]) -> Iter(num),
 				]
 			iter_rev = |Range.{ lower, upper, step, upper_bound, direction, .. }| {
 				reversed = match (direction, upper_bound) {
@@ -7147,15 +7270,15 @@ Builtin :: [].{
 			plus_try : U8, U8 -> Try(U8, [Overflow])
 			plus_try = |a, b| unsigned_plus_try(a, b)
 
-			range_len_if_known : U8, U8, U8, [Exclusive, Inclusive] -> [Known(U64), Unknown]
+			range_len_if_known : U8, U8, U8, [Exclusive, Inclusive] -> Try(U64, [Unknown])
 			range_len_if_known = |lower, upper, step, upper_bound|
 				if step == 0 or lower > upper or (lower == upper and upper_bound == Exclusive) {
-					Known(0)
+					Ok(0)
 				} else {
 					range_len_u64(lower.abs_diff(upper).to_u64(), step.to_u64(), upper_bound)
 				}
 
-			range_iter : U8, U8, U8, [Exclusive, Inclusive], [To, From], [Known(U64), Unknown] -> Iter(U8)
+			range_iter : U8, U8, U8, [Exclusive, Inclusive], [To, From], Try(U64, [Unknown]) -> Iter(U8)
 			range_iter = range_iter_standard
 
 			range_exclusive_to : U8, U8 -> Range(U8)
@@ -7561,9 +7684,9 @@ Builtin :: [].{
 			to = |start, end|
 				iter_from_step(
 					if start > end {
-						Known(0)
+						Ok(0)
 					} else {
-						Known(U8.to_u64(end) - U8.to_u64(start) + 1)
+						Ok(U8.to_u64(end) - U8.to_u64(start) + 1)
 					},
 					||
 						if start <= end {
@@ -7598,9 +7721,9 @@ Builtin :: [].{
 				Iter.custom(
 					start,
 					if start >= end {
-						Known(0)
+						Ok(0)
 					} else {
-						Known(U8.to_u64(end) - U8.to_u64(start))
+						Ok(U8.to_u64(end) - U8.to_u64(start))
 					},
 					|current|
 						if current < end {
@@ -7921,15 +8044,15 @@ Builtin :: [].{
 			plus_try : I8, I8 -> Try(I8, [Overflow])
 			plus_try = |a, b| signed_plus_try(a, b)
 
-			range_len_if_known : I8, I8, I8, [Exclusive, Inclusive] -> [Known(U64), Unknown]
+			range_len_if_known : I8, I8, I8, [Exclusive, Inclusive] -> Try(U64, [Unknown])
 			range_len_if_known = |lower, upper, step, upper_bound|
 				if step <= 0 or lower > upper or (lower == upper and upper_bound == Exclusive) {
-					Known(0)
+					Ok(0)
 				} else {
 					range_len_u64(lower.abs_diff(upper).to_u64(), step.abs_diff(0).to_u64(), upper_bound)
 				}
 
-			range_iter : I8, I8, I8, [Exclusive, Inclusive], [To, From], [Known(U64), Unknown] -> Iter(I8)
+			range_iter : I8, I8, I8, [Exclusive, Inclusive], [To, From], Try(U64, [Unknown]) -> Iter(I8)
 			range_iter = range_iter_standard
 
 			range_exclusive_to : I8, I8 -> Range(I8)
@@ -8321,9 +8444,9 @@ Builtin :: [].{
 			to = |start, end|
 				iter_from_step(
 					if start > end {
-						Known(0)
+						Ok(0)
 					} else {
-						Known(I64.to_u64_wrap(I8.to_i64(end) - I8.to_i64(start) + 1))
+						Ok(I64.to_u64_wrap(I8.to_i64(end) - I8.to_i64(start) + 1))
 					},
 					||
 						if start <= end {
@@ -8358,9 +8481,9 @@ Builtin :: [].{
 				Iter.custom(
 					start,
 					if start >= end {
-						Known(0)
+						Ok(0)
 					} else {
-						Known(I64.to_u64_wrap(I8.to_i64(end) - I8.to_i64(start)))
+						Ok(I64.to_u64_wrap(I8.to_i64(end) - I8.to_i64(start)))
 					},
 					|current|
 						if current < end {
@@ -8799,15 +8922,15 @@ Builtin :: [].{
 			plus_try : U16, U16 -> Try(U16, [Overflow])
 			plus_try = |a, b| unsigned_plus_try(a, b)
 
-			range_len_if_known : U16, U16, U16, [Exclusive, Inclusive] -> [Known(U64), Unknown]
+			range_len_if_known : U16, U16, U16, [Exclusive, Inclusive] -> Try(U64, [Unknown])
 			range_len_if_known = |lower, upper, step, upper_bound|
 				if step == 0 or lower > upper or (lower == upper and upper_bound == Exclusive) {
-					Known(0)
+					Ok(0)
 				} else {
 					range_len_u64(lower.abs_diff(upper).to_u64(), step.to_u64(), upper_bound)
 				}
 
-			range_iter : U16, U16, U16, [Exclusive, Inclusive], [To, From], [Known(U64), Unknown] -> Iter(U16)
+			range_iter : U16, U16, U16, [Exclusive, Inclusive], [To, From], Try(U64, [Unknown]) -> Iter(U16)
 			range_iter = range_iter_standard
 
 			range_exclusive_to : U16, U16 -> Range(U16)
@@ -9149,9 +9272,9 @@ Builtin :: [].{
 			to = |start, end|
 				iter_from_step(
 					if start > end {
-						Known(0)
+						Ok(0)
 					} else {
-						Known(U16.to_u64(end) - U16.to_u64(start) + 1)
+						Ok(U16.to_u64(end) - U16.to_u64(start) + 1)
 					},
 					||
 						if start <= end {
@@ -9186,9 +9309,9 @@ Builtin :: [].{
 				Iter.custom(
 					start,
 					if start >= end {
-						Known(0)
+						Ok(0)
 					} else {
-						Known(U16.to_u64(end) - U16.to_u64(start))
+						Ok(U16.to_u64(end) - U16.to_u64(start))
 					},
 					|current|
 						if current < end {
@@ -9631,15 +9754,15 @@ Builtin :: [].{
 			plus_try : I16, I16 -> Try(I16, [Overflow])
 			plus_try = |a, b| signed_plus_try(a, b)
 
-			range_len_if_known : I16, I16, I16, [Exclusive, Inclusive] -> [Known(U64), Unknown]
+			range_len_if_known : I16, I16, I16, [Exclusive, Inclusive] -> Try(U64, [Unknown])
 			range_len_if_known = |lower, upper, step, upper_bound|
 				if step <= 0 or lower > upper or (lower == upper and upper_bound == Exclusive) {
-					Known(0)
+					Ok(0)
 				} else {
 					range_len_u64(lower.abs_diff(upper).to_u64(), step.abs_diff(0).to_u64(), upper_bound)
 				}
 
-			range_iter : I16, I16, I16, [Exclusive, Inclusive], [To, From], [Known(U64), Unknown] -> Iter(I16)
+			range_iter : I16, I16, I16, [Exclusive, Inclusive], [To, From], Try(U64, [Unknown]) -> Iter(I16)
 			range_iter = range_iter_standard
 
 			range_exclusive_to : I16, I16 -> Range(I16)
@@ -10054,9 +10177,9 @@ Builtin :: [].{
 			to = |start, end|
 				iter_from_step(
 					if start > end {
-						Known(0)
+						Ok(0)
 					} else {
-						Known(I64.to_u64_wrap(I16.to_i64(end) - I16.to_i64(start) + 1))
+						Ok(I64.to_u64_wrap(I16.to_i64(end) - I16.to_i64(start) + 1))
 					},
 					||
 						if start <= end {
@@ -10091,9 +10214,9 @@ Builtin :: [].{
 				Iter.custom(
 					start,
 					if start >= end {
-						Known(0)
+						Ok(0)
 					} else {
-						Known(I64.to_u64_wrap(I16.to_i64(end) - I16.to_i64(start)))
+						Ok(I64.to_u64_wrap(I16.to_i64(end) - I16.to_i64(start)))
 					},
 					|current|
 						if current < end {
@@ -10548,15 +10671,15 @@ Builtin :: [].{
 			plus_try : U32, U32 -> Try(U32, [Overflow])
 			plus_try = |a, b| unsigned_plus_try(a, b)
 
-			range_len_if_known : U32, U32, U32, [Exclusive, Inclusive] -> [Known(U64), Unknown]
+			range_len_if_known : U32, U32, U32, [Exclusive, Inclusive] -> Try(U64, [Unknown])
 			range_len_if_known = |lower, upper, step, upper_bound|
 				if step == 0 or lower > upper or (lower == upper and upper_bound == Exclusive) {
-					Known(0)
+					Ok(0)
 				} else {
 					range_len_u64(lower.abs_diff(upper).to_u64(), step.to_u64(), upper_bound)
 				}
 
-			range_iter : U32, U32, U32, [Exclusive, Inclusive], [To, From], [Known(U64), Unknown] -> Iter(U32)
+			range_iter : U32, U32, U32, [Exclusive, Inclusive], [To, From], Try(U64, [Unknown]) -> Iter(U32)
 			range_iter = range_iter_standard
 
 			range_exclusive_to : U32, U32 -> Range(U32)
@@ -10898,9 +11021,9 @@ Builtin :: [].{
 			to = |start, end|
 				iter_from_step(
 					if start > end {
-						Known(0)
+						Ok(0)
 					} else {
-						Known(U32.to_u64(end) - U32.to_u64(start) + 1)
+						Ok(U32.to_u64(end) - U32.to_u64(start) + 1)
 					},
 					||
 						if start <= end {
@@ -10935,9 +11058,9 @@ Builtin :: [].{
 				Iter.custom(
 					start,
 					if start >= end {
-						Known(0)
+						Ok(0)
 					} else {
-						Known(U32.to_u64(end) - U32.to_u64(start))
+						Ok(U32.to_u64(end) - U32.to_u64(start))
 					},
 					|current|
 						if current < end {
@@ -11414,15 +11537,15 @@ Builtin :: [].{
 			plus_try : I32, I32 -> Try(I32, [Overflow])
 			plus_try = |a, b| signed_plus_try(a, b)
 
-			range_len_if_known : I32, I32, I32, [Exclusive, Inclusive] -> [Known(U64), Unknown]
+			range_len_if_known : I32, I32, I32, [Exclusive, Inclusive] -> Try(U64, [Unknown])
 			range_len_if_known = |lower, upper, step, upper_bound|
 				if step <= 0 or lower > upper or (lower == upper and upper_bound == Exclusive) {
-					Known(0)
+					Ok(0)
 				} else {
 					range_len_u64(lower.abs_diff(upper).to_u64(), step.abs_diff(0).to_u64(), upper_bound)
 				}
 
-			range_iter : I32, I32, I32, [Exclusive, Inclusive], [To, From], [Known(U64), Unknown] -> Iter(I32)
+			range_iter : I32, I32, I32, [Exclusive, Inclusive], [To, From], Try(U64, [Unknown]) -> Iter(I32)
 			range_iter = range_iter_standard
 
 			range_exclusive_to : I32, I32 -> Range(I32)
@@ -11837,9 +11960,9 @@ Builtin :: [].{
 			to = |start, end|
 				iter_from_step(
 					if start > end {
-						Known(0)
+						Ok(0)
 					} else {
-						Known(I64.to_u64_wrap(I32.to_i64(end) - I32.to_i64(start) + 1))
+						Ok(I64.to_u64_wrap(I32.to_i64(end) - I32.to_i64(start) + 1))
 					},
 					||
 						if start <= end {
@@ -11874,9 +11997,9 @@ Builtin :: [].{
 				Iter.custom(
 					start,
 					if start >= end {
-						Known(0)
+						Ok(0)
 					} else {
-						Known(I64.to_u64_wrap(I32.to_i64(end) - I32.to_i64(start)))
+						Ok(I64.to_u64_wrap(I32.to_i64(end) - I32.to_i64(start)))
 					},
 					|current|
 						if current < end {
@@ -12349,15 +12472,15 @@ Builtin :: [].{
 			plus_try : U64, U64 -> Try(U64, [Overflow])
 			plus_try = |a, b| unsigned_plus_try(a, b)
 
-			range_len_if_known : U64, U64, U64, [Exclusive, Inclusive] -> [Known(U64), Unknown]
+			range_len_if_known : U64, U64, U64, [Exclusive, Inclusive] -> Try(U64, [Unknown])
 			range_len_if_known = |lower, upper, step, upper_bound|
 				if step == 0 or lower > upper or (lower == upper and upper_bound == Exclusive) {
-					Known(0)
+					Ok(0)
 				} else {
 					range_len_u64(lower.abs_diff(upper), step, upper_bound)
 				}
 
-			range_iter : U64, U64, U64, [Exclusive, Inclusive], [To, From], [Known(U64), Unknown] -> Iter(U64)
+			range_iter : U64, U64, U64, [Exclusive, Inclusive], [To, From], Try(U64, [Unknown]) -> Iter(U64)
 			range_iter = range_iter_standard
 
 			range_exclusive_to : U64, U64 -> Range(U64)
@@ -12723,11 +12846,11 @@ Builtin :: [].{
 			to = |start, end|
 				iter_from_step(
 					if start > end {
-						Known(0)
+						Ok(0)
 					} else {
 						match U64.plus_try(end - start, 1) {
-							Ok(len) => Known(len)
-							Err(Overflow) => Unknown
+							Ok(len) => Ok(len)
+							Err(Overflow) => Err(Unknown)
 						}
 					},
 					||
@@ -12763,9 +12886,9 @@ Builtin :: [].{
 				Iter.custom(
 					start,
 					if start >= end {
-						Known(0)
+						Ok(0)
 					} else {
-						Known(end - start)
+						Ok(end - start)
 					},
 					|current|
 						if current < end {
@@ -13280,15 +13403,15 @@ Builtin :: [].{
 			plus_try : I64, I64 -> Try(I64, [Overflow])
 			plus_try = |a, b| signed_plus_try(a, b)
 
-			range_len_if_known : I64, I64, I64, [Exclusive, Inclusive] -> [Known(U64), Unknown]
+			range_len_if_known : I64, I64, I64, [Exclusive, Inclusive] -> Try(U64, [Unknown])
 			range_len_if_known = |lower, upper, step, upper_bound|
 				if step <= 0 or lower > upper or (lower == upper and upper_bound == Exclusive) {
-					Known(0)
+					Ok(0)
 				} else {
 					range_len_u64(lower.abs_diff(upper), step.abs_diff(0), upper_bound)
 				}
 
-			range_iter : I64, I64, I64, [Exclusive, Inclusive], [To, From], [Known(U64), Unknown] -> Iter(I64)
+			range_iter : I64, I64, I64, [Exclusive, Inclusive], [To, From], Try(U64, [Unknown]) -> Iter(I64)
 			range_iter = range_iter_standard
 
 			range_exclusive_to : I64, I64 -> Range(I64)
@@ -13703,14 +13826,14 @@ Builtin :: [].{
 			to = |start, end|
 				iter_from_step(
 					if start > end {
-						Known(0)
+						Ok(0)
 					} else {
 						match I64.minus_try(end, start) {
 							Ok(diff) => match I64.plus_try(diff, 1) {
-								Ok(d1) => Known(I64.to_u64_wrap(d1))
-								Err(Overflow) => Unknown
+								Ok(d1) => Ok(I64.to_u64_wrap(d1))
+								Err(Overflow) => Err(Unknown)
 							}
-							Err(Overflow) => Unknown
+							Err(Overflow) => Err(Unknown)
 						}
 					},
 					||
@@ -13746,11 +13869,11 @@ Builtin :: [].{
 				Iter.custom(
 					start,
 					if start >= end {
-						Known(0)
+						Ok(0)
 					} else {
 						match I64.minus_try(end, start) {
-							Ok(diff) => Known(I64.to_u64_wrap(diff))
-							Err(Overflow) => Unknown
+							Ok(diff) => Ok(I64.to_u64_wrap(diff))
+							Err(Overflow) => Err(Unknown)
 						}
 					},
 					|current|
@@ -14238,15 +14361,15 @@ Builtin :: [].{
 			plus_try : U128, U128 -> Try(U128, [Overflow])
 			plus_try = |a, b| unsigned_plus_try(a, b)
 
-			range_len_if_known : U128, U128, U128, [Exclusive, Inclusive] -> [Known(U64), Unknown]
+			range_len_if_known : U128, U128, U128, [Exclusive, Inclusive] -> Try(U64, [Unknown])
 			range_len_if_known = |lower, upper, step, upper_bound|
 				if step == 0 or lower > upper or (lower == upper and upper_bound == Exclusive) {
-					Known(0)
+					Ok(0)
 				} else {
 					range_len_u128(lower.abs_diff(upper), step, upper_bound)
 				}
 
-			range_iter : U128, U128, U128, [Exclusive, Inclusive], [To, From], [Known(U64), Unknown] -> Iter(U128)
+			range_iter : U128, U128, U128, [Exclusive, Inclusive], [To, From], Try(U64, [Unknown]) -> Iter(U128)
 			range_iter = range_iter_standard
 
 			range_exclusive_to : U128, U128 -> Range(U128)
@@ -14588,14 +14711,14 @@ Builtin :: [].{
 			to = |start, end|
 				iter_from_step(
 					if start > end {
-						Known(0)
+						Ok(0)
 					} else {
 						match U128.to_u64_try(end - start) {
 							Ok(diff_u64) => match U64.plus_try(diff_u64, 1) {
-								Ok(len) => Known(len)
-								Err(Overflow) => Unknown
+								Ok(len) => Ok(len)
+								Err(Overflow) => Err(Unknown)
 							}
-							Err(OutOfRange) => Unknown
+							Err(OutOfRange) => Err(Unknown)
 						}
 					},
 					||
@@ -14631,11 +14754,11 @@ Builtin :: [].{
 				Iter.custom(
 					start,
 					if start >= end {
-						Known(0)
+						Ok(0)
 					} else {
 						match U128.to_u64_try(end - start) {
-							Ok(len) => Known(len)
-							Err(OutOfRange) => Unknown
+							Ok(len) => Ok(len)
+							Err(OutOfRange) => Err(Unknown)
 						}
 					},
 					|current|
@@ -15185,15 +15308,15 @@ Builtin :: [].{
 			plus_try : I128, I128 -> Try(I128, [Overflow])
 			plus_try = |a, b| signed_plus_try(a, b)
 
-			range_len_if_known : I128, I128, I128, [Exclusive, Inclusive] -> [Known(U64), Unknown]
+			range_len_if_known : I128, I128, I128, [Exclusive, Inclusive] -> Try(U64, [Unknown])
 			range_len_if_known = |lower, upper, step, upper_bound|
 				if step <= 0 or lower > upper or (lower == upper and upper_bound == Exclusive) {
-					Known(0)
+					Ok(0)
 				} else {
 					range_len_u128(lower.abs_diff(upper), step.abs_diff(0), upper_bound)
 				}
 
-			range_iter : I128, I128, I128, [Exclusive, Inclusive], [To, From], [Known(U64), Unknown] -> Iter(I128)
+			range_iter : I128, I128, I128, [Exclusive, Inclusive], [To, From], Try(U64, [Unknown]) -> Iter(I128)
 			range_iter = range_iter_standard
 
 			range_exclusive_to : I128, I128 -> Range(I128)
@@ -15609,17 +15732,17 @@ Builtin :: [].{
 			to = |start, end|
 				iter_from_step(
 					if start > end {
-						Known(0)
+						Ok(0)
 					} else {
 						match I128.minus_try(end, start) {
 							Ok(diff) => match I128.to_u64_try(diff) {
 								Ok(diff_u64) => match U64.plus_try(diff_u64, 1) {
-									Ok(len) => Known(len)
-									Err(Overflow) => Unknown
+									Ok(len) => Ok(len)
+									Err(Overflow) => Err(Unknown)
 								}
-								Err(OutOfRange) => Unknown
+								Err(OutOfRange) => Err(Unknown)
 							}
-							Err(Overflow) => Unknown
+							Err(Overflow) => Err(Unknown)
 						}
 					},
 					||
@@ -15655,14 +15778,14 @@ Builtin :: [].{
 				Iter.custom(
 					start,
 					if start >= end {
-						Known(0)
+						Ok(0)
 					} else {
 						match I128.minus_try(end, start) {
 							Ok(diff) => match I128.to_u64_try(diff) {
-								Ok(len) => Known(len)
-								Err(OutOfRange) => Unknown
+								Ok(len) => Ok(len)
+								Err(OutOfRange) => Err(Unknown)
 							}
-							Err(Overflow) => Unknown
+							Err(Overflow) => Err(Unknown)
 						}
 					},
 					|current|
@@ -16207,8 +16330,8 @@ Builtin :: [].{
 			## expect !Dec.is_approx_eq(Dec.highest, Dec.lowest, { rel: 1.0, abs: 0.0 })
 			## ```
 			is_approx_eq : Dec, Dec, { rel : Dec, abs : Dec } -> Bool
-			is_approx_eq = |a, b, { rel, abs }| {
-				if !(rel >= 0.0 and rel <= 1.0 and abs >= 0.0) {
+			is_approx_eq = |a, b, { rel, abs: abs_tolerance }| {
+				if !(rel >= 0.0 and rel <= 1.0 and abs_tolerance >= 0.0) {
 					crash "Dec.is_approx_eq: rel must be in [0, 1] and abs non-negative"
 				}
 
@@ -16223,7 +16346,7 @@ Builtin :: [].{
 							} else {
 								Dec.max(Dec.abs(a), Dec.abs(b))
 							}
-							diff <= Dec.max(abs, rel * magnitude)
+							diff <= Dec.max(abs_tolerance, rel * magnitude)
 						}
 						Err(Overflow) => False
 					}
@@ -16267,10 +16390,10 @@ Builtin :: [].{
 				}
 			}
 
-			range_len_if_known : Dec, Dec, Dec, [Exclusive, Inclusive] -> [Known(U64), Unknown]
+			range_len_if_known : Dec, Dec, Dec, [Exclusive, Inclusive] -> Try(U64, [Unknown])
 			range_len_if_known = range_len_dec
 
-			range_iter : Dec, Dec, Dec, [Exclusive, Inclusive], [To, From], [Known(U64), Unknown] -> Iter(Dec)
+			range_iter : Dec, Dec, Dec, [Exclusive, Inclusive], [To, From], Try(U64, [Unknown]) -> Iter(Dec)
 			range_iter = range_iter_standard
 
 			range_exclusive_to : Dec, Dec -> Range(Dec)
@@ -17190,7 +17313,7 @@ Builtin :: [].{
 			to : Dec, Dec -> Iter(Dec)
 			to = |start, end|
 				iter_from_step(
-					Unknown,
+					Err(Unknown),
 					||
 						if start <= end {
 							One({
@@ -17225,7 +17348,7 @@ Builtin :: [].{
 			until = |start, end|
 				Iter.custom(
 					start,
-					Unknown,
+					Err(Unknown),
 					|current|
 						if current < end {
 							match Dec.plus_try(current, 1.0) {
@@ -17434,15 +17557,15 @@ Builtin :: [].{
 			## expect !F32.is_approx_eq(F32.nan, F32.nan, { rel: 1.0, abs: 1.0 })
 			## ```
 			is_approx_eq : F32, F32, { rel : F32, abs : F32 } -> Bool
-			is_approx_eq = |a, b, { rel, abs }| {
-				if !(rel >= 0.0 and rel <= 1.0 and abs >= 0.0 and F32.is_finite(abs)) {
+			is_approx_eq = |a, b, { rel, abs: abs_tolerance }| {
+				if !(rel >= 0.0 and rel <= 1.0 and abs_tolerance >= 0.0 and F32.is_finite(abs_tolerance)) {
 					crash "F32.is_approx_eq: rel must be in [0, 1] and abs finite and non-negative"
 				}
 
 				if F32.is_float_eq(a, b) {
 					True
 				} else if F32.is_finite(a) and F32.is_finite(b) {
-					F32.abs(a - b) <= F32.max(abs, rel * F32.max(F32.abs(a), F32.abs(b)))
+					F32.abs(a - b) <= F32.max(abs_tolerance, rel * F32.max(F32.abs(a), F32.abs(b)))
 				} else {
 					False
 				}
@@ -17959,11 +18082,11 @@ Builtin :: [].{
 			from_numeral : Numeral -> Try(F32, [InvalidNumeral(Str)])
 			from_numeral = |numeral| from_numeral_with(numeral, |str| f32_from_str(str))
 
-			range_len_if_known : F32, F32, F32, [Exclusive, Inclusive] -> [Known(U64), Unknown]
+			range_len_if_known : F32, F32, F32, [Exclusive, Inclusive] -> Try(U64, [Unknown])
 			range_len_if_known = |lower, upper, step, upper_bound|
-				if (step <= 0 or lower > upper or (lower == upper and upper_bound == Exclusive)) Known(0) else Unknown
+				if (step <= 0 or lower > upper or (lower == upper and upper_bound == Exclusive)) Ok(0) else Err(Unknown)
 
-			range_iter : F32, F32, F32, [Exclusive, Inclusive], [To, From], [Known(U64), Unknown] -> Iter(F32)
+			range_iter : F32, F32, F32, [Exclusive, Inclusive], [To, From], Try(U64, [Unknown]) -> Iter(F32)
 			range_iter = range_iter_float
 
 			range_exclusive_to : F32, F32 -> Range(F32)
@@ -18449,15 +18572,15 @@ Builtin :: [].{
 			## expect !F64.is_approx_eq(F64.nan, F64.nan, { rel: 1.0, abs: 1.0 })
 			## ```
 			is_approx_eq : F64, F64, { rel : F64, abs : F64 } -> Bool
-			is_approx_eq = |a, b, { rel, abs }| {
-				if !(rel >= 0.0 and rel <= 1.0 and abs >= 0.0 and F64.is_finite(abs)) {
+			is_approx_eq = |a, b, { rel, abs: abs_tolerance }| {
+				if !(rel >= 0.0 and rel <= 1.0 and abs_tolerance >= 0.0 and F64.is_finite(abs_tolerance)) {
 					crash "F64.is_approx_eq: rel must be in [0, 1] and abs finite and non-negative"
 				}
 
 				if F64.is_float_eq(a, b) {
 					True
 				} else if F64.is_finite(a) and F64.is_finite(b) {
-					F64.abs(a - b) <= F64.max(abs, rel * F64.max(F64.abs(a), F64.abs(b)))
+					F64.abs(a - b) <= F64.max(abs_tolerance, rel * F64.max(F64.abs(a), F64.abs(b)))
 				} else {
 					False
 				}
@@ -18974,11 +19097,11 @@ Builtin :: [].{
 			from_numeral : Numeral -> Try(F64, [InvalidNumeral(Str)])
 			from_numeral = |numeral| from_numeral_with(numeral, |str| f64_from_str(str))
 
-			range_len_if_known : F64, F64, F64, [Exclusive, Inclusive] -> [Known(U64), Unknown]
+			range_len_if_known : F64, F64, F64, [Exclusive, Inclusive] -> Try(U64, [Unknown])
 			range_len_if_known = |lower, upper, step, upper_bound|
-				if (step <= 0 or lower > upper or (lower == upper and upper_bound == Exclusive)) Known(0) else Unknown
+				if (step <= 0 or lower > upper or (lower == upper and upper_bound == Exclusive)) Ok(0) else Err(Unknown)
 
-			range_iter : F64, F64, F64, [Exclusive, Inclusive], [To, From], [Known(U64), Unknown] -> Iter(F64)
+			range_iter : F64, F64, F64, [Exclusive, Inclusive], [To, From], Try(U64, [Unknown]) -> Iter(F64)
 			range_iter = range_iter_float
 
 			range_exclusive_to : F64, F64 -> Range(F64)
@@ -19885,7 +20008,7 @@ Builtin :: [].{
 				chunk_count = len / 16
 				chunks = Iter.custom(
 					0.U64,
-					Known(chunk_count),
+					Ok(chunk_count),
 					|start| {
 						# 16 items starting at `start` fit when `start < len - 15`. That
 						# limit depends only on the list, so a loop that reads repeatedly hoists
@@ -23642,7 +23765,25 @@ Builtin :: [].{
 
 		}
 	}
+}
 
+StrUtf8Problem := [
+	InvalidStartByte,
+	UnexpectedEndOfSequence,
+	ExpectedContinuation,
+	OverlongEncoding,
+	CodepointTooLarge,
+	EncodesSurrogateHalf,
+].{
+	is_eq : Str.Utf8Problem, Str.Utf8Problem -> Bool
+}
+
+StrUtf16Problem := [UnpairedHighSurrogate, UnpairedLowSurrogate, UnexpectedEndOfSequence].{
+	is_eq : Str.Utf16Problem, Str.Utf16Problem -> Bool
+}
+
+StrUtf32Problem := [CodePointTooLarge, SurrogateCodePoint, UnexpectedEndOfSequence].{
+	is_eq : Str.Utf32Problem, Str.Utf32Problem -> Bool
 }
 
 hasher_start : U64 -> Hasher
@@ -27001,7 +27142,6 @@ signed_pow_try_step = |lowest, highest, zero, one, two, neg_one, acc, base, expo
 
 		match next_acc {
 			Err(Overflow) => Err(Overflow)
-			Err(Underflow) => Err(Underflow)
 			Ok(updated_acc) => {
 				next_exponent = exponent / two
 				if next_exponent == zero {
@@ -27200,7 +27340,7 @@ signed_is_multiple_of = |zero, neg_one, value, divisor|
 	}
 
 range_with_step : num, num, num, [Exclusive, Inclusive], [To, From] -> Num.Range(num)
-	where [num.range_len_if_known : num, num, num, [Exclusive, Inclusive] -> [Known(U64), Unknown]]
+	where [num.range_len_if_known : num, num, num, [Exclusive, Inclusive] -> Try(U64, [Unknown])]
 range_with_step = |lower, upper, step, upper_bound, direction|
 	Num.Range.custom({
 		lower,
@@ -27211,49 +27351,49 @@ range_with_step = |lower, upper, step, upper_bound, direction|
 		len_if_known: lower.range_len_if_known(upper, step, upper_bound),
 	})
 
-range_len_u64 : U64, U64, [Exclusive, Inclusive] -> [Known(U64), Unknown]
+range_len_u64 : U64, U64, [Exclusive, Inclusive] -> Try(U64, [Unknown])
 range_len_u64 = |distance, step, upper_bound|
 	if step == 0 {
-		Known(0)
+		Ok(0)
 	} else {
 		match upper_bound {
-			Exclusive => Known((distance - 1) / step + 1)
+			Exclusive => Ok((distance - 1) / step + 1)
 			Inclusive => match (distance / step).plus_try(1) {
-				Ok(len) => Known(len)
-				Err(Overflow) => Unknown
+				Ok(len) => Ok(len)
+				Err(Overflow) => Err(Unknown)
 			}
 		}
 	}
 
-range_len_u128 : U128, U128, [Exclusive, Inclusive] -> [Known(U64), Unknown]
+range_len_u128 : U128, U128, [Exclusive, Inclusive] -> Try(U64, [Unknown])
 range_len_u128 = |distance, step, upper_bound|
 	if step == 0 {
-		Known(0)
+		Ok(0)
 	} else {
 		base = match upper_bound {
 			Exclusive => (distance - 1) / step
 			Inclusive => distance / step
 		}
 		match base.plus_try(1) {
-			Err(Overflow) => Unknown
+			Err(Overflow) => Err(Unknown)
 			Ok(len_u128) => match len_u128.to_u64_try() {
-				Ok(len) => Known(len)
-				Err(OutOfRange) => Unknown
+				Ok(len) => Ok(len)
+				Err(OutOfRange) => Err(Unknown)
 			}
 		}
 	}
 
-range_len_dec : Dec, Dec, Dec, [Exclusive, Inclusive] -> [Known(U64), Unknown]
+range_len_dec : Dec, Dec, Dec, [Exclusive, Inclusive] -> Try(U64, [Unknown])
 range_len_dec = |lower, upper, step, upper_bound| {
 	has_members = step > 0 and match upper_bound {
 		Exclusive => lower < upper
 		Inclusive => lower <= upper
 	}
 	if !has_members {
-		Known(0)
+		Ok(0)
 	} else {
 		match upper.minus_try(lower) {
-			Err(Overflow) => Unknown
+			Err(Overflow) => Err(Unknown)
 			Ok(distance) => {
 				count_try = match upper_bound {
 					Exclusive => (distance / step).ceiling_to_u64_try()
@@ -27263,8 +27403,8 @@ range_len_dec = |lower, upper, step, upper_bound| {
 					}
 				}
 				match count_try {
-					Ok(len) => Known(len)
-					Err(_) => Unknown
+					Ok(len) => Ok(len)
+					Err(_) => Err(Unknown)
 				}
 			}
 		}
@@ -27344,7 +27484,7 @@ range_standard_last = |lower, upper, step, upper_bound| {
 # Both directions use one tagged seed shape, so the public Range source owns a
 # single flat iterator representation even when `direction` is only known at
 # runtime.
-range_iter_standard : num, num, num, [Exclusive, Inclusive], [To, From], [Known(U64), Unknown] -> Iter(num)
+range_iter_standard : num, num, num, [Exclusive, Inclusive], [To, From], Try(U64, [Unknown]) -> Iter(num)
 	where [
 		num.is_eq : num, num -> Bool,
 		num.is_lt : num, num -> Bool,
@@ -27413,7 +27553,7 @@ range_iter_standard = |lower, upper, step, upper_bound, direction, len_if_known|
 # IEEE floats deliberately support only `_to` constructors. This helper keeps
 # their existing repeated-addition/stall semantics; a manually-constructed
 # `From` float range is empty because floats do not claim exact reversibility.
-range_iter_float : num, num, num, [Exclusive, Inclusive], [To, From], [Known(U64), Unknown] -> Iter(num)
+range_iter_float : num, num, num, [Exclusive, Inclusive], [To, From], Try(U64, [Unknown]) -> Iter(num)
 	where [
 		num.is_lt : num, num -> Bool,
 		num.is_lte : num, num -> Bool,
@@ -27450,7 +27590,7 @@ range_iter_float = |current, upper, step, upper_bound, direction, len_if_known| 
 	)
 }
 
-iter_from_step : [Known(U64), Unknown], (() -> [One({ item : item, rest : Iter(item) }), Skip({ rest : Iter(item) }), Done]) -> Iter(item)
+iter_from_step : Try(U64, [Unknown]), (() -> [One({ item : item, rest : Iter(item) }), Skip({ rest : Iter(item) }), Done]) -> Iter(item)
 iter_from_step = |len_if_known, step| {
 	len_if_known,
 	step,
@@ -27459,7 +27599,7 @@ iter_from_step = |len_if_known, step| {
 # The `Stream` counterpart of `iter_from_step`: every `Stream` source and
 # adapter builds its value through this one registered constructor, so Monotype
 # can give the result its exact minted representation.
-stream_from_step : [Known(U64), Unknown], (() => [One({ item : item, rest : Stream(item) }), Skip({ rest : Stream(item) }), Done]) -> Stream(item)
+stream_from_step : Try(U64, [Unknown]), (() => [One({ item : item, rest : Stream(item) }), Skip({ rest : Stream(item) }), Done]) -> Stream(item)
 stream_from_step = |len_if_known, step!| {
 	len_if_known,
 	step!,
@@ -27467,7 +27607,7 @@ stream_from_step = |len_if_known, step!| {
 
 range_done : () -> Iter(item)
 range_done = || iter_from_step(
-	Known(0),
+	Ok(0),
 	|| Done,
 )
 
@@ -27492,7 +27632,7 @@ iter_with_index = |src, index|
 stream_with_index : Stream(a), U64 -> Stream((U64, a))
 stream_with_index = |src, index|
 	stream_from_step(
-		Stream.size_hint(src),
+		Stream.len_if_known(src),
 		||
 			match Stream.next!(src) {
 				Done => Done
@@ -27512,15 +27652,15 @@ iter_step_by : Iter(item), (U64, U64) -> Iter(item)
 iter_step_by = |src, (stride, pending)|
 	iter_from_step(
 		match src.len_if_known {
-			Known(len) => if stride == 0 or len <= pending {
-				Known(0)
+			Ok(len) => if stride == 0 or len <= pending {
+				Ok(0)
 			} else {
-				Known((len - pending - 1) / stride + 1)
+				Ok((len - pending - 1) / stride + 1)
 			}
-			Unknown => if stride == 0 {
-				Known(0)
+			Err(Unknown) => if stride == 0 {
+				Ok(0)
 			} else {
-				Unknown
+				Err(Unknown)
 			}
 		},
 		||
@@ -27872,15 +28012,17 @@ list_map_cast_unsafe : List(input) -> List(output)
 
 # Implemented by the compiler. Moves ownership of the item at the given
 # index out of the list's buffer; the slot keeps stale bytes until
-# list_map_write_unsafe stores its replacement. No bounds checks.
-list_map_extract_unsafe : List(output), U64 -> input
+# list_map_write_unsafe stores its replacement. No bounds checks. The
+# transform is never evaluated: the list's type names only the output item,
+# so the transform's type is what says the slot holds an input item.
+list_map_extract_unsafe : List(output), U64, (input -> output) -> input
 
 # Implemented by the compiler. Stores an owned item into the slot at the
 # given index, which must have been vacated by list_map_extract_unsafe.
 # No bounds checks.
 list_map_write_unsafe : List(output), U64, output -> List(output)
 
-# Implemented by the compiler: the same operation as list_map_extract_unsafe
+# Implemented by the compiler: the same move as list_map_extract_unsafe
 # for a list whose item type does not change. Moves the item at the index out
 # of a uniquely owned list's buffer, doing no refcount work; the slot keeps
 # stale bytes until list_move_in_unsafe refills it. No bounds checks.

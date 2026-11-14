@@ -51,6 +51,12 @@ Header := { tag : U8, _ : {}, value : U32 }
 # @rejects unnamed field not allowed in structural record
 # BadHeader : { tag : U8, _ : {}, value : U32 }
 
+# A nominal record with a `_` field can take more fields from a type parameter
+# with `..rest`. The written fields come first, in written order. The fields of
+# `rest` follow, sorted by name, so `Pad({ b : U64, a : U64 })` puts `z` at
+# offset 0, the reserved byte at 8, `a` at 16 and `b` at 24.
+Pad(rest) := { z : U64, _ : U8, ..rest }
+
 # basic-cli's Host.roc returns the output of a command as a record:
 #
 #   CmdOutput : { status : [Exited(I32), Signaled(I32)], stdout_bytes : List(U8), stderr_bytes : List(U8) }

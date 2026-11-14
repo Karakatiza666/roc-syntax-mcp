@@ -201,6 +201,18 @@ swap = |(x, y)| (y, x)
 # @rejects recursive alias
 # BadTree : [Leaf, Node(BadTree, U64, BadTree)]
 Tree := [Leaf, Node(Tree, U64, Tree)]
+
+# A recursive type passes its own type parameters to itself unchanged, as
+# `Branch(a)` does. Wrapping a parameter, as in `Nest(List(a))`, or swapping two,
+# is an error. A recursive use with a type that names no parameter, such as
+# `Chain(Str)`, is fine.
+#
+# @rejects invalid recursive type
+# Nest(a) := [Done(a), More(Nest(List(a)))]
+#
+# @rejects invalid recursive type
+# Flip(a, b) := [End, Link(a, b, Flip(b, a))]
+Branch(a) := [Leaf(a), Node(Branch(a), Branch(a))]
 Expr := [Num(I64), Add(Expr, Expr), Block(List(Stmt))]
 Stmt := [Let(Str, Expr), Print(Expr)]
 

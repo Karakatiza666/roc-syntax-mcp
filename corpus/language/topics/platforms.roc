@@ -16,14 +16,12 @@
 # number of times, or never. The standard library has no I/O and Roc has no
 # FFI of its own. So every effect, and every call into another language, goes
 # through a function that the platform exposes. A platform can leave out an
-# effect that does not fit its domain (file I/O in a browser), and a package
-# that needs it does not build there. A platform can also guard each effect,
-# e.g. with a prompt before a file write. A platform can wrap one existing
-# codebase, to embed Roc in it. Concurrent I/O scheduled by the platform is
-# planned.
+# effect that does not fit its domain (file I/O in a browser), so a package
+# that needs it does not build there, or guard one, e.g. with a prompt before a
+# file write. Concurrent I/O scheduled by the platform is planned.
 #
-# A host can see the address of any value it receives. Whether a platform API
-# depends on addresses is the choice of the platform author. The optimizer
+# A host can see the address of any value it receives, and a platform API may
+# depend on it. The optimizer
 # assumes that allocation has no observable effect, so effects in a host
 # allocator may run differently between compiler releases.
 #
@@ -38,7 +36,7 @@
 #     hosted { "roc_read_file": File.read_bytes! }
 #     targets: {
 #         inputs_dir: "targets/",
-#         x64linux:  { inputs: ["crt1.o", "libhost.a", app] },
+#         x64musl:   { inputs: ["rcrt1.o", "libhost.a", app, "libc.a"] },
 #         arm64mac:  { inputs: ["libhost.a", app] },
 #         wasm32:    { inputs: ["host.wasm", app], output: Shared, exports: [] },
 #     }
@@ -71,6 +69,9 @@
 #     directory holding those files inside the package bundle. These paths
 #     must stay inside the platform directory. `roc check` reports an absolute
 #     path or a `..` component as "invalid target path".
+#   A native executable is always position-independent, with no opt-out.
+#     Compile the host with `-fPIC`. A static Linux executable needs startup
+#     code that relocates, such as musl's `rcrt1.o`. With `crt1.o` it crashes.
 #
 # A target's `output` field declares the artifact kind:
 #   `Exe` (the default) links an executable. On wasm32, a command module with
@@ -213,8 +214,6 @@
 #
 # 5. The host side (Rust, Zig, and so on): what it must provide
 #
-#
-# The host is not Roc code, but you need to know what it exposes:
 #
 #   `main()` (the OS entry point) sets up locale (e.g. UTF-8 code page
 #     on Windows), then calls the `provides` key (`roc_main` above). The Roc

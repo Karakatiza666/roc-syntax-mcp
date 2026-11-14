@@ -84,23 +84,26 @@ expect unique == Set.from_list([1, 3])
 expect (0..<1_000_000).iter().map(|n| n * 2).take_first(2).collect() == [0, 2]
 
 powers_of_two : Iter(U64)
-powers_of_two = Iter.custom(1, Unknown, |n| Ok((n, n * 2)))
+powers_of_two = Iter.custom(1, Err(Unknown), |n| Ok((n, n * 2)))
 
 expect powers_of_two.take_first(5).collect() == [1, 2, 4, 8, 16]
 
-# `size_hint` reports a length when one is known without walking the iterator.
-#   Iter.size_hint : Iter(item) -> [Known(U64), Unknown]
-# `collect` allocates a list of the `Known` length once, so give `Known(n)` only
-# when the iterator yields exactly n items.
+# `len_if_known` reports a length when one is known without walking the
+# iterator. The length is a `Try`, not a `Known`/`Unknown` tag pair.
+#   Iter.len_if_known : Iter(item) -> Try(U64, [Unknown])
+# `collect` allocates a list of the `Ok` length once, so give `Ok(n)` only when
+# the iterator yields exactly n items.
+expect [1, 2, 3].iter().len_if_known() == Ok(3)
+expect [1, 2, 3].iter().keep_if(|n| n > 1).len_if_known() == Err(Unknown)
 
 # `Iter.custom` is the general unfold. It takes a seed, a length hint, and a
 # step function mapping the seed to the next item plus the next seed, or
 # `NoMore`. The seed type stays hidden inside the step closure.
-#   Iter.custom : state, [Known(U64), Unknown],
+#   Iter.custom : state, Try(U64, [Unknown]),
 #                 (state -> Try((item, state), [NoMore])) -> Iter(item)
 countdown : U64 -> Iter(U64)
 countdown = |from|
-	Iter.custom(from, Known(from), |n| if (n == 0) Err(NoMore) else Ok((n, n - 1)))
+	Iter.custom(from, Ok(from), |n| if (n == 0) Err(NoMore) else Ok((n, n - 1)))
 
 # An iterator is a value. `next` does not change it, and returns `rest` to
 # continue with.
@@ -133,7 +136,7 @@ Rows := { items : List(I64) }.{
 #
 # `Stream(item)` is the effectful counterpart. Its step is a `=>` function, so
 # advancing it can perform effects.
-#   Stream.custom    : state, [Known(U64), Unknown],
+#   Stream.custom    : state, Try(U64, [Unknown]),
 #                      (state => Try((item, state), [NoMore])) -> Stream(item)
 #   Stream.from_iter : Iter(item) -> Stream(item)
 #   Stream.map       : Stream(a), (a => b) -> Stream(b)
@@ -142,7 +145,7 @@ Rows := { items : List(I64) }.{
 #   Stream.collect!  : Stream(item) => List(item)
 #   Stream.fold!     : Stream(a), acc, (acc, a => acc) => acc
 #   Stream.for_each! : Stream(a), (a => {}) => {}
-#   Stream.size_hint : Stream(item) -> [Known(U64), Unknown]
+#   Stream.len_if_known : Stream(item) -> Try(U64, [Unknown])
 #
 # A stream is lazy too. `map`, `keep_if`, `drop_if`, `with_index`,
 # `take_first` and `drop_first` pull nothing. A consumer (`for!`, `fold!`,
@@ -150,7 +153,7 @@ Rows := { items : List(I64) }.{
 # only in an effectful function. Building a stream is pure.
 ticks : U64 -> Stream(U64)
 ticks = |count|
-	Stream.custom(0, Known(count), |n| {
+	Stream.custom(0, Ok(count), |n| {
 		echo!("tick ${n.to_str()}\n")
 		if n < count Ok((n, n + 1)) else Err(NoMore)
 	})

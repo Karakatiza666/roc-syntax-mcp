@@ -69,6 +69,30 @@ ignore_quantity = |price, _quantity| price * 2
 # @warns duplicate definition
 # bump = |later| later + 1
 #
+# Inside a type's `.{ }` block, a member's plain name means that member
+# everywhere in the block, whatever the order of definitions in the file. So a
+# member with the name of a top-level value shadows it and gets the warning,
+# even when the top-level value comes later. Below, `scale(...)` in `twice`
+# calls `Meter.scale`. An argument with the name of a member shadows the member.
+#
+# @warns duplicate definition
+# Meter := U64.{
+# 	scale : Meter -> Meter
+# 	scale = |Meter.(n)| Meter.(n * 10)
+# 	twice : Meter -> Meter
+# 	twice = |meter| scale(scale(meter))
+# }
+# scale : U64 -> U64
+# scale = |n| n * 2
+#
+# @warns duplicate definition
+# Account := { owner : Str }.{
+# 	new : Str -> Account
+# 	new = |owner| Account.{ owner }
+# 	owner : Account -> Str
+# 	owner = |account| account.owner
+# }
+#
 # A type that has the name of a builtin type, such as `Str`, `Dict` or `Iter`,
 # gives a warning and hides the builtin in its scope. A nested type inside a
 # `.{ }` block counts too. Choose another name.

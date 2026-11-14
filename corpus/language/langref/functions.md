@@ -41,7 +41,7 @@ give different answers than if they were run at runtime.
 Pure functions also have no side effects. That said, pure functions in Roc can run things
 that can reasonably be considered side effects:
 
-1. Crashing. Roc pure functions can crash (or get stuck in an infinite loop), as they are not guaranteed to be _total_. If they crash at compile time, it will be reported as a compile error, which is considered an improvement over the alternative of the end user of the program encountering a crash at runtime. ⚠️ If they get stuck in an infinite loop, this currently hangs the compiler (although there are plans to improve this in the future), which is also considered better than the alternative of an end user encountering a program hang at runtime.
+1. Crashing. Roc pure functions can crash (or get stuck in an infinite loop), as they are not guaranteed to be _total_. If they crash at compile time, it will be reported as a compile error, which is considered an improvement over the alternative of the end user of the program encountering a crash at runtime. ⚠️ If they get stuck in an infinite loop, this currently hangs the compiler (improvements are planned for after 0.1.0), which is also considered better than the alternative of an end user encountering a program hang at runtime.
 2. Memory allocation and deallocation. Although memory allocation and deallocation absolutely does depend on mutating state for bookkeeping, Roc does automatic memory management, and so program correctness should never depend on the state of this bookkeeping. Allocation can fail, which in Roc results in a crash—and as previously noted, a crash at compile time is considered preferable to the end user encountering a program crash at runtime.
 3. `dbg` and `expect` output. Pure functions are allowed to use `dbg` and `expect`, as these outputs are intended to be for the programmer only. By design, program behavior should never depend on them, so it's considered fine to display these outputs at compile time only (or not at all, if their code paths end up getting optimized away entirely), as this only means the programmer will see them even earlier in the process.
 
@@ -170,8 +170,8 @@ For example, suppose you wrote a function which called an effectful function, an
 it as if it were a pure function. You'd get an error saying this is an effectful function
 that's been incorrectly annotated as a pure function.
 
-⚠️ In 0.1.0, a wrong purity annotation will cause a compiler warning instead of an error.
-This will allow you to do things like take a function that has been historically pure and add some debugging that involves doing I/O in the middle of the function.
+⚠️ Changing incorrect purity annotations from errors to warnings is planned for after 0.1.0.
+Once implemented, this change will allow you to do things like take a function that has been historically pure and add some debugging that involves doing I/O in the middle of the function.
 You'll get a warning (and potentially miss out on some optimizations) but you won't have to do the chore of going around changing a bunch of annotations just to be able to run the program.
 The compiler will simply treat the wrongly annotated function as an effectful function, ignoring the wrong annotation.
 
@@ -203,6 +203,44 @@ By default, recursive functions have an increased risk of stack overflowing comp
 non-recursive functions, although [tail-call optimization](#tail-call-optimization)
 can eliminate that risk for some recursive functions. (In doing so, the optimization does
 mean a function that recurses forever will loop forever instead of overflowing the stack.)
+
+### Recursion and Type Variables
+
+When a function with [type variables](naming#type-variables) calls itself, it has to pass
+those type variables along unchanged. This is allowed, because the recursive call uses `a`
+for `a`:
+
+```roc
+countdown : U64, a -> a
+countdown = |count, x| if count == 0 x else countdown(count - 1, x)
+```
+
+However, this gives an error at compile time:
+
+```roc
+depth : U64, a -> U64
+depth = |n, x| if n == 0 0 else 1 + depth(n - 1, [x]) # ERROR! Passes List(a) where depth takes a.
+```
+
+Calling `depth(3, "hi")` would call `depth` with a `Str`, then a `List(Str)`, then a
+`List(List(Str))`, and so on. This is called
+[polymorphic recursion](https://en.wikipedia.org/wiki/Polymorphic_recursion), and by design, Roc
+doesn't support it. The compiler works out every type a function gets used with before the
+program runs, which is what lets a `List(U64)` store plain numbers instead of pointers to them.
+Here, the types `depth` gets used with would depend on the number passed in at runtime, so
+there's no way to list them ahead of time.
+
+Passing the same type variables in a different order is an error too:
+
+```roc
+swap : U64, a, b -> U64
+swap = |n, x, y| if n == 0 0 else 1 + swap(n - 1, y, x) # ERROR! Passes b for a and a for b.
+```
+
+The rule only applies to a function calling itself, whether directly or by way of other
+functions that call it back. A function with type variables can freely call a _different_
+function using bigger types, like `List.len([x])`. A recursive call that uses none of the
+function's type variables, like one that passes a `U64` for `a`, is also fine.
 
 ## Tail Calls
 
@@ -312,6 +350,10 @@ Both `is_odd(n - 1)` and `is_even(n - 1)` are [tail calls](#tail-calls), so call
 `is_even(10_000_000)` goes back and forth between the two functions ten million times without
 overflowing the stack. Each call takes over the stack space of the one that called it, so the
 stack never grows.
+
+The rule about [recursion and type variables](#recursion-and-type-variables) applies here too:
+by the time a function has been called back, its type variables have to be the same ones it
+started with.
 
 ## Performance
 

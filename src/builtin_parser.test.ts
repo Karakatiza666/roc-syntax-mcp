@@ -20,7 +20,7 @@ const PHANTOMS = [
   "Num.digits_after_pt", "Num.digits_after_pt_count",
   // Bug B: continuation lines re-read as their own items.
   "Num.Range.lower", "Num.Range.upper", "Num.Range.step",
-  "Num.Range.upper_bound", "Num.Range.direction", "Num.Range.len_if_known",
+  "Num.Range.upper_bound", "Num.Range.direction",
   "Encoding.ParseTagUnionSpec.tag", "Encoding.ParseTagUnionSpec.encoding",
   "Encoding.ParseTagUnionSpec.state", "Encoding.ParseTagUnionSpec.start_payloads",
   "Encoding.ParseTagUnionSpec.next_payload",
@@ -52,7 +52,8 @@ test("every method has a module path", () => {
 test("top-level types are the only items without a module path", () => {
   const orphans = index.items.filter((i) => i.modulePath === "").map((i) => i.fullName);
   assert.deepEqual(orphans.sort(), [
-    "Bool", "Dict", "Hasher", "Iter", "ScannedJsonString", "Set", "Stream", "Try",
+    "Bool", "Dict", "Hasher", "Iter", "ScannedJsonString", "Set",
+    "StrUtf16Problem", "StrUtf32Problem", "StrUtf8Problem", "Stream", "Try",
   ]);
 });
 
@@ -81,6 +82,12 @@ test("signatures of wrapped methods stay intact", () => {
   assert.ok(custom, "Num.Range.custom missing");
   assert.match(custom!.signature, /lower/);
   assert.match(custom!.signature, /upper_bound/);
+
+  // `len_if_known` is both a field of the record that `custom` takes and a
+  // method of `Range`. The index holds the method.
+  const len = index.byFullName.get("Num.Range.len_if_known");
+  assert.ok(len, "Num.Range.len_if_known missing");
+  assert.match(len!.signature, /^Range\(num\) -> Try\(U64, \[Unknown\]\)$/);
 
   const name = index.byFullName.get("Encoding.FieldName.name");
   assert.ok(name, "Encoding.FieldName.name missing");
@@ -151,9 +158,9 @@ test("the JSON codec entry points carry named where clauses", () => {
 const values = index.items.filter((i) => i.kind === "value");
 const types = index.items.filter((i) => i.kind === "type");
 
-test("Builtin.roc yields 2297 methods and 30 types", () => {
-  assert.equal(values.length, 2297);
-  assert.equal(types.length, 30);
+test("Builtin.roc yields 2301 methods and 33 types", () => {
+  assert.equal(values.length, 2301);
+  assert.equal(types.length, 33);
 });
 
 test("a nominal type carries its variants and its own operator", () => {

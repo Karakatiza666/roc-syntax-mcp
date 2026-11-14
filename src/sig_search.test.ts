@@ -218,12 +218,12 @@ test("a signature names each declared type by its full name", () => {
   assert.equal(qualifyTypeNames("[Frame, Ok(Frame)]", "Draw", types), "[Frame, Ok(Draw.Frame)]");
 });
 
-// `Str.Utf8Problem.is_eq` writes `Utf8Problem`, and `Digest.to_hash` writes
+// `Crypto.SHA256.Digest.to_hex` writes `Digest`, and `Digest.to_hash` writes
 // `Digest` and `Builtin.Hasher`. A query with the full names finds both.
 test("a full type name in a query matches the name a module writes", () => {
   const qualified = items.map((it) => ({ ...it }));
   qualifySignatures(qualified);
-  assert.ok(find(searchBySig(qualified, "Str.Utf8Problem ->", ALL), "Str.Utf8Problem.is_eq"));
+  assert.ok(find(searchBySig(qualified, "Crypto.SHA256.Digest ->", ALL), "Crypto.SHA256.Digest.to_hex"));
   const toHash = find(searchBySig(qualified, "Crypto.SHA256.Digest, Hasher -> Hasher", ALL), "Crypto.SHA256.Digest.to_hash");
   assert.strictEqual(toHash?.score, 100);
 });
@@ -232,7 +232,7 @@ test("a full type name in a query matches the name a module writes", () => {
 test("a type name in a query matches a full name that ends with it", () => {
   const qualified = items.map((it) => ({ ...it }));
   qualifySignatures(qualified);
-  assert.ok(find(searchBySig(qualified, "Utf8Problem ->", ALL), "Str.Utf8Problem.is_eq"));
-  assert.equal(find(searchBySig(qualified, "Problem ->", ALL), "Str.Utf8Problem.is_eq"), undefined);
-  assert.equal(find(searchBySig(qualified, "List.Utf8Problem ->", ALL), "Str.Utf8Problem.is_eq"), undefined);
+  assert.ok(find(searchBySig(qualified, "SHA256.Digest ->", ALL), "Crypto.SHA256.Digest.to_hex"));
+  assert.equal(find(searchBySig(qualified, "gest ->", ALL), "Crypto.SHA256.Digest.to_hex"), undefined);
+  assert.equal(find(searchBySig(qualified, "BLAKE3.Digest ->", ALL), "Crypto.SHA256.Digest.to_hex"), undefined);
 });

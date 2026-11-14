@@ -3,9 +3,11 @@
 # `roc test file.roc` runs every top-level `expect` in that file and the
 # files it imports. It also runs the `expect`s of path packages, but not those
 # of URL packages. Tests pass if the expression evaluates to `Bool.True`. A
-# failure report shows the failing expression and the values of the top-level
-# names that it uses. If a test reaches code with a compile error, `roc test`
-# counts it as a compiler error, not as a pass or a fail.
+# failure report shows the failing expression and the definitions of the
+# top-level non-function values that it uses, not their values. To see the
+# values, compare through a helper that `dbg`s them (`check_eq` below). If a
+# test reaches code with a compile error, `roc test` counts it as a compiler
+# error, not as a pass or a fail.
 #
 # A test file needs no header and no `main!`. `roc test test_geo.roc` runs its
 # `expect`s and those of `Geo.roc`:
@@ -19,6 +21,16 @@
 
 # Top-level `expect` (single expression).
 expect Bool.True != Bool.False
+
+check_eq = |received, expected| {
+	equal = received == expected
+	if !equal {
+		dbg { expected, received }
+	}
+	equal
+}
+
+expect check_eq(21 * 2, 42)
 
 # Multi-line `expect` block. The test checks the block's final expression.
 expect {

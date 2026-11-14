@@ -3,7 +3,8 @@
 # you recall from the old compiler (`--optimize`, `--linker`, `roc dev`) do not
 # exist here.
 #
-# Measured on nightly-2026-10-31-f7bef6b, with basic-cli 0.26.0.
+# Measured on nightly-2026-10-31-f7bef6b, with basic-cli 0.26.0. The help of
+# every command is the same in nightly-2026-11-14-a87808d.
 
 # ---------------------------------------------------------------------------
 # The loop: check, test, run, build

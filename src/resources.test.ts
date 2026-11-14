@@ -108,7 +108,7 @@ test("a documented package's page is a resource", async () => {
   assert.match(text, /^Topics: random_generators\.$/m);
 });
 
-// `List` has 94 methods whose docstrings and `expect` blocks are about 6x the
+// `List` has 96 methods whose docstrings and `expect` blocks are about 6x the
 // size of the signatures. Thus "what methods exist" must not cost a full read of
 // all of them.
 test("get_roc_module lists signatures by default and docs on request", async () => {
@@ -122,7 +122,7 @@ test("get_roc_module lists signatures by default and docs on request", async () 
   const brief = replies.get(1).result;
   const full = replies.get(2).result;
 
-  assert.match(brief.content[0].text, /94 methods\./);
+  assert.match(brief.content[0].text, /96 methods\./);
   assert.ok(
     brief.content[0].text.length * 3 < full.content[0].text.length,
     `default output is ${brief.content[0].text.length} chars vs full ${full.content[0].text.length}; it should be far smaller`

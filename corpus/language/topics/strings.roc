@@ -77,11 +77,12 @@ byte_total = |text| text.iter_utf8().map(U8.to_u64).sum()
 # `from_quote`, or from an interpolated literal by defining
 # `from_interpolation`. `Str` itself provides both:
 #   Str.from_quote         : Str -> Try(Str, [BadQuotedBytes(Str)])
-#   Str.from_interpolation : List(Str) -> Try((List(Str) -> Str), [InvalidInterpolation(Str)])
+#   Str.from_interpolation : List(Str) -> Try((Iter(Str) -> Str), [InvalidInterpolation(Str)])
 # `from_interpolation` runs at compile time with the segments, the text around
 # each `${...}`. A literal with `n` interpolations has `n + 1` segments, and
 # some can be empty. It returns the function that joins the values at runtime.
-expect Str.from_interpolation(["a", "c"]).map_ok(|join| join(["b"])) == Ok("abc")
+# That function takes an `Iter` of the values, not a `List`.
+expect Str.from_interpolation(["a", "c"]).map_ok(|join| join(["b"].iter())) == Ok("abc")
 
 # See the `derived_methods` topic for how a custom type opts in.
 

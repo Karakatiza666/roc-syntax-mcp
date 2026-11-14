@@ -68,6 +68,7 @@ functions#closures                                          functions, compile_t
 functions#purity-inference                                  effects, compile_time
 functions#recursive-functions                               functions
 functions#self-recursive-functions                          functions
+functions#recursion-and-type-variables                      functions
 functions#tail-calls                                        functions
 functions#self-tail-calls                                   functions
 functions#tail-call-optimization                            functions
@@ -364,6 +365,7 @@ types#constructing-nominal-types                            nominal, tag_unions
 types#destructuring-nominal-types                           nominal, types, pattern_matching
 types#opaque-nominal-types                                  opaque
 types#nested-nominal-types                                  imports
+types#names-inside-a-block                                  naming
 types#type-aliases                                          types, nominal
 types#recursive                                             types
 types#mutually-recursive                                    types, imports

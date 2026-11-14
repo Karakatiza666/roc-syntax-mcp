@@ -10,15 +10,15 @@
 # a runtime one. The clause names that requirement with a `where` alias that the
 # format module declares, and does not spell out the method signature:
 #
-#   Json.parse       : Str -> Try(a, [InvalidJson(Str), ..errs])
-#                          where [a.Parseable([InvalidJson(Str), ..errs])]
+#   Json.parse       : Str -> Try(a, [InvalidJson(Str)])
+#                          where [a.Parseable([InvalidJson(Str)])]
 #   Json.to_str      : a -> Str where [a.Encodable([])]
 #   Json.to_str_try  : a -> Try(Str, err) where [a.Encodable(err)]
 #
-# The `..errs` is necessary, because the derived parser for a record also produces
-# `MissingRequiredField(Str)`, so the real error union is wider than
-# `[InvalidJson(Str)]`. Annotate the err position with `_` and let the compiler
-# infer it, exactly as the `error_design` topic recommends.
+# The error union is closed. Each format owns one error type, and every parser
+# inside a value returns it: `[InvalidJson(Str)]` for JSON. A missing field is
+# an `InvalidJson` too, whose message names the field. There is no
+# `MissingRequiredField` tag and no `..errs` tail.
 #
 # `to_str` requires an encoder that cannot fail. `to_str_try` is for values that
 # might not be representable: `F32` and `F64` can hold `NaN` or an infinity, and
@@ -81,8 +81,8 @@ decode_camel = Json.parser_camel()
 to_json : a -> Str where [a.Json.Encodable([])]
 to_json = |value| Json.to_str(value)
 
-from_json : Str -> Try(a, [InvalidJson(Str), ..errs])
-	where [a.Json.Parseable([InvalidJson(Str), ..errs])]
+from_json : Str -> Try(a, [InvalidJson(Str)])
+	where [a.Json.Parseable([InvalidJson(Str)])]
 from_json = |text| Json.parse(text)
 
 origin : Point
@@ -155,6 +155,73 @@ parse_token = |text| Json.parse(text)
 expect parse_token("\"abc\"").map_ok(|token| token.raw) == Ok("abc")
 expect Json.to_str(Token.{ raw: "abc" }) == "\"abc\""
 
+# A parser that validates a domain value returns the format's error. It
+# translates its own failure into `InvalidJson` explicitly, so the `where`
+# clause fixes the error to `[InvalidJson(Str)]` rather than leaving it `err`.
+Email := { raw : Str }.{
+	parser_for : encoding -> (state -> Try({ value : Email, rest : state }, [InvalidJson(Str)]))
+		where [
+			encoding.parse_str : encoding, state -> Try({ value : Str, rest : state }, [InvalidJson(Str)]),
+		]
+	parser_for = |encoding| {
+		Encoding : encoding
+
+		|state| {
+			parsed = Encoding.parse_str(encoding, state)?
+			if parsed.value.contains("@") {
+				Ok({ value: Email.{ raw: parsed.value }, rest: parsed.rest })
+			} else {
+				Err(InvalidJson("Invalid email: ${parsed.value}"))
+			}
+		}
+	}
+}
+
+parse_email : Str -> Try(Email, _)
+parse_email = |text| Json.parse(text)
+
+expect parse_email("\"ada\"").map_ok(|email| email.raw) == Err(InvalidJson("Invalid email: ada"))
+expect parse_email("\"a@b\"").map_ok(|email| email.raw) == Ok("a@b")
+
+# A parser whose error is another type does not compile, even when a caller
+# would convert it afterwards. Every parser inside one value shares the error.
+# @rejects type mismatch
+# Strict := { raw : Str }.{
+# 	parser_for = |encoding| {
+# 		parse_str = Str.parser_for(encoding)
+# 		|state| {
+# 			parsed = parse_str(state)?
+# 			if parsed.value.is_empty() Err(EmptyValue) else Ok({ value: Strict.{ raw: parsed.value }, rest: parsed.rest })
+# 		}
+# 	}
+# }
+# strict_ok : Str -> Bool
+# strict_ok = |text| {
+# 	parsed : Try(Strict, _)
+# 	parsed = Json.parse(text)
+# 	parsed.is_ok()
+# }
+
+# Leave out the annotation and the same `Email` parses inside a record, but
+# not as the whole document: there the compiler infers the error as `[]`.
+# Annotate `parser_for`.
+# @rejects parser error type mismatch
+# Loose := { raw : Str }.{
+# 	parser_for = |encoding| {
+# 		parse_str = Str.parser_for(encoding)
+# 		|state| {
+# 			parsed = parse_str(state)?
+# 			if parsed.value.contains("@") Ok({ value: Loose.{ raw: parsed.value }, rest: parsed.rest }) else Err(InvalidJson("no @"))
+# 		}
+# 	}
+# }
+# loose_ok : Str -> Bool
+# loose_ok = |text| {
+# 	parsed : Try(Loose, _)
+# 	parsed = Json.parse(text)
+# 	parsed.is_ok()
+# }
+
 # @rejects type mismatch
 # Bad := { raw : Str }.{
 # 	encoder_for : encoding -> (Bad, state -> Try(state, err))
@@ -181,13 +248,18 @@ parse_headers = Encoding.HttpHeader.parser_for()
 
 expect parse_headers("Content-Length: 12\r\n") == Ok({ content_length: 12, x_auth_token: Err(Missing) })
 
+# Its error is `[BadHeader, MissingHeader(Str)]`, and a required header that is
+# absent names the header as it is written on the wire.
+expect parse_headers("X-Auth-Token: a\r\n") == Err(MissingHeader("content-length"))
+
 # A field missing from the input is an error unless the target says it may be
 # missing: `?: T` (optional field) or `Try(T, [Missing])`. Any other missing
-# field gives `Err(MissingRequiredField("name"))`.
+# field gives an `InvalidJson` whose message names it. The format builds that
+# error with its `missing_field : encoding, Str -> err` method.
 Profile : { name : Str, nick ?: Str, age : Try(U64, [Missing]) }
 
 parse_profile : Str -> Try(Profile, _)
 parse_profile = |text| Json.parse(text)
 
 expect parse_profile("{\"name\":\"ada\"}").is_ok()
-expect parse_profile("{}") == Err(MissingRequiredField("name"))
+expect parse_profile("{}") == Err(InvalidJson("Missing field: name"))

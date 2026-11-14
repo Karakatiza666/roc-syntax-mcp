@@ -153,12 +153,13 @@ method = "POST" # calls HttpMethod.from_quote
 # An interpolated string literal dispatches `from_interpolation` in two stages.
 # At compile time, the method gets the segments, which are the text around the
 # interpolations. A literal with n interpolations has n + 1 segments. The method
-# returns the function that builds the value at runtime from the interpolated
-# values. That function cannot fail. When the method returns
+# returns the function that builds the value at runtime from an `Iter` of the
+# interpolated values, not a `List`. The compiler builds that iterator on the
+# stack, so the literal allocates nothing of its own. That function cannot fail. When the method returns
 # `Err(InvalidInterpolation(message))`, the compiler reports an error with that
 # message.
 Html := [Html(Str)].{
-	from_interpolation : List(Str) -> Try((List(Str) -> Html), [InvalidInterpolation(Str)])
+	from_interpolation : List(Str) -> Try((Iter(Str) -> Html), [InvalidInterpolation(Str)])
 	from_interpolation = |segments|
 		if segments.any(|segment| segment.contains("<script")) {
 			Err(InvalidInterpolation("Html literals cannot contain script tags"))
@@ -178,7 +179,7 @@ greeting = |name| "<p>Hi, ${name}!</p>"
 expect greeting("<b>").to_str() == "<p>Hi, &lt;b>!</p>"
 
 # The segments are always `Str`. The values can have any type that the returned
-# function takes, for example `List(I64) -> Sql`.
+# function takes, for example `Iter(I64) -> Sql`.
 # @rejects invalid string interpolation
 # script_page : Html
 # script_page = "<script>${"x"}</script>"
