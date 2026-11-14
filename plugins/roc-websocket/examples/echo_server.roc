@@ -1,5 +1,5 @@
 ## The server driver over a scripted link with no platform: Server.accept! and Ws.drive! echoing each message.
-app [] { ws: "https://github.com/Karakatiza666/roc-websocket/releases/download/0.0.5/AKLgwxjBQN2XkE4G5sZtzrjPSxhwo6XmJRSPdWhpgVUN.tar.zst" }
+app [] { ws: "https://github.com/Karakatiza666/roc-websocket/releases/download/0.0.6/6rcitHh7bVV7D4A2aubD6H6yLHUgtXLi6jRwxjomSwVv.tar.zst" }
 
 import ws.Ws
 import ws.Server

@@ -1,8 +1,8 @@
 {
  "format": 1,
  "releases": {
-  "AKLgwxjBQN2XkE4G5sZtzrjPSxhwo6XmJRSPdWhpgVUN": {
-   "url": "https://github.com/Karakatiza666/roc-websocket/releases/download/0.0.5/AKLgwxjBQN2XkE4G5sZtzrjPSxhwo6XmJRSPdWhpgVUN.tar.zst",
+  "6rcitHh7bVV7D4A2aubD6H6yLHUgtXLi6jRwxjomSwVv": {
+   "url": "https://github.com/Karakatiza666/roc-websocket/releases/download/0.0.6/6rcitHh7bVV7D4A2aubD6H6yLHUgtXLi6jRwxjomSwVv.tar.zst",
    "snapshot": {
     "kind": "package",
     "exposes": [
@@ -155,8 +155,8 @@
         "modulePath": "Client.Conn",
         "fullName": "Client.Conn.poll!",
         "signature": "Client.Conn(b, e) => Try((Client.Conn(b, e), [Message(Ws.Message), TimedOut]), Client.Error(e))",
-        "docs": "The next message, or `TimedOut` when the platform's read deadline\npassed with no message. Nothing is lost.",
-        "line": 65
+        "docs": "An idle deadline: the next message, or `TimedOut` only when one read\npasses the platform's read deadline with no bytes. Any frame, a Ping\nincluded, restarts it, so it cannot bound the wait for a data message.\nNothing is lost.",
+        "line": 67
        },
        {
         "kind": "value",
@@ -166,7 +166,7 @@
         "fullName": "Client.Conn.close!",
         "signature": "Client.Conn(b, e), U16, Str => Try(Client.Conn(b, e), Client.Error(e))",
         "docs": "Start the closing handshake: send Close and return. A code that may\nnot be sent or a reason over 123 bytes is `InvalidClose`.",
-        "line": 73
+        "line": 75
        },
        {
         "kind": "value",
@@ -176,7 +176,7 @@
         "fullName": "Client.Conn.ping!",
         "signature": "Client.Conn(b, e), List(U8) => Try(Client.Conn(b, e), Client.Error(e))",
         "docs": "Send a Ping, payload at most 125 bytes.",
-        "line": 80
+        "line": 82
        },
        {
         "kind": "value",
@@ -186,7 +186,7 @@
         "fullName": "Client.Conn.pong!",
         "signature": "Client.Conn(b, e), List(U8) => Try(Client.Conn(b, e), Client.Error(e))",
         "docs": "Send an unsolicited Pong, payload at most 125 bytes.",
-        "line": 87
+        "line": 89
        },
        {
         "kind": "value",
@@ -196,7 +196,7 @@
         "fullName": "Client.Conn.send_frame!",
         "signature": "Client.Conn(b, e), Frame => Try(Client.Conn(b, e), Client.Error(e))",
         "docs": "Send any frame, masked. A frame that breaks RFC 6455 is `BadFrame`.",
-        "line": 94
+        "line": 96
        },
        {
         "kind": "value",
@@ -206,7 +206,7 @@
         "fullName": "Client.Conn.receive_frame!",
         "signature": "Client.Conn(b, e) => Try((Client.Conn(b, e), Frame), Client.Error(e))",
         "docs": "The next frame as it arrives: no assembly, no reply. Do not mix it\nwith `receive!` inside a fragmented message.",
-        "line": 102
+        "line": 104
        },
        {
         "kind": "value",
@@ -216,7 +216,7 @@
         "fullName": "Client.default_max_message",
         "signature": "U64",
         "docs": "The largest message accepted when the request does not say: 16 MiB.",
-        "line": 110
+        "line": 112
        },
        {
         "kind": "value",
@@ -226,7 +226,7 @@
         "fullName": "Client.ops",
         "signature": "{} -> Client.Ops(b, e)",
         "docs": "The operations as a record, for code generic over features.",
-        "line": 114
+        "line": 116
        },
        {
         "kind": "value",
@@ -236,7 +236,7 @@
         "fullName": "Client.open!",
         "signature": "Client.Transport(b, e), b, Ws.ConnectRequest => Try(Ws.Opened(Client.Conn(b, e)), Client.Error(e))",
         "docs": "Do the opening handshake over a connected link and return the\nconnection. `request.url` gives the `Host` header and the resource; the\nadapter has already connected to its host and port (and done TLS for\n`wss://`). A refused upgrade, the stream ending during it, or no answer\nbefore the platform's read deadline is `Refused`.",
-        "line": 131
+        "line": 133
        }
       ]
      },
@@ -1069,8 +1069,8 @@
         "modulePath": "Server.Conn",
         "fullName": "Server.Conn.poll!",
         "signature": "Server.Conn(b, e) => Try((Server.Conn(b, e), [Message(Ws.Message), TimedOut]), Server.Error(e))",
-        "docs": "The next message, or `TimedOut` when the platform's read deadline\npassed with no message. Nothing is lost.",
-        "line": 73
+        "docs": "An idle deadline: the next message, or `TimedOut` only when one read\npasses the platform's read deadline with no bytes. Any frame, a Ping\nincluded, restarts it, so it cannot bound the wait for a data message.\nNothing is lost.",
+        "line": 75
        },
        {
         "kind": "value",
@@ -1080,7 +1080,7 @@
         "fullName": "Server.Conn.close!",
         "signature": "Server.Conn(b, e), U16, Str => Try(Server.Conn(b, e), Server.Error(e))",
         "docs": "Start the closing handshake: send Close and return. A code that may\nnot be sent or a reason over 123 bytes is `InvalidClose`. Once\n`receive!` gives `Closed`, the adapter closes the stream (RFC 6455\nsection 7.1.1: the server closes the TCP connection first).",
-        "line": 83
+        "line": 85
        },
        {
         "kind": "value",
@@ -1090,7 +1090,7 @@
         "fullName": "Server.Conn.ping!",
         "signature": "Server.Conn(b, e), List(U8) => Try(Server.Conn(b, e), Server.Error(e))",
         "docs": "Send a Ping, payload at most 125 bytes.",
-        "line": 90
+        "line": 92
        },
        {
         "kind": "value",
@@ -1100,7 +1100,7 @@
         "fullName": "Server.Conn.pong!",
         "signature": "Server.Conn(b, e), List(U8) => Try(Server.Conn(b, e), Server.Error(e))",
         "docs": "Send an unsolicited Pong, payload at most 125 bytes.",
-        "line": 97
+        "line": 99
        },
        {
         "kind": "value",
@@ -1110,7 +1110,7 @@
         "fullName": "Server.Conn.send_frame!",
         "signature": "Server.Conn(b, e), Frame => Try(Server.Conn(b, e), Server.Error(e))",
         "docs": "Send any frame, unmasked. A frame that breaks RFC 6455 is `BadFrame`.",
-        "line": 104
+        "line": 106
        },
        {
         "kind": "value",
@@ -1120,7 +1120,7 @@
         "fullName": "Server.Conn.receive_frame!",
         "signature": "Server.Conn(b, e) => Try((Server.Conn(b, e), Frame), Server.Error(e))",
         "docs": "The next frame as it arrives, unmasked: no assembly, no reply. Do\nnot mix it with `receive!` inside a fragmented message.",
-        "line": 112
+        "line": 114
        },
        {
         "kind": "type",
@@ -1130,7 +1130,7 @@
         "fullName": "Server.Request",
         "signature": "{ transport : Server.Transport(b, e), link : b, upgrade : Handshake.Upgrade, rest : List(U8) }",
         "docs": "An upgrade request read from the link and validated, not answered\nyet, from `Server.read_request!`. It keeps the bytes the client sent\nafter the request head, the start of its first frames.",
-        "line": 122,
+        "line": 124,
         "decl": "::",
         "head": "Request(b, e)"
        },
@@ -1142,7 +1142,7 @@
         "fullName": "Server.Request.map_link",
         "signature": "Server.Request(b, e), (b -> b) -> Server.Request(b, e)",
         "docs": "The same request with its link value changed by `change`, for an\nadapter that reads the request with one deadline and runs the\nconnection with another (a short handshake timeout, for example).",
-        "line": 127
+        "line": 129
        },
        {
         "kind": "value",
@@ -1152,7 +1152,7 @@
         "fullName": "Server.Request.upgrade",
         "signature": "Server.Request(b, e) -> Ws.Upgrade",
         "docs": "The request: its resource, `Host`, the subprotocols the client\noffered in order, and every header (names lowercased).",
-        "line": 132
+        "line": 134
        },
        {
         "kind": "value",
@@ -1162,7 +1162,7 @@
         "fullName": "Server.Request.accept!",
         "signature": "Server.Request(b, e), Ws.AcceptOptions => Try(Ws.Opened(Server.Conn(b, e)), Server.Error(e))",
         "docs": "Accept the upgrade: write the 101 response with the first\nsubprotocol of `options.protocols` that the client offered (the\nserver's order of preference; none when nothing matches), and\nreturn the connection. No\nextension is accepted, so `extensions` is `Reported([])`. Bytes the\nclient sent after its request are then read as frames.\n\nTo choose a subprotocol another way, pick one from\n`request.upgrade().protocols` and pass `protocols: [chosen]`.",
-        "line": 147
+        "line": 149
        },
        {
         "kind": "value",
@@ -1172,7 +1172,7 @@
         "fullName": "Server.Request.refuse!",
         "signature": "Server.Request(b, e), Ws.Refusal => Try(b, Server.Error(e))",
         "docs": "Refuse the upgrade: write a response with `refusal.status`, its\nheaders and body, and give the link back for the adapter to close.\nAny final status is allowed (a 3xx with a `Location` header, a 401\nwith `WWW-Authenticate`, a 4xx or 5xx). A status outside 200-599\n(a 1xx, 101 among them, which ends no exchange, or no HTTP status)\nis `InvalidStatus` and writes nothing.\n\n```roc\nlink = request.refuse!({ status: 403, body: \"no access to ${request.upgrade().resource}\" })?\n```",
-        "line": 172
+        "line": 174
        },
        {
         "kind": "value",
@@ -1182,7 +1182,7 @@
         "fullName": "Server.default_max_message",
         "signature": "U64",
         "docs": "The largest message accepted when the options do not say: 16 MiB.",
-        "line": 184
+        "line": 186
        },
        {
         "kind": "value",
@@ -1192,7 +1192,7 @@
         "fullName": "Server.max_request_head",
         "signature": "U64",
         "docs": "The largest request head accepted, `\\r\\n\\r\\n` included: 16 KiB. A\nlonger one is answered with 431.",
-        "line": 189
+        "line": 191
        },
        {
         "kind": "value",
@@ -1202,7 +1202,7 @@
         "fullName": "Server.ops",
         "signature": "{} -> Server.Ops(b, e)",
         "docs": "The operations as a record, for code generic over features\n(`Ws.drive!`, `Ws.close_and_wait!`, `Ws.messages`).",
-        "line": 194
+        "line": 196
        },
        {
         "kind": "value",
@@ -1212,7 +1212,7 @@
         "fullName": "Server.read_request!",
         "signature": "Server.Transport(b, e), b => Try(Server.Request(b, e), Server.Error(e))",
         "docs": "Read the upgrade request from a link the adapter has accepted, and\nvalidate it (RFC 6455 section 4.2.1). Each read asks for at most the\nbytes still allowed by `max_request_head`, and bytes after the head are\nkept in the request.\n\nA request that is not a valid upgrade is answered (400, 405, 426, or\n431 for a head over `max_request_head`) and gives `NotUpgrade(why)`;\nthe stream ending, or the platform's read deadline passing, before the\nend of the head gives `NotUpgrade(why)` with nothing written.",
-        "line": 215
+        "line": 217
        },
        {
         "kind": "value",
@@ -1222,7 +1222,7 @@
         "fullName": "Server.accept!",
         "signature": "Server.Transport(b, e), b, Ws.AcceptOptions => Try(Ws.Opened(Server.Conn(b, e)), Server.Error(e))",
         "docs": "Read the request and accept it with `options`: `read_request!`, then\n`request.accept!(options)`.",
-        "line": 243
+        "line": 245
        }
       ]
      },
@@ -1581,8 +1581,8 @@
         "modulePath": "Ws",
         "fullName": "Ws.ReceiveWithin",
         "signature": "{ receive_within! : c, U64 => Try((c, [Message(Ws.Message), TimedOut]), Ws.Error(e)), ..r }",
-        "docs": "A receive that waits at most `ms` milliseconds. `TimedOut` loses\nnothing.",
-        "line": 120,
+        "docs": "The next message, or `TimedOut` when `ms` milliseconds have passed\nsince the call. The deadline bounds the whole call: Ping, Pong and\npartial frames do not extend it. An adapter that cannot bound the whole\ncall leaves the field out. `TimedOut` loses nothing.",
+        "line": 122,
         "decl": ":",
         "head": "ReceiveWithin(c, e, r)"
        },
@@ -1593,8 +1593,8 @@
         "modulePath": "Ws",
         "fullName": "Ws.Poll",
         "signature": "{ poll! : c => Try((c, [Message(Ws.Message), TimedOut]), Ws.Error(e)), ..r }",
-        "docs": "A receive that waits only as long as the platform's own read deadline\n(a fixed time the application does not choose), then gives `TimedOut`,\nas `ReceiveWithin` does. `TimedOut` loses nothing.",
-        "line": 125,
+        "docs": "An idle deadline: the next message, or `TimedOut` only when one read\npasses the platform's read deadline with no bytes. Any frame, a Ping\nincluded, restarts it, so `poll!` cannot be used to build a deadline for\ndata messages (use `ReceiveWithin`). `TimedOut` loses nothing.",
+        "line": 128,
         "decl": ":",
         "head": "Poll(c, e, r)"
        },
@@ -1606,7 +1606,7 @@
         "fullName": "Ws.Buffered",
         "signature": "{ buffered_amount! : c => Try(U64, Ws.Error(e)), ..r }",
         "docs": "The bytes queued for sending and not yet handed to the network.",
-        "line": 128,
+        "line": 131,
         "decl": ":",
         "head": "Buffered(c, e, r)"
        },
@@ -1618,7 +1618,7 @@
         "fullName": "Ws.AutoResponse",
         "signature": "{ set_auto_response! : c, { request : Str, response : Str } => Try(c, Ws.Error(e)), clear_auto_response! : c => Try(c, Ws.Error(e)), ..r }",
         "docs": "A fixed text reply that the runtime sends to a fixed text request by\nitself, without running application code (an application-level\nheartbeat that does not wake the server). `c` is the scope the runtime\nsets it for: a connection, or a whole server (every connection it\nholds) on a runtime that keeps one reply per server.",
-        "line": 135,
+        "line": 138,
         "decl": ":",
         "head": "AutoResponse(c, e, r)"
        },
@@ -1630,7 +1630,7 @@
         "fullName": "Ws.Persist",
         "signature": "{ saved! : c => Try([Saved(List(U8)), Nothing], Ws.Error(e)), save! : c, List(U8) => Try(c, Ws.Error(e)), ..r }",
         "docs": "Per-connection state kept by the runtime, which survives the server\nleaving memory while the connection stays open (hibernation).",
-        "line": 139,
+        "line": 142,
         "decl": ":",
         "head": "Persist(c, e, r)"
        },
@@ -1642,7 +1642,7 @@
         "fullName": "Ws.Topics",
         "signature": "{ subscribe! : c, Str => Try(c, Ws.Error(e)), unsubscribe! : c, Str => Try(c, Ws.Error(e)), publish! : c, Str, Ws.Message => Try(c, Ws.Error(e)), ..r }",
         "docs": "Named groups of connections, with one send to every member\n(publish/subscribe).",
-        "line": 143,
+        "line": 146,
         "decl": ":",
         "head": "Topics(c, e, r)"
        },
@@ -1654,7 +1654,7 @@
         "fullName": "Ws.Connect",
         "signature": "{ connect! : Ws.ConnectRequest => Try(Ws.Opened(c), Ws.Error(e)), ..r }",
         "docs": "Open a client connection `c`. A server that refuses the upgrade is\n`Refused(Str)` in `e`.",
-        "line": 147,
+        "line": 150,
         "decl": ":",
         "head": "Connect(c, e, r)"
        },
@@ -1666,7 +1666,7 @@
         "fullName": "Ws.Accept",
         "signature": "{ accept! : q, Ws.AcceptOptions => Try({ response : p, opened : Ws.Opened(c) }, Ws.Error(e)), ..r }",
         "docs": "Accept an upgrade of an incoming request `q` into a server connection\n`c`. `response` is the handshake response `p` that the application\nhands back to its runtime, on a platform where the request handler\nreturns the 101 response (the connection then lives in work that runs\nafter it); `{}` where `accept!` writes the response itself. A request\nthat is not a valid upgrade is `NotUpgrade(Str)` in `e`.",
-        "line": 155,
+        "line": 158,
         "decl": ":",
         "head": "Accept(q, p, c, e, r)"
        },
@@ -1678,7 +1678,7 @@
         "fullName": "Ws.Handlers",
         "signature": "{\n\t\ton_open! : s, c => Try((s, c), Ws.Error(e)),\n\t\ton_message! : s, c, Ws.Message => Try((s, c), Ws.Error(e)),\n\t\ton_close! : s, c, Ws.Closure => Try(s, Ws.Error(e)),\n\t}",
         "docs": "Callbacks of a push-model server, where the runtime delivers events.\n`s` is the application's state, threaded from call to call, and `c` the\nconnection, used with the adapter's `Sender` fields. On a runtime that\ndoes not keep the server in memory between events, the adapter stores\n`s` (for example through `Persist`) or the application keeps `s` as `{}`.\n\n`on_close!` gets the connection too, after it has ended: for what the\nvalue holds (an adapter's link to close, a connection id to forget, a\n`Persist` attachment to read). Sending on it gives `Closed`. It returns\nno connection, since nothing follows it.",
-        "line": 167,
+        "line": 170,
         "decl": ":",
         "head": "Handlers(s, c, e)"
        },
@@ -1690,7 +1690,7 @@
         "fullName": "Ws.Bytes",
         "signature": "{ write_bytes! : b, List(U8) => Try(b, Ws.Error(e)), read_up_to! : b, U64 => Try((b, [Data(List(U8)), End, TimedOut]), Ws.Error(e)), ..r }",
         "docs": "A byte stream `b`, for a platform where Roc owns the wire (TCP).\n`read_up_to!(b, n)` gives `Data` of 1 to `n` bytes, `End` at the end of\nthe stream, or `TimedOut` when a platform deadline passed with nothing\nto read (it consumes nothing).",
-        "line": 179,
+        "line": 182,
         "decl": ":",
         "head": "Bytes(b, e, r)"
        },
@@ -1702,7 +1702,7 @@
         "fullName": "Ws.Random",
         "signature": "{ random_bytes! : b, U64 => Try((b, List(U8)), Ws.Error(e)), ..r }",
         "docs": "Unpredictable bytes (RFC 6455 section 10.3) for the client's key and\nmasks: `random_bytes!(b, n)` gives exactly `n` bytes. `b` may carry a\ngenerator's state.",
-        "line": 184,
+        "line": 187,
         "decl": ":",
         "head": "Random(b, e, r)"
        },
@@ -1714,7 +1714,7 @@
         "fullName": "Ws.Basic",
         "signature": "Ws.Core(c, e, {})",
         "docs": "A connection with only the core.",
-        "line": 189,
+        "line": 192,
         "decl": ":",
         "head": "Basic(c, e)"
        },
@@ -1726,7 +1726,7 @@
         "fullName": "Ws.Raw",
         "signature": "Ws.Core(c, e, Ws.Ping(c, e, Ws.Pong(c, e, Ws.Frames(c, e, {}))))",
         "docs": "A connection over raw bytes: the core, ping, pong and frames.",
-        "line": 192,
+        "line": 195,
         "decl": ":",
         "head": "Raw(c, e)"
        },
@@ -1738,7 +1738,7 @@
         "fullName": "Ws.Timed",
         "signature": "Ws.Core(c, e, Ws.ReceiveWithin(c, e, {}))",
         "docs": "A connection with the core and a receive with a deadline.",
-        "line": 195,
+        "line": 198,
         "decl": ":",
         "head": "Timed(c, e)"
        },
@@ -1750,7 +1750,7 @@
         "fullName": "Ws.Push",
         "signature": "Ws.Sender(c, e, {})",
         "docs": "A push-model server connection: sending only, events by callback.",
-        "line": 198,
+        "line": 201,
         "decl": ":",
         "head": "Push(c, e)"
        },
@@ -1762,7 +1762,7 @@
         "fullName": "Ws.Transport",
         "signature": "Ws.Bytes(b, e, Ws.Random(b, e, {}))",
         "docs": "What the pure client needs from a platform: a byte stream and\nrandomness over one link state `b`.",
-        "line": 202,
+        "line": 205,
         "decl": ":",
         "head": "Transport(b, e)"
        },
@@ -1774,7 +1774,7 @@
         "fullName": "Ws.messages",
         "signature": "{ receive! : c => Try((c, Ws.Message), Ws.Error(e)), .. }, c -> Stream(Try(Ws.Message, Ws.Error(e)))",
         "docs": "The messages of a connection as a stream. The last item is the `Err`\nthat ended it: `Err(Closed(closure))` once the connection has ended, or\nanother error of `receive!`.",
-        "line": 209
+        "line": 212
        },
        {
         "kind": "value",
@@ -1784,7 +1784,7 @@
         "fullName": "Ws.close_and_wait!",
         "signature": "{ close! : c, U16, Str => Try(c, Ws.Error(e)), receive! : c => Try((c, Ws.Message), Ws.Error(e)), .. }, c, U16, Str => Try(Ws.Closure, Ws.Error(e))",
         "docs": "Close and wait for the end of the closing handshake, dropping the\nmessages that arrive meanwhile. A connection that is closing already\n(`close!` gives `Closing`) is waited for as it is.",
-        "line": 226
+        "line": 229
        },
        {
         "kind": "value",
@@ -1794,7 +1794,7 @@
         "fullName": "Ws.drive!",
         "signature": "{ receive! : c => Try((c, Ws.Message), Ws.Error(e)), .. }, c, s, Ws.Handlers(s, c, e) => (s, Try(Ws.Closure, Ws.Error(e)))",
         "docs": "Run push handlers over a pull connection until it closes: `on_open!`,\n`on_message!` for each message, then `on_close!` with the connection\nas the last call left it and the closure.\n\nThe result is the state and how the run ended, both ways: `(s,\nOk(closure))` after `on_close!`, whose state it is, or `(s, Err(err))`\nwith the state as the last handler that succeeded left it (the initial\nstate when `on_open!` fails). So an error does not lose the state:\n\n```roc\n(count, ended) = Ws.drive!(ops, conn, 0, handlers)\nsave!(count)\nclosure = ended?\n```\n\nA handler that fails with `Closed` (it sent on a connection that had\nended, such as one whose stream dropped with messages still to deliver)\ndoes not end the run: the messages left are delivered from the\nconnection as it was before that call, then `on_close!` runs. Any other\nhandler error, or an error of `receive!` other than `Closed`, ends the\nrun with that error and no `on_close!`.",
-        "line": 265
+        "line": 268
        },
        {
         "kind": "value",
@@ -1804,7 +1804,7 @@
         "fullName": "Ws.dropped",
         "signature": "Ws.Closure",
         "docs": "The closure of a connection that dropped with no Close frame.",
-        "line": 297
+        "line": 300
        }
       ]
      },

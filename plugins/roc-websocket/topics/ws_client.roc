@@ -2,9 +2,9 @@
 ## `WsClient.connect!` opens the connection (TCP and handshake), and the
 ## connection's methods send, receive, ping and close.
 app [main!] {
-	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst",
-	ws: "https://github.com/Karakatiza666/roc-websocket/releases/download/0.0.5/AKLgwxjBQN2XkE4G5sZtzrjPSxhwo6XmJRSPdWhpgVUN.tar.zst",
-	cli_ws: "https://github.com/Karakatiza666/roc-basic-cli-websocket/releases/download/0.0.3/9c6XLWHRSREuaoELdH1a835Yopw92Jxy2b5e151X6mZj.tar.zst",
+	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.27.0/9yjxqdGTP4xSpSEmDazwTmRsehfRZzA19pwEKkR6fj1g.tar.zst",
+	ws: "https://github.com/Karakatiza666/roc-websocket/releases/download/0.0.6/6rcitHh7bVV7D4A2aubD6H6yLHUgtXLi6jRwxjomSwVv.tar.zst",
+	cli_ws: "https://github.com/Karakatiza666/roc-basic-cli-websocket/releases/download/0.0.4/B5j45zNdyW8Qxq6GpQ6ZVNmcPC5hwx3TxPRW4cq8wiLV.tar.zst",
 }
 
 import pf.OsStr
@@ -15,7 +15,7 @@ import ws.Ws
 import cli_ws.WsClient
 
 # The app names exactly the platform the adapter was built for (basic-cli
-# 0.26.0) and the roc-websocket release it uses (0.0.5): the adapter's own header
+# 0.27.0) and the roc-websocket release it uses (0.0.6): the adapter's own header
 # pins both, and any other release is a different type at the boundary. `ws` is
 # imported for `Ws.close_and_wait!`; a type used only in an annotation (like
 # `Ws.Message`) needs its import too.
@@ -40,8 +40,10 @@ session! = |{}| {
 	sent = opened.conn.send!(Text("hi"))?
 	(conn, reply) = sent.receive!()?
 
-	# receive! waits through the read timeout. poll! gives TimedOut when it
-	# passes with no message, and keeps every byte read, even inside a frame.
+	# receive! waits through the read timeout. poll! is an idle deadline: it
+	# gives TimedOut only when one read passes the platform's read deadline with
+	# no bytes, so a peer that pings keeps it waiting. It keeps every byte read,
+	# even inside a frame. Bound a wait for data with receive_within!.
 	(conn2, polled) = conn.poll!()?
 
 	# receive_within! is a total deadline: it gives TimedOut `ms` milliseconds

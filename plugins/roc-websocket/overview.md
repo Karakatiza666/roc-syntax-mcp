@@ -14,9 +14,9 @@ alias, `search_symbols Client.open!` for one signature.
 
 ```roc
 app [main!] {
-	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst",
-	ws: "https://github.com/Karakatiza666/roc-websocket/releases/download/0.0.5/AKLgwxjBQN2XkE4G5sZtzrjPSxhwo6XmJRSPdWhpgVUN.tar.zst",
-	cli_ws: "https://github.com/Karakatiza666/roc-basic-cli-websocket/releases/download/0.0.3/9c6XLWHRSREuaoELdH1a835Yopw92Jxy2b5e151X6mZj.tar.zst",
+	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.27.0/9yjxqdGTP4xSpSEmDazwTmRsehfRZzA19pwEKkR6fj1g.tar.zst",
+	ws: "https://github.com/Karakatiza666/roc-websocket/releases/download/0.0.6/6rcitHh7bVV7D4A2aubD6H6yLHUgtXLi6jRwxjomSwVv.tar.zst",
+	cli_ws: "https://github.com/Karakatiza666/roc-basic-cli-websocket/releases/download/0.0.4/B5j45zNdyW8Qxq6GpQ6ZVNmcPC5hwx3TxPRW4cq8wiLV.tar.zst",
 }
 ```
 
@@ -94,8 +94,8 @@ handlers over a pull connection and returns `(state, ended)`, not a `Try`, so
 | `Core(c, e, r)` | `send!`, `receive!`, `close!` |
 | `Ping`, `Pong` | `ping!`, `pong!`, payload at most 125 bytes (`ControlTooLong`) |
 | `Frames` | `send_frame!`, `receive_frame!` |
-| `ReceiveWithin` | `receive_within!(conn, ms)` |
-| `Poll` | `poll!`, `TimedOut` after the platform's own read deadline |
+| `ReceiveWithin` | `receive_within!(conn, ms)`, `TimedOut` `ms` after the call: a total deadline |
+| `Poll` | `poll!`, `TimedOut` when one read passes the platform's read deadline with no bytes. Any frame, a Ping too, restarts it, so it cannot bound a wait for data |
 | `Sender`, `Handlers(s, c, e)` | push-model servers: send and close, and callbacks |
 | `Connect`, `Accept` | open a client connection, accept an upgrade |
 | `Topics`, `Persist`, `Buffered`, `AutoResponse` | publish/subscribe, saved state, queue size, runtime-side replies |
@@ -118,8 +118,8 @@ the package does the handshake, masking, fragments and Ping replies. A platform 
 
 | Adapter | Release | Platform | Side | Why a side is missing |
 | --- | --- | --- | --- | --- |
-| `roc-basic-cli-websocket`, modules `WsClient` and `WsServer` | `https://github.com/Karakatiza666/roc-basic-cli-websocket/releases/download/0.0.3/9c6XLWHRSREuaoELdH1a835Yopw92Jxy2b5e151X6mZj.tar.zst` | basic-cli 0.26.0, roc-websocket 0.0.5 | client and server | none |
-| `roc-basic-webserver-websocket`, module `WsClient` | `https://github.com/Karakatiza666/roc-basic-webserver-websocket/releases/download/0.0.2/63RHisM5dNvGRLkMFurQZd7Gp1AqWpThfd5Dvtb2CTKj.tar.zst` | basic-webserver 0.20.0, roc-websocket 0.0.5 | client | basic-webserver refuses 1xx responses, so it cannot answer an upgrade |
+| `roc-basic-cli-websocket`, modules `WsClient` and `WsServer` | `https://github.com/Karakatiza666/roc-basic-cli-websocket/releases/download/0.0.4/B5j45zNdyW8Qxq6GpQ6ZVNmcPC5hwx3TxPRW4cq8wiLV.tar.zst` | basic-cli 0.27.0, roc-websocket 0.0.6 | client and server | none |
+| `roc-basic-webserver-websocket`, module `WsClient` | `https://github.com/Karakatiza666/roc-basic-webserver-websocket/releases/download/0.0.3/BjBcDpMFYd2ybt1xpiKiSHf2AgrnRnT6qRdFe2bQ2fgL.tar.zst` | basic-webserver 0.21.0, roc-websocket 0.0.6 | client | basic-webserver refuses 1xx responses, so it cannot answer an upgrade |
 | `roc-cloudflare-workers-websocket`, modules `Conn` (pull, connect and accept) and `Push` (Durable Object sockets) | `https://github.com/Karakatiza666/roc-cloudflare-workers-websocket/releases/download/0.0.3/FTAaUpFV8tZKVVbLUaB4SdMKykJNsC9q6MtXRwwqKTJi.tar.zst` | cloudflare-workers 0.0.6, roc-websocket 0.0.5 | client and server | none |
 
 The app pins the platform release an adapter was built for, with this package's
