@@ -25,7 +25,7 @@
 ##   NULL in a tuple    A tuple item (`all_tuples!`) is not a key. Only an item of the type `Try(a, [Null])` reads a NULL.
 ##   Bool               A `Bool` field or item reads 0 and 1. SQLite has no boolean: a comparison or a boolean column is 0
 ##                      or 1. Another integer is `BadData("column x: the value does not fit the type")`.
-app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.6/HgUugW5V5QQbmrjdjkRhjiZ8B9D9gzpEkSwdojqJcW4p.tar.zst" }
+app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.10/Dfyn36P4a9t8519ZVXDkHrmvXA9cbzrjkN4YHJuVfkGd.tar.zst" }
 
 import pf.Worker
 import pf.Request
@@ -36,7 +36,7 @@ import pf.Id64
 
 db = D1.binding("DB")
 
-## A BLOB column reads into a `List(U8)` field or a `Cbor.Bytes` field (D1 gives a BLOB as an array of numbers).
+## A BLOB column reads into a `Sql.Blob`, `List(U8)` or `Cbor.Bytes` field (D1 gives a BLOB as an array of numbers).
 User : { id : I64, name : Str, avatar : List(U8) }
 
 ## Nullable columns and a boolean column. `nick` and `bio` can be NULL: `?:` and `Try(a, [Missing])` are the two ways to read
@@ -87,7 +87,8 @@ events! = || {
 ## `("ann")` is not a tuple: it is the text, so it is one parameter too.
 ## The old `Sql` tag form (`Text("ann")`, `Int(5)`, `[Text("ann")]`) compiles, but it is `BadParam` at run time. The text
 ## names the new form: `Text("ann") is the old Sql tag form, write "ann"`. A record is `BadParam` too.
-## A `List(U8)` is a list of integer parameters, not one blob: use `Sql.blob(list)`.
+## A bare `List(U8)` compiles, but it is `BadParam` at run time: JS cannot tell bytes from a list of integer parameters.
+## Use `Sql.blob(list)` for one blob. A `List(U8)` item of a tuple or a list is a blob.
 ## `Sql.null` is NULL. `Sql.or_null(try)` is the value of an `Ok`, else NULL. `Sql.blob(list)` is a BLOB.
 ## An integer outside I64 (a U64 above 2^63-1) is `BadParam`, never a wrap. A `Bool` is `BadParam`: write 0 or 1.
 ## A parameter is text in SQL when it is text in Roc. It becomes an integer only in an insert into an INTEGER column, in a

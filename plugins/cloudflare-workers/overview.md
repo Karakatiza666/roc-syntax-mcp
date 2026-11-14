@@ -10,7 +10,7 @@ programs, `get_roc_syntax topic="cfw_worker"` for the contract with comments.
 ## Starting a project
 
 There is no npm package and no `package.json`. The shim is the `js/` directory
-of the platform bundle. The helper `roc-cfw` (release 0.0.1, repository
+of the platform bundle. The helper `roc-cfw` (repository
 `Karakatiza666/roc-cloudflare-workers-cli`) copies it to `.roc-cfw/` and runs
 `sync`. Talon (`tln`) installs the helper and runs the scripts:
 
@@ -52,8 +52,7 @@ writes `worker.js`, and checks `wrangler.toml` (bindings, crons, classes). It
 exits 1 and prints the missing lines. A `roc build` with type errors still
 writes `app.wasm` and exits 1.
 `roc main.roc` does not run a Worker. `sync` also warns of a handler that
-`main.roc` defines and `Worker.new` does not list (`roc-cfw` passes `--file
-main.roc`). `sync --check` writes nothing and exits 1 for such a handler. An
+`main.roc` defines and `Worker.new` does not list. `sync --check` writes nothing and exits 1 for such a handler. An
 app with `makeHandler` options (`ops`) puts them in `worker.options.js` next to
 `worker.js`: `export default { ops: { ... } }`. `sync` imports that file and keeps
 writing `worker.js`, so `sync` stays in the build script.
@@ -182,8 +181,8 @@ form (`Text("ann")`) is a `BadParam` at run time, and its text names the new
 form. Annotate each row type: a row that goes only to
 `Response.from_json` is "type not determined" at the call. D1 rounds an
 INTEGER of 2^53 or more, and a typed read of it is `BadData`: read it as
-`CAST(x AS TEXT)`. A BLOB reads into `List(U8)` or `Cbor.Bytes`.
-`Cbor.bytes(list)` makes a `Cbor.Bytes`: `Cbor.Bytes.(...)` is refused.
+`CAST(x AS TEXT)`. A bare `List(U8)` parameter is `BadParam`: write
+`Sql.blob(bytes)`. A BLOB reads into `Sql.Blob`, `List(U8)` or `Cbor.Bytes`. `Cbor.bytes(list)` makes a `Cbor.Bytes`: `Cbor.Bytes.(...)` is refused.
 `db.batch!` is one transaction.
 
 R2 takes a stream with no known length (multipart above 5 MiB, with no
@@ -253,8 +252,8 @@ queue! = |batch| {
 ```
 
 `Queue.json("JOBS")` sends one type. `jobs.each!` acks on `Ok` and retries on
-`Err`. A `Queue.json` message cannot hold an integer of 2^53 or more: use
-`Queue.v8`.
+`Err`. `Queue.json` sends integers of 2^53 or more and bytes as text, and
+reads them back.
 
 ## Traps
 
@@ -263,10 +262,10 @@ queue! = |batch| {
   `BadData("column x: missing or NULL, ...")`. Write `x ?: a` (read it with
   `row.?x`) or `x : Try(a, [Missing])`. Only a tuple item (`all_tuples!`), a
   list item or a root value reads a NULL into `Try(a, [Null])`.
-- A record that crosses as CBOR has no `Try(a, [Null])` field: RPC arguments and
-  replies, queue messages, `Object.Cell`, `Object.attachment` and `Memo` values.
-  The writer writes no key for `Err(Null)`, so the read is `MissingRequiredField`.
-  Use `x ?: a` or `x : Try(a, [Missing])`. A record literal that leaves out an
+- A record from JS (RPC arguments and replies, queue messages, `Ai.run!`)
+  reads a `null` field as no key, so a `Try(a, [Null])` field is
+  `MissingRequiredField`. Use `x ?: a` or `x : Try(a, [Missing])`. Cells,
+  attachments and `Memo` keep `Err(Null)`. A record literal that leaves out an
   optional field needs an annotated function (the error is at `on_worker`).
 - A `Memo` is a top-level constant with no error type:
   `config = Memo.new("config", { max_age_ms: 60_000 })`, then
@@ -277,7 +276,8 @@ queue! = |batch| {
   mismatch" at the `?`. Make it a function: `cfg = || cell.get_or(default)`,
   then `cfg()`. `Memo`, cells and bindings hold no error type: constants.
 - `Object.Cell`, `Object.attachment` and `Memo` values are CBOR. A changed type
-  under the same name reads as `BadData` (`Memo` loads again).
+  under the same name reads as `BadData` (`Memo` loads again). From platform
+  0.0.9, call `cell.migrate!(self)` and `att.migrate!(socket)` once.
 - `Http.send_with!(req, { timeout_ms })` gives `Network` with the name
   `TimeoutError`.
 - WebSocket `close!` gives `Try({}, [BadCode, TooLarge])`: write

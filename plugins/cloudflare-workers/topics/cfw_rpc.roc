@@ -9,7 +9,7 @@
 ## before `export default makeHandler(app);`, and it checks the link to the other Worker of the repo by the interface name.
 ##   wrangler.toml [[services]] binding = "LEDGER", service = "ledger-worker"
 ##                 [[services]] binding = "ADMIN", service = "front-worker", entrypoint = "Admin"
-app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.6/HgUugW5V5QQbmrjdjkRhjiZ8B9D9gzpEkSwdojqJcW4p.tar.zst" }
+app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.10/Dfyn36P4a9t8519ZVXDkHrmvXA9cbzrjkN4YHJuVfkGd.tar.zst" }
 
 import pf.Worker
 import pf.Request
@@ -55,10 +55,10 @@ total = front_api.method("total")
 balance : Rpc(Ledger, { who : Str }, U64, [NoAccount, Infra(Rpc.Infra)])
 balance = ledger_api.method("balance")
 
-## An argument and a reply cross as CBOR. A field that can be empty is `tag ?: Str` or `seen_by : Try(Str, [Missing])`.
-## The writer writes no key for an `Err(Null)` (roc-cbor 0.2.2 and later), and a NULL is the same as no key. A field
-## `x : Try(Str, [Null])` is required, so a reply that holds `Err(Null)` there is `Infra(BadData(..))` for the caller
-## (`MissingRequiredField`). The same rule holds for a queue message, a cell, a `Memo` value and an attachment.
+## An argument and a reply cross as CBOR through JS, and their read takes a `null` field as no key. A field that can be
+## empty is `tag ?: Str` or `seen_by : Try(Str, [Missing])`. A field `x : Try(Str, [Null])` is required, so a reply that
+## holds `Err(Null)` there is `Infra(BadData(..))` for the caller (`MissingRequiredField`). A queue message reads the same
+## way. A cell, a `Memo` value and an attachment read strictly and keep `Err(Null)`.
 Note : { text : Str, tag ?: Str, seen_by : Try(Str, [Missing]) }
 
 note : Rpc(Front, { id : U64 }, Note, [Unknown])

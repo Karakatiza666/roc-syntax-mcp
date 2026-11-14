@@ -1,8 +1,8 @@
 {
  "format": 1,
  "releases": {
-  "HgUugW5V5QQbmrjdjkRhjiZ8B9D9gzpEkSwdojqJcW4p": {
-   "url": "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.6/HgUugW5V5QQbmrjdjkRhjiZ8B9D9gzpEkSwdojqJcW4p.tar.zst",
+  "Dfyn36P4a9t8519ZVXDkHrmvXA9cbzrjkN4YHJuVfkGd": {
+   "url": "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.10/Dfyn36P4a9t8519ZVXDkHrmvXA9cbzrjkN4YHJuVfkGd.tar.zst",
    "snapshot": {
     "kind": "platform",
     "exposes": [
@@ -48,7 +48,7 @@
     "deps": [
      {
       "alias": "cbor",
-      "url": "https://github.com/Karakatiza666/roc-cbor/releases/download/0.2.3/GkHriTGSE8ww1h2HvUL3GS6x1t2keTW13KQazoUZh4Uc.tar.zst"
+      "url": "https://github.com/Karakatiza666/roc-cbor/releases/download/0.5.0/B5U2mPsWTtuxfCRMzqQxio2ecDv7CAzCoyEMENMh4FNF.tar.zst"
      },
      {
       "alias": "http",
@@ -631,8 +631,8 @@
         "modulePath": "Cbor",
         "fullName": "Cbor.Bytes",
         "signature": "CborPkg.Bytes",
-        "docs": "Bytes that cross as a CBOR byte string (major type 2). A `List(U8)` writes as an array of numbers.\nIt reads a byte string or an array of integers 0 to 255: a D1 BLOB, which JS gives as an array, reads into it.\n`Cbor.bytes(list)` makes one (an alias has no constructor: `Cbor.Bytes.(list)` gives \"expected nominal type\"), and `bytes.to_list()` gives the list back.\nThe same type as `Bytes` of the package.",
-        "line": 39,
+        "docs": "Bytes that cross as a CBOR byte string (major type 2). A `List(U8)` also writes a byte string (roc-cbor 0.5.0).\nIt reads a byte string. An array of integers 0 to 255 (a D1 BLOB, which JS gives as an array) needs `BytesFromArray`\n(in `sql_rows`): the D1 reads of the platform have it.\n`Cbor.bytes(list)` makes one (an alias has no constructor: `Cbor.Bytes.(list)` gives \"expected nominal type\"), and `bytes.to_list()` gives the list back.\nThe same type as `Bytes` of the package.",
+        "line": 48,
         "decl": ":",
         "head": "Bytes"
        },
@@ -643,10 +643,52 @@
         "modulePath": "Cbor",
         "fullName": "Cbor.Options",
         "signature": "CborPkg.Options",
-        "docs": "The options of `parse_with`: `{ fields ?: [Snake, Camel], int_from_text ?: Bool }`. Each field is optional: `{}` is the same as `parse`.\nThe same type as `Options` of the package.",
-        "line": 43,
+        "docs": "The options of `parse_with`: `{ fields ?: [Snake, Camel], allow ?: List(Leniency), duplicate_keys ?: .., .. }`.\nEach field is optional: `{}` is the same as `parse`. The same type as `Options` of the package.",
+        "line": 52,
         "decl": ":",
         "head": "Options"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Leniency",
+        "modulePath": "Cbor",
+        "fullName": "Cbor.Leniency",
+        "signature": "CborPkg.Leniency",
+        "docs": "One lenient read, for the option `allow`: `BoolFromInt`, `FloatToInt`, `IntFromText`, `DecFromText`, `NullAsAbsent`,\n`UndefinedAsNull`, `PaddedNumbers`, `BytesFromArray`, `BytesFromBase64`, `IndefiniteLength`. The same type as `Leniency` of the package.",
+        "line": 56,
+        "decl": ":",
+        "head": "Leniency"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "sql_rows",
+        "modulePath": "Cbor",
+        "fullName": "Cbor.sql_rows",
+        "signature": "List(CborPkg.Leniency)",
+        "docs": "The leniencies of a SQL row: `[BoolFromInt, FloatToInt, NullAsAbsent, UndefinedAsNull, BytesFromArray]`.",
+        "line": 59
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "js_values",
+        "modulePath": "Cbor",
+        "fullName": "Cbor.js_values",
+        "signature": "List(CborPkg.Leniency)",
+        "docs": "The leniencies of the platform for a value that comes from JS: an RPC argument and an RPC reply (`Rpc`), a\nmessage of `Queue.json` and `Queue.v8`, the result of `Ai.run!`. A JS object gives `undefined` or `null` for a\nfield that it does not set: `undefined` reads as `null`, and a `null` value in a record is no key. So an optional\nfield (`x ?: a`) and a `Try(a, [Missing])` field read it as absent. A `Try(a, [Null])` record field there reads a\n`null` as no key too (`MissingRequiredField`): use `x ?: a` or `Try(a, [Missing])` for it.\nData that Roc wrote and stores (`Object.cell`, `Object.attachment`, `Memo`) is read strict.",
+        "line": 68
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "legacy_0_2",
+        "modulePath": "Cbor",
+        "fullName": "Cbor.legacy_0_2",
+        "signature": "List(CborPkg.Leniency)",
+        "docs": "The leniencies that read the bytes of roc-cbor 0.2.3 (the version of platform 0.0.9): `PaddedNumbers` (an array or a\nmap of 24 to 65,535 items has a head of 3 bytes) and `BytesFromArray` (a `List(U8)` is an array of integers).\nFor a migration once: read the old value with them, write it again (MODULES.md 1, \"Migration from platform 0.0.9\").\nA `Try(a, [Null])` record field of 0.2.3 with `Err(Null)` has no key: change the field to `x ?: a` or\n`Try(a, [Missing])` (the roc-cbor 0.2.2 rule), no leniency reads it as `Err(Null)`.",
+        "line": 76
        },
        {
         "kind": "type",
@@ -656,7 +698,7 @@
         "fullName": "Cbor.Step",
         "signature": "CborPkg.Step",
         "docs": "One step of the path that `path_at` gives: `Index(U64)` or `Key(Str)`.\nThe same type as `Step` of the package.",
-        "line": 47,
+        "line": 81,
         "decl": ":",
         "head": "Step"
        },
@@ -667,10 +709,22 @@
         "modulePath": "Cbor",
         "fullName": "Cbor.Format",
         "signature": "CborPkg",
-        "docs": "The encoding value. A custom `parser_for` or `encoder_for` in an app takes it as its argument:\n`parser_for : Cbor.Format -> (Cbor.State -> Try({ value : T, rest : Cbor.State }, [InvalidCbor(U64)]))`.\nThe methods of the codec protocol (`enc.parse_str(state)`) are found by static dispatch on it.\nThe same type as `Cbor` of the package.",
-        "line": 84,
+        "docs": "The encoding value. A custom `parser_for` or `encoder_for` in an app takes it as its argument:\n`parser_for : Cbor.Format -> (Cbor.Reader -> Try({ value : T, rest : Cbor.Reader }, [InvalidCbor(U64)]))`,\n`encoder_for : Cbor.Format -> (T, Cbor.Writer -> Try(Cbor.Writer, err))`.\nThe methods of the codec protocol (`enc.parse_str(state)`) are found by static dispatch on it.\nThe same type as `Cbor` of the package.",
+        "line": 119,
         "decl": ":",
         "head": "Format"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Reader",
+        "modulePath": "Cbor",
+        "fullName": "Cbor.Reader",
+        "signature": "CborPkg.Reader",
+        "docs": "The read position of a parse. A custom `parser_for` passes it from step to step. Its fields are hidden.\nThe same type as `Reader` of the package.",
+        "line": 123,
+        "decl": ":",
+        "head": "Reader"
        },
        {
         "kind": "type",
@@ -678,11 +732,23 @@
         "name": "State",
         "modulePath": "Cbor",
         "fullName": "Cbor.State",
-        "signature": "CborPkg.State",
-        "docs": "The read position of a parse. A custom `parser_for` passes it from step to step. Its fields are hidden.\nThe same type as `State` of the package.",
-        "line": 88,
+        "signature": "CborPkg.Reader",
+        "docs": "The name of `Reader` in roc-cbor 0.2: the same type.",
+        "line": 126,
         "decl": ":",
         "head": "State"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Writer",
+        "modulePath": "Cbor",
+        "fullName": "Cbor.Writer",
+        "signature": "CborPkg.Writer",
+        "docs": "The output of an encode. A custom `encoder_for` gets it and writes each item with an `encode_*` function.\nThe same type as `Writer` of the package.",
+        "line": 130,
+        "decl": ":",
+        "head": "Writer"
        },
        {
         "kind": "value",
@@ -692,7 +758,29 @@
         "fullName": "Cbor.bytes",
         "signature": "List(U8) -> CborPkg.Bytes",
         "docs": "Makes `Bytes` from a list: the same as `CborPkg.Bytes.(list)` of the package.",
-        "line": 91
+        "line": 133
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "U8Array",
+        "modulePath": "Cbor",
+        "fullName": "Cbor.U8Array",
+        "signature": "CborPkg.U8Array",
+        "docs": "Bytes that cross as a CBOR array of integers 0 to 255: a JS peer gets a plain `Array` of numbers. For an API\nthat takes a JSON array of bytes (Workers AI: `image`, `audio`), where a `List(U8)` (a byte string, a JS\n`Uint8Array`) does not fit. It reads an array only. `Cbor.u8_array(list)` makes one, `a.to_list()` reads it.\nThe same type as `U8Array` of the package.",
+        "line": 140,
+        "decl": ":",
+        "head": "U8Array"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "u8_array",
+        "modulePath": "Cbor",
+        "fullName": "Cbor.u8_array",
+        "signature": "List(U8) -> CborPkg.U8Array",
+        "docs": "Makes `U8Array` from a list: the same as `CborPkg.U8Array.(list)` of the package.",
+        "line": 143
        },
        {
         "kind": "value",
@@ -702,7 +790,7 @@
         "fullName": "Cbor.parse",
         "signature": "List(U8) -> Try(a, [InvalidCbor(U64), ..errs]) where [a.Parseable([InvalidCbor(U64), ..errs])]",
         "docs": "Reads one CBOR item of the type `a` from all of `raw`. The type comes from the annotation.\nThe error is `InvalidCbor(pos)`, with the byte position of the problem, or `MissingRequiredField(name)` from the\nderived parser of a record. Bytes after the item are an error at the position of the first extra byte.",
-        "line": 97
+        "line": 149
        },
        {
         "kind": "value",
@@ -712,7 +800,7 @@
         "fullName": "Cbor.parse_camel",
         "signature": "List(U8) -> Try(a, [InvalidCbor(U64), ..errs]) where [a.Parseable([InvalidCbor(U64), ..errs])]",
         "docs": "Like `parse`, with record fields in camelCase: `user_id` is read from `userId`.",
-        "line": 101
+        "line": 153
        },
        {
         "kind": "value",
@@ -721,8 +809,18 @@
         "modulePath": "Cbor",
         "fullName": "Cbor.parse_with",
         "signature": "List(U8), CborPkg.Options -> Try(a, [InvalidCbor(U64), ..errs]) where [a.Parseable([InvalidCbor(U64), ..errs])]",
-        "docs": "Like `parse`, with options: `{ fields: Snake, int_from_text: Bool.False }`. Each field is optional, `{}` is the same as `parse`.\n`int_from_text: Bool.True` reads an integer type also from text that is a canonical decimal integer in its range.",
-        "line": 106
+        "docs": "Like `parse`, with options: `{ fields: Camel, allow: [IntFromText] }`. Each field is optional, `{}` is the same as `parse`.\n`allow: [IntFromText]` reads an integer type also from text that is a canonical decimal integer in its range.",
+        "line": 158
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_legacy",
+        "modulePath": "Cbor",
+        "fullName": "Cbor.parse_legacy",
+        "signature": "List(U8) -> Try(a, [InvalidCbor(U64), ..errs]) where [a.Parseable([InvalidCbor(U64), ..errs])]",
+        "docs": "Reads bytes that roc-cbor 0.2.3 wrote (platform 0.0.9): `parse_with(raw, { allow: legacy_0_2 })`. For a migration\nonce: read each old value with it and write it again with `encode` (`Object.Cell.migrate!` does both for a cell).\nDo not keep it as the read of each request: new data reads strict.",
+        "line": 164
        },
        {
         "kind": "value",
@@ -732,7 +830,7 @@
         "fullName": "Cbor.path_at",
         "signature": "List(U8), U64 -> Try(List(CborPkg.Step), [NotFound])",
         "docs": "The path from the root to the item that starts at byte `pos`: the array indexes and the map keys.\nUse it with the position of `InvalidCbor(pos)` to find the field of the error.\nThe path of the root is `[]`. `Err(NotFound)` when no item starts at `pos`.",
-        "line": 112
+        "line": 170
        },
        {
         "kind": "value",
@@ -742,7 +840,7 @@
         "fullName": "Cbor.encode",
         "signature": "a -> List(U8) where [a.Encodable([])]",
         "docs": "Writes `value` as one CBOR item. It cannot fail. A `Secret` in `value` does not compile.",
-        "line": 116
+        "line": 174
        }
       ]
      },
@@ -1888,8 +1986,8 @@
         "modulePath": "Hyperdrive",
         "fullName": "Hyperdrive.config!",
         "signature": "Hyperdrive => Hyperdrive.Config",
-        "docs": "A binding that is not in the config gives `undefined` fields (OP7): a crash with the name of the binding.",
-        "line": 20
+        "docs": "A binding that is not in the config gives `undefined` fields (OP7): a crash (a 500 response) with the name of the\nbinding, not an error value (decided, PLAN.md OO1).",
+        "line": 21
        },
        {
         "kind": "value",
@@ -1899,7 +1997,7 @@
         "fullName": "Hyperdrive.connect",
         "signature": "Hyperdrive -> Io(Tcp, [Infra([SocketErr(Io.Thrown)])])",
         "docs": "`env[name].connect()`, then a wait for `opened` (`pf.tcpOpen`): one wait. The socket goes to the database of the\nbinding through Hyperdrive. A throw (no binding, the origin does not answer) is `SocketErr`.",
-        "line": 34
+        "line": 35
        },
        {
         "kind": "value",
@@ -1909,7 +2007,7 @@
         "fullName": "Hyperdrive.connect!",
         "signature": "Hyperdrive => Try(Tcp, [Infra([SocketErr(Io.Thrown)])])",
         "docs": "",
-        "line": 44
+        "line": 45
        }
       ]
      },
@@ -2688,8 +2786,8 @@
         "modulePath": "Kv",
         "fullName": "Kv.put_with",
         "signature": "Kv(a), Str, a, { ttl_ms ?: U64, expires_ms ?: U64, metadata ?: Kv.Metadata } -> Io({}, [Infra([KvErr(Io.Thrown), BadData(Str)])])",
-        "docs": "`ttl_ms`: a value under 60 s is raised to 60 s (KV throws for less). `expires_ms`: a time of the clock. `metadata`: made by\n`Kv.Metadata.of(m)` (MC5), 1,024 bytes or less as JSON. It is not a type variable of the options: a call with no\n`metadata` would leave the type of `m` open, and that does not compile (\"type not determined\", MODULES.md 5.2).",
-        "line": 103
+        "docs": "`ttl_ms`: a value under 60 s is raised to 60 s (KV throws for less). `expires_ms`: a time of the clock. `metadata`: made by\n`Kv.Metadata.of(m)` (MC5), 1,024 bytes or less as JSON. The JSON forms (`pf.plain`): an integer of 2^53 or more is\ndecimal text, a `List(U8)` is base64 text (it reads back as bytes), a `Dec` with a fraction a number. It is not a type variable of the options: a call with no\n`metadata` would leave the type of `m` open, and that does not compile (\"type not determined\", MODULES.md 5.2).",
+        "line": 104
        },
        {
         "kind": "value",
@@ -2699,7 +2797,7 @@
         "fullName": "Kv.put_with!",
         "signature": "Kv(a), Str, a, { ttl_ms ?: U64, expires_ms ?: U64, metadata ?: Kv.Metadata } => Try({}, [Infra([KvErr(Io.Thrown), BadData(Str)])])",
         "docs": "",
-        "line": 112
+        "line": 113
        },
        {
         "kind": "value",
@@ -2709,7 +2807,7 @@
         "fullName": "Kv.delete",
         "signature": "Kv(a), Str -> Io({}, [Infra([KvErr(Io.Thrown)])])",
         "docs": "",
-        "line": 115
+        "line": 116
        },
        {
         "kind": "value",
@@ -2719,7 +2817,7 @@
         "fullName": "Kv.delete!",
         "signature": "Kv(a), Str => Try({}, [Infra([KvErr(Io.Thrown)])])",
         "docs": "",
-        "line": 124
+        "line": 125
        },
        {
         "kind": "value",
@@ -2729,7 +2827,7 @@
         "fullName": "Kv.list",
         "signature": "Kv(a), { prefix ?: Str, cursor ?: Str, limit ?: U32 } -> Io({ keys : List(Kv.Key), next : [More(Str), Done] }, [Infra([KvErr(Io.Thrown)])])",
         "docs": "`list`: the keys of one page (1,000 at most). The metadata of a key is CBOR, typed at the use (`Kv.Metadata.parse`).",
-        "line": 128
+        "line": 129
        },
        {
         "kind": "value",
@@ -2739,7 +2837,7 @@
         "fullName": "Kv.list!",
         "signature": "Kv(a), { prefix ?: Str, cursor ?: Str, limit ?: U32 } => Try({ keys : List(Kv.Key), next : [More(Str), Done] }, [Infra([KvErr(Io.Thrown)])])",
         "docs": "",
-        "line": 155
+        "line": 156
        },
        {
         "kind": "type",
@@ -2749,7 +2847,7 @@
         "fullName": "Kv.Key",
         "signature": "{ name : Str, expires_ms : [Never, At(U64)], metadata : Try(Kv.Metadata, [Missing]) }",
         "docs": "A key of `list!`.",
-        "line": 159,
+        "line": 160,
         "decl": ":",
         "head": "Key"
        },
@@ -2761,7 +2859,7 @@
         "fullName": "Kv.Metadata",
         "signature": "{ cbor : List(U8) }",
         "docs": "The metadata of a key as CBOR. `of` writes it for `put_with!`, `parse` reads it typed at the use (MC7):\n`(key.metadata ? |_| Missing).parse()`.",
-        "line": 163,
+        "line": 164,
         "decl": "::",
         "head": "Metadata"
        },
@@ -2773,7 +2871,7 @@
         "fullName": "Kv.Metadata.of",
         "signature": "m -> Kv.Metadata where [m.Cbor.Writable]",
         "docs": "",
-        "line": 164
+        "line": 165
        },
        {
         "kind": "value",
@@ -2782,8 +2880,18 @@
         "modulePath": "Kv.Metadata",
         "fullName": "Kv.Metadata.parse",
         "signature": "Kv.Metadata -> Try(m, [Infra([BadData(Str)])]) where [m.Cbor.Readable(errs)]",
-        "docs": "",
-        "line": 167
+        "docs": "The metadata is JSON in KV: an integer of 2^53 or more is decimal text there, so an integer type also reads\ndecimal text (`IntFromText`, up to 39 digits: a `U128` and an `I128` read back), and a `List(U8)` or `Cbor.Bytes` reads base64 text\n(`BytesFromBase64`).",
+        "line": 171
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parse_legacy",
+        "modulePath": "Kv.Metadata",
+        "fullName": "Kv.Metadata.parse_legacy",
+        "signature": "Kv.Metadata -> Try(m, [Infra([BadData(Str)])]) where [m.Cbor.Readable(errs)]",
+        "docs": "`parse` that also reads metadata of platform 0.0.9 (roc-cbor 0.2.3): a `List(U8)` is a JSON array of integers\n(`Cbor.legacy_0_2`). For a migration once: read it, then `put_with!` the key again with `Kv.Metadata.of`.",
+        "line": 176
        },
        {
         "kind": "value",
@@ -2793,7 +2901,7 @@
         "fullName": "Kv.cell",
         "signature": "Kv(a), Str -> Kv.Cell(a)",
         "docs": "One key as a value: `get!`, `set!` and `delete!` with no key argument (MODULES.md 9).",
-        "line": 172
+        "line": 181
        },
        {
         "kind": "type",
@@ -2803,7 +2911,7 @@
         "fullName": "Kv.Cell",
         "signature": "{ kv : Kv(a), key : Str }",
         "docs": "",
-        "line": 175,
+        "line": 184,
         "decl": ":=",
         "head": "Cell(a)"
        },
@@ -2815,7 +2923,7 @@
         "fullName": "Kv.Cell.get",
         "signature": "Kv.Cell(a) -> Io(a, [NotFound, Infra([KvErr(Io.Thrown), BadData(Str), TooLarge])])",
         "docs": "",
-        "line": 176
+        "line": 185
        },
        {
         "kind": "value",
@@ -2825,7 +2933,7 @@
         "fullName": "Kv.Cell.get!",
         "signature": "Kv.Cell(a) => Try(a, [NotFound, Infra([KvErr(Io.Thrown), BadData(Str), TooLarge])])",
         "docs": "",
-        "line": 179
+        "line": 188
        },
        {
         "kind": "value",
@@ -2835,7 +2943,7 @@
         "fullName": "Kv.Cell.find",
         "signature": "Kv.Cell(a) -> Io(Try(a, [NotFound]), [Infra([KvErr(Io.Thrown), BadData(Str), TooLarge])])",
         "docs": "`get` that gives a missing key as `Ok(Err(NotFound))`, so the error type of the caller has no `NotFound`.",
-        "line": 183
+        "line": 192
        },
        {
         "kind": "value",
@@ -2845,7 +2953,7 @@
         "fullName": "Kv.Cell.find!",
         "signature": "Kv.Cell(a) => Try(Try(a, [NotFound]), [Infra([KvErr(Io.Thrown), BadData(Str), TooLarge])])",
         "docs": "",
-        "line": 186
+        "line": 195
        },
        {
         "kind": "value",
@@ -2855,7 +2963,7 @@
         "fullName": "Kv.Cell.declare",
         "signature": "Kv.Cell(a) -> { name : Str, kind : Str, props : List((Str, Str)) }",
         "docs": "The binding of the cell for the manifest, as `Kv.declare` gives it. Name one cell for each binding: the same\nbinding name twice in `bindings` is an error at load.",
-        "line": 191
+        "line": 200
        },
        {
         "kind": "value",
@@ -2865,7 +2973,7 @@
         "fullName": "Kv.Cell.get_or",
         "signature": "Kv.Cell(a), a -> Io(a, [Infra([KvErr(Io.Thrown), BadData(Str), TooLarge])])",
         "docs": "`get`, and `default` for a key that is not there.",
-        "line": 195
+        "line": 204
        },
        {
         "kind": "value",
@@ -2875,7 +2983,7 @@
         "fullName": "Kv.Cell.get_or!",
         "signature": "Kv.Cell(a), a => Try(a, [Infra([KvErr(Io.Thrown), BadData(Str), TooLarge])])",
         "docs": "",
-        "line": 198
+        "line": 207
        },
        {
         "kind": "value",
@@ -2885,7 +2993,7 @@
         "fullName": "Kv.Cell.set",
         "signature": "Kv.Cell(a), a -> Io({}, [Infra([KvErr(Io.Thrown), BadData(Str)])])",
         "docs": "",
-        "line": 201
+        "line": 210
        },
        {
         "kind": "value",
@@ -2895,7 +3003,7 @@
         "fullName": "Kv.Cell.set!",
         "signature": "Kv.Cell(a), a => Try({}, [Infra([KvErr(Io.Thrown), BadData(Str)])])",
         "docs": "",
-        "line": 204
+        "line": 213
        },
        {
         "kind": "value",
@@ -2905,7 +3013,7 @@
         "fullName": "Kv.Cell.set_with",
         "signature": "Kv.Cell(a), a, { ttl_ms ?: U64, expires_ms ?: U64 } -> Io({}, [Infra([KvErr(Io.Thrown), BadData(Str)])])",
         "docs": "`ttl_ms`: a value under 60 s is raised to 60 s (KV throws for less). `expires_ms`: a time of the clock.",
-        "line": 208
+        "line": 217
        },
        {
         "kind": "value",
@@ -2915,7 +3023,7 @@
         "fullName": "Kv.Cell.set_with!",
         "signature": "Kv.Cell(a), a, { ttl_ms ?: U64, expires_ms ?: U64 } => Try({}, [Infra([KvErr(Io.Thrown), BadData(Str)])])",
         "docs": "",
-        "line": 211
+        "line": 220
        },
        {
         "kind": "value",
@@ -2925,7 +3033,7 @@
         "fullName": "Kv.Cell.delete",
         "signature": "Kv.Cell(a) -> Io({}, [Infra([KvErr(Io.Thrown)])])",
         "docs": "",
-        "line": 214
+        "line": 223
        },
        {
         "kind": "value",
@@ -2935,7 +3043,7 @@
         "fullName": "Kv.Cell.delete!",
         "signature": "Kv.Cell(a) => Try({}, [Infra([KvErr(Io.Thrown)])])",
         "docs": "",
-        "line": 217
+        "line": 226
        }
       ]
      },
@@ -3928,12 +4036,22 @@
        {
         "kind": "value",
         "tier": "public",
+        "name": "migrate!",
+        "modulePath": "Object.Cell",
+        "fullName": "Object.Cell.migrate!",
+        "signature": "Object.Cell(a), Object.Self => Try([Current, Migrated], [NotFound, Infra([BadData(Str), StorageErr(Io.Thrown)])]) where [a.Cbor.Readable(errs)]",
+        "docs": "The migration from platform 0.0.9 (roc-cbor 0.2.3), once for each cell: a value that reads strict is `Current`\n(no write). Else it reads with `Cbor.legacy_0_2` and is written again with the writer of now: `Migrated`.\nA value that reads with neither is `BadData`, and the cell does not change (MODULES.md 1, \"Migration from\nplatform 0.0.9\").",
+        "line": 559
+       },
+       {
+        "kind": "value",
+        "tier": "public",
         "name": "attachment",
         "modulePath": "Object",
         "fullName": "Object.attachment",
         "signature": "Str -> Object.Attachment(a) where [a.Cbor.Writable, a.Cbor.Readable(errs)]",
         "docs": "A typed attachment of a socket (MODULES.md 12.1): CBOR bytes in `ws.serializeAttachment`. A constant (WR1), like\n`Object.Cell`: the same constant writes and reads, so the stored type and the read type are one. A socket has one\nattachment slot: two constants on one socket share it. `name` shows in the `BadData` text only.",
-        "line": 559
+        "line": 584
        },
        {
         "kind": "type",
@@ -3943,7 +4061,7 @@
         "fullName": "Object.Attachment",
         "signature": "{ name : Str, write : a -> List(U8), read : List(U8) -> Try(a, Str) }",
         "docs": "",
-        "line": 562,
+        "line": 587,
         "decl": "::",
         "head": "Attachment(a)"
        },
@@ -3955,7 +4073,7 @@
         "fullName": "Object.Attachment.set!",
         "signature": "Object.Attachment(a), Object.Socket, a => Try({}, [TooLarge])",
         "docs": "`ws.serializeAttachment(bytes)`: it stays while the object sleeps. Workers refuses more than 16,384 bytes:\n`TooLarge`.",
-        "line": 566
+        "line": 591
        },
        {
         "kind": "value",
@@ -3965,7 +4083,17 @@
         "fullName": "Object.Attachment.get!",
         "signature": "Object.Attachment(a), Object.Socket => Try(a, [NotFound, Infra([BadData(Str)])])",
         "docs": "`ws.deserializeAttachment()`. `NotFound` when there is none.",
-        "line": 576
+        "line": 601
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "migrate!",
+        "modulePath": "Object.Attachment",
+        "fullName": "Object.Attachment.migrate!",
+        "signature": "Object.Attachment(a), Object.Socket => Try([Current, Migrated], [NotFound, TooLarge, Infra([BadData(Str)])]) where [a.Cbor.Readable(errs)]",
+        "docs": "The migration from platform 0.0.9 (roc-cbor 0.2.3) for the attachment of a socket that slept over the deploy:\n`Current` when it reads strict, else it reads with `Cbor.legacy_0_2` and is written again (`Migrated`).",
+        "line": 614
        }
       ]
      },
@@ -3983,7 +4111,7 @@
         "fullName": "Queue",
         "signature": "{ name : Str, content_type : Str, write : a -> Js, read : List(U8) -> Try(a, Str) }",
         "docs": "",
-        "line": 12,
+        "line": 14,
         "decl": "::",
         "head": "Queue(a)"
        },
@@ -3994,8 +4122,8 @@
         "modulePath": "Queue",
         "fullName": "Queue.json",
         "signature": "Str -> Queue(a) where [a.Cbor.Writable, a.Cbor.Readable(errs)]",
-        "docs": "The content type \"json\": a JS consumer gets the message as an object. No `BigInt` (use `Queue.v8`).",
-        "line": 15
+        "docs": "The content type \"json\": a JS consumer gets the message as an object. The JSON forms (`pf.plain`): an integer of\n2^53 or more (a `BigInt` in JS) is decimal text, a `List(U8)` and a `Cbor.Bytes` are base64 text, a `Dec` with a\nfraction is a number. The read takes decimal text for an integer type (`IntFromText`), so a `U64`, a `U128` and an\n`I128` round-trip (up to 39 digits). The read takes base64 text for a `List(U8)` and a `Cbor.Bytes` (`BytesFromBase64`).",
+        "line": 20
        },
        {
         "kind": "value",
@@ -4005,7 +4133,7 @@
         "fullName": "Queue.declare",
         "signature": "Queue(a) -> { name : Str, kind : Str, props : List((Str, Str)) }",
         "docs": "The binding for the manifest (`Worker.new({ bindings: [...] })`, MODULES.md 3): the kind `queue`.",
-        "line": 24
+        "line": 29
        },
        {
         "kind": "value",
@@ -4015,7 +4143,17 @@
         "fullName": "Queue.v8",
         "signature": "Str -> Queue(a) where [a.Cbor.Writable, a.Cbor.Readable(errs)]",
         "docs": "The content type \"v8\" (the structured clone of Workers): also a `BigInt`, and a `Cbor.Bytes` field reaches a\nJS consumer as a `Uint8Array`.",
-        "line": 29
+        "line": 34
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "legacy_0_2",
+        "modulePath": "Queue",
+        "fullName": "Queue.legacy_0_2",
+        "signature": "Queue(a) -> Queue(a) where [a.Cbor.Readable(errs)]",
+        "docs": "The same queue, with a read that also takes the messages of platform 0.0.9 (roc-cbor 0.2.3) that are still in\nflight after the deploy: a `List(U8)` that 0.2.3 wrote is an array of integers (`BytesFromArray`, with\n`PaddedNumbers`, `Cbor.legacy_0_2`). For the consumer of one deploy, until the old messages are gone (MODULES.md 1,\n\"Migration from platform 0.0.9\"). Then use the queue constant again.",
+        "line": 46
        },
        {
         "kind": "value",
@@ -4025,7 +4163,7 @@
         "fullName": "Queue.text",
         "signature": "Str -> Queue(Str)",
         "docs": "The content type \"text\".",
-        "line": 38
+        "line": 56
        },
        {
         "kind": "value",
@@ -4035,7 +4173,7 @@
         "fullName": "Queue.bytes",
         "signature": "Str -> Queue(List(U8))",
         "docs": "The content type \"bytes\": the message is an `ArrayBuffer` in JS.",
-        "line": 47
+        "line": 65
        },
        {
         "kind": "value",
@@ -4045,7 +4183,7 @@
         "fullName": "Queue.send",
         "signature": "Queue(a), a -> Io({}, [Infra([QueueErr(Io.Thrown)])])",
         "docs": "`send`: 128 KB or less for a message. One wait.",
-        "line": 56
+        "line": 74
        },
        {
         "kind": "value",
@@ -4055,7 +4193,7 @@
         "fullName": "Queue.send!",
         "signature": "Queue(a), a => Try({}, [Infra([QueueErr(Io.Thrown)])])",
         "docs": "",
-        "line": 59
+        "line": 77
        },
        {
         "kind": "value",
@@ -4065,7 +4203,7 @@
         "fullName": "Queue.send_with",
         "signature": "Queue(a), a, { delay_ms ?: U64 } -> Io({}, [Infra([QueueErr(Io.Thrown)])])",
         "docs": "`delay_ms` goes to `delaySeconds` (MC10): whole seconds, rounded up. More than 24 h is `QueueErr` (Workers throws).",
-        "line": 63
+        "line": 81
        },
        {
         "kind": "value",
@@ -4075,7 +4213,7 @@
         "fullName": "Queue.send_with!",
         "signature": "Queue(a), a, { delay_ms ?: U64 } => Try({}, [Infra([QueueErr(Io.Thrown)])])",
         "docs": "",
-        "line": 82
+        "line": 100
        },
        {
         "kind": "value",
@@ -4085,7 +4223,7 @@
         "fullName": "Queue.send_batch",
         "signature": "Queue(a), List(a) -> Io({}, [Infra([QueueErr(Io.Thrown)])])",
         "docs": "`sendBatch`: 100 messages and 256 KB or less (Workers throws for more: `QueueErr`).",
-        "line": 86
+        "line": 104
        },
        {
         "kind": "value",
@@ -4095,7 +4233,7 @@
         "fullName": "Queue.send_batch!",
         "signature": "Queue(a), List(a) => Try({}, [Infra([QueueErr(Io.Thrown)])])",
         "docs": "",
-        "line": 89
+        "line": 107
        },
        {
         "kind": "value",
@@ -4105,7 +4243,7 @@
         "fullName": "Queue.send_batch_with",
         "signature": "Queue(a), List(a), { delay_ms ?: U64 } -> Io({}, [Infra([QueueErr(Io.Thrown)])])",
         "docs": "",
-        "line": 92
+        "line": 110
        },
        {
         "kind": "value",
@@ -4115,7 +4253,7 @@
         "fullName": "Queue.send_batch_with!",
         "signature": "Queue(a), List(a), { delay_ms ?: U64 } => Try({}, [Infra([QueueErr(Io.Thrown)])])",
         "docs": "",
-        "line": 115
+        "line": 133
        },
        {
         "kind": "value",
@@ -4125,7 +4263,7 @@
         "fullName": "Queue.each!",
         "signature": "Queue(a), Queue.Batch, (Queue.Message, a => Try({}, e)) => { acked : U64, retried : U64 }",
         "docs": "Read each message of the batch as `a`, and give the handler the message too (`id`, `timestamp_ms`, `attempts`,\nwhich starts at 1). `Ok` acks the message. `Err(e)` retries it and logs `Str.inspect(e)`. A body that is not an\n`a` is logged and retried too, so after `max_retries` it goes to the dead letter queue, if the queue has one.",
-        "line": 121
+        "line": 139
        },
        {
         "kind": "type",
@@ -4135,7 +4273,7 @@
         "fullName": "Queue.Batch",
         "signature": "{ queue : Str, messages : List(Queue.Message) }",
         "docs": "A consumer batch: the queue name (not the binding name) and its messages. A batch has the limit of the Queues\nconfig (MC11), so it crosses with no `max_bytes`.",
-        "line": 151,
+        "line": 169,
         "decl": "::",
         "head": "Batch"
        },
@@ -4147,7 +4285,7 @@
         "fullName": "Queue.Batch.new",
         "signature": "{ queue : Str, messages : List(Queue.Message) } -> Queue.Batch",
         "docs": "Plain data (MC13): a test can make one.",
-        "line": 154
+        "line": 172
        },
        {
         "kind": "value",
@@ -4157,7 +4295,7 @@
         "fullName": "Queue.Batch.queue",
         "signature": "Queue.Batch -> Str",
         "docs": "",
-        "line": 157
+        "line": 175
        },
        {
         "kind": "value",
@@ -4167,7 +4305,7 @@
         "fullName": "Queue.Batch.messages",
         "signature": "Queue.Batch -> List(Queue.Message)",
         "docs": "",
-        "line": 160
+        "line": 178
        },
        {
         "kind": "value",
@@ -4177,7 +4315,7 @@
         "fullName": "Queue.Batch.ack_all!",
         "signature": "Queue.Batch => {}",
         "docs": "`batch.ackAll()`: no wait.",
-        "line": 164
+        "line": 182
        },
        {
         "kind": "value",
@@ -4187,7 +4325,7 @@
         "fullName": "Queue.Batch.retry_all!",
         "signature": "Queue.Batch => {}",
         "docs": "",
-        "line": 167
+        "line": 185
        },
        {
         "kind": "value",
@@ -4197,7 +4335,7 @@
         "fullName": "Queue.Batch.retry_all_with!",
         "signature": "Queue.Batch, { delay_ms : U64 } => {}",
         "docs": "`delay_ms`: whole seconds, rounded up, at most 86,400 (a retry has no `Try`, so it cannot be an error).",
-        "line": 171
+        "line": 189
        },
        {
         "kind": "type",
@@ -4207,7 +4345,7 @@
         "fullName": "Queue.Message",
         "signature": "{ id : Str, timestamp_ms : U64, attempts : U32, body : List(U8) }",
         "docs": "One message. `body`: the message as CBOR (MC5). `attempts` starts at 1. A function finds its message in the batch\nof the task by `id` (`pf.findById`), so a message holds no ref.",
-        "line": 177,
+        "line": 195,
         "decl": "::",
         "head": "Message"
        },
@@ -4219,7 +4357,7 @@
         "fullName": "Queue.Message.new",
         "signature": "{ id : Str, timestamp_ms : U64, attempts : U32, body : List(U8) } -> Queue.Message",
         "docs": "Plain data (MC13): a test can make one.",
-        "line": 180
+        "line": 198
        },
        {
         "kind": "value",
@@ -4229,7 +4367,7 @@
         "fullName": "Queue.Message.id",
         "signature": "Queue.Message -> Str",
         "docs": "",
-        "line": 183
+        "line": 201
        },
        {
         "kind": "value",
@@ -4239,7 +4377,7 @@
         "fullName": "Queue.Message.timestamp_ms",
         "signature": "Queue.Message -> U64",
         "docs": "",
-        "line": 186
+        "line": 204
        },
        {
         "kind": "value",
@@ -4249,7 +4387,7 @@
         "fullName": "Queue.Message.attempts",
         "signature": "Queue.Message -> U32",
         "docs": "",
-        "line": 189
+        "line": 207
        },
        {
         "kind": "value",
@@ -4259,7 +4397,7 @@
         "fullName": "Queue.Message.body",
         "signature": "Queue.Message -> List(U8)",
         "docs": "",
-        "line": 192
+        "line": 210
        },
        {
         "kind": "value",
@@ -4269,7 +4407,7 @@
         "fullName": "Queue.Message.ack!",
         "signature": "Queue.Message => {}",
         "docs": "`message.ack()`: no wait.",
-        "line": 196
+        "line": 214
        },
        {
         "kind": "value",
@@ -4279,7 +4417,7 @@
         "fullName": "Queue.Message.retry!",
         "signature": "Queue.Message => {}",
         "docs": "",
-        "line": 199
+        "line": 217
        },
        {
         "kind": "value",
@@ -4289,7 +4427,31 @@
         "fullName": "Queue.Message.retry_with!",
         "signature": "Queue.Message, { delay_ms : U64 } => {}",
         "docs": "",
-        "line": 202
+        "line": 220
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "WideRead",
+        "modulePath": "",
+        "fullName": "WideRead",
+        "signature": "{ data : List(U8), wide : U128, low : I128 }",
+        "docs": "",
+        "line": 266,
+        "decl": ":",
+        "head": "WideRead"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "BytesRead",
+        "modulePath": "",
+        "fullName": "BytesRead",
+        "signature": "{ data : Cbor.Bytes }",
+        "docs": "",
+        "line": 271,
+        "decl": ":",
+        "head": "BytesRead"
        }
       ]
      },
@@ -5511,8 +5673,8 @@
         "modulePath": "Rpc",
         "fullName": "Rpc.on",
         "signature": "Rpc(iface, arg, ret, err), (self, arg => Try(ret, err)) -> Rpc.Serves(iface, self) where [arg.Cbor.Readable(errs), ret.Cbor.Writable, err.Cbor.Writable]",
-        "docs": "The callee. `self` is `Object.Self` in a Durable Object (a Worker uses `on_worker`). A class takes a list of\n`Rpc.Serves` of one `iface`. The result of the handler is the reply (`Reply`), also an `Err`. A tag that is not in `err` does not compile. An argument that\ndoes not parse is a throw with the text `bad argument: <error>` (the caller gets `RpcErr`).",
-        "line": 24
+        "docs": "The callee. `self` is `Object.Self` in a Durable Object (a Worker uses `on_worker`). A class takes a list of\n`Rpc.Serves` of one `iface`. The result of the handler is the reply (`Reply`), also an `Err`. A tag that is not in `err` does not compile. An argument that\ndoes not parse is a throw with the text `bad argument: <error>` (the caller gets `RpcErr`). The argument comes from JS\n(a JS caller, or the structured clone of a Roc caller), so it reads with `Cbor.js_values`: `undefined` and `null` of\na field are no key (`UndefinedAsNull`, `NullAsAbsent`).",
+        "line": 26
        },
        {
         "kind": "value",
@@ -5522,7 +5684,7 @@
         "fullName": "Rpc.on_worker",
         "signature": "Rpc(iface, arg, ret, err), (arg => Try(ret, err)) -> Rpc.Serves(iface, {}) where [arg.Cbor.Readable(errs), ret.Cbor.Writable, err.Cbor.Writable]",
         "docs": "The callee in a Worker (the `rpc` of `Worker.new` and of `Rpc.entrypoint`): `on` with no `self`, as a Worker\nentry point has none.",
-        "line": 39
+        "line": 41
        },
        {
         "kind": "value",
@@ -5531,8 +5693,8 @@
         "modulePath": "Rpc",
         "fullName": "Rpc.reply_of",
         "signature": "List(U8) -> Try(ret, [Infra([BadData(Str)]), Remote(err)]) where [ret.Cbor.Readable(e1), err.Cbor.Readable(e2)]",
-        "docs": "The bytes of a reply as the result of `call!`: an `Err` of the callee is `Remote(err)`, a reply that does not fit\nis `Infra(BadData)`.",
-        "line": 44
+        "docs": "The bytes of a reply as the result of `call!`: an `Err` of the callee is `Remote(err)`, a reply that does not fit\nis `Infra(BadData)`. The reply comes from JS (a JS callee, or the structured clone of a Roc callee): it reads with\n`Cbor.js_values` (`UndefinedAsNull`, `NullAsAbsent`).",
+        "line": 47
        },
        {
         "kind": "type",
@@ -5542,7 +5704,7 @@
         "fullName": "Rpc.Infra",
         "signature": "[\n\t\tStorageErr(Io.Thrown),\n\t\tSqlErr(Io.Thrown),\n\t\tD1Err(Io.Thrown),\n\t\tKvErr(Io.Thrown),\n\t\tR2Err(Io.Thrown),\n\t\tCacheErr(Io.Thrown),\n\t\tQueueErr(Io.Thrown),\n\t\tObjectErr(Io.Thrown),\n\t\tServiceErr(Io.Thrown),\n\t\tRpcErr(Io.Thrown),\n\t\tHttpErr(Io.Thrown),\n\t\tNetwork(Io.Thrown),\n\t\tSocketErr(Io.Thrown),\n\t\tBodyErr(Io.Thrown),\n\t\tCryptoErr(Io.Thrown),\n\t\tAiErr(Io.Thrown),\n\t\tVectorizeErr(Io.Thrown),\n\t\tWorkflowsErr(Io.Thrown),\n\t\tEmailErr(Io.Thrown),\n\t\tAnalyticsErr(Io.Thrown),\n\t\tAssetsErr(Io.Thrown),\n\t\tSecretsStoreErr(Io.Thrown),\n\t\tLimitErr(Io.Thrown),\n\t\tBadData(Str),\n\t\tInvalidJson(Str),\n\t\tMissingEnv(Str),\n\t\tTooLarge,\n\t\tTimedOut,\n\t]",
         "docs": "The infrastructure errors of the platform, one closed union (MODULES.md 1, MC9). Each platform function gives\nits own tags in `Infra(...)`. The `err` of a method closes them: `[NotOpen, Infra(Rpc.Infra)]`. A SQL constraint\nfailure is not here: it is the flat domain tag `Constraint(Sql.Constraint)`, which a method lists in its `err` when it\npasses it on (`[NotOpen, Constraint(Sql.Constraint), Infra(Rpc.Infra)]`).",
-        "line": 59,
+        "line": 62,
         "decl": ":",
         "head": "Infra"
        },
@@ -5554,7 +5716,7 @@
         "fullName": "Rpc.forward",
         "signature": "(err -> [Infra(Rpc.Infra), ..e]) -> ([Infra([RpcErr(Io.Thrown), BadData(Str)]), Remote(err)] -> [Infra(Rpc.Infra), ..e])",
         "docs": "A nested call in a handler, for `?`: `call!(...) ? Rpc.forward(f)`. The errors of this call stay in `Infra`,\n`f` maps the `err` of the callee (`Rpc.forward(|e| e)` when the two methods have one error type).",
-        "line": 92
+        "line": 95
        },
        {
         "kind": "value",
@@ -5562,9 +5724,9 @@
         "name": "parser_for",
         "modulePath": "Rpc.NoErr",
         "fullName": "Rpc.NoErr.parser_for",
-        "signature": "Cbor -> (Cbor.State -> Try({ value : Rpc.NoErr, rest : Cbor.State }, [InvalidCbor(U64)]))",
+        "signature": "Cbor -> (Cbor.Reader -> Try({ value : Rpc.NoErr, rest : Cbor.Reader }, [InvalidCbor(U64)]))",
         "docs": "",
-        "line": 102
+        "line": 105
        },
        {
         "kind": "value",
@@ -5572,9 +5734,9 @@
         "name": "encoder_for",
         "modulePath": "Rpc.NoErr",
         "fullName": "Rpc.NoErr.encoder_for",
-        "signature": "Cbor -> (Rpc.NoErr, List(U8) -> Try(List(U8), []))",
+        "signature": "Cbor -> (Rpc.NoErr, Cbor.Writer -> Try(Cbor.Writer, []))",
         "docs": "",
-        "line": 105
+        "line": 108
        },
        {
         "kind": "type",
@@ -5584,7 +5746,7 @@
         "fullName": "Rpc.Handler",
         "signature": "{ name : Str, iface_name : Str, run! : self, List(U8) => Try(List(U8), Str) }",
         "docs": "A method with its types erased: the argument as CBOR in, the reply (`Reply`) as CBOR out. `Err`: an argument\nthat does not parse, as text.",
-        "line": 111,
+        "line": 114,
         "decl": ":",
         "head": "Handler(self)"
        },
@@ -5596,7 +5758,7 @@
         "fullName": "Rpc.Serves",
         "signature": "{ name : Str, iface_name : Str, run! : self, List(U8) => Try(List(U8), Str) }",
         "docs": "A handler of a method of the interface `iface`. A class, an entry point and a Worker take a list of them, so all\ntheir methods have one interface.",
-        "line": 115,
+        "line": 118,
         "decl": ":=",
         "head": "Serves(iface, self)"
        },
@@ -5608,7 +5770,7 @@
         "fullName": "Rpc.Serves.erase",
         "signature": "Rpc.Serves(iface, self) -> Rpc.Handler(self)",
         "docs": "The handler with its interface erased.",
-        "line": 118
+        "line": 121
        },
        {
         "kind": "type",
@@ -5618,7 +5780,7 @@
         "fullName": "Rpc.Iface",
         "signature": "{ name : Str }",
         "docs": "An interface (MODULES.md 8): a type of the app with no values (`Ledger := []`) and its name as text. The shared module\nof the Workers makes one value for each interface (`ledger : Rpc.Iface(Ledger)`, `ledger = Rpc.iface(\"Ledger\")`).\nThe type connects the two sides of a call in the compiler. The name goes to the manifest: the type cannot cross a\nWorker (the link of a service binding or of a `namespace_remote` is in the Wrangler config), so `roc-cloudflare-workers\nsync` compares the names of the Workers of one repo. A call with no `Iface`, or with the `Iface` of another interface,\ndoes not compile.",
-        "line": 128,
+        "line": 131,
         "decl": ":=",
         "head": "Iface(iface)"
        },
@@ -5630,7 +5792,7 @@
         "fullName": "Rpc.Iface.method",
         "signature": "Rpc.Iface(iface), Str -> Rpc(iface, arg, ret, err)",
         "docs": "A method of the interface (WR1): the method name and, by the annotation of the constant, the types of both sides.\n`err` is the tag union that the callee can give (`Rpc.NoErr` for none): the caller gets it as `Remote(err)`.\nA method that two interfaces serve is a function of the interface: `ping : Rpc.Iface(iface) -> Rpc(iface, {}, Str, Rpc.NoErr)`,\n`ping = |i| i.method(\"ping\")`.",
-        "line": 134
+        "line": 137
        },
        {
         "kind": "value",
@@ -5640,7 +5802,7 @@
         "fullName": "Rpc.Iface.name",
         "signature": "Rpc.Iface(iface) -> Str",
         "docs": "The name that `Rpc.iface` got.",
-        "line": 138
+        "line": 141
        },
        {
         "kind": "value",
@@ -5650,7 +5812,7 @@
         "fullName": "Rpc.iface",
         "signature": "Str -> Rpc.Iface(iface)",
         "docs": "The value of an interface: `ledger = Rpc.iface(\"Ledger\")`. The name is the name of the type, as text. Two values with\nthe same name and different types are two interfaces for the compiler and one for `sync`.",
-        "line": 144
+        "line": 147
        },
        {
         "kind": "value",
@@ -5660,7 +5822,7 @@
         "fullName": "Rpc.iface_names",
         "signature": "List(Rpc.Handler(self)) -> List(Str)",
         "docs": "The distinct interface names of some handlers, in order: none for no handler. A class, a Worker and an entry point\nhave one name at most: two names are an error at load (`checkManifest` in `js/manifest.js`).",
-        "line": 149
+        "line": 152
        },
        {
         "kind": "value",
@@ -5670,7 +5832,7 @@
         "fullName": "Rpc.entrypoint",
         "signature": "Str, { fetch! ?: Request => Try(Response, e), rpc ?: List(Rpc.Serves(iface, {})) } -> Rpc.Entrypoint",
         "docs": "A named entry point (a `WorkerEntrypoint` class): `export const Admin = entrypointClass(\"Admin\")` in the JS entry\nfile. A service binding with `entrypoint = \"Admin\"` reaches it. Its `fetch!` gets the requests of `Service.fetch!`\non that binding (the event `EntrypointFetch`). With no `fetch!`, the class has no `fetch` method in JS.",
-        "line": 155
+        "line": 158
        },
        {
         "kind": "type",
@@ -5680,7 +5842,7 @@
         "fullName": "Rpc.Entrypoint",
         "signature": "{ name : Str, handlers : List(Str), rpc : List(Rpc.Handler({})), iface_names : List(Str), fetch! : Request => [Respond(Response), Failed(Str), Unhandled] }",
         "docs": "An entry point with its types erased. `handlers`: the handlers that its JS class has (`fetch`), for the manifest.",
-        "line": 171,
+        "line": 174,
         "decl": ":",
         "head": "Entrypoint"
        },
@@ -5692,7 +5854,7 @@
         "fullName": "Reply",
         "signature": "[Ok(ret), Err(err)]",
         "docs": "The reply of a method on the wire: `{\"Ok\": value}` or `{\"Err\": tag}` (the derived CBOR of a tag). A JS callee gives\nthe same shape. `Try` has no codec, so the wire form is its own type. `reply_of` parses it, `on` writes its bytes.",
-        "line": 176,
+        "line": 179,
         "decl": ":=",
         "head": "Reply(ret, err)"
        },
@@ -5704,7 +5866,7 @@
         "fullName": "Reply.parser_for",
         "signature": "_",
         "docs": "",
-        "line": 177
+        "line": 180
        },
        {
         "kind": "value",
@@ -5714,7 +5876,7 @@
         "fullName": "Reply.encoder_for",
         "signature": "_",
         "docs": "",
-        "line": 178
+        "line": 181
        },
        {
         "kind": "value",
@@ -5724,7 +5886,7 @@
         "fullName": "Reply.is_eq",
         "signature": "_",
         "docs": "",
-        "line": 179
+        "line": 182
        }
       ]
      },
@@ -5926,7 +6088,9 @@
      },
      {
       "name": "Sql",
-      "imports": [],
+      "imports": [
+       "cbor"
+      ],
       "items": [
        {
         "kind": "type",
@@ -5936,7 +6100,7 @@
         "fullName": "Sql",
         "signature": "[Null, Int(I64), Real(F64), Text(Str), Blob(List(U8))]",
         "docs": "",
-        "line": 8,
+        "line": 12,
         "decl": ":=",
         "head": "Sql"
        },
@@ -5948,7 +6112,7 @@
         "fullName": "Sql.is_eq",
         "signature": "_",
         "docs": "",
-        "line": 9
+        "line": 13
        },
        {
         "kind": "value",
@@ -5958,7 +6122,7 @@
         "fullName": "Sql.encoder_for",
         "signature": "encoding -> (Sql, state -> Try(state, err))\n\t\twhere [\n\t\t\tencoding.encode_null : state -> Try(state, err),\n\t\t\tencoding.encode_i64 : I64, state -> Try(state, err),\n\t\t\tencoding.encode_f64 : F64, state -> Try(state, err),\n\t\t\tencoding.encode_str : Str, state -> Try(state, err),\n\t\t\tencoding.encode_bytes : List(U8), state -> Try(state, err),\n\t\t]",
         "docs": "A `Sql` value as a parameter, for SQL that an app builds at run time (a list of `Sql` is one parameter list):\n`Null` is CBOR null, `Int` an integer, `Real` an f64, `Text` text, `Blob` a byte string.",
-        "line": 13
+        "line": 17
        },
        {
         "kind": "value",
@@ -5968,7 +6132,7 @@
         "fullName": "Sql.none",
         "signature": "List(Sql)",
         "docs": "No parameters. A bare `[]` does not compile as a parameter list: its item type has no encoder to choose.",
-        "line": 33
+        "line": 37
        },
        {
         "kind": "value",
@@ -5978,7 +6142,7 @@
         "fullName": "Sql.stmt",
         "signature": "Str, params -> Sql.Stmt where [params.Cbor.Writable]",
         "docs": "One statement of `D1.batch!`. The parameters are encoded here, so a batch can hold statements of different types.",
-        "line": 37
+        "line": 41
        },
        {
         "kind": "type",
@@ -5988,7 +6152,7 @@
         "fullName": "Sql.Stmt",
         "signature": "{ sql : Str, params : List(U8) }",
         "docs": "The parameters are the CBOR bytes of an array.",
-        "line": 41,
+        "line": 45,
         "decl": ":",
         "head": "Stmt"
        },
@@ -6000,7 +6164,7 @@
         "fullName": "Sql.null",
         "signature": "Sql.Null",
         "docs": "NULL as a parameter: CBOR null, bound as JS `null`.",
-        "line": 44
+        "line": 48
        },
        {
         "kind": "type",
@@ -6010,7 +6174,7 @@
         "fullName": "Sql.Null",
         "signature": "[Null]",
         "docs": "The type of `Sql.null`. It has its own encoder, so it encodes as CBOR null, not as a tag.",
-        "line": 48,
+        "line": 52,
         "decl": ":=",
         "head": "Null"
        },
@@ -6022,7 +6186,7 @@
         "fullName": "Sql.Null.encoder_for",
         "signature": "encoding -> (Sql.Null, state -> Try(state, err))\n\t\t\twhere [encoding.encode_null : state -> Try(state, err)]",
         "docs": "",
-        "line": 49
+        "line": 53
        },
        {
         "kind": "value",
@@ -6031,8 +6195,8 @@
         "modulePath": "Sql",
         "fullName": "Sql.or_null",
         "signature": "Try(a, _) -> Sql.OrNull(a)",
-        "docs": "A parameter that can be NULL: `Ok(x)` encodes as `x`, `Err(_)` as NULL, for any error type. A bare `Err(Null)` of\nan annotated `Try(a, [Null])` also encodes as CBOR null (NULL). A tag with a payload encodes as a map: `BadParam`.\nThe parameters are an array (a list or a tuple), so a NULL item stays. In a record that crosses as CBOR (an RPC\nargument or reply, a queue message, a cell, a `Memo` value, an attachment) a field of `Sql.null`, of `Sql.or_null` or of\n`Err(Null)` writes no key (roc-cbor 0.2.2). The record reads back only into `x ?: a` or `x : Try(a, [Missing])`, not\ninto `x : Try(a, [Null])` (`MissingRequiredField`). Use `?:` or `Try(a, [Missing])` for a field that can be empty.",
-        "line": 63
+        "docs": "A parameter that can be NULL: `Ok(x)` encodes as `x`, `Err(_)` as NULL, for any error type. A bare `Err(Null)` of\nan annotated `Try(a, [Null])` also encodes as CBOR null (NULL). A tag with a payload encodes as a map: `BadParam`.\nThe parameters are an array (a list or a tuple), so a NULL item stays. In a record that crosses as CBOR (an RPC\nargument or reply, a queue message, a cell, a `Memo` value, an attachment) a field of `Sql.null`, of `Sql.or_null` or of\n`Err(Null)` writes CBOR null (roc-cbor 0.5.0). A cell, an attachment and a `Memo` value read it back as `Err(Null)`.\nRPC and queue reads (`Cbor.js_values`) read it as no key: there, use `x ?: a` or `x : Try(a, [Missing])`.",
+        "line": 67
        },
        {
         "kind": "type",
@@ -6042,7 +6206,7 @@
         "fullName": "Sql.OrNull",
         "signature": "[Some(a), None]",
         "docs": "The type of `Sql.or_null`.",
-        "line": 70,
+        "line": 74,
         "decl": ":=",
         "head": "OrNull(a)"
        },
@@ -6054,7 +6218,7 @@
         "fullName": "Sql.OrNull.encoder_for",
         "signature": "encoding -> (Sql.OrNull(a), state -> Try(state, err))\n\t\t\twhere [encoding.encode_null : state -> Try(state, err), a.encoder_for : encoding -> (a, state -> Try(state, err))]",
         "docs": "",
-        "line": 71
+        "line": 75
        },
        {
         "kind": "value",
@@ -6062,9 +6226,61 @@
         "name": "blob",
         "modulePath": "Sql",
         "fullName": "Sql.blob",
-        "signature": "List(U8) -> Cbor.Bytes",
-        "docs": "A blob as a parameter: a CBOR byte string, bound as a `Uint8Array`.",
-        "line": 85
+        "signature": "List(U8) -> Sql.Blob",
+        "docs": "A blob as a parameter or a column value: CBOR tag 64 (RFC 8746, a uint8 array) round a byte string. JS reads the tag\nas a `Uint8Array` that D1 binds as a blob, also as the only parameter (`db.run!(sql, Sql.blob(b))` is `[Sql.blob(b)]`).\nA bare `List(U8)` is a byte string with no tag: it stays `BadParam`. Use `Sql.blob(b)` for a blob. `blob.to_list()` gives the list back.",
+        "line": 91
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Blob",
+        "modulePath": "Sql",
+        "fullName": "Sql.Blob",
+        "signature": "[Blob(List(U8))]",
+        "docs": "The type of `Sql.blob`. Its own type, not `List(U8)` and not `Cbor.Bytes`, so the compiler refuses a blob where a list of\nintegers goes. It reads the tag, a plain byte string, and (with `BytesFromArray`, in `Cbor.sql_rows`) the array of integers\n0 to 255 that D1 gives for a BLOB column: a record field `data : Sql.Blob` reads a BLOB of `all!` and `first!`.",
+        "line": 97,
+        "decl": ":=",
+        "head": "Blob"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "is_eq",
+        "modulePath": "Sql.Blob",
+        "fullName": "Sql.Blob.is_eq",
+        "signature": "_",
+        "docs": "",
+        "line": 98
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "encoder_for",
+        "modulePath": "Sql.Blob",
+        "fullName": "Sql.Blob.encoder_for",
+        "signature": "CborPkg -> (Sql.Blob, CborPkg.Writer -> Try(CborPkg.Writer, err))",
+        "docs": "",
+        "line": 100
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "parser_for",
+        "modulePath": "Sql.Blob",
+        "fullName": "Sql.Blob.parser_for",
+        "signature": "CborPkg -> (CborPkg.Reader -> Try({ value : Sql.Blob, rest : CborPkg.Reader }, [InvalidCbor(U64)]))",
+        "docs": "",
+        "line": 103
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_list",
+        "modulePath": "Sql.Blob",
+        "fullName": "Sql.Blob.to_list",
+        "signature": "Sql.Blob -> List(U8)",
+        "docs": "The bytes as a list.",
+        "line": 115
        },
        {
         "kind": "type",
@@ -6074,7 +6290,7 @@
         "fullName": "Sql.Info",
         "signature": "{ changes : U64, last_row_id : Try(I64, [Rounded]), rows_read : U64, rows_written : U64, duration_ms : F64 }",
         "docs": "The `meta` of a query. `last_row_id` is `Err(Rounded)` when D1 gave it with a size of 2^53 or more: D1 gives each\nnumber as a JS `Number`, so a larger rowid is rounded (MODULES.md 5.1, \"Integers in rows\").",
-        "line": 90,
+        "line": 121,
         "decl": ":",
         "head": "Info"
        },
@@ -6086,7 +6302,7 @@
         "fullName": "Sql.Rows",
         "signature": "{ columns : List(Str), rows : List(List(Sql)) }",
         "docs": "Rows with no types: the column names, then one list of values for each row.",
-        "line": 93,
+        "line": 124,
         "decl": ":",
         "head": "Rows"
        },
@@ -6098,7 +6314,7 @@
         "fullName": "Sql.Constraint",
         "signature": "{ kind : [PrimaryKey, Unique, ForeignKey, Check, NotNull, Trigger, Datatype, Other], message : Str }",
         "docs": "A constraint failure (MC9): the kind from the extended code in the message text, and the SQLite text\n(5.1, table \"Constraint kinds\"). A flat domain tag `Constraint(Sql.Constraint)`, not in `Infra`.",
-        "line": 97,
+        "line": 128,
         "decl": ":",
         "head": "Constraint"
        }
@@ -6631,8 +6847,8 @@
         "modulePath": "Version",
         "fullName": "Version.metadata!",
         "signature": "Version => { id : Str, tag : Str, timestamp_ms : U64 }",
-        "docs": "",
-        "line": 15
+        "docs": "The id, the tag and the time (ms) of the deployed version. A binding that is not in the config is a crash (a 500\nresponse) with the name of the binding, not an error value (decided, PLAN.md OO1).",
+        "line": 17
        }
       ]
      },

@@ -5,7 +5,7 @@
 ## object. A `Body` is a tag: write `Text("hello")` or `Bytes(list)`, never a bare string ("used where a non-string
 ## type is needed ... Body"). `req.body` without the call is a field read, and `Request` is opaque: use the methods.
 ## Every platform error is inside `Infra(R2Err(..))`. `NotFound` and `PreconditionFailed` are flat.
-app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.6/HgUugW5V5QQbmrjdjkRhjiZ8B9D9gzpEkSwdojqJcW4p.tar.zst" }
+app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.10/Dfyn36P4a9t8519ZVXDkHrmvXA9cbzrjkN4YHJuVfkGd.tar.zst" }
 
 import pf.Worker
 import pf.Request

@@ -9,7 +9,7 @@
 ## Project files. `roc-cfw sync` writes worker.js with `export const Room = objectClass("Room");`.
 ##   wrangler.toml new_sqlite_classes = ["Room"] in the migration, and a [[durable_objects.bindings]] entry for ROOMS
 ##                 compatibility_flags = ["enable_request_signal"]
-app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.6/HgUugW5V5QQbmrjdjkRhjiZ8B9D9gzpEkSwdojqJcW4p.tar.zst" }
+app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.10/Dfyn36P4a9t8519ZVXDkHrmvXA9cbzrjkN4YHJuVfkGd.tar.zst" }
 
 import pf.Worker
 import pf.Request
@@ -23,7 +23,8 @@ Room := []
 ## One slot for each socket, kept while the object sleeps. The constant gives the type for `set!` and `get!`.
 ## There is one slot for each socket: two constants on one socket share it, and only the text of `BadData` names
 ## the constant. The value is 16,384 bytes or less (`TooLarge`).
-## The attachment is CBOR: a field that can be empty is `x ?: a` or `x : Try(a, [Missing])`, not `Try(a, [Null])`.
+## The attachment is CBOR, read strictly: it reads back as written, `Err(Null)` too. An attachment of a socket that slept
+## over the deploy from platform 0.0.9 needs `att.migrate!(socket)` in the first event of the socket.
 Member : { name : Str }
 
 member_slot : Object.Attachment(Member)

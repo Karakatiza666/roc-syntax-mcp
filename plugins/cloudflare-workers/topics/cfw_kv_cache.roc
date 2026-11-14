@@ -7,7 +7,7 @@
 ##
 ## KV is eventual: a write can take 60 s or more to show in other places. Use a Durable Object (`Object.Cell`) for a
 ## value that must be consistent. Every platform error is inside `Infra(KvErr(..))`. `NotFound` is flat.
-app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.6/HgUugW5V5QQbmrjdjkRhjiZ8B9D9gzpEkSwdojqJcW4p.tar.zst" }
+app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.10/Dfyn36P4a9t8519ZVXDkHrmvXA9cbzrjkN4YHJuVfkGd.tar.zst" }
 
 import pf.Worker
 import pf.Request

@@ -9,15 +9,16 @@ No JavaScript runs from this package. It is Roc source, prose and a manifest.
 
 ## Status
 
-The plugin documents release 0.0.6 of the platform (see `UPSTREAM`). The plugin is checked with
-nightly-2026-11-03-34bd006, the nightly of the 0.0.6 build. The overview gives
-the project setup with Talon and the helper `roc-cfw` 0.0.1
+The plugin documents release 0.0.10 of the platform (see `UPSTREAM`). The plugin is checked with
+nightly-2026-11-06-34f137a, the nightly of the 0.0.10 build. The overview gives
+the project setup with Talon and the helper `roc-cfw`
 ([repository](https://github.com/Karakatiza666/roc-cloudflare-workers-cli)),
 and the topic `cfw_testing` the test helper `startApp`.
 
 Release 0.0.1 of the platform was documented by version 0.0.1 of this package
 ([tag](https://github.com/Karakatiza666/roc-cloudflare-workers/releases/tag/0.0.1)).
-Releases 0.0.2 to 0.0.5 have no version of this package.
+Releases 0.0.2 to 0.0.5 have no version of this package. Release 0.0.6 was
+documented by version 0.0.6, and releases 0.0.7 to 0.0.9 have none.
 
 ## Install
 

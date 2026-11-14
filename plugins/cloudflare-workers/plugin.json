@@ -1,11 +1,11 @@
 {
   "schema": 1,
   "maintainer": "Heorhii Bulakh (Karakatiza666), the platform author",
-  "compiler": "nightly-2026-11-03-34bd006",
+  "compiler": "nightly-2026-11-06-34f137a",
   "corpora": [
     {
       "name": "cloudflare-workers",
-      "release": "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.6/HgUugW5V5QQbmrjdjkRhjiZ8B9D9gzpEkSwdojqJcW4p.tar.zst",
+      "release": "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.10/Dfyn36P4a9t8519ZVXDkHrmvXA9cbzrjkN4YHJuVfkGd.tar.zst",
       "description": "The cloudflare-workers platform: Cloudflare Workers in Roc, one event! with Worker.new and a handler record, and typed modules for fetch, D1, KV, R2, Cache, Queues, Durable Objects, WebSockets, RPC, WebCrypto and the other bindings.",
       "purpose": "Cloudflare Workers: HTTP, storage, Durable Objects",
       "overview": "overview.md",

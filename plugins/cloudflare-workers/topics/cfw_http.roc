@@ -1,7 +1,7 @@
 ## HTTP in a Worker: routing, repeated query parameters, JSON in and out, outbound `fetch` with
 ## `Http.send!`, two calls at the same time, a timeout, a streamed response
 ## with `Response.after`, and a webhook signature check with a secret.
-app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.6/HgUugW5V5QQbmrjdjkRhjiZ8B9D9gzpEkSwdojqJcW4p.tar.zst" }
+app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.10/Dfyn36P4a9t8519ZVXDkHrmvXA9cbzrjkN4YHJuVfkGd.tar.zst" }
 
 import pf.Worker
 import pf.Request

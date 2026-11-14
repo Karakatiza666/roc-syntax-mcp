@@ -17,8 +17,10 @@
 ##
 ## `--no-cache` makes the same source give the same bytes. A `roc build` with
 ## type errors still writes app.wasm and exits with 1: check the exit code.
+## A `--opt=dev` build needs `--wasm-stack-size=2097152` (2 MiB): its frames are large, and a value nested 50 levels
+## deep overflows the 1 MiB of the header ("memory access out of bounds"). The default build keeps 1 MiB.
 ## Without `enable_request_signal`, a task does not stop when the client goes away.
-app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.6/HgUugW5V5QQbmrjdjkRhjiZ8B9D9gzpEkSwdojqJcW4p.tar.zst" }
+app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.10/Dfyn36P4a9t8519ZVXDkHrmvXA9cbzrjkN4YHJuVfkGd.tar.zst" }
 
 import pf.Worker
 import pf.Request

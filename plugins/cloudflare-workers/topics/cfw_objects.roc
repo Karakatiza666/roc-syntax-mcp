@@ -15,7 +15,7 @@
 ## `sync` also checks the Wrangler config against `Worker.new` (`objects`, `bindings`). A class with no export line, or
 ## an export line with no class, stops the load. The error names the class. A class in `new_classes` (KV-backed) fails
 ## at its first event.
-app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.6/HgUugW5V5QQbmrjdjkRhjiZ8B9D9gzpEkSwdojqJcW4p.tar.zst" }
+app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.10/Dfyn36P4a9t8519ZVXDkHrmvXA9cbzrjkN4YHJuVfkGd.tar.zst" }
 
 import pf.Worker
 import pf.Request
@@ -49,10 +49,17 @@ add_hit = counter_api.method("add_hit")
 
 ## A typed value in the storage of one object: strong consistency, and no wait. Workers keeps the value across deploys.
 ## A value that does not parse as the new type is `BadData` (there is no fallback), so change the type with care.
-## A cell is CBOR. In a record type of a cell, write a field that can be empty as `x ?: a` or `x : Try(a, [Missing])`, not
-## as `Try(a, [Null])` (roc-cbor 0.2.2 and later: the writer writes no key for `Err(Null)`, and the read is `BadData`).
+## A cell is CBOR, read strictly: a value reads back as it was written, `Err(Null)` of a `Try(a, [Null])` field too.
+## A cell that platform 0.0.9 wrote (roc-cbor 0.2.3) may not read strictly: call `count.migrate!(self)` once after the
+## deploy, in `init!` or the first `fetch!`. It gives `Ok(Current)`, `Ok(Migrated)` or `Err(NotFound)`.
 count : Object.Cell(I64)
 count = Object.cell("count")
+
+migrate_count! : Object.Self => Try({}, _)
+migrate_count! = |self| match count.migrate!(self) {
+	Ok(Current) | Ok(Migrated) | Err(NotFound) => Ok({})
+	Err(Infra(e)) => Err(Infra(e))
+}
 
 Hit : { at : U64 }
 

@@ -1,6 +1,6 @@
-app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.6/HgUugW5V5QQbmrjdjkRhjiZ8B9D9gzpEkSwdojqJcW4p.tar.zst" }
+app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.10/Dfyn36P4a9t8519ZVXDkHrmvXA9cbzrjkN4YHJuVfkGd.tar.zst" }
 
-## The example Worker (PLAN.md 11b). It has no `cbor` and no `http` entry: the platform brings both.
+## A small Worker in Roc. It has no `cbor` and no `http` entry: the platform brings both.
 ## The platform line is a path so that the repo can test it. In your project, write the release URL (README.md).
 ##
 ## | Route | Shows |
@@ -8,7 +8,7 @@ app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-wor
 ## | `/` | a text answer |
 ## | `/d1` | a D1 read into a record (a BLOB column is a `List(U8)`) |
 ## | `/cbor` | `Cbor.encode` and `Cbor.parse` |
-## | `/fetch?url=U` | `Http.get!` and the status of the answer |
+## | `/fetch?url=U` | `Http.get!` and the status of the answer (an open fetch relay: for the tests only, see below) |
 import pf.Worker
 import pf.Request
 import pf.Response
@@ -52,13 +52,17 @@ cbor = || {
 	Response.from_text(200, "${raw.len().to_str()} bytes, ${Str.inspect(back)}")
 }
 
+## WARNING: `/fetch?url=U` fetches any URL that the client gives. On a public URL this Worker is then an open fetch
+## relay (SSRF): a client can make it fetch other sites, and with `global_fetch_strictly_public` other Workers on
+## workers.dev. The repo tests (scripts/test_example.sh) need the open form. Do not deploy it. The template of
+## `roc-cfw init` (js/template/main.roc) fetches one fixed URL.
 fetch_url! : Str => Response
 fetch_url! = |url| match Http.get!(url) {
 	Ok(r) => Response.from_text(200, "status ${r.status().to_str()}")
 	Err(e) => Response.from_text(502, "Err ${Str.inspect(e)}")
 }
 
-## `bindings`: the manifest lists the D1 binding, so the shim checks `env.DB` at load, and `roc-cfw sync`
+## `bindings`: the manifest lists the D1 binding, so the shim checks `env.DB` at the first event, and `roc-cfw sync`
 ## checks `wrangler.toml`.
 worker = Worker.new({ fetch!: fetch!, bindings: [db.declare()] })
 

@@ -2,13 +2,14 @@
 ##
 ## One constant is the producer and the consumer (MC6): `jobs : Queue(Job)`, `jobs = Queue.json("JOBS")`, where "JOBS" is
 ## the producer binding of the Wrangler config. The consumer gets its batches in the `queue!` field of `Worker.new`.
-## `Queue.json` cannot send an integer above 2^53 (`QueueErr` at the send): use `Queue.v8`. `Queue.v8` also keeps a `Cbor.Bytes`
-## field as bytes. Every platform error is inside `Infra(QueueErr(..))`.
+## `Queue.json` sends an integer of 2^53 or more as decimal text and bytes as base64 text, and the typed read takes both
+## back. `Queue.v8` keeps them as a `BigInt` and a `Uint8Array`. Every platform error is inside `Infra(QueueErr(..))`.
+## Messages in flight from platform 0.0.9: read them with `jobs.legacy_0_2().each!(..)` for one deploy.
 ##
 ##   wrangler.toml [[queues.producers]]  binding = "JOBS", queue = "crawl-jobs"
 ##                 [[queues.consumers]]  queue = "crawl-jobs", max_batch_size = 10, max_retries = 5
 ##                 Set `max_batch_size` small: a batch crosses into wasm memory whole.
-app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.6/HgUugW5V5QQbmrjdjkRhjiZ8B9D9gzpEkSwdojqJcW4p.tar.zst" }
+app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.10/Dfyn36P4a9t8519ZVXDkHrmvXA9cbzrjkN4YHJuVfkGd.tar.zst" }
 
 import pf.Worker
 import pf.Request
@@ -16,9 +17,9 @@ import pf.Response
 import pf.Queue
 import pf.Http
 
-## A message crosses as CBOR. A field that can be empty is `x ?: a` or `x : Try(a, [Missing])`. The writer writes no key for
-## `Err(Null)` (roc-cbor 0.2.2 and later), so an `x : Try(a, [Null])` field is `MissingRequiredField` when the message is read, and
-## `each!` retries it.
+## A message comes back from JS, and that read takes a `null` field as no key, also a `null` that Roc wrote. A field that
+## can be empty is `x ?: a` or `x : Try(a, [Missing])`: an `x : Try(a, [Null])` field is `MissingRequiredField` when the
+## message is read, and `each!` retries it.
 Job : { url : Str }
 
 jobs : Queue(Job)

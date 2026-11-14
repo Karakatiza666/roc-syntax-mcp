@@ -48,7 +48,7 @@
 ##
 ## Other calls: `app.scheduled({ cron })`, `app.queue(name, messages)`, `app.idle()` (wait for `Response.after` work),
 ## `app.calls()`, `app.sql(name, texts)`, `app.logs`. `app.reset()` keeps Durable Object storage.
-app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.6/HgUugW5V5QQbmrjdjkRhjiZ8B9D9gzpEkSwdojqJcW4p.tar.zst" }
+app [event!] { pf: platform "https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.10/Dfyn36P4a9t8519ZVXDkHrmvXA9cbzrjkN4YHJuVfkGd.tar.zst" }
 
 import pf.Worker
 import pf.Request

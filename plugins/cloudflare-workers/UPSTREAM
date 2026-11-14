@@ -4,49 +4,55 @@
 # diff tag to tag.
 
 repo     https://github.com/Karakatiza666/roc-cloudflare-workers
-tag      0.0.6
-commit   1609bc2 of the platform repo (talon/cloudflare-workers submodule), the tag 0.0.6
-platform HgUugW5V5QQbmrjdjkRhjiZ8B9D9gzpEkSwdojqJcW4p.tar.zst
-url      https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.6/HgUugW5V5QQbmrjdjkRhjiZ8B9D9gzpEkSwdojqJcW4p.tar.zst
+tag      0.0.10
+commit   9f878196ba8a497e69a926d16cf7dcef69d55805 of the platform repo, the tag 0.0.10
+platform Dfyn36P4a9t8519ZVXDkHrmvXA9cbzrjkN4YHJuVfkGd.tar.zst
+url      https://github.com/Karakatiza666/roc-cloudflare-workers/releases/download/0.0.10/Dfyn36P4a9t8519ZVXDkHrmvXA9cbzrjkN4YHJuVfkGd.tar.zst
 
-# The topics were written against a local bundle of main at 759ef98, made with
-# scripts/bundle.sh. The release asset has the same hash, and 759ef98..1609bc2
-# changes only README.md and research/min-nightly/ci.sh, so the content is the
-# same.
-#
-# The repin before this one (never published) pinned a local bundle of
-# 6c0f7a0 as 0.0.2. Between it and 759ef98 the Roc API changed for app authors
-# in: WebSocket (send! adds Infra(SocketErr), close! gives Try({}, [BadCode,
-# TooLarge]), Closed has `by`, accept_with!, protocol(s), pick_protocol,
-# closed!, extensions, max_queued_bytes; Object.Self.accept_with! takes
-# protocols), Worker.new on_trap (Worker.Fixed, Worker.OnTrap),
-# Request.query_all and query_pairs (query now parses as URLSearchParams),
-# Body.chunk_with! and default_fill, Native.ZstdStream.feed!, Kv.get_with!
-# raising cache_ttl_ms to 30 s, Memo checking that a value parses back, one
-# clock (the makeHandler option `now` drives Time.now_ms!, Memo, alarms), and
-# roc-cbor 0.2.3 in the platform header. 0.0.4 to 0.0.6 change only the test
-# helper startApp (js/test.mjs) and docs: the Roc API and the ABI are the same.
-#
+# 0.0.6 to 0.0.10, from the "Changes in" sections of README.md at the tag:
+#   0.0.7  `Worker.new bindings` is checked at the first event, not at load. No
+#          API change.
+#   0.0.8  smaller `roc_event` code. No API change.
+#   0.0.9  allocator size classes, the makeHandler options `stats` and `trace`.
+#          No Roc API change.
+#   0.0.10 roc-cbor 0.2.3 to 0.5.0 in the platform header, with strict reads.
+#          For app authors: data that Roc stores (cells, attachments, Memo)
+#          reads strictly and keeps `Err(Null)`; values from JS (RPC, queues,
+#          Ai.run!) still read a `null` field as no key; a bare `List(U8)` SQL
+#          parameter is `BadParam` (`Sql.blob` now gives `Sql.Blob`); a
+#          `List(U8)` writes a byte string; `Queue.json` and KV metadata write
+#          big integers and bytes as text and read them back; `Cbor.State` is
+#          `Cbor.Reader`, and a custom `encoder_for` takes `Cbor.Writer`; new
+#          `Object.Cell.migrate!`, `Object.Attachment.migrate!`,
+#          `Queue.legacy_0_2`, `Kv.Metadata.parse_legacy`, `Cbor.parse_legacy`
+#          for data of 0.0.9; a `--opt=dev` build needs
+#          `--wasm-stack-size=2097152`.
+# The overview and the topics (objects, queues, rpc, websockets, d1, worker)
+# were changed for these. The run-time rules (null handling, BadParam, the text
+# forms of Queue.json) are taken from MODULES.md 1 and README.md at the tag, the
+# platform's own record of its checks; this repin compiled every program but ran
+# none. cfw_objects compiles a `migrate!` call.
+
 # A release asset is a public file that `roc check` downloaded into
 # the same cache. The bundle has the Roc modules, the production host.wasm and
 # the shim js/.
 #
-# The packages of the platform header: roc-lang/http 2.0.0 and roc-cbor 0.2.3
+# The packages of the platform header: roc-lang/http 2.0.0 and roc-cbor 0.5.0
 # (examples/hello_with_cbor.roc has the roc-cbor URL of the header).
 
 # The nightly every app here was checked under, and the manifest's `compiler`
-# line. It is compat/last-stack-first-nightly of the platform repo at 759ef98
-# (the build of 0.0.6). `plugin validate` needs it unpacked at the repo root as
-# roc_nightly-linux_x86_64-2026-11-03-34bd006/. The platform supports
-# nightly-2026-10-19-601b54c (min_nightly of js/cfw.json) and later.
-compiler nightly-2026-11-03-34bd006
+# line. It is compat/last-stack-first-nightly of the platform repo at the tag
+# 0.0.10, and the nightly the release notes name. `plugin validate` needs it
+# unpacked at the repo root as roc_nightly-linux_x86_64-2026-11-06-34f137a/.
+# js/cfw.json at the tag still names nightly-2026-10-19-601b54c as min_nightly.
+compiler nightly-2026-11-06-34f137a
 
 index.json <- the bundle's own .roc modules, parsed by
               `roc-syntax-mcp plugin index`. No source is vendored
 examples/  <- examples/hello/main.roc and with_cbor.roc of the platform repo,
               flattened to hello.roc and hello_with_cbor.roc. The one change:
               the platform line `"../../platform/main.roc"` is the URL above.
-              (with_cbor.roc has the roc-cbor 0.2.3 URL of the commit 759ef98.)
+              (with_cbor.roc has the roc-cbor 0.5.0 URL of the tag.)
               The doc comment of hello.roc still says that the line is a path:
               it is upstream's text, kept as it is
 topics/    <- this package's own: programs written against this pin and
@@ -54,9 +60,10 @@ topics/    <- this package's own: programs written against this pin and
               in research/plugin-probes/ (v2/ for 0.0.1, s_*.roc there for 0.0.2) of the platform repo.
               The 0.0.6 findings (WebSocket close!/send!/Closed, on_trap, Header
               records, the Worker.new literal) came from probes compiled with
-              the nightly above; topics/cfw_testing.roc was built to app.wasm
-              and its JS test (in its comments) passed under startApp with
-              wrangler's Miniflare on Node 26.7
+              nightly-2026-11-03-34bd006; topics/cfw_testing.roc was built to
+              app.wasm and its JS test (in its comments) passed under startApp
+              with wrangler's Miniflare on Node 26.7. At 0.0.10 every topic was
+              compiled again with the nightly above, and none was run
 overview.md <- this package's own. Each snippet is in verify/overview-snippets.roc
 
 # What examples/ leaves out, and why:
