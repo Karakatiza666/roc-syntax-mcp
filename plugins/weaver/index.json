@@ -2,7 +2,7 @@
  "format": 1,
  "releases": {
   "7CdYzjBAJmprmnK45oTpmH6BXt76ZASN2Ck5uZQEoWsK": {
-   "url": "https://github.com/lukewilliamboswell/weaver/releases/download/0.10.0/7CdYzjBAJmprmnK45oTpmH6BXt76ZASN2Ck5uZQEoWsK.tar.zst",
+   "url": "https://github.com/lukewilliamboswell/weaver/releases/download/0.11.0/7CdYzjBAJmprmnK45oTpmH6BXt76ZASN2Ck5uZQEoWsK.tar.zst",
    "snapshot": {
     "kind": "package",
     "exposes": [

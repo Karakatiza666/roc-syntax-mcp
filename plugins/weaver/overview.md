@@ -16,8 +16,8 @@ compile.
 
 ```roc
 app [main!] {
-	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.25.0/CZsY7tYZwR3rj9kYbpaCfxki2yVAaRL8bBwMLvB2xkbA.tar.zst",
-	weaver: "https://github.com/lukewilliamboswell/weaver/releases/download/0.10.0/7CdYzjBAJmprmnK45oTpmH6BXt76ZASN2Ck5uZQEoWsK.tar.zst",
+	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst",
+	weaver: "https://github.com/lukewilliamboswell/weaver/releases/download/0.11.0/7CdYzjBAJmprmnK45oTpmH6BXt76ZASN2Ck5uZQEoWsK.tar.zst",
 }
 ```
 
@@ -110,7 +110,7 @@ Weaver reads arguments as `path.Path`, so the third argument is the converter
 from the platform's own argument type: `OsStr.to_raw` on basic-cli, and on a
 platform whose `main!` takes `List(Str)` a hand-written
 `Str -> [Utf8(Str), UnixBytes(List(U8)), WindowsU16s(List(U16))]`. Weaver never
-drops an argument of its own. basic-cli 0.25.0 does not put the program name in
+drops an argument of its own. basic-cli 0.28.1 does not put the program name in
 `args` (it is `Env.program_name!`), so pass them whole. On a platform that puts
 the executable path in `args[0]`, `args.drop_first(1)` is the app's job. Without
 it, the app compiles, then consumes the executable path as the first parameter.

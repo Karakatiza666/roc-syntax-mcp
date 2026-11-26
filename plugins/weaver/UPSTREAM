@@ -4,26 +4,33 @@
 # diff tag to tag.
 
 repo     https://github.com/lukewilliamboswell/weaver
-tag      0.10.0
-commit   23a61441a1afd9f913bbc43b55bfc66041d8d522
+tag      0.11.0
+commit   7df15a658d9dbc880718751fff79ad794653804f
 tarball  7CdYzjBAJmprmnK45oTpmH6BXt76ZASN2Ck5uZQEoWsK.tar.zst
 
 # The nightly every app here was checked under, and the manifest's `compiler`
 # line. Upstream's release notes say "Package and examples built and tested
-# with roc nightly-2026-10-23-18478ff". Since 0.9.1 upstream floats the package
-# compiler and no longer commits a .roc-version.
+# with roc nightly-2026-11-18-a520eed". Since 0.9.1 upstream floats the package
+# compiler and no longer commits a .roc-version. The programs here pin
+# basic-cli 0.28.1, which this server bundles, so the gates check them with
+# that release's nightly (corpus/platforms/basic-cli/UPSTREAM). Every one also
+# passes `roc check` under nightly-2026-11-18-a520eed.
 #
-# 0.10.0 over 0.9.0: no package API changes ("roc bump" reports none for 0.9.1,
-# and 0.10.0 says so too). 0.9.1 fixed four parsing bugs and quotes echoed
-# argument text in diagnostics. 0.10.0 changes behaviour: everything after a
+# 0.11.0 over 0.10.0 (0.10.1 and 0.10.2 in between): no package API or
+# parsing change, and the package tarball has the same hash at every one of
+# the four tags. Each release only moved upstream's examples to a newer
+# basic-cli: 0.26.0 (0.25.0's `Tcp.Stream` shadows the builtin `Stream`, and
+# the nightly refuses it), 0.27.0, then 0.28.1 at 0.11.0 (0.27.0's entrypoint
+# conflicts with nominal `OsStr` on the November 18 compiler). This plugin
+# follows: its topics, verify/ and examples move from basic-cli 0.25.0 to
+# 0.28.1, and the overview's note that basic-cli does not pass the program
+# name in `args` now names 0.28.1 (its main.roc says the host removes argv[0]).
+# Nothing else in the overview or the topics changed, and every program
+# compiled unchanged. 0.10.0 changed behaviour: everything after a
 # subcommand's name is parsed by that subcommand alone, so `work build -q` is
 # "The argument \"-q\" was not recognized." when -q is the parent's option.
-# The overview and topics/weaver_subcommands.roc say so, and the second was run
-# to confirm it. Upstream's own examples moved to basic-cli 0.25.0 and
-# `List(OsStr)` at 0.10.0, so the old patch is gone and the plugin pins
-# basic-cli 0.25.0 as upstream does. 0.25.0 does not pass the program name in
-# `args`. basic-cli 0.26.0 is not used by upstream yet.
-compiler nightly-2026-10-23-18478ff
+# The overview and topics/weaver_subcommands.roc say so.
+compiler nightly-2026-11-18-a520eed
 
 index.json  <- package/, parsed by `roc-syntax-mcp plugin index`. Public and
                private modules; `package [...]` in main.roc is what separates
@@ -31,7 +38,7 @@ index.json  <- package/, parsed by `roc-syntax-mcp plugin index`. Public and
 examples/   <- examples/, repinned with two edits per file. Upstream pins weaver
                as `../package/main.roc`, a path that resolves only inside a
                checkout, so each header's weaver entry is replaced with the
-               0.10.0 tarball above; and each file gains one `##` line above
+               0.11.0 tarball above; and each file gains one `##` line above
                its header, because that line is the title
                `list_roc_index(kind: "examples")` prints and upstream's examples
                carry none. Two filenames gain an underscore, because the gate
@@ -39,7 +46,7 @@ examples/   <- examples/, repinned with two edits per file. Upstream pins weaver
                single-arg.roc. Nothing else differs from upstream.
 topics/     <- this package's own, not upstream's: programs written against
                this pin and declared in plugin.json so they answer by name. They
-               pin basic-cli 0.25.0, as upstream's examples do.
+               pin basic-cli 0.28.1, as upstream's examples do.
 overview.md <- this package's own. Every API claim on it was compiled, and every
                fenced block appears in verify/overview-snippets.roc.
 
@@ -51,7 +58,7 @@ overview.md <- this package's own. Every API claim on it was compiled, and every
 #   assets/, scripts/ contributor material, not app-facing
 #   .github/          the same
 
-# Weaver is UPL-1.0 from 0.9.1, and 0.10.0 ships a LICENSE file. LICENSE keeps
+# Weaver is UPL-1.0 from 0.9.1, and 0.11.0 ships a LICENSE file. LICENSE keeps
 # its notice and the MIT notice of the project that weaver forks
 # (smores56/weaver), and package.json names UPL-1.0.
 
