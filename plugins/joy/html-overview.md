@@ -1,7 +1,7 @@
 # joy-html
 
 `niclas-ahden/joy-html`: an HTML tree typed by its message, `Html(msg)`, and the
-attributes and events on it. It is what a Joy app's `render` returns, and any
+attributes and events on it. It is what a Joy app's `view` returns, and any
 platform can render it to a string for the server. Three modules: `Html` for
 elements, `Attribute` for attributes and events, and `Event`, a small subset of
 the events.
@@ -40,10 +40,10 @@ listed, and an empty list means every key. `.stop_propagation()` and
 `.prevent_default()` stops only those keys, and the browser keeps Tab.
 
 An element keeps one handler per event, so `on_check` and `on_change` on one
-checkbox both bind `change` and the last one wins. When a render hides a
+checkbox both bind `change` and the last one wins. When a view hides a
 focused input, `blur` arrives after the message that hid it. So a commit on
-`blur` must do nothing when the edit already ended: the `todomvc` example
-checks its `Editing` state.
+`blur` must do nothing when the edit already ended: the `spa_todomvc`
+example checks its `Editing` state.
 
 Two modules cannot both expose the same name. `style` is both the
 `<style>` element and the attribute, and `on_click` is in both `Attribute` and
@@ -66,6 +66,9 @@ inside the view instead.
 
 `Html.render : Html(msg) -> Str`, and `Html.ssr_document`, which adds
 `<!DOCTYPE html>`. Text and attributes are escaped and event handlers dropped.
+`Html.document(files, page)` renders a page that runs Joy apps: each element
+with `data-joy-bundle` gets its wasm URL, and `head` gets Joy's loader.
+`files` is an `Html.JoyFiles`, `{ loader, runtime, wasm : Str -> Str }`.
 basic-webserver has an `Html` module of its own, and importing both unaliased
 lets the platform's win, so `Html.ssr_document` "does not exist": alias it,
 `import pf.Html as WsHtml`. `html_ssr` shows the whole server.

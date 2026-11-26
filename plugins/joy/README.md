@@ -31,13 +31,13 @@ app can pin it.
 | `joy-overview.md` | What `get_roc_syntax(scope: "joy")` returns: how a project is started and built, the app contract, effects and subscriptions, HTTP, time, ports, testing and the traps |
 | `html-overview.md` | What `get_roc_syntax(topic: "joy-html")` returns: element shapes, attributes, events, lazy regions and server rendering |
 | `index.json` | Both releases' own modules, parsed by `plugin index`. No source is vendored |
-| `examples/` | Complete programs from joy, all of which type-check |
+| `examples/` | Complete programs from joy, including two of its project templates, all of which type-check |
 | `topics/` | Programs `get_roc_syntax(topic:)` answers with: `joy_app`, `joy_http`, `joy_subscriptions`, `html_views`, `html_ssr` |
 | `scaffold.roc` | The app `roc_check` wraps bare source in, with joy-html imported |
 
 ## Pinned to
 
-The two releases in `plugin.json`, and the nightly its `compiler` line names.
+The two releases in `plugin.json`, and the Roc release its `compiler` line names.
 `UPSTREAM` records the commits, the tarball hashes and the upstream files that
 this package does not include.
 

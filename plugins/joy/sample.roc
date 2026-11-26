@@ -12,8 +12,8 @@ update = |model, msg|
 		Decrement => ({ count: model.count - 1 }, [])
 	}
 
-render : Model -> Html(Msg)
-render = |model|
+view : Model -> Html(Msg)
+view = |model|
 	Html.div(
 		[Attribute.class("counter")],
 		[

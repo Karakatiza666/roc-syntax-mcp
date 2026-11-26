@@ -4,12 +4,12 @@
 ##
 ## Every entry point is pure. `init` and `update` return the new model beside a
 ## list of `Effect` values, which the host runs and answers with a message.
-app [Model, Msg, init, update, render, subscriptions] {
-	pf: platform "https://github.com/niclas-ahden/joy/releases/download/0.34.0/2B3sC6U2dWkVUK2VY2gJS5Wej9YCDo3ZYq2e7tMWUCNp.tar.zst",
+app [Model, Msg, init, update, view, subscriptions] {
+	pf: platform "https://github.com/niclas-ahden/joy/releases/download/0.35.0/FtRCTy7CSPSdS2vLzGJPwYfcGurQfoaADXPNT8aJBBCr.tar.zst",
 	# The app pins joy-html itself, at exactly the release the platform pins.
-	# `render` returns the platform's `Html`. Another joy-html release has a
+	# `view` returns the platform's `Html`. Another joy-html release has a
 	# different `Html` type, and the compiler error cannot name the difference.
-	html: "https://github.com/niclas-ahden/joy-html/releases/download/0.17.1/AcmwFzyfbsf5RALWNdX6cXw1cuuDXt96YfcysNqgFqoG.tar.zst",
+	html: "https://github.com/niclas-ahden/joy-html/releases/download/0.18.0/6XAQypURmG12GNMHHZmjcXVGtctYy52mmPZoaUMWejRK.tar.zst",
 }
 
 # `exposing [Html]` is an error, "redundant expose": a type module exposes its
@@ -26,8 +26,13 @@ import pf.Time
 # --- A component -------------------------------------------------------------
 #
 # Its own model, messages, update and view. The parent wraps its messages in a
-# tag and maps both directions: `Html.map` for the view, `Effect.map` for what
-# its update returns.
+# tag and maps both directions: `Html.map` for the view, `Effect.map_all` for
+# what its update returns.
+#
+# The methods are not named `init`, `update` and `view`. A method in a type's
+# block that has the name of a top-level definition is a "duplicate
+# definition" warning, and the app's own `init`, `update` and `view` are
+# top-level.
 
 Counter := { n : I64 }.{
 	Msg : [Inc, Ticked(I64)]
@@ -36,11 +41,11 @@ Counter := { n : I64 }.{
 	# at the bottom needs `==`.
 	is_eq : _
 
-	init : Counter
-	init = { n: 0 }
+	start : Counter
+	start = { n: 0 }
 
-	update : Counter, Msg -> (Counter, List(Effect(Msg)))
-	update = |c, msg|
+	step : Counter, Msg -> (Counter, List(Effect(Msg)))
+	step = |c, msg|
 		match msg {
 			# Timer delays are U32 milliseconds. The callback gets I64
 			# milliseconds since the Unix epoch.
@@ -48,8 +53,8 @@ Counter := { n : I64 }.{
 			Ticked(_) => (c, [])
 		}
 
-	view : Counter -> Html(Msg)
-	view = |c| div([], [button([on_click(Inc)], [text("+")]), text(c.n.to_str())])
+	to_html : Counter -> Html(Msg)
+	to_html = |c| div([], [button([on_click(Inc)], [text("+")]), text(c.n.to_str())])
 }
 
 # --- The four required functions --------------------------------------------
@@ -66,36 +71,36 @@ Msg : [Left(Counter.Msg), Right(Counter.Msg), Reset]
 # clock to read and no URL to ask for: the page that embeds the app puts boot
 # data into the flags.
 init : Str -> (Model, List(Effect(Msg)))
-init = |flags| ({ left: Counter.init, right: Counter.init, booted: flags }, [Console.log("booted")])
+init = |flags| ({ left: Counter.start, right: Counter.start, booted: flags }, [Console.log("booted")])
 
 update : Model, Msg -> (Model, List(Effect(Msg)))
 update = |model, msg|
 	match msg {
-		# A tag is not a function, so `effect.map(Left)` does not compile.
-		# Every callback this platform takes is written as a lambda.
+		# A tag is not a function, so `Effect.map_all(effects, Left)` does not
+		# compile. Every callback this platform takes is written as a lambda.
 		Left(m) => {
-			(left, effects) = Counter.update(model.left, m)
-			({ ..model, left }, effects.map(|e| e.map(|x| Left(x))))
+			(left, effects) = Counter.step(model.left, m)
+			({ ..model, left }, Effect.map_all(effects, |x| Left(x)))
 		}
 		Right(m) => {
-			(right, effects) = Counter.update(model.right, m)
-			({ ..model, right }, effects.map(|e| e.map(|x| Right(x))))
+			(right, effects) = Counter.step(model.right, m)
+			({ ..model, right }, Effect.map_all(effects, |x| Right(x)))
 		}
 		Reset => {
 			# `dbg` as a statement goes to the browser console. As an
 			# expression, `x = dbg value`, it compiles and binds `{}`.
 			dbg model.left
-			({ ..model, left: Counter.init, right: Counter.init }, [])
+			({ ..model, left: Counter.start, right: Counter.start }, [])
 		}
 	}
 
-render : Model -> Html(Msg)
-render = |model|
+view : Model -> Html(Msg)
+view = |model|
 	div(
 		[],
 		[
-			Html.map(Counter.view(model.left), |m| Left(m)),
-			Html.map(Counter.view(model.right), |m| Right(m)),
+			Html.map(Counter.to_html(model.left), |m| Left(m)),
+			Html.map(Counter.to_html(model.right), |m| Right(m)),
 			# `on_click` takes the message itself, not a function that returns one.
 			button([on_click(Reset)], [text("reset")]),
 		],

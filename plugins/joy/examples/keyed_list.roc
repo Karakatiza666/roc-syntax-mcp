@@ -1,9 +1,9 @@
-app [Model, Msg, init, update, render, subscriptions] {
-	pf: platform "https://github.com/niclas-ahden/joy/releases/download/0.34.0/2B3sC6U2dWkVUK2VY2gJS5Wej9YCDo3ZYq2e7tMWUCNp.tar.zst",
-	html: "https://github.com/niclas-ahden/joy-html/releases/download/0.17.1/AcmwFzyfbsf5RALWNdX6cXw1cuuDXt96YfcysNqgFqoG.tar.zst",
+app [Model, Msg, init, subscriptions, update, view] {
+	html: "https://github.com/niclas-ahden/joy-html/releases/download/0.18.0/6XAQypURmG12GNMHHZmjcXVGtctYy52mmPZoaUMWejRK.tar.zst",
+	pf: platform "https://github.com/niclas-ahden/joy/releases/download/0.35.0/FtRCTy7CSPSdS2vLzGJPwYfcGurQfoaADXPNT8aJBBCr.tar.zst",
 }
 
-import html.Html exposing [div, button, ul, li, text]
+import html.Html exposing [button, div, li, text, ul]
 import html.Attribute exposing [on_click]
 import pf.Effect
 
@@ -24,9 +24,6 @@ Msg : [
 	UserClickedRemoveSecond,
 	UserClickedReverse,
 ]
-
-# No recurring event sources.
-subscriptions = |_model| []
 
 init : Str -> (Model, List(Effect(Msg)))
 init = |_| ({ items: ["apple", "banana", "cherry", "date"], next_id: 1 }, [])
@@ -52,20 +49,23 @@ update = |model, msg|
 		# Worst case for the differ's LIS pass: everything moves.
 		UserClickedReverse =>
 			({ ..model, items: model.items.fold([], |acc, item| acc.prepend(item)) }, [])
-		}
+	}
 
-render : Model -> Html(Msg)
-render = |model|
+view : Model -> Html(Msg)
+view = |model|
 	div(
 		[],
 		[
-			button([on_click(UserClickedRotate)], [text("rotate")]),
-			button([on_click(UserClickedPrepend)], [text("prepend")]),
-			button([on_click(UserClickedRemoveSecond)], [text("remove second")]),
-			button([on_click(UserClickedReverse)], [text("reverse")]),
+			button([on_click(UserClickedRotate)], [text("Rotate")]),
+			button([on_click(UserClickedPrepend)], [text("Prepend")]),
+			button([on_click(UserClickedRemoveSecond)], [text("Remove second")]),
+			button([on_click(UserClickedReverse)], [text("Reverse")]),
 			ul(
 				[],
 				model.items.map(|item| Html.keyed(item, li([], [text(item)]))),
 			),
 		],
 	)
+
+# No subs needed for this example!
+subscriptions = |_model| []

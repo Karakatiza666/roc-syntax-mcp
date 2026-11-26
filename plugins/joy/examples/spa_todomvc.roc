@@ -1,15 +1,18 @@
-app [Model, Msg, init, update, render, subscriptions] {
-	pf: platform "https://github.com/niclas-ahden/joy/releases/download/0.34.0/2B3sC6U2dWkVUK2VY2gJS5Wej9YCDo3ZYq2e7tMWUCNp.tar.zst",
-	html: "https://github.com/niclas-ahden/joy-html/releases/download/0.17.1/AcmwFzyfbsf5RALWNdX6cXw1cuuDXt96YfcysNqgFqoG.tar.zst",
+app [Model, Msg, init, subscriptions, update, view] {
+	html: "https://github.com/niclas-ahden/joy-html/releases/download/0.18.0/6XAQypURmG12GNMHHZmjcXVGtctYy52mmPZoaUMWejRK.tar.zst",
+	pf: platform "https://github.com/niclas-ahden/joy/releases/download/0.35.0/FtRCTy7CSPSdS2vLzGJPwYfcGurQfoaADXPNT8aJBBCr.tar.zst",
 }
 
 import html.Html exposing [a, button, div, footer, h1, header, input, label, li, p, section, span, strong, text, ul]
-import html.Attribute exposing [autofocus, checked, class, class_list, for_, id, on, on_check, on_click, on_input, on_key, placeholder, type, value]
+import html.Attribute exposing [aria, autofocus, checked, class, class_list, for_, href, id, on, on_check, on_click, on_input, on_key, placeholder, type, value]
+import pf.DOM
 import pf.Effect
+import pf.Navigation
+import pf.Sub
 
 # TodoMVC (https://todomvc.com) as a client-side Joy app. All state lives in
-# the model, so a page reload starts you over. The page, styles and browser
-# tests live next to this file, so the whole example is this one directory.
+# the model, so a page reload starts you over. The page is public/index.html,
+# the styles are assets/css/style.css and the browser tests are in e2e/.
 
 Todo : { id : U64, title : Str, done : Bool }
 
@@ -34,7 +37,7 @@ Msg : [
 	UserToggledTodo(U64, Bool),
 	UserClickedDestroy(U64),
 	UserToggledAll(Bool),
-	UserClickedFilter(Filter),
+	UrlChanged(Str),
 	UserClickedClearCompleted,
 	UserDoubleClickedTodo(U64, Str),
 	UserTypedEdit(Str),
@@ -42,11 +45,39 @@ Msg : [
 	UserCancelledEdit,
 ]
 
-subscriptions = |_model| []
+# The filters are links to `#/`, `#/active` and `#/completed`, which the
+# browser follows on its own. We hear of the new URL here, and of Back and
+# Forward too.
+subscriptions : Model -> List(Sub(Msg))
+subscriptions = |_model| [Navigation.on_url_change(|url| UrlChanged(url))]
 
+# `url` is the URL the page was opened at. public/index.html passes it in as
+# the flags, so that a refresh or a shared link opens the right filter.
 init : Str -> (Model, List(Effect(Msg)))
-init = |_flags|
-	({ todos: [], draft: "", filter: All, next_id: 1, editing: NotEditing }, [])
+init = |url|
+	({ todos: [], draft: "", filter: filter_in(url), next_id: 1, editing: NotEditing }, [])
+
+# The filter a URL names. Anything but `#/active` and `#/completed` shows
+# every todo.
+filter_in : Str -> Filter
+filter_in = |url| {
+	fragment =
+		match url.split_first("#") {
+			Ok(split) => split.after
+			Err(_) => ""
+		}
+	match fragment {
+		"/active" => Active
+		"/completed" => Completed
+		_ => All
+	}
+}
+
+expect filter_in("http://localhost:8000/") == All
+expect filter_in("http://localhost:8000/#/") == All
+expect filter_in("http://localhost:8000/#/active") == Active
+expect filter_in("http://localhost:8000/#/completed") == Completed
+expect filter_in("http://localhost:8000/#/nope") == All
 
 update : Model, Msg -> (Model, List(Effect(Msg)))
 update = |model, msg|
@@ -75,7 +106,7 @@ update = |model, msg|
 			(
 				{
 					..model,
-					todos: model.todos.map(|t| if t.id == todo_id ({ ..t, done: now }) else t),
+					todos: model.todos.map(|t| if (t.id == todo_id) ({ ..t, done: now }) else t),
 				},
 				[],
 			)
@@ -86,13 +117,15 @@ update = |model, msg|
 		UserToggledAll(now) =>
 			({ ..model, todos: model.todos.map(|t| ({ ..t, done: now })) }, [])
 
-		UserClickedFilter(filter) => ({ ..model, filter: filter }, [])
+		UrlChanged(url) => ({ ..model, filter: filter_in(url) }, [])
 
 		UserClickedClearCompleted =>
 			({ ..model, todos: model.todos.keep_if(|t| !t.done) }, [])
 
+		# The edit field is revealed by this render and focused right after
+		# it, so typing can start without a second click.
 		UserDoubleClickedTodo(todo_id, title) =>
-			({ ..model, editing: Editing(todo_id, title) }, [])
+			({ ..model, editing: Editing(todo_id, title) }, [DOM.focus(".todo-list li.editing .edit")])
 
 		UserTypedEdit(edit_text) =>
 			match model.editing {
@@ -111,7 +144,7 @@ update = |model, msg|
 					todos = if title.is_empty() {
 						model.todos.keep_if(|t| t.id != todo_id)
 					} else {
-						model.todos.map(|t| if t.id == todo_id ({ ..t, title: title }) else t)
+						model.todos.map(|t| if (t.id == todo_id) ({ ..t, title: title }) else t)
 					}
 					({ ..model, todos: todos, editing: NotEditing }, [])
 				}
@@ -121,8 +154,8 @@ update = |model, msg|
 		UserCancelledEdit => ({ ..model, editing: NotEditing }, [])
 	}
 
-render : Model -> Html(Msg)
-render = |model| {
+view : Model -> Html(Msg)
+view = |model| {
 	visible = match model.filter {
 		All => model.todos
 		Active => model.todos.keep_if(|t| !t.done)
@@ -183,7 +216,7 @@ view_main = |model, visible| {
 				on_check(|now| UserToggledAll(now)),
 			]),
 			label([for_("toggle-all")], [text("Mark all as complete")]),
-			ul([class("todo-list")], visible.map(|t| view_todo(t, model.editing))),
+			ul([class("todo-list")], visible.map(|t| Html.keyed(t.id.to_str(), view_todo(t, model.editing)))),
 		],
 	)
 }
@@ -202,7 +235,7 @@ view_todo = |todo, editing| {
 	# While the input is hidden its `value` tracks the todo's title, so each
 	# edit starts from the current title. While editing it tracks the typed
 	# text, so cancelling can put the title back.
-	shown_value = if is_editing edit_text else todo.title
+	shown_value = if (is_editing) edit_text else todo.title
 
 	li(
 		[
@@ -222,7 +255,7 @@ view_todo = |todo, editing| {
 						[on("dblclick", UserDoubleClickedTodo(todo.id, todo.title))],
 						[text(todo.title)],
 					),
-					button([class("destroy"), on_click(UserClickedDestroy(todo.id))], []),
+					button([class("destroy"), aria("label", "Delete ${todo.title}"), on_click(UserClickedDestroy(todo.id))], []),
 				],
 			),
 			input([
@@ -237,7 +270,7 @@ view_todo = |todo, editing| {
 				on_key(
 					"keydown",
 					["Enter", "Escape"],
-					|e| if e.key == "Enter" UserCommittedEdit else UserCancelledEdit,
+					|e| if (e.key == "Enter") UserCommittedEdit else UserCancelledEdit,
 				),
 			]),
 		],
@@ -248,7 +281,7 @@ view_footer : Model -> Html(Msg)
 view_footer = |model| {
 	active_count = model.todos.count_if(|t| !t.done)
 	completed_count = model.todos.len() - active_count
-	items = if active_count == 1 "item" else "items"
+	items = if (active_count == 1) "item" else "items"
 
 	clear = if completed_count == 0 {
 		[]
@@ -266,26 +299,28 @@ view_footer = |model| {
 			ul(
 				[class("filters")],
 				[
-					view_filter("All", All, model.filter),
-					view_filter("Active", Active, model.filter),
-					view_filter("Completed", Completed, model.filter),
+					view_filter("All", "#/", All, model.filter),
+					view_filter("Active", "#/active", Active, model.filter),
+					view_filter("Completed", "#/completed", Completed, model.filter),
 				],
 			),
 		].concat(clear),
 	)
 }
 
-view_filter : Str, Filter, Filter -> Html(Msg)
-view_filter = |label_text, filter, current|
+# A filter is a real link, so it can be reached with the keyboard, opened in
+# a new tab and shared. The one that's on gets `aria-current`, which screen
+# readers read out, next to the class the stylesheet highlights it with.
+view_filter : Str, Str, Filter, Filter -> Html(Msg)
+view_filter = |label_text, url, filter, current| {
+	on = if (filter == current) [aria("current", "page")] else []
 	li(
 		[],
 		[
 			a(
-				[
-					class_list([("selected", filter == current)]),
-					on_click(UserClickedFilter(filter)),
-				],
+				[href(url), class_list([("selected", filter == current)])].concat(on),
 				[text(label_text)],
 			),
 		],
 	)
+}

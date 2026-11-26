@@ -1,10 +1,10 @@
-app [Model, Msg, init, update, render, subscriptions] {
-	pf: platform "https://github.com/niclas-ahden/joy/releases/download/0.34.0/2B3sC6U2dWkVUK2VY2gJS5Wej9YCDo3ZYq2e7tMWUCNp.tar.zst",
-	html: "https://github.com/niclas-ahden/joy-html/releases/download/0.17.1/AcmwFzyfbsf5RALWNdX6cXw1cuuDXt96YfcysNqgFqoG.tar.zst",
+app [Model, Msg, init, subscriptions, update, view] {
+	html: "https://github.com/niclas-ahden/joy-html/releases/download/0.18.0/6XAQypURmG12GNMHHZmjcXVGtctYy52mmPZoaUMWejRK.tar.zst",
+	pf: platform "https://github.com/niclas-ahden/joy/releases/download/0.35.0/FtRCTy7CSPSdS2vLzGJPwYfcGurQfoaADXPNT8aJBBCr.tar.zst",
 }
 
-import html.Html exposing [div, pre, button, text]
-import html.Attribute exposing [style, on_click]
+import html.Html exposing [button, div, pre, text]
+import html.Attribute exposing [on_click, style]
 import pf.Effect
 import pf.Http
 import pf.Console
@@ -18,11 +18,49 @@ Msg : [
 	GotQuote(Try(Http.Response, [HttpErr([Timeout, NetworkError])])),
 ]
 
-# No subscriptions
-subscriptions = |_model| []
-
 init : Str -> (Model, List(Effect(Msg)))
 init = |_| ({ quote: NotRequestedYet }, [])
+
+view : Model -> Html(Msg)
+view = |model|
+	match model.quote {
+		NotRequestedYet =>
+			div(
+				[],
+				[
+					text("Would you like a Ron Swanson quote?"),
+					request_quote_button,
+				],
+			)
+
+		Loading => div([], [text("Getting a quote...")])
+
+		Loaded(quote) =>
+			div(
+				[],
+				[
+					text("Ron once said:"),
+					pre([], [text(quote)]),
+					request_quote_button,
+				],
+			)
+
+		Error(error) =>
+			div(
+				[],
+				[
+					text("Couldn't get quote, cause: ${error}"),
+					request_quote_button,
+				],
+			)
+	}
+
+request_quote_button : Html(Msg)
+request_quote_button =
+	button(
+		[style([("display", "block")]), on_click(UserRequestedQuote)],
+		[text("Treat Yo Self")],
+	)
 
 update : Model, Msg -> (Model, List(Effect(Msg)))
 update = |_model, msg|
@@ -62,45 +100,7 @@ update = |_model, msg|
 
 		GotQuote(Err(HttpErr(NetworkError))) =>
 			({ quote: Error("The request never completed") }, [])
-		}
+	}
 
-render : Model -> Html(Msg)
-render = |model|
-	match model.quote {
-		NotRequestedYet =>
-			div(
-				[],
-				[
-					text("Would you like a Ron Swanson quote?"),
-					request_quote_button,
-				],
-			)
-
-		Loading => div([], [text("Getting a quote...")])
-
-		Loaded(quote) =>
-			div(
-				[],
-				[
-					text("Ron once said:"),
-					pre([], [text(quote)]),
-					request_quote_button,
-				],
-			)
-
-		Error(error) =>
-			div(
-				[],
-				[
-					text("Couldn't get quote, cause: ${error}"),
-					request_quote_button,
-				],
-			)
-		}
-
-request_quote_button : Html(Msg)
-request_quote_button =
-	button(
-		[style([("display", "block")]), on_click(UserRequestedQuote)],
-		[text("Treat Yo Self")],
-	)
+# No subs needed for this example!
+subscriptions = |_model| []

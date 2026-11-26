@@ -1,28 +1,70 @@
 {
  "format": 1,
  "releases": {
-  "2B3sC6U2dWkVUK2VY2gJS5Wej9YCDo3ZYq2e7tMWUCNp": {
-   "url": "https://github.com/niclas-ahden/joy/releases/download/0.34.0/2B3sC6U2dWkVUK2VY2gJS5Wej9YCDo3ZYq2e7tMWUCNp.tar.zst",
+  "FtRCTy7CSPSdS2vLzGJPwYfcGurQfoaADXPNT8aJBBCr": {
+   "url": "https://github.com/niclas-ahden/joy/releases/download/0.35.0/FtRCTy7CSPSdS2vLzGJPwYfcGurQfoaADXPNT8aJBBCr.tar.zst",
    "snapshot": {
     "kind": "platform",
     "exposes": [
      "Effect",
      "Sub",
+     "Wire",
      "Http",
      "Time",
      "Keyboard",
      "Console",
      "DOM",
+     "Navigation",
+     "Clipboard",
      "Port",
-     "WebCrypto"
+     "WebCrypto",
+     "Media"
     ],
     "deps": [
      {
       "alias": "html",
-      "url": "https://github.com/niclas-ahden/joy-html/releases/download/0.17.0/AcmwFzyfbsf5RALWNdX6cXw1cuuDXt96YfcysNqgFqoG.tar.zst"
+      "url": "https://github.com/niclas-ahden/joy-html/releases/download/0.18.0/6XAQypURmG12GNMHHZmjcXVGtctYy52mmPZoaUMWejRK.tar.zst"
      }
     ],
     "modules": [
+     {
+      "name": "Clipboard",
+      "imports": [],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Problem",
+        "modulePath": "Clipboard",
+        "fullName": "Clipboard.Problem",
+        "signature": "[NotAllowed, Insecure, Unsupported, NotFound, Other(Str)]",
+        "docs": "Why the text was not copied.\n\n- `NotAllowed`: the browser refused. Most often no click or key press led\n  to the write, or the page did not have focus.\n- `Insecure`: the page is not served over HTTPS (or from localhost).\n- `Unsupported`: the browser has no clipboard to write to.\n- `NotFound`: [Clipboard.write_text_of] was given a selector that matches\n  nothing.\n- `Other(name)`: anything else, with the browser's name for the error.",
+        "line": 40,
+        "decl": ":",
+        "head": "Problem"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "write_text",
+        "modulePath": "Clipboard",
+        "fullName": "Clipboard.write_text",
+        "signature": "Str, (Try({}, Clipboard.Problem) -> msg) -> Effect(msg)",
+        "docs": "Put a text on the clipboard. Your message says whether it worked, so a\nCopy button can say \"Copied\", or ask the user to copy by hand.\n\n```roc\nClipboard.write_text(\"roc build\", |r| Copied(r))\n```",
+        "line": 48
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "write_text_of",
+        "modulePath": "Clipboard",
+        "fullName": "Clipboard.write_text_of",
+        "signature": "Str, (Try({}, Clipboard.Problem) -> msg) -> Effect(msg)",
+        "docs": "Put the text of an element on the clipboard: the element a CSS selector\nmatches. This is for text your app does not hold, like a code block in the\npage around your app.\n\n```roc\nClipboard.write_text_of(\"#install-command\", |r| Copied(r))\n```\n\nThe selector looks in your app's own view first, and then in the rest of\nthe page.",
+        "line": 61
+       }
+      ]
+     },
      {
       "name": "Console",
       "imports": [],
@@ -34,8 +76,8 @@
         "modulePath": "Console",
         "fullName": "Console.log",
         "signature": "Str -> Effect(msg)",
-        "docs": "Log a message: the message reaches the console queue when the\nreturned effects run.",
-        "line": 20
+        "docs": "Write a line to the console.\n\n```roc\nConsole.log(\"The app started\")\n```",
+        "line": 34
        }
       ]
      },
@@ -50,8 +92,8 @@
         "modulePath": "DOM",
         "fullName": "DOM.show_modal",
         "signature": "Str -> Effect(msg)",
-        "docs": "Open the `<dialog>` element matching this CSS selector as a modal\n(the element's `showModal()`): centered, on the top layer, with\neverything behind it inert. Render the dialog and its contents from\nyour model like any other element; only the open/closed state lives\noutside the model, which is why it is driven by an effect rather than\nan attribute. No-op when the selector matches nothing or the element\nis not a dialog. Note the user can dismiss a modal with Escape, so pair\nit with a \"close\" msg that also returns `close_modal` and your model never\ndisagrees with what is on screen for long.",
-        "line": 25
+        "docs": "Open a `<dialog>` element as a modal: on top of the page, with everything\nbehind it out of reach.\n\n```roc\nUserClickedDelete => (model, [DOM.show_modal(\"#confirm\")])\n```\n\nRender the dialog and what is in it from your model, like any element.\nOnly whether it is open lives in the browser, which is why opening it is an\neffect.\n\nThe user can close a modal with Escape too. If your model keeps track of\nwhether it is open, listen for the dialog's `close` event:\n`on(\"close\", UserClosedDialog)`.",
+        "line": 46
        },
        {
         "kind": "value",
@@ -60,48 +102,48 @@
         "modulePath": "DOM",
         "fullName": "DOM.close_modal",
         "signature": "Str -> Effect(msg)",
-        "docs": "Close the `<dialog>` element matching this CSS selector (the\nelement's `close()`). No-op when it is not open.",
-        "line": 30
+        "docs": "Close a `<dialog>` element. Does nothing when it is not open.\n\n```roc\nUserClickedKeep => (model, [DOM.close_modal(\"#confirm\")])\n```",
+        "line": 54
        },
        {
         "kind": "value",
         "tier": "public",
-        "name": "navigate",
+        "name": "focus",
         "modulePath": "DOM",
-        "fullName": "DOM.navigate",
+        "fullName": "DOM.focus",
         "signature": "Str -> Effect(msg)",
-        "docs": "A full page load. The app re-initialises, so the model is lost.",
-        "line": 34
+        "docs": "Give an element the keyboard focus.\n\nIt runs after the view is up to date, so it can name an element the same\n`update` just showed. The field is open and focused before the user's next\nkey press:\n\n```roc\nUserClickedEdit =>\n    ({ ..model, editing: Bool.True }, [DOM.focus(\"#title\")])\n```\n\nA text field gets its cursor at the end, so typing carries on from what is\nthere. Does nothing when the element cannot take focus, like a hidden or a\ndisabled one.",
+        "line": 71
        },
        {
         "kind": "value",
         "tier": "public",
-        "name": "push_url",
+        "name": "set_title",
         "modulePath": "DOM",
-        "fullName": "DOM.push_url",
+        "fullName": "DOM.set_title",
         "signature": "Str -> Effect(msg)",
-        "docs": "Change the URL without reloading and add a history entry, so Back\nreturns to the previous URL. Pair with `on_url_change` so the view\nreacts when the user steps back through those entries.",
-        "line": 40
+        "docs": "Set the page's title: the text in the browser's tab and in its history.\n\n```roc\nDOM.set_title(\"Inbox (3)\")\n```\n\nAn app with several pages returns it wherever it changes page.",
+        "line": 81
        },
        {
         "kind": "value",
         "tier": "public",
-        "name": "replace_url",
+        "name": "scroll_to",
         "modulePath": "DOM",
-        "fullName": "DOM.replace_url",
-        "signature": "Str -> Effect(msg)",
-        "docs": "Rewrite the URL in place: no reload and no history entry. Built for\nthings like keeping \"?q=...\" in sync with a search box, where Back\nshould not step through every keystroke.",
-        "line": 46
+        "fullName": "DOM.scroll_to",
+        "signature": "{ x : U64, y : U64 } -> Effect(msg)",
+        "docs": "Scroll the page to a position, in pixels from its top left corner.\n\n```roc\nDOM.scroll_to({ x: 0, y: 0 })\n```\n\nIt runs after the view is up to date, so a page you just switched to starts\nat the top and not where the last one was scrolled to.",
+        "line": 92
        },
        {
         "kind": "value",
         "tier": "public",
-        "name": "on_url_change",
+        "name": "on_document_click",
         "modulePath": "DOM",
-        "fullName": "DOM.on_url_change",
-        "signature": "(Str -> msg) -> Sub(msg)",
-        "docs": "Fire a message when the browser's back/forward buttons change the URL\n(the `popstate` event), with the new path (path + query + fragment).\nProgrammatic changes (`push_url`, `replace_url`) do not fire it\nbecause the app already knows about those.",
-        "line": 53
+        "fullName": "DOM.on_document_click",
+        "signature": "Str, (Str -> msg) -> Sub(msg)",
+        "docs": "A message when the user clicks an element that has a given attribute, or\nanything inside one. The message gets the attribute's value.\n\n```roc\nDOM.on_document_click(\"data-copy\", |id| UserClickedCopy(id))\n```\n\nIt listens on the whole page, so it also hears the page's own HTML around\nyour app, which your app does not render and cannot put handlers on. When\nseveral elements around the click have the attribute, the nearest one\ncounts.",
+        "line": 106
        }
       ]
      },
@@ -115,9 +157,9 @@
         "name": "Effect",
         "modulePath": "",
         "fullName": "Effect",
-        "signature": "[\n\t## CSS selector of the `<dialog>` to close (see `DOM.close_modal`)\n\tCloseModal(Str),\n\t## message drained to the browser console (see `Console.log`)\n\tConsoleLog(Str),\n\t## algorithm (a Web Crypto name: \"SHA-1\", \"SHA-256\", \"SHA-384\", \"SHA-512\"),\n\t## bytes to hash, on_hash (called with the hash bytes; empty on failure)\n\tCryptoDigest(Str, List(U8), Box((List(U8) -> Box(msg)))),\n\t## algorithm, file id, start byte, byte count (0 = through end of file),\n\t## on_hash (called with the hash bytes; empty on failure/unknown file)\n\tCryptoDigestFile(Str, U32, U64, U64, Box((List(U8) -> Box(msg)))),\n\t## method, url, headers, body, timeout in ms (0 = no timeout),\n\t## on_response. The raw status doubles as the transport channel: 0 means\n\t## the request never completed and 1 means it timed out (real HTTP\n\t## statuses start at 100). Http decodes that into a Try before the app\n\t## sees it.\n\tHttpSend(Str, Str, List({ name : Str, value : Str }), List(U8), U64, Box(({ status : U16, headers : List({ name : Str, value : Str }), body : List(U8) } -> Box(msg)))),\n\t## method, url, headers, file id, start byte, byte count (0 = through end\n\t## of file), timeout in ms (0 = no timeout), on_response. The file's\n\t## bytes are streamed by the browser and never enter wasm memory.\n\tHttpSendFile(Str, Str, List({ name : Str, value : Str }), U32, U64, U64, U64, Box(({ status : U16, headers : List({ name : Str, value : Str }), body : List(U8) } -> Box(msg)))),\n\t## url for a full page load (see `DOM.navigate`)\n\tNavigate(Str),\n\t## port name, value delivered to the JS handler registered for that name\n\tPortSend(Str, Str),\n\t## url for a history entry without a reload (see `DOM.push_url`)\n\tPushUrl(Str),\n\t## url rewritten in place, no reload, no history entry (see\n\t## `DOM.replace_url`)\n\tReplaceUrl(Str),\n\t## CSS selector of the `<dialog>` to open as a modal (see\n\t## `DOM.show_modal`)\n\tShowModal(Str),\n\t## delay in ms, on_fire (called once with the current time in ms since epoch)\n\tTimeAfter(U32, Box((I64 -> Box(msg)))),\n\t## debounce key whose pending timer is discarded (see `Time.cancel`)\n\tTimeCancel(Str),\n\t## debounce key, delay in ms, on_fire. Issuing the effect re-arms the\n\t## pending timer with the same key, so only the last of a burst fires;\n\t## `Time.cancel` discards a pending key entirely.\n\tTimeDebounce(Str, U32, Box((I64 -> Box(msg)))),\n]",
-        "docs": "An effect: an asynchronous action described as *data*, returned from `init`\nor `update` and executed by the host. The response callback is a real typed\nfunction (`... -> msg`), boxed so the host can store and call it without\nknowing the app's Msg layout.\n\nWhy data instead of effectful platform functions: hosted functions are\nmonomorphic C symbols, so they cannot accept a callback that is generic\nover the app's `msg`. Effects flow through `update`'s return type, where\n`msg` is properly in scope. Msg-free effects (logging, navigation,\nmodals, timer cancellation) are data too: as data they can be matched\non, so a pure test can assert exactly which effects an update produced.\nThe boundary rule: every app entrypoint is pure and the compiler\nenforces it, every observable effect is an `Effect` value returned from\n`init` or `update`, and `init` receives the app's flags string, into\nwhich the embedder puts any boot data the app needs (time, url,\nwhatever). Recurring event sources are subscriptions (see `Sub`).\n\nApps normally use the constructors in `Http`, `Time` and `WebCrypto` rather\nthan these variants directly. Payload fields are positional for a simpler\nhost walk. File ids come from a file input's `Attribute.on_file`; the\nbrowser side holds the actual File object, so its bytes never cross into\nwasm unless you hash or upload them.",
-        "line": 23,
+        "signature": "[\n\t## JavaScript that answers (see Features in the runtime): its id as `Id`\n\t## marks it, its arguments (see Wire), on_reply. The reply is a status byte, 0 for done\n\t## and 1 for failed, then the answer (see Wire) or the reason as UTF-8.\n\tCall(Str, List(U8), Box((List(U8) -> Box(msg)))),\n\t## message drained to the browser console (see `Console.log`)\n\tConsoleLog(Str),\n\t## JavaScript that answers nothing: its id and its arguments (see Wire).\n\tSend(Str, List(U8)),\n]",
+        "docs": "An effect: something your app asks the browser to do, like make a request,\nstart a timer or change the URL.\n\nYour `init` and `update` never do these things themselves. They return\neffects, and Joy carries them out. When an effect has an answer, it comes\nback to `update` as a message.\n\n```roc\nupdate : Model, Msg -> (Model, List(Effect(Msg)))\nupdate = |model, msg|\n    match msg {\n        UserClickedSave => (model, [Console.log(\"Saving\")])\n    }\n```\n\nYou rarely make an `Effect` yourself. The other modules make them:\n[Http.get], [Time.after], [Navigation.push_url] and so on. What this module adds:\n\n- [Effect.map] and [Effect.map_all], for an app split into pages or parts.\n- [Effect.call], [Effect.send] and [Effect.reply], for a custom effect: a\n  browser feature Joy lacks, with JavaScript of your own.\n- [Effect.identity], for tests.\n\n## Why an effect is a value\n\n`update` only says what should happen. That keeps it a plain function: the\nsame model and message always give the same result. So a test can call\n`update` and look at the effects it returned, with no browser.\n\nThe guide has pages on [effects](../../#effects) and on\n[custom effects](../../#custom-effects).",
+        "line": 32,
         "decl": ":=",
         "head": "Effect(msg)"
        },
@@ -128,148 +170,90 @@
         "modulePath": "Effect",
         "fullName": "Effect.map",
         "signature": "Effect(a), (a -> b) -> Effect(b)",
-        "docs": "Re-target an effect to a parent message type: the response callback's\nmessage is passed through `f` on its way to `update`, so components can\nown their effects too.",
-        "line": 83
+        "docs": "Turn an effect of one message type into an effect of another. An app split\ninto pages uses it to wrap a page's messages in its own, so the answer\nfinds its way back to the page:\n\n```roc\nEffect.map(Console.log(\"Hello\"), |m| SettingsMsg(m))\n```",
+        "line": 58
        },
        {
         "kind": "value",
         "tier": "public",
-        "name": "close_modal",
+        "name": "map_all",
         "modulePath": "Effect",
-        "fullName": "Effect.close_modal",
-        "signature": "Str -> Effect(msg)",
-        "docs": "",
-        "line": 171
+        "fullName": "Effect.map_all",
+        "signature": "List(Effect(a)), (a -> b) -> List(Effect(b))",
+        "docs": "[Effect.map] for a whole list, as a page's effects become the app's:\n\n```roc\nSettingsMsg(page_msg) => {\n    (page, effects) = Settings.update(model.page, page_msg)\n    (\n        { ..model, page },\n        Effect.map_all(effects, |m| SettingsMsg(m)),\n    )\n}\n```",
+        "line": 87
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Id",
+        "modulePath": "Effect",
+        "fullName": "Effect.Id",
+        "signature": "Str",
+        "docs": "The name of an effect's JavaScript, like `\"my_app/share_link\"`. It is what\nthe Roc and the JavaScript of an effect have in common.\n\nYou write it as a plain string where an `Id` is asked for. It has to be\nwritten out in the code, not put together while the app runs: a build reads\nthe names out of your app to know which JavaScript it needs, and checks\nthat each one has some.",
+        "line": 97,
+        "decl": "::",
+        "head": "Id"
        },
        {
         "kind": "value",
         "tier": "public",
-        "name": "console_log",
-        "modulePath": "Effect",
-        "fullName": "Effect.console_log",
-        "signature": "Str -> Effect(msg)",
-        "docs": "",
-        "line": 174
+        "name": "from_quote",
+        "modulePath": "Effect.Id",
+        "fullName": "Effect.Id.from_quote",
+        "signature": "Str -> Try(Id, [BadQuotedBytes(Str)])",
+        "docs": "How the compiler turns a string in your code into an `Id`. You do not call\nit. It refuses a name that is empty, longer than 100 bytes, or made of\nanything but letters, digits and `_ - . /`.",
+        "line": 102
        },
        {
         "kind": "value",
         "tier": "public",
-        "name": "crypto_digest",
-        "modulePath": "Effect",
-        "fullName": "Effect.crypto_digest",
-        "signature": "Str, List(U8), (List(U8) -> msg) -> Effect(msg)",
-        "docs": "",
-        "line": 177
+        "name": "to_str",
+        "modulePath": "Effect.Id",
+        "fullName": "Effect.Id.to_str",
+        "signature": "Id -> Str",
+        "docs": "The name as you wrote it.",
+        "line": 115
        },
        {
         "kind": "value",
         "tier": "public",
-        "name": "crypto_digest_file",
+        "name": "identity",
         "modulePath": "Effect",
-        "fullName": "Effect.crypto_digest_file",
-        "signature": "Str, U32, U64, U64, (List(U8) -> msg) -> Effect(msg)",
-        "docs": "",
-        "line": 181
+        "fullName": "Effect.identity",
+        "signature": "Effect(msg) -> { id : Str, args : List(U8) }",
+        "docs": "For tests. What an effect asks for: its name and its arguments. A\n`Console.log` has no name, and its text as its arguments.\n\n```roc\nexpect {\n    (_, effects) = update(model, UserClickedLoad)\n    ids = effects.map(|effect| effect.identity().id)\n    ids == [\"joy/http/send\"]\n}\n```",
+        "line": 129
        },
        {
         "kind": "value",
         "tier": "public",
-        "name": "http_send",
+        "name": "call",
         "modulePath": "Effect",
-        "fullName": "Effect.http_send",
-        "signature": "Str, Str, List({ name : Str, value : Str }), List(U8), U64, ({ status : U16, headers : List({ name : Str, value : Str }), body : List(U8) } -> msg) -> Effect(msg)",
-        "docs": "",
-        "line": 185
+        "fullName": "Effect.call",
+        "signature": "Id, List(U8), (List(U8) -> msg) -> Effect(msg)",
+        "docs": "For a custom effect. Run your own JavaScript by its name, and get its\nanswer.\n\n`args` is what the JavaScript reads, written with `Wire`. What comes back\ngoes through [Effect.reply], which says whether it worked.\n\n```roc\nget : (Try(Info, Str) -> msg) -> Effect(msg)\nget = |to_msg|\n    Effect.call(\n        \"my_app/locale_get\",\n        [],\n        |reply| to_msg(info(reply)),\n    )\n```\n\nThe JavaScript is in the `.js` file beside the Roc module. The guide's page\non [custom effects](../../#custom-effects) shows both halves.",
+        "line": 155
        },
        {
         "kind": "value",
         "tier": "public",
-        "name": "http_send_file",
+        "name": "send",
         "modulePath": "Effect",
-        "fullName": "Effect.http_send_file",
-        "signature": "Str, Str, List({ name : Str, value : Str }), U32, U64, U64, U64, ({ status : U16, headers : List({ name : Str, value : Str }), body : List(U8) } -> msg) -> Effect(msg)",
-        "docs": "",
-        "line": 189
+        "fullName": "Effect.send",
+        "signature": "Id, List(U8) -> Effect(msg)",
+        "docs": "For a custom effect. Run your own JavaScript by its name, when it has\nnothing to answer.\n\n```roc\nargs = Wire.writer({}).u32(200).done()\n\nEffect.send(\"my_app/vibrate\", args)\n```",
+        "line": 166
        },
        {
         "kind": "value",
         "tier": "public",
-        "name": "navigate",
+        "name": "reply",
         "modulePath": "Effect",
-        "fullName": "Effect.navigate",
-        "signature": "Str -> Effect(msg)",
-        "docs": "",
-        "line": 193
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "port_send",
-        "modulePath": "Effect",
-        "fullName": "Effect.port_send",
-        "signature": "Str, Str -> Effect(msg)",
-        "docs": "",
-        "line": 196
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "push_url",
-        "modulePath": "Effect",
-        "fullName": "Effect.push_url",
-        "signature": "Str -> Effect(msg)",
-        "docs": "",
-        "line": 199
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "replace_url",
-        "modulePath": "Effect",
-        "fullName": "Effect.replace_url",
-        "signature": "Str -> Effect(msg)",
-        "docs": "",
-        "line": 202
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "show_modal",
-        "modulePath": "Effect",
-        "fullName": "Effect.show_modal",
-        "signature": "Str -> Effect(msg)",
-        "docs": "",
-        "line": 205
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "time_after",
-        "modulePath": "Effect",
-        "fullName": "Effect.time_after",
-        "signature": "U32, (I64 -> msg) -> Effect(msg)",
-        "docs": "",
-        "line": 208
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "time_cancel",
-        "modulePath": "Effect",
-        "fullName": "Effect.time_cancel",
-        "signature": "Str -> Effect(msg)",
-        "docs": "",
-        "line": 211
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "time_debounce",
-        "modulePath": "Effect",
-        "fullName": "Effect.time_debounce",
-        "signature": "Str, U32, (I64 -> msg) -> Effect(msg)",
-        "docs": "",
-        "line": 214
+        "fullName": "Effect.reply",
+        "signature": "List(U8) -> Try(List(U8), [EffectFailed({ name : Str, message : Str })])",
+        "docs": "For a custom effect. What your JavaScript answered, or why it failed.\n\n- `Ok(answer)`: the bytes your JavaScript wrote, to read with `Wire`.\n- `Err(EffectFailed({ name, message }))`: the error your JavaScript threw.\n  A browser that refuses says `NotAllowedError`, and a name with no\n  JavaScript behind it says `MissingEffectError`.\n\n```roc\ninfo : List(U8) -> Try(Info, Str)\ninfo = |reply| {\n    answer = Effect.reply(reply) ? |_| \"The browser said no\"\n    (language, _) = Wire.reader(answer).str() ? Wire.explain\n    Ok({ language })\n}\n```",
+        "line": 184
        }
       ]
      },
@@ -285,7 +269,7 @@
         "fullName": "Method",
         "signature": "[OPTIONS, GET, POST, PUT, DELETE, HEAD, TRACE, CONNECT, PATCH, EXTENSION(Str)]",
         "docs": "",
-        "line": 15,
+        "line": 55,
         "decl": ":",
         "head": "Method"
        },
@@ -296,8 +280,8 @@
         "modulePath": "Http",
         "fullName": "Http.Header",
         "signature": "{ name : Str, value : Str }",
-        "docs": "An HTTP header, e.g. `{ name: \"Content-Type\", value: \"application/json\" }`.",
-        "line": 41,
+        "docs": "One header of a request or a response, like\n`{ name: \"Content-Type\", value: \"application/json\" }`.",
+        "line": 82,
         "decl": ":",
         "head": "Header"
        },
@@ -308,8 +292,8 @@
         "modulePath": "Http",
         "fullName": "Http.Response",
         "signature": "{ status : U16, headers : List(Header), body : List(U8) }",
-        "docs": "An HTTP response. Any status the server sent lands here, 4xx and 5xx\nincluded, while transport failures never produce a `Response` at all.",
-        "line": 45,
+        "docs": "What the server answered.\n\n- `status` is the status code: 200 when all went well, 404 when there\n  is nothing at that address, and so on.\n- `headers` are the headers the server sent along.\n- `body` is the content, as bytes. See \"Reading the body\" at the top of\n  this page.",
+        "line": 91,
         "decl": ":",
         "head": "Response"
        },
@@ -320,8 +304,8 @@
         "modulePath": "Http",
         "fullName": "Http.Request",
         "signature": "{\n\t\tmethod : Method,\n\t\turi : Str,\n\t\theaders : List(Header),\n\t\tbody : List(U8),\n\t\ttimeout_ms : [TimeoutMilliseconds(U64), NoTimeout],\n\t}",
-        "docs": "An HTTP request, for `Http.request`.",
-        "line": 48,
+        "docs": "Everything about a request, for [Http.request]. You rarely write one\nfrom scratch: start from [Http.default_request] and change what you\nneed.\n\n- `method` is `GET`, `POST`, `PUT`, `DELETE` and so on.\n- `uri` is the address to send it to.\n- `headers` are the headers to send along.\n- `body` is the content to send, as bytes. `Str.to_utf8` turns text\n  into bytes.\n- `timeout_ms` is how long to wait for the answer:\n  `TimeoutMilliseconds(5000)` gives up after five seconds, and\n  `NoTimeout` waits for as long as the browser does.",
+        "line": 105,
         "decl": ":",
         "head": "Request"
        },
@@ -332,8 +316,8 @@
         "modulePath": "Http",
         "fullName": "Http.default_request",
         "signature": "Request",
-        "docs": "A `GET` request with empty headers/body, no timeout, and an empty URI.\nOverride the fields you need, e.g.\n`{ ..Http.default_request, uri: \"https://example.com\" }`.",
-        "line": 59
+        "docs": "A request to start from: a `GET` with no headers, no body and no\ntimeout. Change the fields you need:\n\n```roc\n{ ..Http.default_request, uri: \"/todos.json\" }\n```",
+        "line": 119
        },
        {
         "kind": "value",
@@ -342,8 +326,8 @@
         "modulePath": "Http",
         "fullName": "Http.method_to_str",
         "signature": "Method -> Str",
-        "docs": "The request method as it appears on the wire.",
-        "line": 69
+        "docs": "A method's name as text, like `\"GET\"`.",
+        "line": 129
        },
        {
         "kind": "value",
@@ -352,8 +336,8 @@
         "modulePath": "Http",
         "fullName": "Http.get",
         "signature": "Str, (Try(Response, [HttpErr([Timeout, NetworkError])]) -> msg) -> Effect(msg)",
-        "docs": "",
-        "line": 84
+        "docs": "Make a `GET` request.\n\n```roc\nHttp.get(\"/todos.json\", |answer| ServerSentTodos(answer))\n```\n\nThe second argument is how the answer becomes one of your messages.\nThe top of this page shows what the answer can be.",
+        "line": 152
        },
        {
         "kind": "value",
@@ -362,8 +346,8 @@
         "modulePath": "Http",
         "fullName": "Http.post",
         "signature": "Str, List(U8), (Try(Response, [HttpErr([Timeout, NetworkError])]) -> msg) -> Effect(msg)",
-        "docs": "",
-        "line": 88
+        "docs": "Make a `POST` request with a body. The body is bytes, and\n`Str.to_utf8` turns text into bytes:\n\n```roc\nbody = Str.to_utf8(Json.to_str({ title: \"Buy milk\" }))\n\nHttp.post(\"/todos\", body, |answer| ServerSavedTodo(answer))\n```\n\n`post` sends no headers. To tell the server that the body is JSON, or\nto use another method, use [Http.request].",
+        "line": 167
        },
        {
         "kind": "value",
@@ -372,8 +356,8 @@
         "modulePath": "Http",
         "fullName": "Http.request",
         "signature": "Request, (Try(Response, [HttpErr([Timeout, NetworkError])]) -> msg) -> Effect(msg)",
-        "docs": "Full control: method, uri, headers, body, timeout.",
-        "line": 93
+        "docs": "A request where you decide everything: the method, the headers, the\nbody and how long to wait. Start from [Http.default_request] and change\nwhat you need:\n\n```roc\njson = { name: \"Content-Type\", value: \"application/json\" }\nbody = Str.to_utf8(Json.to_str({ title: \"Buy milk\" }))\n\nHttp.request(\n    {\n        ..Http.default_request,\n        method: POST,\n        uri: \"/todos\",\n        headers: [json],\n        body,\n        timeout_ms: TimeoutMilliseconds(5000),\n    },\n    |answer| ServerSavedTodo(answer),\n)\n```",
+        "line": 191
        },
        {
         "kind": "value",
@@ -382,8 +366,8 @@
         "modulePath": "Http",
         "fullName": "Http.post_file",
         "signature": "Str, U32, List(Header), (Try(Response, [HttpErr([Timeout, NetworkError])]) -> msg) -> Effect(msg)",
-        "docs": "POST a user-picked file as the request body. The file id comes from\n`Attribute.on_file`; the browser streams the File object directly, so\nthe bytes never enter wasm memory (uploads of any size cost no wasm\nheap).",
-        "line": 108
+        "docs": "Upload a file the user picked, with a `POST` request. The file is the\nbody.\n\nA file input tells you about the file with `on_file` (in joy-html's\n`Attribute`), and what it gives you has the file's `id`:\n\n```roc\ninput([type(\"file\"), on_file(|file| UserPickedFile(file))])\n```\n\n```roc\nHttp.post_file(\n    \"/upload\",\n    file.id,\n    [],\n    |answer| ServerTookFile(answer),\n)\n```\n\nThe browser sends the file straight from where it is. Your app never\nholds its bytes, so a big file costs it no memory.",
+        "line": 216
        },
        {
         "kind": "value",
@@ -392,8 +376,8 @@
         "modulePath": "Http",
         "fullName": "Http.put_file",
         "signature": "Str, U32, List(Header), (Try(Response, [HttpErr([Timeout, NetworkError])]) -> msg) -> Effect(msg)",
-        "docs": "PUT a user-picked file as the request body (see `post_file`).",
-        "line": 113
+        "docs": "The same as [Http.post_file], with a `PUT` request.",
+        "line": 221
        },
        {
         "kind": "value",
@@ -402,8 +386,8 @@
         "modulePath": "Http",
         "fullName": "Http.request_file",
         "signature": "{ method : Method, uri : Str, headers : List(Header), file : U32, start : U64, len : U64, timeout_ms : [TimeoutMilliseconds(U64), NoTimeout] }, (Try(Response, [HttpErr([Timeout, NetworkError])]) -> msg) -> Effect(msg)",
-        "docs": "Full control over a file-body request, including a byte range and a\ntimeout. `start` and `len` slice the file (`len` 0 means through the\nend), the building block for chunked uploads of large files.",
-        "line": 120
+        "docs": "Upload a file, or a part of one, where you decide everything: the\nmethod, the headers and how long to wait.\n\n`start` and `len` say which bytes of the file to send, and a `len` of\n0 means all the rest. Sending a big file a part at a time is how you\nshow progress, or go on after the connection dropped.\n\n```roc\nHttp.request_file(\n    {\n        method: PUT,\n        uri: \"/upload/part/1\",\n        headers: [],\n        file: file.id,\n        start: 0,\n        len: 1_000_000,\n        timeout_ms: NoTimeout,\n    },\n    |answer| ServerTookPart(answer),\n)\n```",
+        "line": 246
        }
       ]
      },
@@ -418,8 +402,8 @@
         "modulePath": "Keyboard",
         "fullName": "Keyboard.on_down",
         "signature": "(Sub.KeyEvent -> msg) -> Sub(msg)",
-        "docs": "Msg for every keydown.",
-        "line": 23
+        "docs": "A message for every key that goes down.\n\n```roc\nKeyboard.on_down(|event| UserPressedKey(event.key))\n```",
+        "line": 41
        },
        {
         "kind": "value",
@@ -428,8 +412,8 @@
         "modulePath": "Keyboard",
         "fullName": "Keyboard.on_down_keys",
         "signature": "List(Str), (Sub.KeyEvent -> msg) -> Sub(msg)",
-        "docs": "Keydown for these keys only.",
-        "line": 27
+        "docs": "A message when one of these keys goes down.\n\n```roc\nKeyboard.on_down_keys(\n    [\"ArrowLeft\", \"ArrowRight\"],\n    |event| UserPressedArrow(event.key),\n)\n```",
+        "line": 52
        },
        {
         "kind": "value",
@@ -438,8 +422,8 @@
         "modulePath": "Keyboard",
         "fullName": "Keyboard.on_down_keys_prevent_default",
         "signature": "List(Str), (Sub.KeyEvent -> msg) -> Sub(msg)",
-        "docs": "Like `on_down_keys`, and preventDefault on the matching events.",
-        "line": 31
+        "docs": "Like [Keyboard.on_down_keys], and the browser does not do what it normally\ndoes with those keys. Use it to keep Space from scrolling the page, or Tab\nfrom moving the focus.\n\n```roc\nKeyboard.on_down_keys_prevent_default(\n    [\" \"],\n    |_| UserPressedSpace,\n)\n```\n\nA key typed in a field outside your app keeps its normal effect.",
+        "line": 67
        },
        {
         "kind": "value",
@@ -448,8 +432,8 @@
         "modulePath": "Keyboard",
         "fullName": "Keyboard.on_up",
         "signature": "(Sub.KeyEvent -> msg) -> Sub(msg)",
-        "docs": "Msg for every keyup.",
-        "line": 35
+        "docs": "A message for every key that comes back up.\n\n```roc\nKeyboard.on_up(|event| UserReleasedKey(event.key))\n```",
+        "line": 75
        },
        {
         "kind": "value",
@@ -458,8 +442,8 @@
         "modulePath": "Keyboard",
         "fullName": "Keyboard.on_up_keys",
         "signature": "List(Str), (Sub.KeyEvent -> msg) -> Sub(msg)",
-        "docs": "Keyup for these keys only.",
-        "line": 39
+        "docs": "A message when one of these keys comes back up.\n\n```roc\nKeyboard.on_up_keys([\" \"], |_| UserReleasedSpace)\n```",
+        "line": 83
        },
        {
         "kind": "value",
@@ -468,8 +452,220 @@
         "modulePath": "Keyboard",
         "fullName": "Keyboard.on_up_keys_prevent_default",
         "signature": "List(Str), (Sub.KeyEvent -> msg) -> Sub(msg)",
-        "docs": "Like `on_up_keys`, and preventDefault on the matching events.",
-        "line": 43
+        "docs": "Like [Keyboard.on_up_keys], and the browser does not do what it normally\ndoes when those keys come up. A key typed in a field outside your app keeps\nits normal effect.",
+        "line": 89
+       }
+      ]
+     },
+     {
+      "name": "Media",
+      "imports": [
+       "html"
+      ],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "MediaStream",
+        "modulePath": "Media",
+        "fullName": "Media.MediaStream",
+        "signature": "{ stream_id : U32 }",
+        "docs": "An open microphone or camera, from [Media.stream].",
+        "line": 67,
+        "decl": ":",
+        "head": "MediaStream"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "MediaRecorder",
+        "modulePath": "Media",
+        "fullName": "Media.MediaRecorder",
+        "signature": "{ recorder_id : U32 }",
+        "docs": "A recording that is under way, from [Media.record].",
+        "line": 70,
+        "decl": ":",
+        "head": "MediaRecorder"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Problem",
+        "modulePath": "Media",
+        "fullName": "Media.Problem",
+        "signature": "[NotAllowed, NotFound, NotReadable, Insecure, Unsupported, Other(Str)]",
+        "docs": "Why it did not work.\n\n- `NotAllowed`: the user or the browser said no. Once refused, only the\n  browser's own settings can change it.\n- `NotFound`: there is no such device.\n- `NotReadable`: another program holds the device, or the system blocks\n  it.\n- `Insecure`: the page is not served over HTTPS (or from localhost).\n- `Unsupported`: the browser lacks the feature, or the format you asked\n  for.\n- `Other(name)`: anything else, with the browser's name for the error.",
+        "line": 83,
+        "decl": ":",
+        "head": "Problem"
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "RecordingOptions",
+        "modulePath": "Media",
+        "fullName": "Media.RecordingOptions",
+        "signature": "{ mime_type : Str, min_audio_bits_per_second : U32 }",
+        "docs": "How to record.\n\n- `mime_type` is the format, like `\"audio/webm\"`. `\"\"` lets the browser\n  choose: Opus in WebM where it can, and MP4 in Safari.\n- `min_audio_bits_per_second` is the lowest audio quality you accept. A\n  browser that would record lower is raised to it, and one that records\n  higher keeps its own.",
+        "line": 92,
+        "decl": ":",
+        "head": "RecordingOptions"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "default_recording",
+        "modulePath": "Media",
+        "fullName": "Media.default_recording",
+        "signature": "RecordingOptions",
+        "docs": "The browser's own choice of format and quality. Start from it:\n\n```roc\n{ ..Media.default_recording, mime_type: \"audio/webm\" }\n```",
+        "line": 99
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "stream",
+        "modulePath": "Media",
+        "fullName": "Media.stream",
+        "signature": "{ audio : Bool, video : Bool }, (Try(Media.MediaStream, Media.Problem) -> msg) -> Sub(msg)",
+        "docs": "Open the microphone (`audio`), the camera (`video`) or both, for as long as\nthe subscription is in the list `subscriptions` returns.\n\n```roc\nMedia.stream(\n    { audio: Bool.True, video: Bool.False },\n    |opened| StreamOpened(opened),\n)\n```\n\nThe browser asks the user first, so the message can come much later.\nAsking for something else, like adding the camera, is a new stream: the old\none closes, and the browser asks again.",
+        "line": 115
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "levels",
+        "modulePath": "Media",
+        "fullName": "Media.levels",
+        "signature": "Media.MediaStream, U32, (U16 -> msg) -> Sub(msg)",
+        "docs": "How loud an open stream is, every `interval_ms` milliseconds. Use it for a\nlevel meter or a live waveform.\n\n```roc\nMedia.levels(stream, 50, |level| MicLevel(level))\n```\n\nThe level is the loudest moment since the last message, from 0 for silence\nto 1000 for as loud as the device can go.",
+        "line": 128
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "record",
+        "modulePath": "Media",
+        "fullName": "Media.record",
+        "signature": "Media.MediaStream, Media.RecordingOptions, (Try(Media.MediaRecorder, Media.Problem) -> msg) -> Effect(msg)",
+        "docs": "Start recording an open stream.\n\n```roc\nMedia.record(\n    stream,\n    Media.default_recording,\n    |started| RecorderStarted(started),\n)\n```\n\nA recording that is not finished when its stream closes is thrown away.",
+        "line": 147
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "finish",
+        "modulePath": "Media",
+        "fullName": "Media.finish",
+        "signature": "Media.MediaRecorder, Str, (Try(Attribute.FileInfo, Media.Problem) -> msg) -> Effect(msg)",
+        "docs": "Stop a recording and get it as a file.\n\n```roc\nMedia.finish(recorder, \"memo\", |file| RecordingDone(file))\n```\n\nThe file is named after `name`, with the ending of the format the browser\nrecorded in, like `memo.webm`.",
+        "line": 163
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "audio_summary",
+        "modulePath": "Media",
+        "fullName": "Media.audio_summary",
+        "signature": "U32, U64, (Try({ duration_ms : I64, peaks : List(U16) }, Media.Problem) -> msg) -> Effect(msg)",
+        "docs": "The length of an audio file and its waveform, for a file the browser holds,\nlike a finished recording or a picked file.\n\n```roc\nMedia.audio_summary(file.id, 200, |s| GotWaveform(s))\n```\n\n`peak_count` is how many points you want the waveform in. Each peak is the\nloudest moment of its stretch, from 0 to 1000, and the stretches are spread\nevenly over the file. The file's bytes never enter your app.",
+        "line": 181
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "object_url",
+        "modulePath": "Media",
+        "fullName": "Media.object_url",
+        "signature": "U32, (Try(Str, Media.Problem) -> msg) -> Effect(msg)",
+        "docs": "A URL for a file the browser holds, to give an `<audio>`, `<video>` or\n`<img>` element as its `src`.\n\n```roc\nMedia.object_url(file.id, |url| GotMemoUrl(url))\n```\n\nThe same file always gets the same URL.",
+        "line": 197
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "play",
+        "modulePath": "Media",
+        "fullName": "Media.play",
+        "signature": "Str, (Try({}, Media.Problem) -> msg) -> Effect(msg)",
+        "docs": "Play an `<audio>` or `<video>` element, found by a CSS selector. The\nselector looks in your app's own view first, and then in the rest of the\npage.\n\n```roc\nMedia.play(\"#memo\", |done| PlayStarted(done))\n```\n\nBrowsers refuse to play sound before the user has clicked or typed\nsomewhere on the page. That comes back as `NotAllowed`.",
+        "line": 215
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "pause",
+        "modulePath": "Media",
+        "fullName": "Media.pause",
+        "signature": "Str, (Try({}, Media.Problem) -> msg) -> Effect(msg)",
+        "docs": "Pause an `<audio>` or `<video>` element.\n\n```roc\nMedia.pause(\"#memo\", |done| PlayPaused(done))\n```",
+        "line": 223
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "seek",
+        "modulePath": "Media",
+        "fullName": "Media.seek",
+        "signature": "Str, U64, (Try({}, Media.Problem) -> msg) -> Effect(msg)",
+        "docs": "Move an `<audio>` or `<video>` element to a position, in milliseconds from\nits start.\n\n```roc\nMedia.seek(\"#memo\", 30_000, |done| PlayMoved(done))\n```",
+        "line": 232
+       }
+      ]
+     },
+     {
+      "name": "Navigation",
+      "imports": [],
+      "items": [
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "navigate",
+        "modulePath": "Navigation",
+        "fullName": "Navigation.navigate",
+        "signature": "Str -> Effect(msg)",
+        "docs": "Go to a URL by loading it, as a plain link does. Your app starts over, so\nthe model is gone.\n\n```roc\nNavigation.navigate(\"/login\")\n```",
+        "line": 46
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "push_url",
+        "modulePath": "Navigation",
+        "fullName": "Navigation.push_url",
+        "signature": "Str -> Effect(msg)",
+        "docs": "Change the URL without loading a page, and add a step to the history, so\nBack returns to the URL before.\n\n```roc\nUserClickedLink(url) => (model, [Navigation.push_url(url)])\n```\n\nYour app hears of the new URL through [Navigation.on_url_change], the same way it\nhears of Back and Forward. So the code that opens the page a URL names is\nwritten once, there.\n\nThe page is then shown from the top, or from the element the URL's\n`#fragment` names, as a page the browser loads is. Pushing the URL that is\nalready showing does nothing.",
+        "line": 63
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "replace_url",
+        "modulePath": "Navigation",
+        "fullName": "Navigation.replace_url",
+        "signature": "Str -> Effect(msg)",
+        "docs": "Change the URL in place: no page load, no step in the history, and the page\nstays scrolled where it is.\n\n```roc\nNavigation.replace_url(\"?q=${model.query}\")\n```\n\nIt is for things like keeping `?q=...` in step with a search box, where\nBack should not walk through every key press. Your app hears of it through\n[Navigation.on_url_change], unless the URL is the one already showing.",
+        "line": 76
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "on_url_change",
+        "modulePath": "Navigation",
+        "fullName": "Navigation.on_url_change",
+        "signature": "(Str -> msg) -> Sub(msg)",
+        "docs": "A message each time the page's URL changes. It carries the whole address,\nlike `https://example.com/notes/3?sort=new#top`.\n\n```roc\nNavigation.on_url_change(|url| UrlChanged(url))\n```\n\nIt hears all of these:\n\n- Back and Forward.\n- [Navigation.push_url] and [Navigation.replace_url].\n- A click on a link to a `#fragment` of the page, which the browser follows\n  without loading anything.\n\nAn app with several pages opens the page an address names here, and nowhere\nelse.",
+        "line": 95
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "on_link_click",
+        "modulePath": "Navigation",
+        "fullName": "Navigation.on_link_click",
+        "signature": "(Str -> msg) -> Sub(msg)",
+        "docs": "A message each time the user clicks a link of your site inside your app,\nwith the link's whole address. Your app then decides what happens, and\n[Navigation.push_url] with that address goes there without loading a page.\n\n```roc\nNavigation.on_link_click(|url| UserClickedLink(url))\n```\n\nSome clicks stay the browser's: one with Ctrl, Shift, Alt or Meta held, a\nlink that opens in another tab or downloads, and a link to another site.\n\nWithout this subscription every link loads its page, as links do.",
+        "line": 111
        }
       ]
      },
@@ -484,8 +680,8 @@
         "modulePath": "Port",
         "fullName": "Port.listen",
         "signature": "Str, (Str -> msg) -> Sub(msg)",
-        "docs": "",
-        "line": 34
+        "docs": "Listen to a port. Every text JavaScript sends on it becomes a message, for\nas long as the subscription is in the list `subscriptions` returns.\n\n```roc\nPort.listen(\"price\", |text| PriceChanged(text))\n```",
+        "line": 65
        },
        {
         "kind": "value",
@@ -494,8 +690,8 @@
         "modulePath": "Port",
         "fullName": "Port.send",
         "signature": "Str, Str -> Effect(msg)",
-        "docs": "",
-        "line": 37
+        "docs": "Send a text on a port.\n\n```roc\nPort.send(\"level\", \"9\")\n```",
+        "line": 74
        }
       ]
      },
@@ -509,9 +705,9 @@
         "name": "Sub",
         "modulePath": "",
         "fullName": "Sub",
-        "signature": "[\n\t## Fire every `ms` milliseconds with the current time in ms since the\n\t## Unix epoch.\n\tEvery({ ms : U32, on_tick : Box((I64 -> Box(msg))) }),\n\t## Fire on a document-level keyboard event (\"keydown\" or \"keyup\") with\n\t## the `KeyEvent` record (key, physical code, modifiers, repeat). An\n\t## empty `keys` list matches every key; a non-empty one fires (and, when\n\t## `prevent_default` is set, suppresses the browser default) only when\n\t## the event's `key` is listed.\n\tKeyboard({ event : Str, keys : List(Str), prevent_default : Bool, on_key : Box((KeyEvent -> Box(msg))) }),\n\t## Fire whenever JavaScript sends a value to the named port (see the\n\t## `Port` module). Identity is the name, so listening stops when the\n\t## subscription leaves the list, and two listeners on one name both fire.\n\tPortListen({ name : Str, on_value : Box((Str -> Box(msg))) }),\n\t## Fire when the browser's back/forward buttons change the URL (the\n\t## `popstate` event), with the new path (path + query + fragment). See\n\t## `DOM.on_url_change`.\n\tUrlChanged({ on_change : Box((Str -> Box(msg))) }),\n]",
-        "docs": "A subscription: a recurring event source declared as *data*, returned from\n`subscriptions` and managed by the host. While a subscription stays in the\nreturned list it keeps firing; leaving it out of the list stops it, so\ncancellation is by omission and nothing leaks. The callback is a real typed\nfunction, boxed so the host can store and call it without knowing the app's\nMsg layout.\n\nIdentity is the variant plus its parameters (for `Every` the interval, for\n`PortListen` the port name). A model change that alters the parameters\nstops the old source and starts a fresh one; re-declaring the same\nidentity keeps the running source and only swaps in the new callbacks\n(which may capture new model state). Two subscriptions with identical\nparameters share one underlying source (timer, document listener, port\nregistration), and each firing delivers every declared callback's message,\nin declaration order.\n\nApps normally use the constructors in `Time`, `Keyboard`, `Port` and `DOM`\nrather than these variants directly. Payloads are records so the host\nreads named fields.",
-        "line": 20,
+        "signature": "{ id : Str, args : List(U8), on_event : Box((List(U8) -> Box(msg))) }",
+        "docs": "A subscription: something your app listens to for a while, like the clock,\nthe keyboard or a port.\n\n`subscriptions` looks at the model and returns what your app wants to hear\nright now. Joy starts what is new in the list and stops what is gone. So to\nstop listening, leave it out:\n\n```roc\nsubscriptions : Model -> List(Sub(Msg))\nsubscriptions = |model|\n    if model.paused {\n        []\n    } else {\n        [Time.every(1000, |now| Tick(now))]\n    }\n```\n\nYou rarely make a `Sub` yourself. The other modules make them:\n[Time.every], [Keyboard.on_down], [Port.listen], [Navigation.on_url_change] and\n[Media.stream]. What this module adds:\n\n- [Sub.map] and [Sub.map_all], for an app split into pages or parts.\n- [Sub.KeyEvent], what a key handler gets.\n- [Sub.listen], for a custom effect: a browser feature Joy lacks, with\n  JavaScript of your own.\n- [Sub.identity] and [Sub.deliver], for tests.\n\n## When a subscription starts over\n\nA subscription is known by what it listens to, not by the function you give\nit. `Time.every(1000, ...)` is the same timer on every call, and it keeps\nrunning. Change the 1000 to 500 and the old timer stops and a new one\nstarts.\n\nTwo subscriptions to the same thing share it, and each event gives both of\nthem a message.\n\nThe guide has [a page on subscriptions](../../#subscriptions).",
+        "line": 39,
         "decl": ":=",
         "head": "Sub(msg)"
        },
@@ -522,8 +718,8 @@
         "modulePath": "Sub",
         "fullName": "Sub.KeyEvent",
         "signature": "{\n\t\tkey : Str,\n\t\tcode : Str,\n\t\tctrl : Bool,\n\t\tshift : Bool,\n\t\talt : Bool,\n\t\tmeta : Bool,\n\t\trepeat : Bool,\n\t\tis_composing : Bool,\n\t}",
-        "docs": "The keyboard event record delivered to key handlers, document-level\n(the `Keyboard` module) and element-level (`Attribute.on_key` and\nfriends) alike; annotate handlers as `Sub.KeyEvent`. `key` is the\nlogical key (\"a\", \"Enter\", \"Escape\", ...): it follows the active\nlayout and modifiers, so Shift makes \"a\" arrive as \"A\". `code` is the\nphysical key (\"KeyA\", \"Space\", \"ControlLeft\", ...): it ignores both,\nwhich is what layout-independent controls (say, WASD movement) want.\n`repeat` is true on the auto-repeated firings of a held key; skip\nthose to react once per press. The four modifier flags say whether\nthat modifier was held when the event fired, so a Ctrl+S shortcut is\n`if e.ctrl and e.key == \"s\"`. `is_composing` is true while an IME\ncomposition session is in progress (the browser reports such keydowns\nas key \"Process\"); skip those to ignore the intermediate keystrokes\ninternational text input is assembled from.",
-        "line": 58,
+        "docs": "What a key handler gets about a key press. The subscriptions in `Keyboard`\nhand you one, and so do the key handlers in joy-html's `Attribute`.\n\n- `key`: what the key means, like `\"a\"`, `\"Enter\"` or `\"Escape\"`. It\n  follows the keyboard layout and Shift, so with Shift held `\"a\"` arrives\n  as `\"A\"`.\n- `code`: which physical key it was, like `\"KeyA\"` or `\"Space\"`. It ignores\n  the layout and Shift, which is what controls like WASD want.\n- `ctrl`, `shift`, `alt`, `meta`: whether that key was held at the time. A\n  Ctrl+S shortcut is `event.ctrl and event.key == \"s\"`.\n- `repeat`: true for the repeats a held key sends. Skip those to react once\n  for each press.\n- `is_composing`: true while the user puts a character together from\n  several key presses, as input methods for Chinese, Japanese and Korean\n  do. Skip those to ignore the steps in between.",
+        "line": 62,
         "decl": ":",
         "head": "KeyEvent"
        },
@@ -534,48 +730,80 @@
         "modulePath": "Sub",
         "fullName": "Sub.map",
         "signature": "Sub(a), (a -> b) -> Sub(b)",
-        "docs": "Re-target a subscription to a parent message type.\nNote the mapped callback is a new box each render, which is fine: sub\nidentity comes from the variant's parameters, never the callback.",
-        "line": 72
+        "docs": "Turn a subscription of one message type into one of another. An app split\ninto pages uses it to wrap a page's messages in its own:\n\n```roc\nSub.map(Time.every(1000, |now| Tick(now)), |m| ClockMsg(m))\n```\n\nThe subscription listens to the same thing as before, so it keeps running.",
+        "line": 81
        },
        {
         "kind": "value",
         "tier": "public",
-        "name": "every",
+        "name": "map_all",
         "modulePath": "Sub",
-        "fullName": "Sub.every",
-        "signature": "U32, (I64 -> msg) -> Sub(msg)",
-        "docs": "",
+        "fullName": "Sub.map_all",
+        "signature": "List(Sub(a)), (a -> b) -> List(Sub(b))",
+        "docs": "[Sub.map] for a whole list, as a page's subscriptions become the app's:\n\n```roc\nsubscriptions = |model|\n    Sub.map_all(\n        Clock.subscriptions(model.clock),\n        |m| ClockMsg(m),\n    )\n```",
+        "line": 105
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Id",
+        "modulePath": "Sub",
+        "fullName": "Sub.Id",
+        "signature": "Str",
+        "docs": "The name of a subscription's JavaScript, like `\"my_app/network_changes\"`.\n\nYou write it as a plain string where an `Id` is asked for. It has to be\nwritten out in the code, not put together while the app runs: a build reads\nthe names out of your app to know which JavaScript it needs.",
+        "line": 113,
+        "decl": "::",
+        "head": "Id"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "from_quote",
+        "modulePath": "Sub.Id",
+        "fullName": "Sub.Id.from_quote",
+        "signature": "Str -> Try(Id, [BadQuotedBytes(Str)])",
+        "docs": "How the compiler turns a string in your code into an `Id`. You do not call\nit. It refuses a name that is empty, longer than 100 bytes, or made of\nanything but letters, digits and `_ - . /`.",
         "line": 118
        },
        {
         "kind": "value",
         "tier": "public",
-        "name": "keyboard",
-        "modulePath": "Sub",
-        "fullName": "Sub.keyboard",
-        "signature": "Str, List(Str), Bool, (KeyEvent -> msg) -> Sub(msg)",
-        "docs": "",
-        "line": 121
+        "name": "to_str",
+        "modulePath": "Sub.Id",
+        "fullName": "Sub.Id.to_str",
+        "signature": "Id -> Str",
+        "docs": "The name as you wrote it.",
+        "line": 131
        },
        {
         "kind": "value",
         "tier": "public",
-        "name": "port_listen",
+        "name": "listen",
         "modulePath": "Sub",
-        "fullName": "Sub.port_listen",
-        "signature": "Str, (Str -> msg) -> Sub(msg)",
-        "docs": "",
-        "line": 125
+        "fullName": "Sub.listen",
+        "signature": "Id, List(U8), (List(U8) -> msg) -> Sub(msg)",
+        "docs": "For a custom effect. Hear the events of your own JavaScript, by its name.\n\n`args` is what the JavaScript is started with, and each event's bytes go\nthrough your function on their way to `update`. Both are written and read\nwith `Wire`.\n\n```roc\non_change : (Status -> msg) -> Sub(msg)\non_change = |to_msg|\n    Sub.listen(\n        \"my_app/network_changes\",\n        [],\n        |event| to_msg(status(event)),\n    )\n```\n\nThe guide's page on [custom effects](../../#custom-effects) shows the\nJavaScript that goes with it.",
+        "line": 153
        },
        {
         "kind": "value",
         "tier": "public",
-        "name": "url_changed",
+        "name": "identity",
         "modulePath": "Sub",
-        "fullName": "Sub.url_changed",
-        "signature": "(Str -> msg) -> Sub(msg)",
-        "docs": "",
-        "line": 128
+        "fullName": "Sub.identity",
+        "signature": "Sub(msg) -> { id : Str, args : List(U8) }",
+        "docs": "For tests. What a subscription listens to: its name and its arguments.\n\n```roc\nexpect {\n    sub = Time.every(1000, |now| Tick(now))\n    sub.identity().id == \"joy/time/every\"\n}\n```",
+        "line": 164
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "deliver",
+        "modulePath": "Sub",
+        "fullName": "Sub.deliver",
+        "signature": "Sub(msg), List(U8) -> msg",
+        "docs": "For tests. Hand a subscription an event, the way Joy does, and get the\nmessage it makes.\n\n```roc\nexpect {\n    sub = Network.on_change(|status| NetworkChanged(status))\n    event = Wire.writer({}).bool(Bool.True).done()\n    sub.deliver(event) == NetworkChanged(Online)\n}\n```",
+        "line": 177
        }
       ]
      },
@@ -590,8 +818,8 @@
         "modulePath": "Time",
         "fullName": "Time.after",
         "signature": "U32, (I64 -> msg) -> Effect(msg)",
-        "docs": "Produce a msg once, `ms` milliseconds from now.",
-        "line": 21
+        "docs": "Send a message once, `ms` milliseconds from now.\n\n```roc\nTime.after(3000, |_now| NoticeTimedOut)\n```",
+        "line": 43
        },
        {
         "kind": "value",
@@ -600,8 +828,8 @@
         "modulePath": "Time",
         "fullName": "Time.every",
         "signature": "U32, (I64 -> msg) -> Sub(msg)",
-        "docs": "Produce a msg every `ms` milliseconds, while subscribed.",
-        "line": 25
+        "docs": "Send a message every `ms` milliseconds, for as long as the subscription is\nin the list `subscriptions` returns. Leave it out of the list to stop it:\n\n```roc\nsubscriptions = |model|\n    if model.paused {\n        []\n    } else {\n        [Time.every(1000, |now| Tick(now))]\n    }\n```",
+        "line": 57
        },
        {
         "kind": "value",
@@ -610,8 +838,8 @@
         "modulePath": "Time",
         "fullName": "Time.debounce",
         "signature": "Str, U32, (I64 -> msg) -> Effect(msg)",
-        "docs": "Produce a msg once, `ms` milliseconds after the LAST `debounce` with\nthis key: issuing the effect again re-arms the pending timer, so only\nthe final call of a burst fires. The classic use is search-as-you-type,\nwhere every keystroke returns `Time.debounce(\"search\", 300, ...)` and\nthe query runs 300ms after typing pauses. Keys are global to the app,\nso pick one per debounced action, and prefix it with the component name\nwhen writing reusable components, so two instances cannot swallow each\nother's timers.",
-        "line": 36
+        "docs": "Send a message once, `ms` milliseconds after the last `debounce` with the\nsame key. Each new one starts the wait over, so of a quick run of them only\nthe last fires.\n\nSearch as you type is the usual case. Every key press asks for the same\ndebounce, and the search runs when the typing has paused:\n\n```roc\nUserTypedSearch(text) =>\n    (\n        { ..model, text },\n        [Time.debounce(\"search\", 300, |_now| TypingPaused)],\n    )\n```\n\nKeys belong to the whole app, so use one per thing you debounce. In a\ncomponent you mean to reuse, start the key with the component's name.",
+        "line": 77
        },
        {
         "kind": "value",
@@ -620,8 +848,8 @@
         "modulePath": "Time",
         "fullName": "Time.cancel",
         "signature": "Str -> Effect(msg)",
-        "docs": "Discard the pending `debounce` timer with this key, so it never\nfires. No-op when nothing is pending.",
-        "line": 41
+        "docs": "Call off a waiting [Time.debounce] by its key, so it never fires. Does\nnothing when none is waiting.\n\n```roc\nTime.cancel(\"search\")\n```",
+        "line": 86
        }
       ]
      },
@@ -636,8 +864,8 @@
         "modulePath": "WebCrypto",
         "fullName": "WebCrypto.Algorithm",
         "signature": "[Sha1, Sha256, Sha384, Sha512]",
-        "docs": "Web Crypto's supported digest algorithms. Sha1 is broken for\ncollision resistance; it is here for interop with systems keyed on\nit, not for anything security-sensitive.",
-        "line": 26,
+        "docs": "The kinds of hash Web Crypto can make.\n\n`Sha1` is no longer safe for anything that guards against tampering. It is\nhere for systems that already use it.",
+        "line": 50,
         "decl": ":",
         "head": "Algorithm"
        },
@@ -648,8 +876,8 @@
         "modulePath": "WebCrypto",
         "fullName": "WebCrypto.algorithm_name",
         "signature": "Algorithm -> Str",
-        "docs": "The Web Crypto name of an algorithm (\"SHA-256\", ...).",
-        "line": 29
+        "docs": "An algorithm's name as Web Crypto spells it, like `\"SHA-256\"`.",
+        "line": 53
        },
        {
         "kind": "value",
@@ -658,8 +886,8 @@
         "modulePath": "WebCrypto",
         "fullName": "WebCrypto.digest",
         "signature": "Algorithm, List(U8), (List(U8) -> msg) -> Effect(msg)",
-        "docs": "Hash bytes: `WebCrypto.digest(Sha384, bytes, |hash| GotHash(hash))`.\n(For Sha256, the built-in `Crypto.SHA256.hash` is the better tool.)",
-        "line": 40
+        "docs": "Hash bytes your app holds.\n\n```roc\nWebCrypto.digest(Sha384, bytes, |hash| GotHash(hash))\n```\n\nFor `Sha256`, the built-in `Crypto.SHA256.hash(bytes)` does the same with\nno effect.",
+        "line": 70
        },
        {
         "kind": "value",
@@ -668,8 +896,8 @@
         "modulePath": "WebCrypto",
         "fullName": "WebCrypto.digest_file",
         "signature": "Algorithm, U32, (List(U8) -> msg) -> Effect(msg)",
-        "docs": "Hash a user-picked file by its `Attribute.FileInfo` id.",
-        "line": 45
+        "docs": "Hash a file the user picked, by its `id`.\n\n```roc\nWebCrypto.digest_file(Sha256, file.id, |hash| GotHash(hash))\n```",
+        "line": 79
        },
        {
         "kind": "value",
@@ -678,8 +906,8 @@
         "modulePath": "WebCrypto",
         "fullName": "WebCrypto.digest_file_slice",
         "signature": "Algorithm, { file : U32, start : U64, len : U64 }, (List(U8) -> msg) -> Effect(msg)",
-        "docs": "Hash a byte range of a user-picked file (`len` 0 means through the\nend). One call per chunk gives chunked hashing with progress.",
-        "line": 51
+        "docs": "Hash a part of a file the user picked. `start` and `len` say which bytes,\nand a `len` of 0 means all the rest.\n\n```roc\nWebCrypto.digest_file_slice(\n    Sha256,\n    { file: file.id, start: 0, len: 1_000_000 },\n    |hash| GotPartHash(hash),\n)\n```",
+        "line": 92
        },
        {
         "kind": "value",
@@ -688,8 +916,310 @@
         "modulePath": "WebCrypto",
         "fullName": "WebCrypto.to_hex",
         "signature": "List(U8) -> Str",
-        "docs": "The conventional lowercase-hex rendering of a hash.",
-        "line": 56
+        "docs": "A hash as text, the way hashes are usually shown: two lowercase hex digits\nfor each byte.\n\n```roc\nWebCrypto.to_hex([222, 173, 190, 239]) == \"deadbeef\"\n```",
+        "line": 101
+       }
+      ]
+     },
+     {
+      "name": "Wire",
+      "imports": [],
+      "items": [
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Problem",
+        "modulePath": "Wire",
+        "fullName": "Wire.Problem",
+        "signature": "[WireEnded, WireMismatch({ value : U64, wanted : Str, found : Str })]",
+        "docs": "Why a read gave nothing. Both mean that the Roc and the JavaScript of an\neffect disagree on what is passed.\n\n- `WireEnded`: the bytes ran out. The JavaScript wrote fewer values than\n  the Roc reads.\n- `WireMismatch`: the value there is of another kind than the one read.\n  `value` says which one, counting from 1, `wanted` what the Roc read and\n  `found` what was there.",
+        "line": 74,
+        "decl": ":",
+        "head": "Problem"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "explain",
+        "modulePath": "Wire",
+        "fullName": "Wire.explain",
+        "signature": "Problem -> Str",
+        "docs": "A problem in words, for you to read while you write the two sides.\n\n```roc\n(language, _) = Wire.reader(answer).str() ? Wire.explain\n```",
+        "line": 81
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Writer",
+        "modulePath": "Wire",
+        "fullName": "Wire.Writer",
+        "signature": "List(U8)",
+        "docs": "Writes values, one after another. Start with [Wire.writer], add each value\nwith the method for its type, and end with `done`:\n\n```roc\nWire.writer({}).str(\"memo\").u32(3).bool(Bool.True).done()\n```",
+        "line": 94,
+        "decl": "::",
+        "head": "Writer"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "u8",
+        "modulePath": "Wire.Writer",
+        "fullName": "Wire.Writer.u8",
+        "signature": "Wire.Writer, U8 -> Wire.Writer",
+        "docs": "",
+        "line": 95
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "bool",
+        "modulePath": "Wire.Writer",
+        "fullName": "Wire.Writer.bool",
+        "signature": "Wire.Writer, Bool -> Wire.Writer",
+        "docs": "",
+        "line": 98
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "u16",
+        "modulePath": "Wire.Writer",
+        "fullName": "Wire.Writer.u16",
+        "signature": "Wire.Writer, U16 -> Wire.Writer",
+        "docs": "",
+        "line": 101
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "u32",
+        "modulePath": "Wire.Writer",
+        "fullName": "Wire.Writer.u32",
+        "signature": "Wire.Writer, U32 -> Wire.Writer",
+        "docs": "",
+        "line": 104
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "u64",
+        "modulePath": "Wire.Writer",
+        "fullName": "Wire.Writer.u64",
+        "signature": "Wire.Writer, U64 -> Wire.Writer",
+        "docs": "",
+        "line": 107
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "i64",
+        "modulePath": "Wire.Writer",
+        "fullName": "Wire.Writer.i64",
+        "signature": "Wire.Writer, I64 -> Wire.Writer",
+        "docs": "",
+        "line": 110
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "f64",
+        "modulePath": "Wire.Writer",
+        "fullName": "Wire.Writer.f64",
+        "signature": "Wire.Writer, F64 -> Wire.Writer",
+        "docs": "",
+        "line": 113
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "bytes",
+        "modulePath": "Wire.Writer",
+        "fullName": "Wire.Writer.bytes",
+        "signature": "Wire.Writer, List(U8) -> Wire.Writer",
+        "docs": "",
+        "line": 116
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "str",
+        "modulePath": "Wire.Writer",
+        "fullName": "Wire.Writer.str",
+        "signature": "Wire.Writer, Str -> Wire.Writer",
+        "docs": "",
+        "line": 119
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "u16s",
+        "modulePath": "Wire.Writer",
+        "fullName": "Wire.Writer.u16s",
+        "signature": "Wire.Writer, List(U16) -> Wire.Writer",
+        "docs": "",
+        "line": 125
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "done",
+        "modulePath": "Wire.Writer",
+        "fullName": "Wire.Writer.done",
+        "signature": "Wire.Writer -> List(U8)",
+        "docs": "The bytes written, to hand to [Effect.call], [Effect.send] or [Sub.listen].",
+        "line": 129
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_list",
+        "modulePath": "Wire.Writer",
+        "fullName": "Wire.Writer.to_list",
+        "signature": "Wire.Writer -> List(U8)",
+        "docs": "",
+        "line": 132
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "Reader",
+        "modulePath": "Wire",
+        "fullName": "Wire.Reader",
+        "signature": "{ bytes : List(U8), at : U64, read : U64 }",
+        "docs": "Reads values, one after another, in the order they were written. Start\nwith [Wire.reader]. Each method gives you the value and a reader for the\nrest, or a [Wire.Problem]:\n\n```roc\n(name, rest) = Wire.reader(answer).str()?\n(count, _) = rest.u32()?\n```",
+        "line": 144,
+        "decl": "::",
+        "head": "Reader"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "u8",
+        "modulePath": "Wire.Reader",
+        "fullName": "Wire.Reader.u8",
+        "signature": "Wire.Reader -> Try((U8, Wire.Reader), Wire.Problem)",
+        "docs": "",
+        "line": 145
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "bool",
+        "modulePath": "Wire.Reader",
+        "fullName": "Wire.Reader.bool",
+        "signature": "Wire.Reader -> Try((Bool, Wire.Reader), Wire.Problem)",
+        "docs": "",
+        "line": 151
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "u16",
+        "modulePath": "Wire.Reader",
+        "fullName": "Wire.Reader.u16",
+        "signature": "Wire.Reader -> Try((U16, Wire.Reader), Wire.Problem)",
+        "docs": "",
+        "line": 157
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "u32",
+        "modulePath": "Wire.Reader",
+        "fullName": "Wire.Reader.u32",
+        "signature": "Wire.Reader -> Try((U32, Wire.Reader), Wire.Problem)",
+        "docs": "",
+        "line": 163
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "u64",
+        "modulePath": "Wire.Reader",
+        "fullName": "Wire.Reader.u64",
+        "signature": "Wire.Reader -> Try((U64, Wire.Reader), Wire.Problem)",
+        "docs": "",
+        "line": 169
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "i64",
+        "modulePath": "Wire.Reader",
+        "fullName": "Wire.Reader.i64",
+        "signature": "Wire.Reader -> Try((I64, Wire.Reader), Wire.Problem)",
+        "docs": "",
+        "line": 172
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "f64",
+        "modulePath": "Wire.Reader",
+        "fullName": "Wire.Reader.f64",
+        "signature": "Wire.Reader -> Try((F64, Wire.Reader), Wire.Problem)",
+        "docs": "",
+        "line": 178
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "bytes",
+        "modulePath": "Wire.Reader",
+        "fullName": "Wire.Reader.bytes",
+        "signature": "Wire.Reader -> Try((List(U8), Wire.Reader), Wire.Problem)",
+        "docs": "",
+        "line": 184
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "str",
+        "modulePath": "Wire.Reader",
+        "fullName": "Wire.Reader.str",
+        "signature": "Wire.Reader -> Try((Str, Wire.Reader), Wire.Problem)",
+        "docs": "",
+        "line": 187
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "u16s",
+        "modulePath": "Wire.Reader",
+        "fullName": "Wire.Reader.u16s",
+        "signature": "Wire.Reader -> Try((List(U16), Wire.Reader), Wire.Problem)",
+        "docs": "",
+        "line": 193
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "remaining",
+        "modulePath": "Wire.Reader",
+        "fullName": "Wire.Reader.remaining",
+        "signature": "Wire.Reader -> List(U8)",
+        "docs": "What is left unread, as raw bytes. This is for bytes that were not written\nthrough a writer, which have no marks to read them by.",
+        "line": 201
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "writer",
+        "modulePath": "Wire",
+        "fullName": "Wire.writer",
+        "signature": "{} -> Wire.Writer",
+        "docs": "A writer with nothing written yet.",
+        "line": 206
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "reader",
+        "modulePath": "Wire",
+        "fullName": "Wire.reader",
+        "signature": "List(U8) -> Wire.Reader",
+        "docs": "A reader at the start of some bytes.",
+        "line": 210
        }
       ]
      },
@@ -703,8 +1233,8 @@
     ]
    }
   },
-  "AcmwFzyfbsf5RALWNdX6cXw1cuuDXt96YfcysNqgFqoG": {
-   "url": "https://github.com/niclas-ahden/joy-html/releases/download/0.17.1/AcmwFzyfbsf5RALWNdX6cXw1cuuDXt96YfcysNqgFqoG.tar.zst",
+  "6XAQypURmG12GNMHHZmjcXVGtctYy52mmPZoaUMWejRK": {
+   "url": "https://github.com/niclas-ahden/joy-html/releases/download/0.18.0/6XAQypURmG12GNMHHZmjcXVGtctYy52mmPZoaUMWejRK.tar.zst",
    "snapshot": {
     "kind": "package",
     "exposes": [
@@ -799,12 +1329,22 @@
        {
         "kind": "value",
         "tier": "public",
+        "name": "string_of",
+        "modulePath": "Attribute",
+        "fullName": "Attribute.string_of",
+        "signature": "List(Attribute(msg)), Str -> Try(Str, [NoValue])",
+        "docs": "The last string attribute named `name`, in any case, the way\n`Html.document` reads a bundle root's `data-joy-bundle`.",
+        "line": 189
+       },
+       {
+        "kind": "value",
+        "tier": "public",
         "name": "without_value",
         "modulePath": "Attribute",
         "fullName": "Attribute.without_value",
         "signature": "List(Attribute(msg)) -> List(Attribute(msg))",
         "docs": "The attribute list without its `value` string attributes (see\n`value_of`).",
-        "line": 189
+        "line": 194
        },
        {
         "kind": "value",
@@ -814,7 +1354,7 @@
         "fullName": "Attribute.stop_propagation",
         "signature": "Attribute(msg) -> Attribute(msg)",
         "docs": "Stop the event here instead of letting it bubble on to ancestor\nhandlers: `on_click(Ignored).stop_propagation()`. This is what keeps a\nclick inside a modal from reaching the backdrop that closes it.\nIgnored on anything that is not an event handler, and in SSR.",
-        "line": 196
+        "line": 201
        },
        {
         "kind": "value",
@@ -824,7 +1364,7 @@
         "fullName": "Attribute.prevent_default",
         "signature": "Attribute(msg) -> Attribute(msg)",
         "docs": "Suppress the browser's default action for this event:\n`on_click(Navigate).prevent_default()` on a link keeps the browser\nfrom following its href. On a key handler with a key filter only the\nlisted keys are suppressed. Ignored on anything that is not an event\nhandler, and in SSR.",
-        "line": 211
+        "line": 216
        },
        {
         "kind": "value",
@@ -834,7 +1374,7 @@
         "fullName": "Attribute.stops_propagation",
         "signature": "Attribute(msg) -> Bool",
         "docs": "Whether this attribute stops the event at its element, the flag the\nclient runtime reads to decide on a stopPropagation call. False for\nanything that is not an event handler. Exposed because the variants\nare private to this module, so this is the only way a renderer or a\nfacade like `Event` can see the flag.",
-        "line": 226
+        "line": 231
        },
        {
         "kind": "value",
@@ -844,7 +1384,7 @@
         "fullName": "Attribute.prevents_default",
         "signature": "Attribute(msg) -> Bool",
         "docs": "Whether this attribute suppresses the browser default for its event,\nthe flag the client runtime reads to decide on a preventDefault call.\nExposed for the same reason as `stops_propagation`.",
-        "line": 239
+        "line": 244
        },
        {
         "kind": "value",
@@ -854,7 +1394,7 @@
         "fullName": "Attribute.sanitize_name",
         "signature": "Str -> Str",
         "docs": "Strip every character that is not an ASCII letter, digit, `-`, `_`,\n`.` or `:` from a tag or attribute name. A space or `>` in a name\nbreaks out of the tag however the value is escaped, and no quoting can\nmake it safe there, so it is removed instead. Applied by\n`Html.element`, `attribute`, `data` and `aria` as the string enters\nthe tree, which covers both SSR and client rendering.",
-        "line": 255
+        "line": 260
        },
        {
         "kind": "value",
@@ -864,7 +1404,7 @@
         "fullName": "Attribute.attribute",
         "signature": "Str, Str -> Attribute(msg)",
         "docs": "An arbitrary string attribute, e.g. `attribute(\"data-id\", \"42\")`.\nThe key is sanitized (see `sanitize_name`).",
-        "line": 265
+        "line": 270
        },
        {
         "kind": "value",
@@ -874,7 +1414,7 @@
         "fullName": "Attribute.boolean",
         "signature": "Str, Bool -> Attribute(msg)",
         "docs": "An arbitrary boolean attribute, e.g. `boolean(\"hidden\", Bool.True)`.\nRendered as present/absent (HTML boolean attribute semantics).",
-        "line": 270
+        "line": 275
        },
        {
         "kind": "value",
@@ -884,7 +1424,7 @@
         "fullName": "Attribute.style",
         "signature": "List((Str, Str)) -> Attribute(msg)",
         "docs": "Inline styles: `style([(\"display\", \"flex\"), (\"padding\", \"20px\")])`.",
-        "line": 274
+        "line": 279
        },
        {
         "kind": "value",
@@ -894,7 +1434,7 @@
         "fullName": "Attribute.classes",
         "signature": "List(Str) -> Attribute(msg)",
         "docs": "A class attribute from a list of names, joined with spaces.",
-        "line": 278
+        "line": 283
        },
        {
         "kind": "value",
@@ -904,7 +1444,7 @@
         "fullName": "Attribute.class_list",
         "signature": "List((Str, Bool)) -> Attribute(msg)",
         "docs": "A class attribute from (name, active) pairs, keeping only the active\nnames: `class_list([(\"btn\", Bool.True), (\"hidden\", is_hidden)])`.",
-        "line": 283
+        "line": 288
        },
        {
         "kind": "value",
@@ -914,7 +1454,7 @@
         "fullName": "Attribute.data",
         "signature": "Str, Str -> Attribute(msg)",
         "docs": "A `data-*` attribute: `data(\"id\", \"42\")` is `data-id=\"42\"`. The name\nis sanitized (see `sanitize_name`).",
-        "line": 288
+        "line": 293
        },
        {
         "kind": "value",
@@ -924,7 +1464,7 @@
         "fullName": "Attribute.aria",
         "signature": "Str, Str -> Attribute(msg)",
         "docs": "An `aria-*` attribute: `aria(\"label\", \"Close\")` is `aria-label=\"Close\"`.\nThe name is sanitized (see `sanitize_name`).",
-        "line": 293
+        "line": 298
        },
        {
         "kind": "value",
@@ -934,7 +1474,7 @@
         "fullName": "Attribute.class",
         "signature": "Str -> Attribute(msg)",
         "docs": "",
-        "line": 296
+        "line": 301
        },
        {
         "kind": "value",
@@ -944,7 +1484,7 @@
         "fullName": "Attribute.id",
         "signature": "Str -> Attribute(msg)",
         "docs": "",
-        "line": 299
+        "line": 304
        },
        {
         "kind": "value",
@@ -954,7 +1494,7 @@
         "fullName": "Attribute.value",
         "signature": "Str -> Attribute(msg)",
         "docs": "",
-        "line": 302
+        "line": 307
        },
        {
         "kind": "value",
@@ -964,7 +1504,7 @@
         "fullName": "Attribute.placeholder",
         "signature": "Str -> Attribute(msg)",
         "docs": "",
-        "line": 305
+        "line": 310
        },
        {
         "kind": "value",
@@ -974,7 +1514,7 @@
         "fullName": "Attribute.name",
         "signature": "Str -> Attribute(msg)",
         "docs": "",
-        "line": 308
+        "line": 313
        },
        {
         "kind": "value",
@@ -984,7 +1524,7 @@
         "fullName": "Attribute.href",
         "signature": "Str -> Attribute(msg)",
         "docs": "",
-        "line": 311
+        "line": 316
        },
        {
         "kind": "value",
@@ -994,7 +1534,7 @@
         "fullName": "Attribute.src",
         "signature": "Str -> Attribute(msg)",
         "docs": "",
-        "line": 314
+        "line": 319
        },
        {
         "kind": "value",
@@ -1004,7 +1544,7 @@
         "fullName": "Attribute.alt",
         "signature": "Str -> Attribute(msg)",
         "docs": "",
-        "line": 317
+        "line": 322
        },
        {
         "kind": "value",
@@ -1014,7 +1554,7 @@
         "fullName": "Attribute.for_",
         "signature": "Str -> Attribute(msg)",
         "docs": "The `for` attribute on labels. Named `for_` because `for` is a Roc keyword.",
-        "line": 321
+        "line": 326
        },
        {
         "kind": "value",
@@ -1024,7 +1564,7 @@
         "fullName": "Attribute.type",
         "signature": "Str -> Attribute(msg)",
         "docs": "The `type` attribute, as on `input([type(\"checkbox\")])`.",
-        "line": 325
+        "line": 330
        },
        {
         "kind": "value",
@@ -1034,7 +1574,7 @@
         "fullName": "Attribute.lang",
         "signature": "Str -> Attribute(msg)",
         "docs": "The document language, as `html([lang(\"en\")])`. Set it on the `html`\nelement: screen readers and hyphenation depend on it.",
-        "line": 330
+        "line": 335
        },
        {
         "kind": "value",
@@ -1044,7 +1584,7 @@
         "fullName": "Attribute.accept",
         "signature": "Str -> Attribute(msg)",
         "docs": "",
-        "line": 333
+        "line": 338
        },
        {
         "kind": "value",
@@ -1054,7 +1594,7 @@
         "fullName": "Attribute.accept_charset",
         "signature": "Str -> Attribute(msg)",
         "docs": "Renders as `accept-charset`, the character encodings a form accepts.",
-        "line": 337
+        "line": 342
        },
        {
         "kind": "value",
@@ -1064,7 +1604,7 @@
         "fullName": "Attribute.action",
         "signature": "Str -> Attribute(msg)",
         "docs": "",
-        "line": 340
+        "line": 345
        },
        {
         "kind": "value",
@@ -1074,7 +1614,7 @@
         "fullName": "Attribute.autocapitalize",
         "signature": "Str -> Attribute(msg)",
         "docs": "Whether a touch keyboard capitalizes automatically: \"none\",\n\"sentences\", \"words\" or \"characters\".",
-        "line": 345
+        "line": 350
        },
        {
         "kind": "value",
@@ -1084,7 +1624,7 @@
         "fullName": "Attribute.autocomplete",
         "signature": "Str -> Attribute(msg)",
         "docs": "",
-        "line": 348
+        "line": 353
        },
        {
         "kind": "value",
@@ -1094,7 +1634,7 @@
         "fullName": "Attribute.content",
         "signature": "Str -> Attribute(msg)",
         "docs": "",
-        "line": 351
+        "line": 356
        },
        {
         "kind": "value",
@@ -1104,7 +1644,7 @@
         "fullName": "Attribute.crossorigin",
         "signature": "Str -> Attribute(msg)",
         "docs": "CORS mode for a fetched subresource: \"anonymous\" or\n\"use-credentials\". Needed on `script` and `img` when you want error\ndetails or canvas access for a cross-origin file.",
-        "line": 357
+        "line": 362
        },
        {
         "kind": "value",
@@ -1114,7 +1654,7 @@
         "fullName": "Attribute.datetime",
         "signature": "Str -> Attribute(msg)",
         "docs": "",
-        "line": 360
+        "line": 365
        },
        {
         "kind": "value",
@@ -1124,7 +1664,7 @@
         "fullName": "Attribute.decoding",
         "signature": "Str -> Attribute(msg)",
         "docs": "Image decoding hint: \"sync\", \"async\" or \"auto\".",
-        "line": 364
+        "line": 369
        },
        {
         "kind": "value",
@@ -1134,7 +1674,7 @@
         "fullName": "Attribute.download",
         "signature": "Str -> Attribute(msg)",
         "docs": "Turns a link into a download rather than a navigation. The value is\nthe suggested filename, and `download(\"\")` keeps the server's.",
-        "line": 369
+        "line": 374
        },
        {
         "kind": "value",
@@ -1144,7 +1684,7 @@
         "fullName": "Attribute.http_equiv",
         "signature": "Str -> Attribute(msg)",
         "docs": "Renders as `http-equiv`, for `meta` directives.",
-        "line": 373
+        "line": 378
        },
        {
         "kind": "value",
@@ -1154,7 +1694,7 @@
         "fullName": "Attribute.inputmode",
         "signature": "Str -> Attribute(msg)",
         "docs": "Which touch keyboard to show: \"numeric\", \"decimal\", \"tel\", \"email\",\n\"url\", \"search\" or \"text\". A hint only, it does not validate.",
-        "line": 378
+        "line": 383
        },
        {
         "kind": "value",
@@ -1164,7 +1704,7 @@
         "fullName": "Attribute.itemprop",
         "signature": "Str -> Attribute(msg)",
         "docs": "Microdata property name, paired with `itemscope` and `itemtype`.",
-        "line": 382
+        "line": 387
        },
        {
         "kind": "value",
@@ -1174,7 +1714,7 @@
         "fullName": "Attribute.itemtype",
         "signature": "Str -> Attribute(msg)",
         "docs": "Microdata vocabulary URL, e.g. \"https://schema.org/Person\".",
-        "line": 386
+        "line": 391
        },
        {
         "kind": "value",
@@ -1184,7 +1724,7 @@
         "fullName": "Attribute.loading",
         "signature": "Str -> Attribute(msg)",
         "docs": "Deferred loading for `img` and `iframe`: \"lazy\" or \"eager\".",
-        "line": 390
+        "line": 395
        },
        {
         "kind": "value",
@@ -1194,7 +1734,7 @@
         "fullName": "Attribute.max",
         "signature": "Str -> Attribute(msg)",
         "docs": "The upper bound of an input's range. A `Str` because the bound follows\nthe input's type: \"10\" for `number`, \"2026-12-31\" for `date`, \"23:59\"\nfor `time`. See also `min`.",
-        "line": 396
+        "line": 401
        },
        {
         "kind": "value",
@@ -1204,7 +1744,7 @@
         "fullName": "Attribute.media",
         "signature": "Str -> Attribute(msg)",
         "docs": "",
-        "line": 399
+        "line": 404
        },
        {
         "kind": "value",
@@ -1214,7 +1754,7 @@
         "fullName": "Attribute.method",
         "signature": "Str -> Attribute(msg)",
         "docs": "",
-        "line": 402
+        "line": 407
        },
        {
         "kind": "value",
@@ -1224,7 +1764,7 @@
         "fullName": "Attribute.min",
         "signature": "Str -> Attribute(msg)",
         "docs": "The lower bound of an input's range. A `Str` for the same reason as\n`max`.",
-        "line": 407
+        "line": 412
        },
        {
         "kind": "value",
@@ -1234,7 +1774,7 @@
         "fullName": "Attribute.pattern",
         "signature": "Str -> Attribute(msg)",
         "docs": "",
-        "line": 410
+        "line": 415
        },
        {
         "kind": "value",
@@ -1244,7 +1784,7 @@
         "fullName": "Attribute.property",
         "signature": "Str -> Attribute(msg)",
         "docs": "Open Graph and RDFa property name, as on `meta`. Unrelated to DOM\nproperties, which `on_property` reads.",
-        "line": 415
+        "line": 420
        },
        {
         "kind": "value",
@@ -1254,7 +1794,7 @@
         "fullName": "Attribute.rel",
         "signature": "Str -> Attribute(msg)",
         "docs": "",
-        "line": 418
+        "line": 423
        },
        {
         "kind": "value",
@@ -1264,7 +1804,7 @@
         "fullName": "Attribute.role",
         "signature": "Str -> Attribute(msg)",
         "docs": "",
-        "line": 421
+        "line": 426
        },
        {
         "kind": "value",
@@ -1274,7 +1814,7 @@
         "fullName": "Attribute.sizes",
         "signature": "Str -> Attribute(msg)",
         "docs": "",
-        "line": 424
+        "line": 429
        },
        {
         "kind": "value",
@@ -1284,7 +1824,7 @@
         "fullName": "Attribute.srcset",
         "signature": "Str -> Attribute(msg)",
         "docs": "",
-        "line": 427
+        "line": 432
        },
        {
         "kind": "value",
@@ -1294,7 +1834,7 @@
         "fullName": "Attribute.step",
         "signature": "Str -> Attribute(msg)",
         "docs": "The granularity an input's value must fall on. A `Str` because it\ntakes \"any\" as well as numbers, and because the unit follows the\ninput's type as it does for `min` and `max`.",
-        "line": 433
+        "line": 438
        },
        {
         "kind": "value",
@@ -1304,7 +1844,7 @@
         "fullName": "Attribute.target",
         "signature": "Str -> Attribute(msg)",
         "docs": "",
-        "line": 436
+        "line": 441
        },
        {
         "kind": "value",
@@ -1314,7 +1854,7 @@
         "fullName": "Attribute.title",
         "signature": "Str -> Attribute(msg)",
         "docs": "The `title` attribute, which browsers show as a tooltip. For the\npage title use the `Html.title` element instead.",
-        "line": 441
+        "line": 446
        },
        {
         "kind": "value",
@@ -1324,7 +1864,7 @@
         "fullName": "Attribute.cols",
         "signature": "U64 -> Attribute(msg)",
         "docs": "Visible width of a `textarea`, in characters.",
-        "line": 450
+        "line": 455
        },
        {
         "kind": "value",
@@ -1334,7 +1874,7 @@
         "fullName": "Attribute.rows",
         "signature": "U64 -> Attribute(msg)",
         "docs": "Visible height of a `textarea`, in lines.",
-        "line": 454
+        "line": 459
        },
        {
         "kind": "value",
@@ -1344,7 +1884,7 @@
         "fullName": "Attribute.colspan",
         "signature": "U64 -> Attribute(msg)",
         "docs": "How many columns a table cell spans.",
-        "line": 458
+        "line": 463
        },
        {
         "kind": "value",
@@ -1354,7 +1894,7 @@
         "fullName": "Attribute.rowspan",
         "signature": "U64 -> Attribute(msg)",
         "docs": "How many rows a table cell spans.",
-        "line": 462
+        "line": 467
        },
        {
         "kind": "value",
@@ -1364,7 +1904,7 @@
         "fullName": "Attribute.maxlength",
         "signature": "U64 -> Attribute(msg)",
         "docs": "Longest accepted input, in characters.",
-        "line": 466
+        "line": 471
        },
        {
         "kind": "value",
@@ -1374,7 +1914,7 @@
         "fullName": "Attribute.width",
         "signature": "U64 -> Attribute(msg)",
         "docs": "Intrinsic width in pixels, for `img`, `video` and `canvas`. Setting it\nwith `height` reserves the right space before the image loads. For a\npercentage or any other CSS length use `style` instead.",
-        "line": 472
+        "line": 477
        },
        {
         "kind": "value",
@@ -1384,7 +1924,7 @@
         "fullName": "Attribute.height",
         "signature": "U64 -> Attribute(msg)",
         "docs": "Intrinsic height in pixels. See `width`.",
-        "line": 476
+        "line": 481
        },
        {
         "kind": "value",
@@ -1394,7 +1934,7 @@
         "fullName": "Attribute.tabindex",
         "signature": "I32 -> Attribute(msg)",
         "docs": "Keyboard navigation order. `0` puts the element in document order and\n`-1` makes it focusable by script or click while skipping the tab\norder. Positive values jump the queue and are best avoided.",
-        "line": 482
+        "line": 487
        },
        {
         "kind": "value",
@@ -1404,7 +1944,7 @@
         "fullName": "Attribute.allowfullscreen",
         "signature": "Bool -> Attribute(msg)",
         "docs": "",
-        "line": 489
+        "line": 494
        },
        {
         "kind": "value",
@@ -1414,7 +1954,7 @@
         "fullName": "Attribute.autofocus",
         "signature": "Bool -> Attribute(msg)",
         "docs": "Focus this element when the page loads. At most one per document.",
-        "line": 493
+        "line": 498
        },
        {
         "kind": "value",
@@ -1424,7 +1964,7 @@
         "fullName": "Attribute.autoplay",
         "signature": "Bool -> Attribute(msg)",
         "docs": "",
-        "line": 496
+        "line": 501
        },
        {
         "kind": "value",
@@ -1434,7 +1974,7 @@
         "fullName": "Attribute.checked",
         "signature": "Bool -> Attribute(msg)",
         "docs": "Whether a checkbox or radio starts checked. Read the live state back\nwith `on_check`.",
-        "line": 501
+        "line": 506
        },
        {
         "kind": "value",
@@ -1444,7 +1984,7 @@
         "fullName": "Attribute.controls",
         "signature": "Bool -> Attribute(msg)",
         "docs": "Show the browser's built-in play and volume controls on `video`.",
-        "line": 505
+        "line": 510
        },
        {
         "kind": "value",
@@ -1454,7 +1994,7 @@
         "fullName": "Attribute.defer",
         "signature": "Bool -> Attribute(msg)",
         "docs": "",
-        "line": 508
+        "line": 513
        },
        {
         "kind": "value",
@@ -1464,7 +2004,7 @@
         "fullName": "Attribute.disabled",
         "signature": "Bool -> Attribute(msg)",
         "docs": "",
-        "line": 511
+        "line": 516
        },
        {
         "kind": "value",
@@ -1474,7 +2014,7 @@
         "fullName": "Attribute.hidden",
         "signature": "Bool -> Attribute(msg)",
         "docs": "Hide the element from rendering and from assistive technology. CSS\n`display` overrides it, so prefer `class_list` when you style it\nanyway.",
-        "line": 517
+        "line": 522
        },
        {
         "kind": "value",
@@ -1484,7 +2024,7 @@
         "fullName": "Attribute.itemscope",
         "signature": "Bool -> Attribute(msg)",
         "docs": "Start a microdata item, scoping the `itemprop`s inside it.",
-        "line": 521
+        "line": 526
        },
        {
         "kind": "value",
@@ -1494,7 +2034,7 @@
         "fullName": "Attribute.multiple",
         "signature": "Bool -> Attribute(msg)",
         "docs": "Accept more than one value, on `select` and on `input([type(\"file\")])`.",
-        "line": 525
+        "line": 530
        },
        {
         "kind": "value",
@@ -1504,7 +2044,7 @@
         "fullName": "Attribute.muted",
         "signature": "Bool -> Attribute(msg)",
         "docs": "",
-        "line": 528
+        "line": 533
        },
        {
         "kind": "value",
@@ -1514,7 +2054,7 @@
         "fullName": "Attribute.novalidate",
         "signature": "Bool -> Attribute(msg)",
         "docs": "Skip the browser's own form validation on submit, leaving it to your\nupdate function.",
-        "line": 533
+        "line": 538
        },
        {
         "kind": "value",
@@ -1524,7 +2064,7 @@
         "fullName": "Attribute.open",
         "signature": "Bool -> Attribute(msg)",
         "docs": "Whether a `details` element starts expanded.",
-        "line": 537
+        "line": 542
        },
        {
         "kind": "value",
@@ -1534,7 +2074,7 @@
         "fullName": "Attribute.readonly",
         "signature": "Bool -> Attribute(msg)",
         "docs": "",
-        "line": 540
+        "line": 545
        },
        {
         "kind": "value",
@@ -1544,7 +2084,7 @@
         "fullName": "Attribute.required",
         "signature": "Bool -> Attribute(msg)",
         "docs": "",
-        "line": 543
+        "line": 548
        },
        {
         "kind": "value",
@@ -1554,7 +2094,7 @@
         "fullName": "Attribute.selected",
         "signature": "Bool -> Attribute(msg)",
         "docs": "Which `option` a `select` starts on. Without it a rendered dropdown\nalways opens on its first entry.",
-        "line": 548
+        "line": 553
        },
        {
         "kind": "value",
@@ -1564,7 +2104,7 @@
         "fullName": "Attribute.on",
         "signature": "Str, msg -> Attribute(msg)",
         "docs": "Send `msg` when the named DOM event fires: `on(\"mousedown\", Grab)`.\nNever rendered in SSR.",
-        "line": 553
+        "line": 558
        },
        {
         "kind": "value",
@@ -1574,7 +2114,7 @@
         "fullName": "Attribute.on_click",
         "signature": "msg -> Attribute(msg)",
         "docs": "Send `msg` when the element is clicked, by mouse, touch or by keyboard\nactivation on a focusable element.",
-        "line": 558
+        "line": 563
        },
        {
         "kind": "value",
@@ -1584,7 +2124,7 @@
         "fullName": "Attribute.on_submit",
         "signature": "msg -> Attribute(msg)",
         "docs": "Send `msg` when a form submits, suppressing the browser's default\n(which would reload the page and lose the model). Put it on the\n`form` element and submission by Enter or a submit button both fire.",
-        "line": 564
+        "line": 569
        },
        {
         "kind": "value",
@@ -1594,7 +2134,7 @@
         "fullName": "Attribute.on_property",
         "signature": "Str, Str, (Str -> msg) -> Attribute(msg)",
         "docs": "Send the message built from a DOM property of the event target when\nthe named event fires:\n`on_property(\"change\", \"checked\", |s| Toggled(s == \"true\"))`. The\nproperty arrives stringified, so booleans read as \"true\"/\"false\",\nnumbers as decimal text, and anything missing, null or NaN as \"\".",
-        "line": 572
+        "line": 577
        },
        {
         "kind": "value",
@@ -1604,7 +2144,7 @@
         "fullName": "Attribute.on_value",
         "signature": "Str, (Str -> msg) -> Attribute(msg)",
         "docs": "Send the message produced from the event target's `value` when the named\nevent fires: `on_value(\"input\", |s| UserTyped(s))`.",
-        "line": 578
+        "line": 583
        },
        {
         "kind": "value",
@@ -1614,7 +2154,7 @@
         "fullName": "Attribute.on_input",
         "signature": "(Str -> msg) -> Attribute(msg)",
         "docs": "Send the message built from the control's `value` on every keystroke,\nas `on_input(|s| NameTyped(s))`. For a value read only once the edit\nis committed, use `on_change`.",
-        "line": 584
+        "line": 589
        },
        {
         "kind": "value",
@@ -1624,7 +2164,7 @@
         "fullName": "Attribute.on_change",
         "signature": "(Str -> msg) -> Attribute(msg)",
         "docs": "Send the message produced from the control's `value` when it commits a\nchange. Reads `value` for every element type, so one handler on a radio\ngroup receives the selected radio's value. For a checkbox's on/off\nstate use `on_check`.",
-        "line": 591
+        "line": 596
        },
        {
         "kind": "value",
@@ -1634,7 +2174,7 @@
         "fullName": "Attribute.on_check",
         "signature": "(Bool -> msg) -> Attribute(msg)",
         "docs": "Send the message produced from a checkbox's checked state when it\nchanges: `on_check(|now| UserToggled(now))`. Don't combine with\n`on_change` on the same element: both bind the change event, and the\nruntime keeps one handler per event, so the last one wins.",
-        "line": 598
+        "line": 603
        },
        {
         "kind": "value",
@@ -1644,7 +2184,7 @@
         "fullName": "Attribute.on_key",
         "signature": "Str, List(Str), (KeyEvent -> msg) -> Attribute(msg)",
         "docs": "Send the message built from the `KeyEvent` when a keyboard event fires\non this element: `on_key(\"keydown\", [\"Enter\"], |_| UserSubmitted)`. An\nempty key list matches every key, a non-empty one only the keys listed\n(matched case-sensitively), and `.prevent_default()` then applies to\njust those keys.",
-        "line": 606
+        "line": 611
        },
        {
         "kind": "value",
@@ -1654,7 +2194,7 @@
         "fullName": "Attribute.on_keydown",
         "signature": "(KeyEvent -> msg) -> Attribute(msg)",
         "docs": "Every key pressed down on this element, browser defaults left intact.\nChaining `.prevent_default()` here suppresses Tab and the browser's\nown shortcuts along with everything else, so prefer a key filter:\n`on_key(\"keydown\", [\"Enter\"], to_msg).prevent_default()`.",
-        "line": 614
+        "line": 619
        },
        {
         "kind": "value",
@@ -1664,7 +2204,7 @@
         "fullName": "Attribute.on_keyup",
         "signature": "(KeyEvent -> msg) -> Attribute(msg)",
         "docs": "Every key released on this element. Unlike keydown it does not repeat\nwhile a key is held.",
-        "line": 619
+        "line": 624
        },
        {
         "kind": "value",
@@ -1674,7 +2214,7 @@
         "fullName": "Attribute.on_pointer",
         "signature": "Str, (PointerEvent -> msg) -> Attribute(msg)",
         "docs": "Send the message produced from the `PointerEvent` record (coordinates,\nbuttons, modifiers) when the named pointer event fires on this element.\nPointer events unify mouse, touch and pen input. Chain\n`.prevent_default()` to suppress the browser default (text selection\nwhile dragging, touch scrolling).",
-        "line": 627
+        "line": 632
        },
        {
         "kind": "value",
@@ -1684,7 +2224,7 @@
         "fullName": "Attribute.on_pointer_down",
         "signature": "(PointerEvent -> msg) -> Attribute(msg)",
         "docs": "A mouse button, finger or pen made contact. The start of a drag.",
-        "line": 632
+        "line": 637
        },
        {
         "kind": "value",
@@ -1694,7 +2234,7 @@
         "fullName": "Attribute.on_pointer_move",
         "signature": "(PointerEvent -> msg) -> Attribute(msg)",
         "docs": "The pointer moved over this element. Fires whether or not a button is\nheld, so drag handlers should check `e.buttons != 0` first.",
-        "line": 637
+        "line": 642
        },
        {
         "kind": "value",
@@ -1704,7 +2244,7 @@
         "fullName": "Attribute.on_pointer_up",
         "signature": "(PointerEvent -> msg) -> Attribute(msg)",
         "docs": "Contact ended over this element. A drag can also end outside it, so\npair this with `on_pointer_leave` and `on_pointer_cancel`.",
-        "line": 642
+        "line": 647
        },
        {
         "kind": "value",
@@ -1714,7 +2254,7 @@
         "fullName": "Attribute.on_pointer_leave",
         "signature": "(PointerEvent -> msg) -> Attribute(msg)",
         "docs": "The pointer left the element (or was lifted, on touch). Dragging code\nshould usually handle this like `on_pointer_up`.",
-        "line": 647
+        "line": 652
        },
        {
         "kind": "value",
@@ -1724,7 +2264,7 @@
         "fullName": "Attribute.on_pointer_enter",
         "signature": "(PointerEvent -> msg) -> Attribute(msg)",
         "docs": "The pointer entered the element. Unlike a bubbling hover event this\ndoes not fire again as the pointer crosses into a child.",
-        "line": 652
+        "line": 657
        },
        {
         "kind": "value",
@@ -1734,7 +2274,7 @@
         "fullName": "Attribute.on_pointer_cancel",
         "signature": "(PointerEvent -> msg) -> Attribute(msg)",
         "docs": "The browser canceled the pointer stream (e.g. it decided a touch was a\nscroll). Treat like `on_pointer_up`.",
-        "line": 657
+        "line": 662
        },
        {
         "kind": "value",
@@ -1744,7 +2284,7 @@
         "fullName": "Attribute.on_file",
         "signature": "(FileInfo -> msg) -> Attribute(msg)",
         "docs": "Send the message produced from the `FileInfo` record when the user\npicks a file in this `<input type=\"file\">`:\n`input([type(\"file\"), on_file(|f| UserPickedFile(f))])`.",
-        "line": 663
+        "line": 668
        },
        {
         "kind": "value",
@@ -1754,7 +2294,7 @@
         "fullName": "Attribute.on_visible",
         "signature": "msg, { root_margin : Str, rearm_key : Str } -> Attribute(msg)",
         "docs": "Send `msg` when this element scrolls into view, the usual way to load\nthe next page of an endless list. `root_margin` grows the viewport for\nthe check, so \"200px\" fires 200px before the element really shows.\n\nThe observer fires only on the crossing into view, so an element that\nstays on screen after the re-render never fires again and the loading\nstalls. Give `rearm_key` something that changes when you want another\ncheck (the number of items shown, say) and the observer re-arms with\nit. Keep it constant to fire once per crossing.",
-        "line": 675
+        "line": 680
        }
       ]
      },
@@ -1981,6 +2521,28 @@
         "line": 136
        },
        {
+        "kind": "type",
+        "tier": "public",
+        "name": "JoyFiles",
+        "modulePath": "Html",
+        "fullName": "Html.JoyFiles",
+        "signature": "{ loader : Str, runtime : Str, wasm : Str -> Str }",
+        "docs": "The URLs of Joy's files a page loads: the loader's, the runtime's and\neach bundle's wasm by the bundle's id. A server learns them from its\nbuild's assets.json, and a Joy project's generated/ package makes the\nrecord (`Names.joy_files`).",
+        "line": 143,
+        "decl": ":",
+        "head": "JoyFiles"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "document",
+        "modulePath": "Html",
+        "fullName": "Html.document",
+        "signature": "Html.JoyFiles, Html(msg) -> Str",
+        "docs": "A full SSR page that runs Joy bundles. Each bundle root, an element\nwith `data-joy-bundle`, gets its wasm's URL in `data-joy-wasm`, and the\nend of the head gets the loader as a module script and hints for the\nruntime and each bundle's wasm, so the browser fetches them alongside\nthe loader instead of one after another. The page names no file of\nJoy's itself. A page without a root renders as `ssr_document` does.\n\nA wasm hint is crossorigin because the runtime fetches the wasm with a\nCORS request, and a hint in another mode would not be used.",
+        "line": 154
+       },
+       {
         "kind": "value",
         "tier": "public",
         "name": "a",
@@ -1988,7 +2550,7 @@
         "fullName": "Html.a",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 141
+        "line": 173
        },
        {
         "kind": "value",
@@ -1998,7 +2560,7 @@
         "fullName": "Html.article",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 144
+        "line": 176
        },
        {
         "kind": "value",
@@ -2008,7 +2570,7 @@
         "fullName": "Html.aside",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 147
+        "line": 179
        },
        {
         "kind": "value",
@@ -2018,7 +2580,7 @@
         "fullName": "Html.blockquote",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 150
+        "line": 182
        },
        {
         "kind": "value",
@@ -2028,7 +2590,7 @@
         "fullName": "Html.body",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 153
+        "line": 185
        },
        {
         "kind": "value",
@@ -2038,7 +2600,7 @@
         "fullName": "Html.button",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 156
+        "line": 188
        },
        {
         "kind": "value",
@@ -2048,7 +2610,7 @@
         "fullName": "Html.caption",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 159
+        "line": 191
        },
        {
         "kind": "value",
@@ -2058,7 +2620,7 @@
         "fullName": "Html.code",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 162
+        "line": 194
        },
        {
         "kind": "value",
@@ -2068,7 +2630,7 @@
         "fullName": "Html.dd",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 165
+        "line": 197
        },
        {
         "kind": "value",
@@ -2078,7 +2640,7 @@
         "fullName": "Html.details",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 168
+        "line": 200
        },
        {
         "kind": "value",
@@ -2088,7 +2650,7 @@
         "fullName": "Html.dialog",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 171
+        "line": 203
        },
        {
         "kind": "value",
@@ -2098,7 +2660,7 @@
         "fullName": "Html.div",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 174
+        "line": 206
        },
        {
         "kind": "value",
@@ -2108,7 +2670,7 @@
         "fullName": "Html.dl",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 177
+        "line": 209
        },
        {
         "kind": "value",
@@ -2118,7 +2680,7 @@
         "fullName": "Html.dt",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 180
+        "line": 212
        },
        {
         "kind": "value",
@@ -2128,7 +2690,7 @@
         "fullName": "Html.em",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 183
+        "line": 215
        },
        {
         "kind": "value",
@@ -2138,7 +2700,7 @@
         "fullName": "Html.fieldset",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 186
+        "line": 218
        },
        {
         "kind": "value",
@@ -2148,7 +2710,7 @@
         "fullName": "Html.figure",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 189
+        "line": 221
        },
        {
         "kind": "value",
@@ -2158,7 +2720,7 @@
         "fullName": "Html.footer",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 192
+        "line": 224
        },
        {
         "kind": "value",
@@ -2168,7 +2730,7 @@
         "fullName": "Html.form",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 195
+        "line": 227
        },
        {
         "kind": "value",
@@ -2178,7 +2740,7 @@
         "fullName": "Html.h1",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 198
+        "line": 230
        },
        {
         "kind": "value",
@@ -2188,7 +2750,7 @@
         "fullName": "Html.h2",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 201
+        "line": 233
        },
        {
         "kind": "value",
@@ -2198,7 +2760,7 @@
         "fullName": "Html.h3",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 204
+        "line": 236
        },
        {
         "kind": "value",
@@ -2208,7 +2770,7 @@
         "fullName": "Html.h4",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 207
+        "line": 239
        },
        {
         "kind": "value",
@@ -2218,7 +2780,7 @@
         "fullName": "Html.h5",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 210
+        "line": 242
        },
        {
         "kind": "value",
@@ -2228,7 +2790,7 @@
         "fullName": "Html.h6",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 213
+        "line": 245
        },
        {
         "kind": "value",
@@ -2238,7 +2800,7 @@
         "fullName": "Html.head",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 216
+        "line": 248
        },
        {
         "kind": "value",
@@ -2248,7 +2810,7 @@
         "fullName": "Html.header",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 219
+        "line": 251
        },
        {
         "kind": "value",
@@ -2258,7 +2820,7 @@
         "fullName": "Html.html",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 222
+        "line": 254
        },
        {
         "kind": "value",
@@ -2268,7 +2830,7 @@
         "fullName": "Html.iframe",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 225
+        "line": 257
        },
        {
         "kind": "value",
@@ -2278,7 +2840,7 @@
         "fullName": "Html.label",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 228
+        "line": 260
        },
        {
         "kind": "value",
@@ -2288,7 +2850,7 @@
         "fullName": "Html.legend",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 231
+        "line": 263
        },
        {
         "kind": "value",
@@ -2298,7 +2860,7 @@
         "fullName": "Html.li",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 234
+        "line": 266
        },
        {
         "kind": "value",
@@ -2308,7 +2870,7 @@
         "fullName": "Html.main",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 237
+        "line": 269
        },
        {
         "kind": "value",
@@ -2318,7 +2880,7 @@
         "fullName": "Html.nav",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 240
+        "line": 272
        },
        {
         "kind": "value",
@@ -2328,7 +2890,7 @@
         "fullName": "Html.ol",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 243
+        "line": 275
        },
        {
         "kind": "value",
@@ -2338,7 +2900,7 @@
         "fullName": "Html.option",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "One choice in a `select`. The label is a text child and the submitted\nstring is `Attribute.value`. Mark the current choice with\n`Attribute.selected`, which is what SSR needs to render a preselected\ndropdown.",
-        "line": 250
+        "line": 282
        },
        {
         "kind": "value",
@@ -2348,7 +2910,7 @@
         "fullName": "Html.p",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 253
+        "line": 285
        },
        {
         "kind": "value",
@@ -2358,7 +2920,7 @@
         "fullName": "Html.pre",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 256
+        "line": 288
        },
        {
         "kind": "value",
@@ -2368,7 +2930,7 @@
         "fullName": "Html.progress",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 259
+        "line": 291
        },
        {
         "kind": "value",
@@ -2378,7 +2940,7 @@
         "fullName": "Html.script",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "Load JavaScript with the `src` attribute. Inline script text is\nescaped like any other text, and browsers do not decode entities\ninside `<script>`, so an inline script never runs.",
-        "line": 265
+        "line": 297
        },
        {
         "kind": "value",
@@ -2388,7 +2950,7 @@
         "fullName": "Html.section",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 268
+        "line": 300
        },
        {
         "kind": "value",
@@ -2398,7 +2960,7 @@
         "fullName": "Html.select",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "A dropdown of `option` children. Put `Event.on_change` on the select\nitself, not on the options: it reports the chosen option's `value`.",
-        "line": 273
+        "line": 305
        },
        {
         "kind": "value",
@@ -2408,7 +2970,7 @@
         "fullName": "Html.small",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 276
+        "line": 308
        },
        {
         "kind": "value",
@@ -2418,7 +2980,7 @@
         "fullName": "Html.span",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 279
+        "line": 311
        },
        {
         "kind": "value",
@@ -2428,7 +2990,7 @@
         "fullName": "Html.strong",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 282
+        "line": 314
        },
        {
         "kind": "value",
@@ -2438,7 +3000,7 @@
         "fullName": "Html.style",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "Style text is emitted raw, not escaped, so inline CSS works as\nwritten. The one rewrite is `</` to `<\\/` (the CSS escape for `/`), so\nthe text cannot close the element early.",
-        "line": 288
+        "line": 320
        },
        {
         "kind": "value",
@@ -2448,7 +3010,7 @@
         "fullName": "Html.summary",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 291
+        "line": 323
        },
        {
         "kind": "value",
@@ -2458,7 +3020,7 @@
         "fullName": "Html.svg",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "An SVG root. Inner SVG tags have no helpers here, so build them with\n`element(\"path\", ...)`. Camel-cased SVG attribute names survive\nsanitizing, so `Attribute.attribute(\"viewBox\", \"0 0 24 24\")` works.",
-        "line": 297
+        "line": 329
        },
        {
         "kind": "value",
@@ -2468,7 +3030,7 @@
         "fullName": "Html.table",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 300
+        "line": 332
        },
        {
         "kind": "value",
@@ -2478,7 +3040,7 @@
         "fullName": "Html.tbody",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 303
+        "line": 335
        },
        {
         "kind": "value",
@@ -2488,7 +3050,7 @@
         "fullName": "Html.td",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 306
+        "line": 338
        },
        {
         "kind": "value",
@@ -2498,7 +3060,7 @@
         "fullName": "Html.template",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "Markup the browser parses but does not render or run until a script\nclones it. Its children are ordinary `Html` and are escaped like any\nother, so this is a holding pen, not a raw-markup escape hatch.",
-        "line": 312
+        "line": 344
        },
        {
         "kind": "value",
@@ -2508,7 +3070,7 @@
         "fullName": "Html.textarea",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "Give a textarea its value with `Attribute.value`, like an input:\n`textarea([value(model.draft), on_input(|s| Typed(s))], [])`. The\nclient then keeps what it shows in step with the model, and `render`\nwrites the value as the textarea's text, which is how HTML carries\none. A text child only sets the initial content, which the browser\nstops following once the user has typed. Whitespace inside the tag is\nsignificant, so do not pad the text for readability.",
-        "line": 322
+        "line": 354
        },
        {
         "kind": "value",
@@ -2518,7 +3080,7 @@
         "fullName": "Html.tfoot",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 325
+        "line": 357
        },
        {
         "kind": "value",
@@ -2528,7 +3090,7 @@
         "fullName": "Html.th",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 328
+        "line": 360
        },
        {
         "kind": "value",
@@ -2538,7 +3100,7 @@
         "fullName": "Html.thead",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 331
+        "line": 363
        },
        {
         "kind": "value",
@@ -2548,7 +3110,7 @@
         "fullName": "Html.time",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 334
+        "line": 366
        },
        {
         "kind": "value",
@@ -2558,7 +3120,7 @@
         "fullName": "Html.title",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 337
+        "line": 369
        },
        {
         "kind": "value",
@@ -2568,7 +3130,7 @@
         "fullName": "Html.tr",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 340
+        "line": 372
        },
        {
         "kind": "value",
@@ -2578,7 +3140,7 @@
         "fullName": "Html.ul",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 343
+        "line": 375
        },
        {
         "kind": "value",
@@ -2588,7 +3150,7 @@
         "fullName": "Html.use",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "Reference another SVG node by id, the usual way to stamp out a sprite\nfrom a symbol: `use([Attribute.href(\"#icon-close\")], [])`.",
-        "line": 348
+        "line": 380
        },
        {
         "kind": "value",
@@ -2598,7 +3160,7 @@
         "fullName": "Html.video",
         "signature": "List(Attribute(msg)), List(Html(msg)) -> Html(msg)",
         "docs": "",
-        "line": 351
+        "line": 383
        },
        {
         "kind": "value",
@@ -2608,7 +3170,7 @@
         "fullName": "Html.br",
         "signature": "List(Attribute(msg)) -> Html(msg)",
         "docs": "",
-        "line": 357
+        "line": 389
        },
        {
         "kind": "value",
@@ -2618,7 +3180,7 @@
         "fullName": "Html.hr",
         "signature": "List(Attribute(msg)) -> Html(msg)",
         "docs": "",
-        "line": 360
+        "line": 392
        },
        {
         "kind": "value",
@@ -2628,7 +3190,7 @@
         "fullName": "Html.img",
         "signature": "List(Attribute(msg)) -> Html(msg)",
         "docs": "",
-        "line": 363
+        "line": 395
        },
        {
         "kind": "value",
@@ -2638,7 +3200,7 @@
         "fullName": "Html.input",
         "signature": "List(Attribute(msg)) -> Html(msg)",
         "docs": "",
-        "line": 366
+        "line": 398
        },
        {
         "kind": "value",
@@ -2648,7 +3210,7 @@
         "fullName": "Html.link",
         "signature": "List(Attribute(msg)) -> Html(msg)",
         "docs": "",
-        "line": 369
+        "line": 401
        },
        {
         "kind": "value",
@@ -2658,7 +3220,7 @@
         "fullName": "Html.meta",
         "signature": "List(Attribute(msg)) -> Html(msg)",
         "docs": "",
-        "line": 372
+        "line": 404
        },
        {
         "kind": "value",
@@ -2668,7 +3230,7 @@
         "fullName": "Html.source",
         "signature": "List(Attribute(msg)) -> Html(msg)",
         "docs": "",
-        "line": 375
+        "line": 407
        }
       ]
      },

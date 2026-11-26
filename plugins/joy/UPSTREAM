@@ -4,49 +4,102 @@
 # diff tag to tag.
 
 repo     https://github.com/niclas-ahden/joy
-tag      0.34.0
-commit   931256f145fc624d5897a9db6de9e12566b6a842
-platform 2B3sC6U2dWkVUK2VY2gJS5Wej9YCDo3ZYq2e7tMWUCNp.tar.zst
-# The corpus was written against 528f884. The release tag points at 931256f,
-# one commit later, which changes only flake.lock, so no file here differs.
-#
-# The previous release, 0.33.0 with joy-html 0.16.0, does not build under the
-# nightly below: both bundles fail on "redundant expose".
+tag      0.35.0
+commit   feab8c2e4fa43f7708d5f091efc8212f10def39f
+platform FtRCTy7CSPSdS2vLzGJPwYfcGurQfoaADXPNT8aJBBCr.tar.zst
+# The release's other bundle, 4ZWtVnGUbEA2PrkhMwW3xHDASMZSmJNV9XmvSFPpzk3S.tar.zst,
+# is joy's command-line program (`roc run <url> init`, then `./joy dev`,
+# `./joy build`, `./joy upgrade`). No app pins it, and this plugin does not
+# index it. joy-overview.md names its URL for the starter.
 
 repo     https://github.com/niclas-ahden/joy-html
-tag      0.17.1
-commit   6c60aa3f9bc44a09027f77df8d909d20fc291404
-package  AcmwFzyfbsf5RALWNdX6cXw1cuuDXt96YfcysNqgFqoG.tar.zst
-# 0.17.1 differs from 0.17.0 in its README, flake.nix and flake.lock only (a
-# Roc bump of the nix build). The package tarball has the same hash, so the
-# Html type is identical. The joy 0.34.0 platform header still names the 0.17.0
-# URL for this same tarball; 0.17.1 is the latest release of the package.
-# The release that the joy 0.34.0 platform header pins. The loader refuses this
-# plugin if the two pins are different, because an app's `render` returns this
+tag      0.18.0
+commit   736ee7b53a3f17f9448f662d9d2fa1f8b37339bc
+package  6XAQypURmG12GNMHHZmjcXVGtctYy52mmPZoaUMWejRK.tar.zst
+# The release that the joy 0.35.0 platform header pins. The loader refuses this
+# plugin if the two pins are different, because an app's `view` returns this
 # package's Html type, and a different release has a different Html type.
+# 0.18.0 over 0.17.1 only adds: `Html.document` and `Html.JoyFiles` (an SSR
+# page that mounts Joy bundles) and `Attribute.string_of`. html_ssr shows
+# `Html.document`, and html-overview.md names it.
 
-compiler nightly-2026-10-09-258ab27
+# The compiler. Both releases say they need "Roc 0.1.0-rc1": joy's flake.nix
+# pins roc-lang/roc 15177e91f62cafddf5336c455e00e9f05427ac16, the commit the
+# roc-lang/roc release 0.1.0_RC1 was built from, and that commit is no nightly.
+# The manifest's `compiler` names the next release, 0.1.0-RC2 (2026-11-25,
+# built from ee835686f9: 0.1.0_RC1 and three fixes to defaults of records typed
+# through an alias). It is a roc-lang/roc release, not a nightly: the gates take
+# it from the repo root as roc-<target>-0.1.0-RC2/, CI downloads it from
+# roc-lang/roc, and `roc-syntax-mcp roc install 0.1.0-RC2` installs it. Every
+# program here checks under it with the same result as under
+# nightly-2026-11-22-3350b1c (the first nightly that contains 15177e9), which the
+# plugin named before. html_ssr pins basic-webserver 0.22.0, so it is checked
+# with that release's nightly, f25da45.
+#
+#   gh release download 0.1.0-RC2 -R roc-lang/roc -p 'roc-linux_x86_64-0.1.0-RC2.tar.gz'
+#   tar -xzf roc-linux_x86_64-0.1.0-RC2.tar.gz
+compiler 0.1.0-RC2
+
+# 0.35.0 over 0.34.0: what changed what this plugin teaches, each found by
+# checking the 0.34.0 topics under the new pins.
+#   - The required `render` is now `view`. A `render` is "missing platform
+#     required definition". Every topic, the scaffold, the sample and the
+#     overview moved.
+#   - The URL moved from `DOM` to a new `Navigation` module:
+#     `Navigation.on_url_change`, `on_link_click`, `push_url`, `replace_url`,
+#     `navigate`. `DOM.on_url_change` and `DOM.replace_url` "do not exist".
+#     joy_subscriptions uses them.
+#   - `Effect` is now three tags (`Call`, `ConsoleLog`, `Send`): every
+#     platform effect but `Console.log` is a `Call` by id, its arguments and
+#     reply in the new `Wire` format. The `HttpSend` tag that joy_http's test
+#     matched is gone. The test now reads `effect.identity().id`
+#     ("joy/http/send") and answers the `Call`'s callback with Wire bytes.
+#   - `Effect.map_all` and `Sub.map_all` are new. joy_app maps a component's
+#     effects with `Effect.map_all`.
+#   - The compiler (not the platform) now warns "duplicate definition" for a
+#     method in a type's block that has the name of a top-level definition.
+#     joy_app's component methods were renamed from init/update/view to
+#     start/step/to_html.
+#   - New, indexed and named on the overview, with no topic: `Clipboard`,
+#     `Media`, `DOM.focus`/`set_title`/`scroll_to`/`on_document_click`, and
+#     custom effects (`Effect.call`, `Effect.send`, `Effect.reply`, `Wire`).
+#   - Projects: the starter and `./joy` replace the hand-run
+#     `roc build --target=wasm32` and the copied runtime.js. A page mounts an
+#     app with `data-joy-bundle` and `<script type="module" src="/joy.js">`,
+#     flags come from `data-joy-flags`, and ports reach `app` through the
+#     `joy:mount` and `joy:mounted` events. These come from the guide at the
+#     tag (guide/Topic/*.roc, guide/pages/ports.html) and the template's
+#     public/index.html, not from a compiler.
 
 index.json <- both releases' own .roc modules, parsed by
               `roc-syntax-mcp plugin index`. No source is vendored
-examples/  <- joy's examples/ at the commit above, one file per app
+examples/  <- joy's examples/ at the commit above, one file per app, and two
+              single-file apps flattened from their directories:
+              examples/spa-todomvc/client/app.roc as spa_todomvc.roc, and
+              examples/templates/spa-minimal/client/app.roc as spa_minimal.roc
 topics/    <- this package's own: programs written against these pins, for
               the platform and for the package
 joy-overview.md, html-overview.md <- this package's own. Every Roc block on
               them is line for line in a topic, so the gate compiles it
 
 # What examples/ leaves out, and why:
-#   todomvc   only its app.roc, as examples/todomvc.roc. The rest of the
-#             directory is a build script, a watcher, browser tests and a
-#             Caddyfile, which joy-overview.md points at in the
-#             niclas-ahden/joy-todomvc repository
+#   spa-todomvc  only client/app.roc. The rest is the project around it:
+#                browser tests, a page and a stylesheet
+#   templates/spa-pages, templates/spa-pages-expanded  split into page modules,
+#                and the gate compiles one file at a time
+#   templates/*  everything but spa-minimal's client/app.roc (READMEs, pages,
+#                stylesheets)
+# 0.35.0 removed upload.roc and the todomvc directory, and added navigation,
+# voice_memo, spa-todomvc and the templates.
 # joy-html has no examples directory.
 
 # What else the releases have and this package does not ship:
-#   docs/index.html  in both repos, a redirect to the hosted docs
-#   host/, www/, benchmarks/, tests/  the platform's own build and tests
+#   docs/index.html  in joy-html, a redirect to the hosted docs
+#   guide/           joy's guide, Roc programs that render the hosted guide
+#   cli/, host/, www/, benchmarks/, tests/  the command-line program and the
+#                platform's own build and tests
 
 # The repin changes one line in every vendored example: the platform pin
-# "../platform/main.roc" ("../../platform/main.roc" for todomvc/app.roc) becomes
-# the release URL above. Nothing else changes, because
-# the examples already pin joy-html 0.17.1 by URL.
+# "../platform/main.roc" (deeper for the two flattened apps) becomes the
+# release URL above. Nothing else changes, because the examples already pin
+# joy-html 0.18.0 by URL.

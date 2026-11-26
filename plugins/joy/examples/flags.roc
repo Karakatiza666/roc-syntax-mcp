@@ -1,6 +1,6 @@
-app [Model, Msg, init, update, render, subscriptions] {
-	pf: platform "https://github.com/niclas-ahden/joy/releases/download/0.34.0/2B3sC6U2dWkVUK2VY2gJS5Wej9YCDo3ZYq2e7tMWUCNp.tar.zst",
-	html: "https://github.com/niclas-ahden/joy-html/releases/download/0.17.1/AcmwFzyfbsf5RALWNdX6cXw1cuuDXt96YfcysNqgFqoG.tar.zst",
+app [Model, Msg, init, subscriptions, update, view] {
+	html: "https://github.com/niclas-ahden/joy-html/releases/download/0.18.0/6XAQypURmG12GNMHHZmjcXVGtctYy52mmPZoaUMWejRK.tar.zst",
+	pf: platform "https://github.com/niclas-ahden/joy/releases/download/0.35.0/FtRCTy7CSPSdS2vLzGJPwYfcGurQfoaADXPNT8aJBBCr.tar.zst",
 }
 
 import html.Html exposing [div, p, pre, text]
@@ -19,9 +19,6 @@ Model : [
 ]
 
 Msg : []
-
-# No recurring event sources
-subscriptions = |_model| []
 
 init : Str -> (Model, List(Effect(Msg)))
 init = |flags| {
@@ -43,8 +40,8 @@ init = |flags| {
 update : Model, Msg -> (Model, List(Effect(Msg)))
 update = |model, _msg| (model, [])
 
-render : Model -> Html(Msg)
-render = |model|
+view : Model -> Html(Msg)
+view = |model|
 	match model {
 		Human({ name, karma }) => judgement_view(name, karma)
 		FailedToParseFlags(flags) => error_view(flags)
@@ -86,7 +83,6 @@ error_view = |flags|
 								\\    root: document.getElementById('app'),
 								\\    flags: `{"name": "Brödil", "karma": 99}`,
 								\\});
-								,
 							),
 						],
 					),
@@ -103,4 +99,7 @@ error_view = |flags|
 					pre([], [text(flags)]),
 				],
 			)
-		}
+	}
+
+# No subs needed for this example!
+subscriptions = |_model| []

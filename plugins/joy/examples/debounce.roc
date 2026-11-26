@@ -1,10 +1,10 @@
-app [Model, Msg, init, update, render, subscriptions] {
-	pf: platform "https://github.com/niclas-ahden/joy/releases/download/0.34.0/2B3sC6U2dWkVUK2VY2gJS5Wej9YCDo3ZYq2e7tMWUCNp.tar.zst",
-	html: "https://github.com/niclas-ahden/joy-html/releases/download/0.17.1/AcmwFzyfbsf5RALWNdX6cXw1cuuDXt96YfcysNqgFqoG.tar.zst",
+app [Model, Msg, init, subscriptions, update, view] {
+	html: "https://github.com/niclas-ahden/joy-html/releases/download/0.18.0/6XAQypURmG12GNMHHZmjcXVGtctYy52mmPZoaUMWejRK.tar.zst",
+	pf: platform "https://github.com/niclas-ahden/joy/releases/download/0.35.0/FtRCTy7CSPSdS2vLzGJPwYfcGurQfoaADXPNT8aJBBCr.tar.zst",
 }
 
-import html.Html exposing [div, p, input, button, text]
-import html.Attribute exposing [id, on_input, on_click, placeholder]
+import html.Html exposing [button, div, input, p, text]
+import html.Attribute exposing [id, on_click, on_input, placeholder]
 import pf.Effect
 import pf.Time
 
@@ -20,8 +20,6 @@ Msg : [
 	SearchFired,
 	UserCanceled,
 ]
-
-subscriptions = |_model| []
 
 init : Str -> (Model, List(Effect(Msg)))
 init = |_| ({ typed: "", searched: "", searches: 0 }, [])
@@ -39,16 +37,19 @@ update = |model, msg|
 
 		UserCanceled =>
 			(model, [Time.cancel("search")])
-		}
+	}
 
-render : Model -> Html(Msg)
-render = |model|
+view : Model -> Html(Msg)
+view = |model|
 	div(
 		[],
 		[
 			input([id("search"), placeholder("Search..."), on_input(|s| UserTyped(s))]),
 			button([id("cancel"), on_click(UserCanceled)], [text("Cancel")]),
-			p([id("searched")], [text("searched for: ${model.searched}")]),
-			p([id("searches")], [text("searches: ${model.searches.to_str()}")]),
+			p([id("searched")], [text("Searched for: ${model.searched}")]),
+			p([id("searches")], [text("Searches: ${model.searches.to_str()}")]),
 		],
 	)
+
+# No subs needed for this example!
+subscriptions = |_model| []

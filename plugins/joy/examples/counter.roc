@@ -1,9 +1,9 @@
-app [Model, Msg, init, update, render, subscriptions] {
-	pf: platform "https://github.com/niclas-ahden/joy/releases/download/0.34.0/2B3sC6U2dWkVUK2VY2gJS5Wej9YCDo3ZYq2e7tMWUCNp.tar.zst",
-	html: "https://github.com/niclas-ahden/joy-html/releases/download/0.17.1/AcmwFzyfbsf5RALWNdX6cXw1cuuDXt96YfcysNqgFqoG.tar.zst",
+app [Model, Msg, init, subscriptions, update, view] {
+	html: "https://github.com/niclas-ahden/joy-html/releases/download/0.18.0/6XAQypURmG12GNMHHZmjcXVGtctYy52mmPZoaUMWejRK.tar.zst",
+	pf: platform "https://github.com/niclas-ahden/joy/releases/download/0.35.0/FtRCTy7CSPSdS2vLzGJPwYfcGurQfoaADXPNT8aJBBCr.tar.zst",
 }
 
-import html.Html exposing [div, button, text]
+import html.Html exposing [button, div, text]
 import html.Attribute exposing [id, on_click]
 import pf.Effect
 
@@ -11,21 +11,11 @@ Model : { count : I64 }
 
 Msg : [Increment, Decrement]
 
-# No recurring event sources.
-subscriptions = |_model| []
-
 init : Str -> (Model, List(Effect(Msg)))
 init = |_| ({ count: 0 }, [])
 
-update : Model, Msg -> (Model, List(Effect(Msg)))
-update = |model, msg|
-	match msg {
-		Increment => ({ count: model.count + 1 }, [])
-		Decrement => ({ count: model.count - 1 }, [])
-	}
-
-render : Model -> Html(Msg)
-render = |model|
+view : Model -> Html(Msg)
+view = |model|
 	div(
 		[],
 		[
@@ -34,3 +24,13 @@ render = |model|
 			button([id("decrement"), on_click(Decrement)], [text("-")]),
 		],
 	)
+
+update : Model, Msg -> (Model, List(Effect(Msg)))
+update = |model, msg|
+	match msg {
+		Increment => ({ count: model.count + 1 }, [])
+		Decrement => ({ count: model.count - 1 }, [])
+	}
+
+# No subs needed for this example!
+subscriptions = |_model| []

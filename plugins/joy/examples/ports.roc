@@ -1,6 +1,6 @@
-app [Model, Msg, init, update, render, subscriptions] {
-	pf: platform "https://github.com/niclas-ahden/joy/releases/download/0.34.0/2B3sC6U2dWkVUK2VY2gJS5Wej9YCDo3ZYq2e7tMWUCNp.tar.zst",
-	html: "https://github.com/niclas-ahden/joy-html/releases/download/0.17.1/AcmwFzyfbsf5RALWNdX6cXw1cuuDXt96YfcysNqgFqoG.tar.zst",
+app [Model, Msg, init, subscriptions, update, view] {
+	html: "https://github.com/niclas-ahden/joy-html/releases/download/0.18.0/6XAQypURmG12GNMHHZmjcXVGtctYy52mmPZoaUMWejRK.tar.zst",
+	pf: platform "https://github.com/niclas-ahden/joy/releases/download/0.35.0/FtRCTy7CSPSdS2vLzGJPwYfcGurQfoaADXPNT8aJBBCr.tar.zst",
 }
 
 import html.Html exposing [div, h1, p, pre, small, text]
@@ -22,7 +22,7 @@ Model : I32
 Msg : [Tick]
 
 subscriptions = |model|
-	if model < 3 [Port.listen("excitement", |_| Tick)] else []
+	if (model < 3) [Port.listen("excitement", |_| Tick)] else []
 
 init : Str -> (Model, List(Effect(Msg)))
 init = |_|
@@ -39,10 +39,10 @@ update = |model, msg|
 					Port.send("level", (model + 1).to_str()),
 				],
 			)
-		}
+	}
 
-render : Model -> Html(Msg)
-render = |model|
+view : Model -> Html(Msg)
+view = |model|
 	match model {
 		0 =>
 			div(
@@ -66,4 +66,4 @@ render = |model|
 					},
 				],
 			)
-		}
+	}

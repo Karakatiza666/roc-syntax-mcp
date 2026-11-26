@@ -1,15 +1,16 @@
 ## HTTP from a Joy app: `Http.get`, a full `Http.request` with headers, a JSON
 ## body and a timeout, the response arriving as a message, and why a 404 is
 ## `Ok`. Ends with a test that answers the request the way the host does.
-app [Model, Msg, init, update, render, subscriptions] {
-	pf: platform "https://github.com/niclas-ahden/joy/releases/download/0.34.0/2B3sC6U2dWkVUK2VY2gJS5Wej9YCDo3ZYq2e7tMWUCNp.tar.zst",
-	html: "https://github.com/niclas-ahden/joy-html/releases/download/0.17.1/AcmwFzyfbsf5RALWNdX6cXw1cuuDXt96YfcysNqgFqoG.tar.zst",
+app [Model, Msg, init, update, view, subscriptions] {
+	pf: platform "https://github.com/niclas-ahden/joy/releases/download/0.35.0/FtRCTy7CSPSdS2vLzGJPwYfcGurQfoaADXPNT8aJBBCr.tar.zst",
+	html: "https://github.com/niclas-ahden/joy-html/releases/download/0.18.0/6XAQypURmG12GNMHHZmjcXVGtctYy52mmPZoaUMWejRK.tar.zst",
 }
 
 import html.Html exposing [div, button, input, text]
 import html.Attribute exposing [on_click, on_input, value]
 import pf.Effect
 import pf.Http
+import pf.Wire
 
 Model : { query : Str, status : Str }
 
@@ -54,8 +55,8 @@ update = |model, msg|
 		Loaded(Err(HttpErr(NetworkError))) | Saved(Err(HttpErr(NetworkError))) => ({ ..model, status: "offline" }, [])
 	}
 
-render : Model -> Html(Msg)
-render = |model|
+view : Model -> Html(Msg)
+view = |model|
 	div(
 		[],
 		[
@@ -71,9 +72,17 @@ subscriptions = |_model| []
 
 # --- Answering a request in a test ------------------------------------------
 #
-# The effect carries its callback, so a test can call it with what the host
-# would pass. The host reports a transport failure as a status: 0 for a request
-# that never completed, 1 for a timeout. `Http` turns both into `Err`.
+# An effect is data, so a test can ask what `update` sent and answer it the
+# way the host does. `effect.identity()` names the request: every `Http` call
+# is the effect "joy/http/send". The effect is a `Call` that carries its
+# callback, which takes the reply as bytes in Joy's `Wire` format: a status
+# byte (0 for done), then the HTTP status as a U16, the header count as a U32
+# and the body. The host reports a transport failure as an HTTP status: 0 for
+# a request that never completed, 1 for a timeout. `Http` turns both into
+# `Err`. There is no `HttpSend` tag to match since 0.35.0.
+
+reply_with : U16 -> List(U8)
+reply_with = |status| [0].concat(Wire.writer({}).u16(status).u32(0).bytes([]).done())
 
 # The message is an argument. If the test wrote `Load` here, the compiler would
 # know which effects come back and would warn that the match is already decided.
@@ -81,8 +90,8 @@ answer : Msg, U16 -> Str
 answer = |sent, status| {
 	(_, effects) = update({ query: "", status: "" }, sent)
 	match effects {
-		[HttpSend(_, _, _, _, _, callback)] => {
-			reply = Box.unbox(Box.unbox(callback)({ status, headers: [], body: [] }))
+		[Call(_, _, callback)] => {
+			reply = Box.unbox(Box.unbox(callback)(reply_with(status)))
 			(after, _) = update({ query: "", status: "" }, reply)
 			after.status
 		}
@@ -90,6 +99,14 @@ answer = |sent, status| {
 	}
 }
 
+sent_ids : Msg -> List(Str)
+sent_ids = |sent| {
+	(_, effects) = update({ query: "", status: "" }, sent)
+	effects.map(|effect| effect.identity().id)
+}
+
+expect sent_ids(Load) == ["joy/http/send"]
+expect answer(Load, 200) == ""
 expect answer(Load, 404) == "HTTP 404"
 expect answer(Load, 500) == "HTTP 500"
 expect answer(Load, 0) == "offline"

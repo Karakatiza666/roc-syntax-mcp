@@ -4,13 +4,13 @@ Joy is a Roc platform for single-page web apps. The app compiles to a
 WebAssembly module. The platform's `runtime.js` loads that module in the page,
 updates the DOM to match what the app renders, and does all of the I/O. The app
 follows the Elm architecture: `init` makes the first model from a flags string the
-page gives, `update` makes the next model from a model and a message, `render`
+page gives, `update` makes the next model from a model and a message, `view`
 makes an HTML tree from the model, and `subscriptions` names the outside events
 to listen for. The app does no I/O itself. An HTTP request, a timer or a call to
 JavaScript is a value that it returns, and the result comes back as a message.
 The HTML tree is `Html(msg)` from the joy-html package, so each app pins
 joy-html version too. Joy has no server part yet. A server renders the same views with
-basic-webserver and joy-html.
+basic-webserver and joy-html, and `Html.document` mounts the app in that page.
 
 | To find | Ask |
 |---|---|
@@ -23,41 +23,41 @@ basic-webserver and joy-html.
 
 ## Starting a project
 
-An app is one `app.roc`. Both the platform and joy-html are release URLs in its
-header, which the first build downloads, so the only install is a Roc nightly.
-The build is a wasm module that a page mounts, beside the platform's
-`runtime.js`:
+The only install is Roc 0.1.0-RC2, the release this page was checked with
+(0.1.0-rc1, which joy names, works too). The starter writes a project from a template and installs a `./joy` command in it:
 
 ```bash
-roc build --target=wasm32 --output=www/app.wasm app.roc
+roc run https://github.com/niclas-ahden/joy/releases/download/0.35.0/4ZWtVnGUbEA2PrkhMwW3xHDASMZSmJNV9XmvSFPpzk3S.tar.zst init
+./joy dev       # serves http://localhost:8000 and hot-reloads on save
+./joy build     # writes what ships into dist/
+./joy upgrade   # moves the project to a newer Joy release
 ```
 
-`runtime.js` ships inside the platform bundle. After the first build it is at
-`~/.cache/roc/packages/<hash>/www/runtime.js` (under `$XDG_CACHE_HOME` when
-set), where `<hash>` is the tarball name in the header. Copy it next to
-`app.wasm`. The page mounts the module and passes the flags string `init`
-receives:
+That URL is Joy's command-line program, not the platform an app pins. A
+project is `client/app.roc`, `public/index.html` and `assets/`. The page
+mounts the app on an element with `data-joy-bundle`, and `data-joy-flags` is
+the string `init` receives, empty when absent:
 
-```js
-import { mount } from './runtime.js';
-const app = await mount({ wasm: './app.wasm', root: document.getElementById('app'), flags: '' });
+```html
+<div id="app" data-joy-bundle="app" data-joy-flags='{"name": "Ada"}'></div>
+<script type="module" src="/joy.js"></script>
 ```
 
-The `todomvc` example is the largest app. Its project, niclas-ahden/joy-todomvc,
-is one to copy: a build script, a watcher and browser tests, all Roc programs
-on basic-cli. It can be one release behind the platform.
+The `spa_minimal` example is the one-file template, and `spa_todomvc` is the
+largest app. The templates `spa-pages` and `spa-pages-expanded` split an app
+into page modules; read them in the repository.
 
 ## The application contract
 
 ```roc
-app [Model, Msg, init, update, render, subscriptions] {
-	pf: platform "https://github.com/niclas-ahden/joy/releases/download/0.34.0/2B3sC6U2dWkVUK2VY2gJS5Wej9YCDo3ZYq2e7tMWUCNp.tar.zst",
-	html: "https://github.com/niclas-ahden/joy-html/releases/download/0.17.1/AcmwFzyfbsf5RALWNdX6cXw1cuuDXt96YfcysNqgFqoG.tar.zst",
+app [Model, Msg, init, update, view, subscriptions] {
+	pf: platform "https://github.com/niclas-ahden/joy/releases/download/0.35.0/FtRCTy7CSPSdS2vLzGJPwYfcGurQfoaADXPNT8aJBBCr.tar.zst",
+	html: "https://github.com/niclas-ahden/joy-html/releases/download/0.18.0/6XAQypURmG12GNMHHZmjcXVGtctYy52mmPZoaUMWejRK.tar.zst",
 }
 
 init : Str -> (Model, List(Effect(Msg)))
 update : Model, Msg -> (Model, List(Effect(Msg)))
-render : Model -> Html(Msg)
+view : Model -> Html(Msg)
 subscriptions : Model -> List(Sub(Msg))
 ```
 
@@ -66,7 +66,8 @@ define types named exactly `Model` and `Msg`, even when no message is ever
 sent. Listing them in the header is optional. `init` always takes the flags
 string. `update` returns the model and a list of effects, never the bare model.
 
-The `html` pin is required. `render` returns joy-html's `Html`, so the app
+The fourth function is `view`. A `render` from 0.34.0 is "missing platform
+required definition". The `html` pin is required. `view` returns joy-html's `Html`, so the app
 pins exactly the release the platform pins. A different
 release has a different `Html`, and the error reads "The difference is inside
 this type, but it is not visible in this display". With no `html` pin, the
@@ -76,14 +77,17 @@ compiler flags only the first use of `import html.Html`.
 
 Every entry point is pure. Anything observable is an `Effect` value returned
 from `init` or `update`, which the host runs and answers with a message. The
-constructors are in `Http`, `Time`, `DOM`, `Console`, `Port` and `WebCrypto`.
-Anything recurring is a `Sub` returned from `subscriptions`: `Time.every`,
-`Keyboard.*`, `DOM.on_url_change`, `Port.listen`. They are different types,
+constructors are in `Http`, `Time`, `DOM`, `Navigation`, `Clipboard`,
+`Media`, `Console`, `Port` and `WebCrypto`. Anything recurring is a `Sub`
+returned from `subscriptions`: `Time.every`, `Keyboard.*`,
+`Navigation.on_url_change`, `Navigation.on_link_click`,
+`DOM.on_document_click`, `Port.listen`. The URL is `Navigation`'s:
+`DOM.on_url_change` and `DOM.replace_url` do not exist. They are different types,
 and each is rejected in the other's place. A subscription stays active
 while the list contains it. To stop it, leave it out.
 
 Every callback is a lambda. A tag is not a function, so `Http.get(url, Got)`,
-`on_input(Typed)` and `effect.map(Left)` do not compile. `|r| Got(r)` does.
+`on_input(Typed)` and `Effect.map_all(effects, Left)` do not compile. `|r| Got(r)` does.
 `on_click` and `on_submit` are the opposite. They take the message itself,
 `on_click(Increment)`.
 
@@ -93,8 +97,10 @@ Exposing a module's own type, `import pf.Effect exposing [Effect]` or
 `exposing [Html]`, is an error, "redundant expose".
 
 A component is a model, a `Msg` and an `update` of its own. The parent wraps the
-child's messages in a tag and maps both ways: `Html.map(view, |m| Left(m))` and
-`effects.map(|e| e.map(|m| Left(m)))`. `joy_app` shows the whole pattern.
+child's messages in a tag and maps both ways: `Html.map(html, |m| Left(m))` and
+`Effect.map_all(effects, |m| Left(m))`. Do not name its functions `init`,
+`update` or `view`: a method with the name of a top-level definition is a
+"duplicate definition" warning. `joy_app` shows the whole pattern.
 
 ## HTTP
 
@@ -124,14 +130,21 @@ both in a reusable component.
 `Port.send(name, value)` is an effect, received by `app.onPort(name, fn)` on the
 page. `Port.listen(name, |s| ...)` is a subscription, fed by
 `app.sendPort(name, value)`. Both carry strings, so structured data is JSON. A
-name nobody registered is a no-op.
+name nobody registered is a no-op. The page gets `app` from two events that
+`joy.js` dispatches on `document`: set `event.detail.setup = (app) => ...` in
+`joy:mount` to register `onPort` before the app starts, and use
+`event.detail.app` in `joy:mounted` to send. A browser feature with types of
+its own is a custom effect: `Effect.call(id, args, |reply| ...)` or
+`Effect.send`, its arguments written with `Wire`, and a `.js` file beside the
+module.
 
 ## Testing
 
-An effect is data that the app can match on, so a pure `expect` can
-assert what `update` asked for, and can call an effect's callback with what
-the host would pass. `joy_http` answers a request with statuses 404, 500, 0
-(never completed) and 1 (timed out). `roc test` runs the platform's own
+An effect is data, so a pure `expect` can assert what `update` asked for:
+`effect.identity().id` is the effect's name, `"joy/http/send"` for every
+request. A request is a `Call` whose callback takes the reply as `Wire`
+bytes, so a test can answer it as the host would. `joy_http` answers with
+statuses 404, 500, 0 (never completed) and 1 (timed out). `roc test` runs the platform's own
 expects beside the app's.
 
 ## Traps

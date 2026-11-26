@@ -6,9 +6,9 @@
 ## name. src/roc_check.ts reads both markers, and
 ## scripts/check-platform-examples.sh compiles the whole file, so the scaffold
 ## always matches the pinned platform.
-app [Model, Msg, init, update, render, subscriptions] {
-	pf: platform "https://github.com/niclas-ahden/joy/releases/download/0.34.0/2B3sC6U2dWkVUK2VY2gJS5Wej9YCDo3ZYq2e7tMWUCNp.tar.zst",
-	html: "https://github.com/niclas-ahden/joy-html/releases/download/0.17.1/AcmwFzyfbsf5RALWNdX6cXw1cuuDXt96YfcysNqgFqoG.tar.zst",
+app [Model, Msg, init, update, view, subscriptions] {
+	pf: platform "https://github.com/niclas-ahden/joy/releases/download/0.35.0/FtRCTy7CSPSdS2vLzGJPwYfcGurQfoaADXPNT8aJBBCr.tar.zst",
+	html: "https://github.com/niclas-ahden/joy-html/releases/download/0.18.0/6XAQypURmG12GNMHHZmjcXVGtctYy52mmPZoaUMWejRK.tar.zst",
 }
 
 # Every exposed module, qualified, so a snippet that uses any of them compiles
@@ -23,6 +23,10 @@ import pf.Time
 import pf.Keyboard
 import pf.Console
 import pf.DOM
+import pf.Navigation
+import pf.Clipboard
+import pf.Media
+import pf.Wire
 import pf.Port
 import pf.WebCrypto
 
@@ -45,9 +49,9 @@ init = |_flags| crash "scaffolded init: define your own to build a Model"
 update : Model, Msg -> (Model, List(Effect(Msg)))
 update = |model, _msg| (model, [])
 
-# @default render
-render : Model -> Html(Msg)
-render = |_model| Html.text("")
+# @default view
+view : Model -> Html(Msg)
+view = |_model| Html.text("")
 
 # @default subscriptions
 subscriptions : Model -> List(Sub(Msg))

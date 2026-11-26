@@ -1,9 +1,9 @@
 ## Writing views with joy-html: element and void-element shapes, typed
 ## attributes, events and their modifiers, keyed lists, `lazy` regions, and the
 ## import lists that collide.
-app [Model, Msg, init, update, render, subscriptions] {
-	pf: platform "https://github.com/niclas-ahden/joy/releases/download/0.34.0/2B3sC6U2dWkVUK2VY2gJS5Wej9YCDo3ZYq2e7tMWUCNp.tar.zst",
-	html: "https://github.com/niclas-ahden/joy-html/releases/download/0.17.1/AcmwFzyfbsf5RALWNdX6cXw1cuuDXt96YfcysNqgFqoG.tar.zst",
+app [Model, Msg, init, update, view, subscriptions] {
+	pf: platform "https://github.com/niclas-ahden/joy/releases/download/0.35.0/FtRCTy7CSPSdS2vLzGJPwYfcGurQfoaADXPNT8aJBBCr.tar.zst",
+	html: "https://github.com/niclas-ahden/joy-html/releases/download/0.18.0/6XAQypURmG12GNMHHZmjcXVGtctYy52mmPZoaUMWejRK.tar.zst",
 }
 
 # Two modules cannot both expose the same name. `style` is the `<style>`
@@ -59,8 +59,8 @@ row_view = |r, is_selected|
 		],
 	)
 
-render : Model -> Html(Msg)
-render = |model|
+view : Model -> Html(Msg)
+view = |model|
 	div(
 		# `style` takes pairs, not a CSS string.
 		[style([("max-width", "40rem"), ("margin", "0 auto")])],

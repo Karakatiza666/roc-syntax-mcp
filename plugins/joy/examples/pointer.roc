@@ -1,10 +1,10 @@
-app [Model, Msg, init, update, render, subscriptions] {
-	pf: platform "https://github.com/niclas-ahden/joy/releases/download/0.34.0/2B3sC6U2dWkVUK2VY2gJS5Wej9YCDo3ZYq2e7tMWUCNp.tar.zst",
-	html: "https://github.com/niclas-ahden/joy-html/releases/download/0.17.1/AcmwFzyfbsf5RALWNdX6cXw1cuuDXt96YfcysNqgFqoG.tar.zst",
+app [Model, Msg, init, subscriptions, update, view] {
+	html: "https://github.com/niclas-ahden/joy-html/releases/download/0.18.0/6XAQypURmG12GNMHHZmjcXVGtctYy52mmPZoaUMWejRK.tar.zst",
+	pf: platform "https://github.com/niclas-ahden/joy/releases/download/0.35.0/FtRCTy7CSPSdS2vLzGJPwYfcGurQfoaADXPNT8aJBBCr.tar.zst",
 }
 
 import html.Html exposing [div, p, text]
-import html.Attribute exposing [id, style, on_pointer, on_pointer_down, on_pointer_move, on_pointer_up]
+import html.Attribute exposing [id, on_pointer, on_pointer_down, on_pointer_move, on_pointer_up, style]
 import pf.Effect
 
 # Pointer events (unifying mouse, touch and pen) as typed messages: each
@@ -27,8 +27,6 @@ Msg : [
 	UserReleased,
 ]
 
-subscriptions = |_model| []
-
 init : Str -> (Model, List(Effect(Msg)))
 init = |_|
 	({ x: 0.0, y: 0.0, dragging: Bool.False, moves: 0, shift_clicks: 0 }, [])
@@ -43,7 +41,7 @@ update = |model, msg|
 					x: e.offset_x,
 					y: e.offset_y,
 					dragging: Bool.True,
-					shift_clicks: if e.shift model.shift_clicks + 1 else model.shift_clicks,
+					shift_clicks: if (e.shift) model.shift_clicks + 1 else model.shift_clicks,
 				},
 				[],
 			)
@@ -51,7 +49,7 @@ update = |model, msg|
 		UserDragged(e) =>
 		# `buttons` is the held-buttons bitmask, so a plain hover (no
 		# button down) never counts as dragging.
-			if model.dragging and e.buttons > 0
+			if (model.dragging and e.buttons > 0)
 				({ ..model, x: e.offset_x, y: e.offset_y, moves: model.moves + 1 }, [])
 			else
 				(model, [])
@@ -59,9 +57,9 @@ update = |model, msg|
 		UserReleased => ({ ..model, dragging: Bool.False }, [])
 	}
 
-render : Model -> Html(Msg)
-render = |model| {
-	dragging_status = if model.dragging "dragging" else "idle"
+view : Model -> Html(Msg)
+view = |model| {
+	dragging_status = if (model.dragging) "dragging" else "idle"
 	div(
 		[],
 		[
@@ -76,7 +74,7 @@ render = |model| {
 					on_pointer("pointermove", |e| UserDragged(e)).prevent_default(),
 					on_pointer_up(|_| UserReleased),
 				],
-				[text("Draw here")],
+				[text("Click and drag here")],
 			),
 			p([id("position")], [text("At ${model.x.to_str()}, ${model.y.to_str()} (${dragging_status})")]),
 			p([id("moves")], [text("Moves: ${model.moves.to_str()}")]),
@@ -84,3 +82,6 @@ render = |model| {
 		],
 	)
 }
+
+# No subs needed for this example!
+subscriptions = |_model| []

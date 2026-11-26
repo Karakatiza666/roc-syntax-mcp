@@ -3,9 +3,9 @@
 ## `Html.ssr_document` and `Html.render`. No Joy platform is involved: joy-html
 ## is a package, and any platform's app can pin it.
 app [Context, program] {
-	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.19.0/4KBAoiBazDfi9UF6e3BYKwon6rA8mnx3dbLMLKFzdEMw.tar.zst",
+	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.22.0/BM2BUXA8mwbcoKPUfRV8cLtsUdnsSBPwjNLPRUJQAQ7Q.tar.zst",
 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
-	html: "https://github.com/niclas-ahden/joy-html/releases/download/0.17.1/AcmwFzyfbsf5RALWNdX6cXw1cuuDXt96YfcysNqgFqoG.tar.zst",
+	html: "https://github.com/niclas-ahden/joy-html/releases/download/0.18.0/6XAQypURmG12GNMHHZmjcXVGtctYy52mmPZoaUMWejRK.tar.zst",
 }
 
 import pf.Server
@@ -47,6 +47,25 @@ respond! = |_request, _context|
 
 shutdown! : Server.ShutdownReason, Context => Try({}, [Exit(I64)])
 shutdown! = |_reason, _context| Ok({})
+
+# A server page that runs a Joy app: `Html.document` takes the URLs of Joy's
+# files (`loader`, `runtime`, and `wasm` as a function of a bundle id) and
+# the page. Every element with `data-joy-bundle` gets its wasm URL in
+# `data-joy-wasm`, and the end of `head` gets the loader as a module script
+# and preload hints. The page itself names no file of Joy's. A page with no
+# bundle root renders as `ssr_document` does.
+joy_files : Html.JoyFiles
+joy_files = { loader: "/joy.1a.js", runtime: "/runtime.2b.js", wasm: |id| "/${id}/app.3c.wasm" }
+
+with_app : Str -> Str
+with_app = |flags|
+	Html.document(
+		joy_files,
+		Html.html([], [Html.head([], [Html.title([], [text("Shop")])]), Html.body([], [div([Attribute.data("joy-bundle", "app"), Attribute.data("joy-flags", flags)], [])])]),
+	)
+
+expect with_app("{}").contains("data-joy-wasm=\"/app/app.3c.wasm\"")
+expect with_app("{}").contains("<script type=\"module\" src=\"/joy.1a.js\"></script></head>")
 
 # Text and attribute values are escaped. The output has no trace of the click handler.
 expect Html.render(clickable) == "<div class=\"hi\">a&amp;b</div>"

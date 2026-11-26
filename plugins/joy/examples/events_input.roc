@@ -1,10 +1,10 @@
-app [Model, Msg, init, update, render, subscriptions] {
-	pf: platform "https://github.com/niclas-ahden/joy/releases/download/0.34.0/2B3sC6U2dWkVUK2VY2gJS5Wej9YCDo3ZYq2e7tMWUCNp.tar.zst",
-	html: "https://github.com/niclas-ahden/joy-html/releases/download/0.17.1/AcmwFzyfbsf5RALWNdX6cXw1cuuDXt96YfcysNqgFqoG.tar.zst",
+app [Model, Msg, init, subscriptions, update, view] {
+	html: "https://github.com/niclas-ahden/joy-html/releases/download/0.18.0/6XAQypURmG12GNMHHZmjcXVGtctYy52mmPZoaUMWejRK.tar.zst",
+	pf: platform "https://github.com/niclas-ahden/joy/releases/download/0.35.0/FtRCTy7CSPSdS2vLzGJPwYfcGurQfoaADXPNT8aJBBCr.tar.zst",
 }
 
-import html.Html exposing [div, form, textarea, label, input, button, p, h1, text]
-import html.Attribute exposing [id, rows, cols, type, checked, on_input, on_submit, on_check]
+import html.Html exposing [button, div, form, h1, input, label, p, text, textarea]
+import html.Attribute exposing [checked, cols, id, on_check, on_input, on_submit, rows, style, type]
 import pf.Effect
 import pf.Console
 
@@ -15,8 +15,6 @@ Msg : [
 	UserSavedEntry,
 	UserToggledSecret(Bool),
 ]
-
-subscriptions = |_model| []
 
 init : Str -> (Model, List(Effect(Msg)))
 init = |_| ({ draft: "", saved: "", secret: Bool.False }, [])
@@ -32,9 +30,9 @@ update = |model, msg|
 		UserToggledSecret(secret) => ({ ..model, secret }, [])
 	}
 
-render : Model -> Html(Msg)
-render = |model| {
-	secret_status = if model.secret "on" else "off"
+view : Model -> Html(Msg)
+view = |model| {
+	secret_status = if (model.secret) "on" else "off"
 	div(
 		[],
 		[
@@ -50,7 +48,7 @@ render = |model| {
 						[rows(10), cols(30), on_input(|s| UserTypedSomething(s))],
 						[],
 					),
-					button([type("submit")], [text("Save entry")]),
+					button([type("submit"), style([("display", "block"), ("margin", "8px 0")])], [text("Save entry")]),
 				],
 			),
 			label(
@@ -65,3 +63,6 @@ render = |model| {
 		],
 	)
 }
+
+# No subs needed for this example!
+subscriptions = |_model| []
