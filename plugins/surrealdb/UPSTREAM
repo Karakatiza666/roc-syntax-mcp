@@ -4,12 +4,12 @@
 # diff tag to tag.
 
 repo     https://github.com/Karakatiza666/roc-reify-surrealdb
-tag      0.0.4
-commit   c0fe6b020bbd6db5cbc971f110ea1625844f853d "Prepare 0.0.4", the commit of the tag
-bundle   CkLUeGcqAc6kNLaDf5rMbQEaZAE7nxapCE4EsHnqh5HY.tar.zst
-url      https://github.com/Karakatiza666/roc-reify-surrealdb/releases/download/0.0.4/CkLUeGcqAc6kNLaDf5rMbQEaZAE7nxapCE4EsHnqh5HY.tar.zst
+tag      0.0.6
+commit   35740c60404d685323b043f1ce4cd102f0427121 "0.0.6: roc-cbor 0.6.0; ...", the commit of the tag
+bundle   2tpVeMyJCHagfi9hgtFKLe9SZVEwKoHzWxxwwk33Anfk.tar.zst
+url      https://github.com/Karakatiza666/roc-reify-surrealdb/releases/download/0.0.6/2tpVeMyJCHagfi9hgtFKLe9SZVEwKoHzWxxwwk33Anfk.tar.zst
 
-# 0.0.1 to 0.0.4, from "Changes" in the README at the tag. What the plugin
+# 0.0.1 to 0.0.6, from "Changes" in the README at the tag. What the plugin
 # changed for it:
 #   0.0.2  `ready` for a query with no parameter; migrations as reviewed files
 #          (`Surreal.plan`, `Session.migrate!`). The topics end parameterless
@@ -25,6 +25,31 @@ url      https://github.com/Karakatiza666/roc-reify-surrealdb/releases/download/
 #   0.0.4  SurrealDB 4.0.1 or later only, CBOR v2 and roc-cbor 0.5.0, sized
 #          number field types, values sent as `vars` (`Request`,
 #          `Unchecked.send!`). The overview and the topics name SurrealDB 4.0.1.
+#   0.0.4, re-cut  Upstream moved the 0.0.4 tag on 2026-11-17 (commit
+#          cc62d13, bundle B6FLFRXgHFjL9kyQSF3N467dpJjcsxjLd1HLxhr8Zmt2); the
+#          commit c0fe6b0 and bundle CkLUeGcq this plugin pinned before are no
+#          longer in the repo's history, so diff a later repin against the
+#          bundle (the Roc package cache keeps it), not against the tag. Over
+#          the first 0.0.4: compiler ee91030 (reify nightly 2026-11-15, on
+#          nightly-2026-11-15-f25da45), roc-cbor 0.5.1, roc-websocket 0.0.7,
+#          roc-basic-cli-websocket 0.0.5 (basic-cli 0.28.1) and
+#          roc-basic-webserver-websocket 0.0.4 (basic-webserver 0.22.0);
+#          `Id.table` is `Id.table_name`; `Table`, `Def`, `Selected`, `Query`,
+#          `Grouped`, `Access` and `Auth` are aliases of private top-level types
+#          (`Table(row) : SurrealTable(row)`), and `Diff.TextPatch` of
+#          `DiffTextPatch`, because the nightly warns when a nested member has
+#          the name of a module definition. Calls are written as before.
+#   0.0.5  no API change: an optimised build of an app with many prepared
+#          queries is much faster (`Prepared` and `Watch` hold a `Box`).
+#   0.0.6  roc-cbor 0.6.0. A function generic over read rows writes
+#          `where [a.Cbor.Readable]`, not `a.Cbor.Readable(errs)` ("expects 0
+#          arguments"). The overview says so, names roc-cbor 0.6.0 and
+#          roc-websocket 0.0.7, and has a trap line for `id.table_name()`
+#          (`id.table()` is a missing method); both were compiled with ee91030.
+#          The topics pin basic-cli 0.28.1 and roc-basic-cli-websocket 0.0.5,
+#          the releases upstream's examples pin. surreal_schema's comment that
+#          `U8` is `TYPE int` with an ASSERT was stale since 0.0.4: it prints
+#          `TYPE u8`.
 
 # Repin to a new release:
 #  1. Take the asset URL from the release notes and replace the url in
@@ -38,22 +63,25 @@ url      https://github.com/Karakatiza666/roc-reify-surrealdb/releases/download/
 #  4. Redo the findings of the overview, and update this file.
 
 # The compiler is NOT a nightly. The package needs the reify fork of Roc
-# (`Karakatiza666/roc`, branch reify, commit 76ed44249ac086e593325c58f56d96d8dc4ffd47
-# = the package's .roc-version, based on nightly-2026-11-07-ad3a5d2). Stock Roc
-# has no `Code` type. The release nightly-reify-2026-11-07-76ed442 of
+# (`Karakatiza666/roc`, branch reify, commit ee91030491d78fa5367d82222cb4c2fe0781c5cb
+# = the package's .roc-version, based on nightly-2026-11-15-f25da45). Stock Roc
+# has no `Code` type. The release nightly-reify-2026-11-15-ee91030 of
 # Karakatiza666/roc-reify-nightlies is a release build of that commit (`roc
-# version` prints its name), and this repin used it. The `compiler` of
+# version` prints its name), and this repin used it. That repo has a newer
+# release (nightly-reify-2026-11-15-1439171) that no release of the package
+# pins yet; the plugin follows the package's .roc-version. The `compiler` of
 # plugin.json names the fork in the .roc-version form, and the gates check every
 # program of this plugin with roc_<compiler>/roc at the repo root, so unpack the
 # build there:
 #
-#   tar -xzf roc_nightly-reify-linux_x86_64-2026-11-07-76ed442.tar.gz
-#   mv roc_nightly-reify-linux_x86_64-2026-11-07-76ed442 roc_reify-76ed44249ac086e593325c58f56d96d8dc4ffd47
+#   gh release download nightly-reify-2026-11-15-ee91030 -R Karakatiza666/roc-reify-nightlies -p 'roc_nightly-reify-linux_x86_64-*'
+#   tar -xzf roc_nightly-reify-linux_x86_64-2026-11-15-ee91030.tar.gz
+#   mv roc_nightly-reify-linux_x86_64-2026-11-15-ee91030 roc_reify-ee91030491d78fa5367d82222cb4c2fe0781c5cb
 #
 # CI builds no fork. Run `plugin validate plugins/surrealdb --attest` locally
 # after every change, and commit the BUILD-PROOF it writes. CI and the publish
 # workflow check that file with `plugin validate --offline --proof`.
-compiler reify-76ed44249ac086e593325c58f56d96d8dc4ffd47
+compiler reify-ee91030491d78fa5367d82222cb4c2fe0781c5cb
 
 BUILD-PROOF <- written by `plugin validate --attest` (see above), not upstream's
 index.json  <- the bundle's modules (src/Surreal.roc and the modules it imports),
@@ -65,10 +93,10 @@ examples/   <- monitoring.roc, search.roc, client.roc, watch.roc and server.roc
                `surreal: "../src/main.roc"` is the url above (the sed
                `s#"\.\./src/main\.roc"#"<url>"#`), and the file gains one `##`
                title line above everything, which `list_roc_index(kind:
-               "examples")` prints. Nothing else differs. At 0.0.4 the five
+               "examples")` prints. Nothing else differs. At 0.0.6 the five
                were copied again from the tag, keeping the title lines
 topics/     <- this package's own: programs written against this pin and
-               declared in plugin.json. At 0.0.4 surreal_session and
+               declared in plugin.json. At 0.0.6 surreal_session and
                surreal_live were run against SurrealDB 4.0.1 (docker image
                surrealdb/surrealdb:v4.0.1, memory) with the port changed to a
                free one, and surreal_queries was run for its SurrealQL; the
@@ -99,8 +127,14 @@ overview.md <- this package's own. Each snippet is in verify/overview-snippets.r
 # Compiler findings of this pin (the overview has the ones an app author needs):
 #  - At 0.0.1, `rows = read.result.map_err(Str.inspect)?` on the `result` of
 #    `Session.run!` stopped the debug build of c1e6af27 with "ARC: use of
-#    unbound refcounted local". At 0.0.4 it checks and builds with the release
-#    build of 76ed442, so the overview no longer names it.
+#    unbound refcounted local". Since 0.0.4 it checks and builds with the
+#    release builds (76ed442, then ee91030), so the overview no longer names it.
+#  - Index tiers at 0.0.6: 1181 items in 88 modules, 587 host, 16 private, 578
+#    public (`plugin validate`'s corpus line). The methods of `SurrealTable`,
+#    `SurrealDef`, `SurrealSelected`, `SurrealQuery`, `SurrealGrouped`,
+#    `SurrealAccess` and `SurrealAuth` (`create`, `insert`, `unique`,
+#    `order_by`, ...) are filed under the aliases that name them, such as
+#    `Table(row) : SurrealTable(row)`, so an app finds `Surreal.Table.create`.
 #  - The stock nightly 2026-11-03-34bd006 rejects every builder call
 #    with "missing method" and give no hint about `Code`.
 #  - The warning "unconditional condition" appears when a `match` runs on a

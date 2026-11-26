@@ -20,11 +20,11 @@
 #     roc examples/server.roc &
 #     curl 'http://127.0.0.1:8001/readings?min_pulse=120'
 app [Context, program] {
-	cbor: "https://github.com/Karakatiza666/roc-cbor/releases/download/0.5.0/B5U2mPsWTtuxfCRMzqQxio2ecDv7CAzCoyEMENMh4FNF.tar.zst",
+	cbor: "https://github.com/Karakatiza666/roc-cbor/releases/download/0.6.0/BWQX6N63JpXQjThcHNgnRmiYp93ch2QTckFTxF98KAus.tar.zst",
 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
-	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.21.0/4viZsnWjdYsyH4Q87ESFAwM5c55Hnc15nAGW1UwzWpFU.tar.zst",
-	bws_ws: "https://github.com/Karakatiza666/roc-basic-webserver-websocket/releases/download/0.0.3/BjBcDpMFYd2ybt1xpiKiSHf2AgrnRnT6qRdFe2bQ2fgL.tar.zst",
-	surreal: "https://github.com/Karakatiza666/roc-reify-surrealdb/releases/download/0.0.4/CkLUeGcqAc6kNLaDf5rMbQEaZAE7nxapCE4EsHnqh5HY.tar.zst",
+	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.22.0/BM2BUXA8mwbcoKPUfRV8cLtsUdnsSBPwjNLPRUJQAQ7Q.tar.zst",
+	bws_ws: "https://github.com/Karakatiza666/roc-basic-webserver-websocket/releases/download/0.0.4/CVdw532jo8EfTqYFZjfGismeWHjfuVPTfj6ofaKGcAmU.tar.zst",
+	surreal: "https://github.com/Karakatiza666/roc-reify-surrealdb/releases/download/0.0.6/2tpVeMyJCHagfi9hgtFKLe9SZVEwKoHzWxxwwk33Anfk.tar.zst",
 }
 
 import pf.Server

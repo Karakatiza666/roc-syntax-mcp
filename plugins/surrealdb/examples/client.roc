@@ -22,11 +22,11 @@
 # links to, are the app's own: it defines them, and removes them at the end. With `-- --record DIR`, the app saves
 # the reply to each request as `DIR/<name>.cbor` (`check.py --record`).
 app [main!] {
-	cbor: "https://github.com/Karakatiza666/roc-cbor/releases/download/0.5.0/B5U2mPsWTtuxfCRMzqQxio2ecDv7CAzCoyEMENMh4FNF.tar.zst",
+	cbor: "https://github.com/Karakatiza666/roc-cbor/releases/download/0.6.0/BWQX6N63JpXQjThcHNgnRmiYp93ch2QTckFTxF98KAus.tar.zst",
 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
-	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.27.0/9yjxqdGTP4xSpSEmDazwTmRsehfRZzA19pwEKkR6fj1g.tar.zst",
-	cli_ws: "https://github.com/Karakatiza666/roc-basic-cli-websocket/releases/download/0.0.4/B5j45zNdyW8Qxq6GpQ6ZVNmcPC5hwx3TxPRW4cq8wiLV.tar.zst",
-	surreal: "https://github.com/Karakatiza666/roc-reify-surrealdb/releases/download/0.0.4/CkLUeGcqAc6kNLaDf5rMbQEaZAE7nxapCE4EsHnqh5HY.tar.zst",
+	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst",
+	cli_ws: "https://github.com/Karakatiza666/roc-basic-cli-websocket/releases/download/0.0.5/AZpgG3RszEahBa67zc9yCJcAKe4MKw5HucDouNpi727b.tar.zst",
+	surreal: "https://github.com/Karakatiza666/roc-reify-surrealdb/releases/download/0.0.6/2tpVeMyJCHagfi9hgtFKLe9SZVEwKoHzWxxwwk33Anfk.tar.zst",
 }
 
 import pf.Http
@@ -667,7 +667,7 @@ made_rows : Str, List(new), (Str -> Bool), Str -> (Try(List(Surreal.Created(row,
 made_rows = |table, want, shape, kind| |got| match got {
 	Ok(rows) => {
 		keys = rows.map(|r| r.id.key())
-		fine = Str.inspect(rows.map(|r| r.fields)) == Str.inspect(want) and rows.all(|r| r.id.table() == table and shape(r.id.key())) and keys.all(|k| keys.count_if(|o| o == k) == 1)
+		fine = Str.inspect(rows.map(|r| r.fields)) == Str.inspect(want) and rows.all(|r| r.id.table_name() == table and shape(r.id.key())) and keys.all(|k| keys.count_if(|o| o == k) == 1)
 		if fine {
 			{ agrees: Bool.True, text: "${row_count(rows)}, ${kind} keys" }
 		} else {

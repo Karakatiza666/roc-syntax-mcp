@@ -11,22 +11,22 @@ against it, and an overview page on which every claim was compiled.
 The package needs the **reify fork of the Roc compiler**, not a nightly. `Code(f)`
 is a type of that fork. Use the `reify` branch of
 [Karakatiza666/roc](https://github.com/Karakatiza666/roc) at commit
-`76ed44249ac086e593325c58f56d96d8dc4ffd47`, the commit of the package's
-`.roc-version`. The release `nightly-reify-2026-11-07-76ed442` of
+`ee91030491d78fa5367d82222cb4c2fe0781c5cb`, the commit of the package's
+`.roc-version`. The release `nightly-reify-2026-11-15-ee91030` of
 [Karakatiza666/roc-reify-nightlies](https://github.com/Karakatiza666/roc-reify-nightlies)
 has prebuilt binaries of it. Unpack one and point this server at it:
 
 ```bash
-gh release download nightly-reify-2026-11-07-76ed442 -R Karakatiza666/roc-reify-nightlies -p '*linux_x86_64*'
-tar -xzf roc_nightly-reify-linux_x86_64-2026-11-07-76ed442.tar.gz
-roc-syntax-mcp roc use $PWD/roc_nightly-reify-linux_x86_64-2026-11-07-76ed442/roc
+gh release download nightly-reify-2026-11-15-ee91030 -R Karakatiza666/roc-reify-nightlies -p '*linux_x86_64*'
+tar -xzf roc_nightly-reify-linux_x86_64-2026-11-15-ee91030.tar.gz
+roc-syntax-mcp roc use $PWD/roc_nightly-reify-linux_x86_64-2026-11-15-ee91030/roc
 ```
 
 A stock nightly rejects the package's programs with "missing method" errors,
 and none of them mentions `Code`.
 
 The plugin was validated with that release build. It documents package release
-0.0.4, which needs SurrealDB 4.0.1 or later.
+0.0.6, which needs SurrealDB 4.0.1 or later.
 [`BUILD-PROOF`](BUILD-PROOF) records the compiler and the digest of the
 validated files.
 

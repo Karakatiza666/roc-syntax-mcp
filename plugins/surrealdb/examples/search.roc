@@ -18,7 +18,7 @@
 # The `-- roc:` and `-- intrinsic:` lines are that check. Skip them when
 # reading.
 
-app [main!] { surreal: "https://github.com/Karakatiza666/roc-reify-surrealdb/releases/download/0.0.4/CkLUeGcqAc6kNLaDf5rMbQEaZAE7nxapCE4EsHnqh5HY.tar.zst" }
+app [main!] { surreal: "https://github.com/Karakatiza666/roc-reify-surrealdb/releases/download/0.0.6/2tpVeMyJCHagfi9hgtFKLe9SZVEwKoHzWxxwwk33Anfk.tar.zst" }
 
 import surreal.Surreal
 

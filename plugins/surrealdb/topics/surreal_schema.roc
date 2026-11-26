@@ -3,7 +3,7 @@
 ## type and from constraint functions. This app has no platform (it runs with
 ## `roc file.roc` on the reify compiler) and prints the schema.
 app [main!] {
-	surreal: "https://github.com/Karakatiza666/roc-reify-surrealdb/releases/download/0.0.4/CkLUeGcqAc6kNLaDf5rMbQEaZAE7nxapCE4EsHnqh5HY.tar.zst",
+	surreal: "https://github.com/Karakatiza666/roc-reify-surrealdb/releases/download/0.0.6/2tpVeMyJCHagfi9hgtFKLe9SZVEwKoHzWxxwwk33Anfk.tar.zst",
 }
 
 import surreal.Surreal
@@ -21,9 +21,10 @@ Owner := { id : Str, name : Str, email : Str, address : Address, tags : List(Str
 	parser_for : _
 }
 
-# `U8` becomes `TYPE int` with `ASSERT >= 0 AND <= 255`. A tag union becomes a
-# literal union. A field of a union arm may not be named `kind`: that is the
-# tag in SurrealQL, and `Surreal.schema` returns `BadSchema` for it.
+# `U8` becomes the sized field type `TYPE u8` (`I8` .. `U64` and `F32` too). A
+# tag union becomes a literal union. A field of a union arm may not be named
+# `kind`: that is the tag in SurrealQL, and `Surreal.schema` returns `BadSchema`
+# for it.
 Species : [Dog, Cat, Bird({ wingspan_cm : U8 })]
 
 # `Surreal.Link(row)` is a record link. The table of `row` has to be in the

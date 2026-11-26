@@ -22,10 +22,10 @@
 # that the clauses read run last, in a database of their own, `roc_watch`,
 # which the app makes again each time with the tables of the watches.
 app [main!] {
-	cbor: "https://github.com/Karakatiza666/roc-cbor/releases/download/0.5.0/B5U2mPsWTtuxfCRMzqQxio2ecDv7CAzCoyEMENMh4FNF.tar.zst",
-	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.27.0/9yjxqdGTP4xSpSEmDazwTmRsehfRZzA19pwEKkR6fj1g.tar.zst",
-	cli_ws: "https://github.com/Karakatiza666/roc-basic-cli-websocket/releases/download/0.0.4/B5j45zNdyW8Qxq6GpQ6ZVNmcPC5hwx3TxPRW4cq8wiLV.tar.zst",
-	surreal: "https://github.com/Karakatiza666/roc-reify-surrealdb/releases/download/0.0.4/CkLUeGcqAc6kNLaDf5rMbQEaZAE7nxapCE4EsHnqh5HY.tar.zst",
+	cbor: "https://github.com/Karakatiza666/roc-cbor/releases/download/0.6.0/BWQX6N63JpXQjThcHNgnRmiYp93ch2QTckFTxF98KAus.tar.zst",
+	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst",
+	cli_ws: "https://github.com/Karakatiza666/roc-basic-cli-websocket/releases/download/0.0.5/AZpgG3RszEahBa67zc9yCJcAKe4MKw5HucDouNpi727b.tar.zst",
+	surreal: "https://github.com/Karakatiza666/roc-reify-surrealdb/releases/download/0.0.6/2tpVeMyJCHagfi9hgtFKLe9SZVEwKoHzWxxwwk33Anfk.tar.zst",
 }
 
 import pf.Stdout
@@ -527,7 +527,7 @@ write_group! = |session, writes| {
 ## those in `have`. The notices came while the session ran the writes: the
 ## inbox of the session kept them. A change that does not come in
 ## `change_limit_ms` is an error that names the changes still missing.
-take_changes! : Surreal.Session, Surreal.Live(out), List(Surreal.Change(out)), List(Surreal.Change(out)) => Try({ session : Surreal.Session, live : Surreal.Live(out), changes : List(Surreal.Change(out)) }, Str) where [out.Cbor.Readable(errs), out.is_eq : out, out -> Bool]
+take_changes! : Surreal.Session, Surreal.Live(out), List(Surreal.Change(out)), List(Surreal.Change(out)) => Try({ session : Surreal.Session, live : Surreal.Live(out), changes : List(Surreal.Change(out)) }, Str) where [out.Cbor.Readable, out.is_eq : out, out -> Bool]
 take_changes! = |session, live, have, want|
 	if have.len() >= want.len() {
 		Ok({ session, live, changes: have })
@@ -560,7 +560,7 @@ missing = |want, have| have.fold(want, |left, got|
 ## before it sent the second (`README.md`, the session). Only a notice
 ## that came before the app sent a write is before the notice of that
 ## write.
-check_watch! : Surreal.Session, Str, Surreal.Watch(out), List(List(Step(out))) => Try({ session : Surreal.Session, failures : U64 }, Str) where [out.Cbor.Readable(errs), out.is_eq : out, out -> Bool]
+check_watch! : Surreal.Session, Str, Surreal.Watch(out), List(List(Step(out))) => Try({ session : Surreal.Session, failures : U64 }, Str) where [out.Cbor.Readable, out.is_eq : out, out -> Bool]
 check_watch! = |session, name, watch, groups| {
 	started = session.live!(watch.checked().map_err(Str.inspect)?).map_err(Str.inspect)?
 	say!("${name}: ${started.view.rows().len().to_str()} rows in the snapshot")?
@@ -623,7 +623,12 @@ check_gauges! = |session| {
 	for edit in gauge_steps {
 		wrote = $session.run!(gauges.edit(edit))
 		$session = wrote.session
-		_ = wrote.result.map_err(|e| "a write failed: ${Str.inspect(e)}")?
+		# A match, not `_ = wrote.result.map_err(..)?`: that form makes the
+		# compiler panic (roc-lang/roc#13115).
+		match wrote.result {
+			Err(e) => return Err("a write failed: ${Str.inspect(e)}")
+			Ok(_) => {}
+		}
 		got_patch = $session.next_within!($live, change_limit_ms).map_err(Str.inspect)?
 		$session = got_patch.session
 		$live = got_patch.live

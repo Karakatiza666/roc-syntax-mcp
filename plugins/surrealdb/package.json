@@ -1,6 +1,6 @@
 {
   "name": "@roc-syntax/surrealdb",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "The roc-reify-surrealdb SurrealDB ORM, as a roc-syntax-mcp corpus.",
   "license": "UPL-1.0",
   "files": [

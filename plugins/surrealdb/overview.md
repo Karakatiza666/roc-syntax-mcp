@@ -1,4 +1,4 @@
-# roc-reify-surrealdb 0.0.4
+# roc-reify-surrealdb 0.0.6
 
 A SurrealDB ORM for Roc. A row type is a plain Roc record, a table is a
 `Surreal.Table(row)` over it, and every clause, projection and constraint is a
@@ -17,17 +17,17 @@ typed results and errors), `surreal_live` (a watch). Run them with
 
 `Code(f)` is a type of the reify fork of Roc, not of any nightly. Use
 `Karakatiza666/roc`, branch `reify`, at commit
-`76ed44249ac086e593325c58f56d96d8dc4ffd47` (the package's `.roc-version`). A
+`ee91030491d78fa5367d82222cb4c2fe0781c5cb` (the package's `.roc-version`). A
 stock nightly fails with "missing method" errors on `.unique`, `.assert` and the
 other builder calls, and none of them mentions `Code`. The release
-`nightly-reify-2026-11-07-76ed442` of `Karakatiza666/roc-reify-nightlies` has
+`nightly-reify-2026-11-15-ee91030` of `Karakatiza666/roc-reify-nightlies` has
 prebuilt binaries (`roc version` prints that name). Unpack one and point this
 server at it:
 
 ```sh
-gh release download nightly-reify-2026-11-07-76ed442 -R Karakatiza666/roc-reify-nightlies -p '*linux_x86_64*'
-tar -xzf roc_nightly-reify-linux_x86_64-2026-11-07-76ed442.tar.gz
-roc-syntax-mcp roc use $PWD/roc_nightly-reify-linux_x86_64-2026-11-07-76ed442/roc
+gh release download nightly-reify-2026-11-15-ee91030 -R Karakatiza666/roc-reify-nightlies -p '*linux_x86_64*'
+tar -xzf roc_nightly-reify-linux_x86_64-2026-11-15-ee91030.tar.gz
+roc-syntax-mcp roc use $PWD/roc_nightly-reify-linux_x86_64-2026-11-15-ee91030/roc
 ```
 
 SurrealDB 4.0.1 or later is the server. 3.x is not supported.
@@ -41,16 +41,18 @@ adapter of that platform from roc-websocket (the roc-websocket plugin documents
 
 ```roc
 app [main!] {
-	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.27.0/9yjxqdGTP4xSpSEmDazwTmRsehfRZzA19pwEKkR6fj1g.tar.zst",
-	cli_ws: "https://github.com/Karakatiza666/roc-basic-cli-websocket/releases/download/0.0.4/B5j45zNdyW8Qxq6GpQ6ZVNmcPC5hwx3TxPRW4cq8wiLV.tar.zst",
-	surreal: "https://github.com/Karakatiza666/roc-reify-surrealdb/releases/download/0.0.4/CkLUeGcqAc6kNLaDf5rMbQEaZAE7nxapCE4EsHnqh5HY.tar.zst",
+	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst",
+	cli_ws: "https://github.com/Karakatiza666/roc-basic-cli-websocket/releases/download/0.0.5/AZpgG3RszEahBa67zc9yCJcAKe4MKw5HucDouNpi727b.tar.zst",
+	surreal: "https://github.com/Karakatiza666/roc-reify-surrealdb/releases/download/0.0.6/2tpVeMyJCHagfi9hgtFKLe9SZVEwKoHzWxxwwk33Anfk.tar.zst",
 }
 ```
 
 `echo!` exists only in a platformless app. With a platform, use `Stdout.line!`.
-The package depends on roc-cbor 0.5.0 and roc-websocket 0.0.6, so an app that
-uses `Cbor` itself names roc-cbor 0.5.0 too. On basic-webserver 0.21.0 the
-adapter is roc-basic-webserver-websocket and the transport is `Transport.websocket`.
+The package depends on roc-cbor 0.6.0 and roc-websocket 0.0.7, so an app that
+uses `Cbor` itself names roc-cbor 0.6.0 too, and a function generic over rows
+writes `where [out.Cbor.Readable]` (`Readable(errs)` is "expects 0 arguments").
+On basic-webserver 0.22.0 the adapter is roc-basic-webserver-websocket and the
+transport is `Transport.websocket`.
 
 ## A table and a query
 
@@ -99,6 +101,7 @@ Surreal.from(owners).filter_by(in_city).select(|o| { id: o.id, name: o.name }).p
 - **An unannotated query fragment** (`whole = |q| q.select(|r| r)`) is a type
   mismatch, because the lambda is not a `Code`. Annotate the query type with
   open rows, as the `Clinic` helpers of the upstream repo do.
+- **The table of a key** is `id.table_name()`. `id.table()` is a missing method.
 - **Edges** name their ends `from` and `to` (`in` is a keyword). An edge table
   used in the wrong direction is a type error.
 - **A session value is single use.** Every call returns the session to use
