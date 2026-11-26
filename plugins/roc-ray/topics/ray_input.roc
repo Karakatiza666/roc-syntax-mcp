@@ -4,7 +4,7 @@
 ## `input.devices`. The `Keys`, `Mouse` and `Gamepad` modules hold the same
 ## queries as plain functions over that snapshot, so `input.devices.key_down(k)`
 ## and `Keys.key_down(input.devices, k)` are one call written two ways.
-app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
+app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.13.0/default-8yWQXdFMfK8erQff7bMEjF6KjrwFR6sTq9EY4LURGgBw.tar.zst" }
 
 import rr.App
 import rr.Color

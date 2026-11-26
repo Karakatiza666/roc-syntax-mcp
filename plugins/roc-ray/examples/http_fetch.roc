@@ -10,7 +10,7 @@
 ## to a different origin arrives as `PermissionDenied`.
 app [Model, program] {
 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
-	rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst",
+	rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.13.0/default-8yWQXdFMfK8erQff7bMEjF6KjrwFR6sTq9EY4LURGgBw.tar.zst",
 }
 
 import rr.App
@@ -164,6 +164,10 @@ fetch! = |http, id, url|
 			}
 		Err(PermissionDenied) => Broke(id, "the server redirected to an origin this app did not declare")
 		Err(InvalidUrl(_)) => Broke(id, "that is not a URL this platform will fetch")
+		Err(HttpErr(Busy)) => Broke(id, "the host has other large responses in flight")
+		Err(HttpErr(ResponseLimitUnsupported)) => Broke(id, "the requested response limit is too high")
+		Err(HttpErr(ResponseTooLarge)) => Broke(id, "the response exceeded the byte limit")
+		Err(HttpErr(Unavailable)) => Broke(id, "the HTTP runtime has stopped")
 		Err(HttpErr(Timeout)) => Broke(id, "the request timed out")
 		Err(HttpErr(NetworkError)) => Broke(id, "the request failed at the network layer")
 		Err(HttpErr(MalformedResponse)) => Broke(id, "the reply was not a well-formed HTTP response")
@@ -232,7 +236,7 @@ render! = |model, frame| {
 draw_indicator! : Draw.Frame, { x : F32, y : F32 }, State, F32 => {}
 draw_indicator! = |frame, center, state, elapsed| {
 	color = state_color(state)
-	frame.circle!({ center: center, radius: 20, style: Draw.outlined(Color.with_alpha(color, 55), 1.5) })
+	frame.circle!({ center: Draw.Vector2.{ x: center.x, y: center.y }, radius: 20, style: Draw.outlined(Color.with_alpha(color, 55), 1.5) })
 	match state {
 		Waiting =>
 			List.for_each!(
@@ -247,7 +251,7 @@ draw_indicator! = |frame, center, state, elapsed| {
 				},
 			)
 
-		_ => frame.circle!({ center: center, radius: 6, style: Draw.filled(color) })
+		_ => frame.circle!({ center: Draw.Vector2.{ x: center.x, y: center.y }, radius: 6, style: Draw.filled(color) })
 	}
 }
 

@@ -3,7 +3,7 @@
 ## how to place points with the same transformation, and how `update!` changes
 ## the mouse cursor after calculating what the pointer is over.
 app [Model, program] {
-	rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst",
+	rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.13.0/default-8yWQXdFMfK8erQff7bMEjF6KjrwFR6sTq9EY4LURGgBw.tar.zst",
 }
 
 import rr.App
@@ -35,7 +35,7 @@ Model : {
 ## Apply pointer input and return the cursor that `update!` should set.
 drag_corner : Model, Devices.Snapshot -> { model : Model, cursor : Mouse.Cursor }
 drag_corner = |model, devices| {
-	mouse = devices.mouse.position()
+	mouse = Math.Vec2.{ x: devices.mouse.x, y: devices.mouse.y }
 	handle_near = Math.distance(mouse, model.corners.top_right) < 34
 	dragging = devices.mouse.button_down(Left) and (model.dragging or (devices.mouse.button_pressed(Left) and handle_near))
 	cursor = if (handle_near or dragging) ResizeAll else Arrow

@@ -6,7 +6,7 @@
 ## of what the devices did, and how `update!` can change the clipboard, cursor,
 ## and window or read a pixel from the previous drawing. Every cycle with
 ## events also prints them to the terminal, in the order they happened.
-app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
+app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.13.0/default-8yWQXdFMfK8erQff7bMEjF6KjrwFR6sTq9EY4LURGgBw.tar.zst" }
 
 import rr.Draw
 import rr.Text
@@ -163,6 +163,8 @@ update! = |model, input, io| {
 		status = match io.clipboard().set_text!(buffered) {
 			Ok({}) => "copied to clipboard"
 			Err(PermissionDenied) => "clipboard access was not granted"
+			Err(TooLarge) => "text is too large for the clipboard"
+			Err(Unavailable) => "clipboard write is unavailable"
 		}
 		{ typed: buffered, clipboard_status: status }
 	} else if ctrl_held and devices.key_pressed(KeyV) {
@@ -274,6 +276,7 @@ eyedropper_label = |picked|
 		Err(RegionOutOfBounds) => "Under the pointer: off screen"
 		# Nothing has been presented yet, or this run has no framebuffer at all.
 		Err(Unavailable) => "Under the pointer: no frame to read yet"
+		Err(BudgetExceeded) => "Under the pointer: source exceeds the readback budget"
 		Err(Busy) => "Under the pointer: host busy, try again"
 		Err(TargetUnavailable) => "Under the pointer: no source"
 		Err(ReadbackFailed) => "Under the pointer: readback failed"

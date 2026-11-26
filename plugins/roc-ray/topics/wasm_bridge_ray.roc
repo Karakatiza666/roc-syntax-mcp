@@ -1,6 +1,6 @@
 ## A RocRay game in the browser: one platform-free core, two runners.
 ##
-## roc-ray 0.11.1 has no wasm32 target. `--target=wasm32` fails with
+## roc-ray 0.13.0 has no wasm32 target. `--target=wasm32` fails with
 ## "unsupported target", and upstream closed the web target as not planned
 ## (roc-ray issue #154). So the rules and the picture of the game go in a
 ## module that imports no platform. Two runners drive that module:
@@ -19,14 +19,15 @@
 ## `Game.Shape`. The wasm side is in comments at the end, because no app can
 ## import two platforms. It was built and run with nightly
 ## `nightly-2026-09-27-a3ce7f1`, the nightly that roc-ray 0.10.0 pinned. The
-## roc-ray runner here checks under the nightly of roc-ray 0.11.1.
-app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
+## roc-ray runner here checks under the nightly of roc-ray 0.13.0.
+app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.13.0/default-8yWQXdFMfK8erQff7bMEjF6KjrwFR6sTq9EY4LURGgBw.tar.zst" }
 
 import rr.App
 import rr.Color
 import rr.Devices
 import rr.Draw
 import rr.Keys
+import rr.Math
 
 # The core. Nothing from here to the runner uses `rr`.
 
@@ -194,7 +195,9 @@ paint! = |frame, shape|
 	match shape {
 		Rect(r) => frame.rectangle!({ x: r.x, y: r.y, width: r.width, height: r.height, style: Draw.filled(Color.from_hex_rgba(r.rgba)) })
 		Disc(d) => frame.circle!({ center: { x: d.x, y: d.y }, radius: d.radius, style: Draw.filled(Color.from_hex_rgba(d.rgba)) })
-		Poly(p) => frame.convex_polygon!({ points: p.points, style: Draw.filled(Color.from_hex_rgba(p.rgba)) })
+		# The core's points are plain records, and a plain record is never a
+		# `Math.Vec2`, so each is converted here, at the platform edge.
+		Poly(p) => frame.convex_polygon!({ points: List.map(p.points, |pt| Math.vec2(pt.x, pt.y)), style: Draw.filled(Color.from_hex_rgba(p.rgba)) })
 	}
 
 ## The wasm side. Steps, in the order a build runs them:

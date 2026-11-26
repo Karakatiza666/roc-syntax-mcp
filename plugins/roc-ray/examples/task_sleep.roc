@@ -3,7 +3,7 @@
 ## open until you press Escape. This example introduces tasks, work that may
 ## wait without pausing drawing, and messages, the values finished tasks
 ## deliver in a later `Input`.
-app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
+app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.13.0/default-8yWQXdFMfK8erQff7bMEjF6KjrwFR6sTq9EY4LURGgBw.tar.zst" }
 
 import rr.App
 import rr.Task
@@ -148,15 +148,15 @@ render! = |model, frame| {
 }
 
 ## A point on the ring at `angle` radians.
-on_ring : { x : F32, y : F32 }, F32 -> { x : F32, y : F32 }
+on_ring : Draw.Vector2, F32 -> Draw.Vector2
 on_ring = |center, angle| { x: center.x + ring_radius * F32.cos(angle), y: center.y + ring_radius * F32.sin(angle) }
 
 ## Where the comet is at a given moment. One function so the head and every
 ## trail sample are guaranteed to sit on the same orbit.
-orbit : { x : F32, y : F32 }, F32 -> { x : F32, y : F32 }
+orbit : Draw.Vector2, F32 -> Draw.Vector2
 orbit = |center, seconds| on_ring(center, seconds * 2)
 
-draw_trail! : Draw.Frame, { x : F32, y : F32 }, F32 => {}
+draw_trail! : Draw.Frame, Draw.Vector2, F32 => {}
 draw_trail! = |frame, center, seconds| {
 	for remaining in (1.U64..=8).iter_rev() {
 		fade = U64.to_f32(remaining) / 8
@@ -166,7 +166,7 @@ draw_trail! = |frame, center, seconds| {
 
 ## The progress arc, stepped by hand out of short segments so it needs nothing
 ## more than `frame.line!`.
-draw_arc! : Draw.Frame, { x : F32, y : F32 }, F32 => {}
+draw_arc! : Draw.Frame, Draw.Vector2, F32 => {}
 draw_arc! = |frame, center, progress| {
 	for step in 0.U64..<ring_segments {
 		if U64.to_f32(step) / U64.to_f32(ring_segments) >= progress {

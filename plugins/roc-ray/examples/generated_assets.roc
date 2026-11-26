@@ -6,7 +6,7 @@
 ## example shows generated assets, updating part of a texture, and keeping
 ## drawing data separate from the effects that upload pixels and play sound.
 app [Model, program] {
-	rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst",
+	rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.13.0/default-8yWQXdFMfK8erQff7bMEjF6KjrwFR6sTq9EY4LURGgBw.tar.zst",
 }
 
 import rr.App
@@ -233,7 +233,7 @@ update_editor = |model, input| {
 			],
 		}
 	} else if input.mouse.button_down(Left) {
-		match cell_at(input.mouse.position()) {
+		match cell_at(Math.Vec2.{ x: input.mouse.x, y: input.mouse.y }) {
 			Err(_) => { model: { ..base, last_cell: Idle }, edits: [] }
 			Ok(index) =>
 				if base.last_cell == Painted(index) {
@@ -339,7 +339,7 @@ update! = |model, input, _io| {
 		perform_edit!(next.model.texture, edit)
 	}
 
-	mouse = devices.mouse.position()
+	mouse = Math.Vec2.{ x: devices.mouse.x, y: devices.mouse.y }
 	Mouse.set_cursor!(
 		match cell_at(mouse) {
 			Ok(_) => Crosshair

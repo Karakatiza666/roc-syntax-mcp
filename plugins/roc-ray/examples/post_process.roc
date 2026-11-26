@@ -3,7 +3,7 @@
 ##
 ## Press Escape to quit. This example shows drawing in stages, combining light
 ## additively, and changing a shader setting before using it.
-app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
+app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.13.0/default-8yWQXdFMfK8erQff7bMEjF6KjrwFR6sTq9EY4LURGgBw.tar.zst" }
 
 import rr.App
 import rr.Assets
@@ -32,7 +32,7 @@ dev_flag = "--dev"
 ## The directory that `--dev` loads the shader from, relative to the directory
 ## you run the example from. The config declares it and `open_assets!` opens
 ## it, so both read this one constant.
-assets_dir = "examples/post_process/assets"
+assets_dir = "assets"
 
 config : List(Str) -> App.Config
 config = |args| {

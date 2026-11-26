@@ -4,7 +4,7 @@
 ## and press Escape to quit. This example introduces the three app functions:
 ## `init!` creates the starting state, `update!` responds to each `Input`, and
 ## `render!` draws the current state into a `Frame`.
-app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
+app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.13.0/default-8yWQXdFMfK8erQff7bMEjF6KjrwFR6sTq9EY4LURGgBw.tar.zst" }
 
 import rr.App
 import rr.Color
@@ -99,8 +99,8 @@ render! = |model, frame| {
 	model.help.draw!(frame, { pos: { x: center_x, y: panel.y + 160 }, color: Color.from_hex_rgb(0xa8b4cc), align: (Top, Center) })
 
 	# The pointer gets a halo that pulses with the same clock as the backdrop.
-	frame.circle!({ center: model.pointer, radius: 26 + 8 * pulse, style: Draw.filled(Color.with_alpha(accent, 40)) })
-	frame.circle!({ center: model.pointer, radius: 18, style: Draw.filled_and_outlined(accent, Color.white, 3) })
+	frame.circle!({ center: Draw.Vector2.{ x: model.pointer.x, y: model.pointer.y }, radius: 26 + 8 * pulse, style: Draw.filled(Color.with_alpha(accent, 40)) })
+	frame.circle!({ center: Draw.Vector2.{ x: model.pointer.x, y: model.pointer.y }, radius: 18, style: Draw.filled_and_outlined(accent, Color.white, 3) })
 
 	Ok({})
 }

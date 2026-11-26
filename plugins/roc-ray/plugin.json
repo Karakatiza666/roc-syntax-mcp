@@ -1,10 +1,10 @@
 {
   "schema": 1,
   "maintainer": "roc-syntax-mcp, from the lukewilliamboswell/roc-ray releases",
-  "compiler": "nightly-2026-10-23-18478ff",
+  "compiler": "nightly-2026-11-24-ff5e544",
   "corpora": [
     {
-      "release": "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst",
+      "release": "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.13.0/default-8yWQXdFMfK8erQff7bMEjF6KjrwFR6sTq9EY4LURGgBw.tar.zst",
       "description": "The RocRay platform: a frame loop over raylib, with drawing, input devices, audio, assets, tilemaps, physics, tasks, declared permissions, files, HTTP, UDP, SQLite, commands, and capture.",
       "purpose": "games, graphics and sound",
       "overview": "overview.md",
@@ -139,13 +139,17 @@
             "args!",
             "entropy!",
             "redundant open tag union",
-            "error set"
+            "error set",
+            "Math.Vec2",
+            "Math.vec2",
+            "mouse position",
+            "plain record"
           ]
         },
         {
           "name": "ray_draw",
           "file": "topics/ray_draw.roc",
-          "description": "Drawing through `Draw.Frame`: the styles, shapes, convex polygons and concave shapes split into triangles, scoped camera and scissor callbacks, and listing `ScopeLimit` in `render!`'s error set.",
+          "description": "Drawing through `Draw.Frame`: the styles, shapes, convex polygons, concave fills with `triangles!`, line strips and rings, scoped camera and scissor callbacks, and listing `ScopeLimit` in `render!`'s error set.",
           "keywords": [
             "draw",
             "drawing",
@@ -175,7 +179,15 @@
             "camera",
             "scissor",
             "render",
-            "canvas"
+            "canvas",
+            "triangles!",
+            "triangle_fan!",
+            "triangle_strip!",
+            "line_strip!",
+            "ring!",
+            "ellipse!",
+            "circle_sector!",
+            "winding"
           ]
         },
         {
@@ -261,7 +273,7 @@
         {
           "name": "ray_tasks",
           "file": "topics/ray_tasks.roc",
-          "description": "Work that waits: `Task.spawn!` with the input as its witness, services from `App.Io` captured by the closure, directory handles, one message per task on a later `input.messages`, and the phase rule the types do not carry.",
+          "description": "Work that waits: `Task.spawn!` with the input as its witness, services from `App.Io` captured by the closure, directory handles, HTTP limits through `send_with!` and every transport error, one message per task on a later `input.messages`, and the phase rule the types do not carry.",
           "keywords": [
             "task",
             "tasks",
@@ -291,7 +303,14 @@
             "ReadDir",
             "Url.parse",
             "HttpOrigin",
-            "PermissionDenied"
+            "PermissionDenied",
+            "send_with!",
+            "get_utf8_with!",
+            "Http.Config",
+            "max_response_bytes",
+            "timeout_ms",
+            "ResponseTooLarge",
+            "Busy"
           ]
         },
         {

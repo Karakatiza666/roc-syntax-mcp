@@ -7,7 +7,7 @@
 ## Shaders and 3D drawing have their own program, `ray_shader`. Since 0.11.0 a
 ## shader is `Shader(uniforms)` with a Roc record for its uniforms, and
 ## `Draw.Shader` is gone.
-app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
+app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.13.0/default-8yWQXdFMfK8erQff7bMEjF6KjrwFR6sTq9EY4LURGgBw.tar.zst" }
 
 import rr.App
 import rr.Camera
@@ -120,13 +120,27 @@ render! = |model, frame| {
 		style: Draw.filled_and_outlined(Color.from_hex_rgb(0x27ae60), Color.ray_white, 2),
 	})
 
-	# Split a concave shape into `triangle!` calls. List each triangle's corners
-	# counter-clockwise as seen on screen, because a clockwise triangle fills
-	# nothing. These three make a square with a V cut into its top edge.
-	notched = Draw.filled(Color.from_hex_rgb(0x56ccf2))
-	frame.triangle!({ a: { x: 760, y: 300 }, b: { x: 760, y: 460 }, c: { x: 810, y: 360 }, style: notched })
-	frame.triangle!({ a: { x: 810, y: 360 }, b: { x: 760, y: 460 }, c: { x: 860, y: 460 }, style: notched })
-	frame.triangle!({ a: { x: 810, y: 360 }, b: { x: 860, y: 460 }, c: { x: 860, y: 300 }, style: notched })
+	# Fill a concave shape with `triangles!`: every three points are one
+	# triangle, in either winding, and a count that is not a multiple of three
+	# stops the app. It takes a `color`, not a `style`, because a triangle list
+	# has no outline. One `triangle!` takes a style instead, and it fills
+	# nothing when its corners run clockwise on screen. These three triangles
+	# make a square with a V cut into its top edge.
+	frame.triangles!({
+		points: [
+			{ x: 760, y: 300 }, { x: 760, y: 460 }, { x: 810, y: 360 },
+			{ x: 810, y: 360 }, { x: 860, y: 460 }, { x: 760, y: 460 },
+			{ x: 810, y: 360 }, { x: 860, y: 460 }, { x: 860, y: 300 },
+		],
+		color: Color.from_hex_rgb(0x56ccf2),
+	})
+	# An open polyline is `line_strip!`, and it takes a `stroke`.
+	frame.line_strip!({
+		points: [{ x: 760, y: 500 }, { x: 790, y: 540 }, { x: 830, y: 500 }, { x: 860, y: 540 }],
+		stroke: Draw.stroke(Color.ray_white, 2),
+	})
+	# Arcs are in degrees. `ring!` is an annular sector, so a gauge is one call.
+	frame.ring!({ center: { x: 120, y: 120 }, inner_radius: 30, outer_radius: 40, start_angle: 0, end_angle: 270, segments: 36, style: Draw.filled(Color.orange) })
 
 	# The debug FPS counter is styled like everything else rather than being a
 	# bare corner: `{ pos, size, color }`, and `pos` is the record, not the call.

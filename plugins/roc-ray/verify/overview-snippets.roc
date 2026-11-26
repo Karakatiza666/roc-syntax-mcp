@@ -2,7 +2,7 @@
 ## matches code that compiles. `plugin validate` fails the page when a fenced Roc block
 ## on it has no line-for-line home here.
 app [Model, program] {
-	rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst",
+	rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.13.0/default-8yWQXdFMfK8erQff7bMEjF6KjrwFR6sTq9EY4LURGgBw.tar.zst",
 }
 
 import rr.App
@@ -60,7 +60,8 @@ update! = |model, input, _io| {
 	if input.devices.key_pressed(KeyQ) {
 		Err(Exit(0))
 	} else {
-		Ok({ ..model, notes, pointer: input.devices.mouse.position() })
+		p = input.devices.mouse.position()
+		Ok({ ..model, notes, pointer: Math.vec2(p.x, p.y) })
 	}
 }
 

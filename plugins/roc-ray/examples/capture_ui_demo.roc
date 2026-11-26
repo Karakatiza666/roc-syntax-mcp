@@ -2,7 +2,7 @@
 ## `captures/ui_demo.gif`, then exits. This example shows how simulated mouse,
 ## key, and text input can exercise normal UI code, and how to include a cursor
 ## in a recording.
-app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
+app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.13.0/default-8yWQXdFMfK8erQff7bMEjF6KjrwFR6sTq9EY4LURGgBw.tar.zst" }
 
 import rr.App
 import rr.Capture
@@ -306,7 +306,7 @@ render! = |model, frame| {
 
 	match List.get(model.field_labels, model.typed) {
 		Ok(label) => {
-			label.draw!(frame, { pos: field_text_origin, color: theme.ink })
+			label.draw!(frame, { pos: Draw.Vector2.{ x: field_text_origin.x, y: field_text_origin.y }, color: theme.ink })
 			if model.focused and caret_visible(model.frame) {
 				draw_caret!(frame, field_text_origin.x + label.bounds().width + 3)
 			}

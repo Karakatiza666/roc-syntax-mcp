@@ -18,7 +18,7 @@
 ## `Camera.perspective` makes a `Camera.Camera3D`, and `frame.with_camera_3d!`
 ## draws inside it with depth testing. Like `with_camera!` it can answer
 ## `ScopeLimit`, so `render!` lists the tag.
-app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
+app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.13.0/default-8yWQXdFMfK8erQff7bMEjF6KjrwFR6sTq9EY4LURGgBw.tar.zst" }
 
 import rr.App
 import rr.Assets
@@ -55,10 +55,16 @@ fragment_source =
 	\\    finalColor = texel * tint * (0.8 + 0.2 * sin(time * 3.0));
 	\\}
 
+## The type of a uniform, as `UniformTypeMismatch` reports it. The platform
+## names this union `ShaderUniformType` inside its `Shader` module, but
+## `Shader.ShaderUniformType` is "not exposed", so an app that lists the error
+## writes the union out.
+UniformType : [Array(U32), Bool, Float, Int, Sampler2D, Vec2, Vec3, Vec4, Unknown(U32)]
+
 ## Loading a shader is refused in `render!`, so it happens here. An empty
 ## vertex source selects raylib's default stage. The error set names the load
 ## errors this call can raise, including the uniform ones.
-init! : App.Init(Model, [ShaderLoadFailed, ResourceLimit, UniformNotFound(Str), UniformReflectionUnavailable, UniformTypeMismatch({ name : Str, expected : Shader.ShaderUniformType, actual : Shader.ShaderUniformType }), UnsupportedUniformType(Str), TextureGenerationFailed])
+init! : App.Init(Model, [ShaderLoadFailed, ResourceLimit, UniformNotFound(Str), UniformReflectionUnavailable, UniformTypeMismatch({ name : Str, expected : UniformType, actual : UniformType }), UnsupportedUniformType(Str), TextureGenerationFailed])
 init! = App.init(
 	App.default.with_title("Topic: shader").with_size({ width: 800, height: 600 }),
 	|_io| {

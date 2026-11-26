@@ -8,4 +8,7 @@ Model : { pointer : Math.Vec2 }
 
 init! = App.init(App.default, |_io| Ok({ pointer: { x: 0, y: 0 } }))
 
-update! = |_model, input, _io| Ok({ pointer: input.devices.mouse.position() })
+update! = |_model, input, _io| {
+	p = input.devices.mouse.position()
+	Ok({ pointer: Math.vec2(p.x, p.y) })
+}

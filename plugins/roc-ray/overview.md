@@ -15,7 +15,7 @@ signature, `search scope="roc-ray"` when you do not know the name,
 A game is one `main.roc`. The platform line is a release URL that the first
 build downloads and caches, so the only install is a Roc nightly. Since 0.11.0
 the platform names no compiler: use a recent nightly. This release was built
-and tested with `nightly-2026-10-23-18478ff`. An app header from 0.10.0 may
+and tested with `nightly-2026-11-24-ff5e544`. An app header from 0.10.0 may
 carry a `roc: "nightly-..."` entry; delete it.
 
 ```bash
@@ -63,7 +63,7 @@ source-tree declaration and a recording mode can ask for a hidden window.
 
 ```roc
 app [Model, program] {
-	rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst",
+	rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.13.0/default-8yWQXdFMfK8erQff7bMEjF6KjrwFR6sTq9EY4LURGgBw.tar.zst",
 }
 
 program = { init!, update!, render! }
@@ -151,7 +151,9 @@ type-checks inside it, so use the inner name.
 
 `with_camera!`, `with_scissor!` and `with_blend_mode!` raise `ScopeLimit`.
 `with_shader!` and `with_render_texture!` add `ScopeUnavailable`. A record
-literal is a `Math.Vec2` wherever one is expected.
+literal is a `Math.Vec2` wherever one is expected, but a value of plain record
+type never is: `mouse.position()` returns `{ x, y }`, so a `Math.Vec2` field
+takes `Math.vec2(p.x, p.y)`. A concave fill is `frame.triangles!`.
 
 A shader is `Shader(uniforms)` from the `Shader` module, not `Draw.Shader`. Its
 uniforms are a Roc record that you hand to `Shader.from_source!` or
@@ -250,6 +252,10 @@ them in the repository.
   `Sprite.step(animation, dt)`. A `Sprite` carries them, named `.rotation(r)`,
   not `.with_rotation(r)`.
 - `io.args!()` includes `argv[0]`, so an app's own flags start at index 1.
+- Each `Http.Client` sender has a `_with!` twin taking an `Http.Config` first.
+  Its fields default, so `send_with!({ max_response_bytes: 64 * 1024 }, req)`
+  names only what changes. A match on `HttpErr` also lists `Busy`,
+  `ResponseTooLarge`, `ResponseLimitUnsupported` and `Unavailable`.
 - `Http.Client.send!` takes the `roc-lang/http` package's `Request`. Naming it
   means pinning `http: ".../roc-lang/http/releases/download/1.0.0/..."` in
   the app header too. `ray_tasks` has the line.

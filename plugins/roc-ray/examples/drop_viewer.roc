@@ -1,7 +1,7 @@
 ## Displays an image dropped onto the window; press Escape to quit. This
 ## example shows one-time dropped-file input, tasks that read without pausing
 ## drawing, messages that return the bytes to `update!`, and texture creation.
-app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
+app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.13.0/default-8yWQXdFMfK8erQff7bMEjF6KjrwFR6sTq9EY4LURGgBw.tar.zst" }
 
 import rr.App
 import rr.Assets

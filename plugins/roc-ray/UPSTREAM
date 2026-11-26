@@ -4,40 +4,60 @@
 # diff tag to tag.
 
 repo     https://github.com/lukewilliamboswell/roc-ray
-tag      0.11.1
-platform 4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst
-# The release's other bundle, 4HTCkB6nkWxGHMP3aMvifD5a9CfyNfVGsD5cEpZURxcf.tar.zst,
+tag      0.13.0
+platform default-8yWQXdFMfK8erQff7bMEjF6KjrwFR6sTq9EY4LURGgBw.tar.zst
+# The release's other bundle, wayland-DtNESPBhqKozdsads2jCX1haCqNccMcySfVEKwxPchxp.tar.zst,
 # is the Wayland build of the same platform. Its .roc modules have the same API.
 # Nothing here pins it. There is no types bundle. The platform contains the
 # roc-ray-types package of the release candidates, so this plugin has no types/
 # directory and the manifest has no `packages` entry.
 #
-# 0.11.1 republishes 0.11.0. The platform is unchanged, and only the examples
-# archive differs: 0.11.0's entries had no file type, and the nightly runner
-# refused the archive. This plugin took its examples from 0.11.1's archive.
-# 0.11.0 bundle: JoBzGMU8iK4WzhkVGUjrDvfev2TTjYPhQfPphEVFeux.tar.zst. This
-# plugin does not pin it.
+# Since 0.12.3 a bundle's file name is `<variant>-<hash>.tar.zst`, not the bare
+# hash. The compiler caches it under the bare hash.
 
 # The manifest's `compiler` line is the nightly the release says it was
-# "Built and tested with": nightly-2026-10-23-18478ff. The release notes add
+# "Built and tested with": nightly-2026-11-24-ff5e544. The release notes add
 # that the platform names no compiler: neither its bundle header nor any
 # example has a `roc:` entry, so a compiler pin is not part of the release.
-# Every app here was checked under nightly-2026-10-23-18478ff, which is not
-# the nightly in corpus/language/UPSTREAM. Another nightly may check the same
-# apps too, because no entry pins one. At 0.10.0 the pin was a hard
+# Every app here was checked under nightly-2026-11-24-ff5e544, which is not
+# the nightly in corpus/language/UPSTREAM. At 0.10.0 the pin was a hard
 # requirement (a "roc version mismatch" warning on every app under any other
 # nightly), and that is gone.
-compiler nightly-2026-10-23-18478ff
+#
+# 0.13.0 over 0.11.1 (0.12.0 to 0.12.3 in between). What changed what this
+# plugin teaches, each found by checking the 0.11.1 programs under the new pin:
+#   - The compiler no longer converts a value of plain record type to a
+#     nominal one. `input.devices.mouse.position()` returns `{ x, y }`, so a
+#     model field typed `Math.Vec2` takes `Math.vec2(p.x, p.y)`. A record
+#     literal still becomes a `Math.Vec2` where one is expected. ray_app,
+#     verify/, sample.roc and wasm_bridge_ray were fixed, and the overview
+#     says so.
+#   - `Shader.ShaderUniformType` is "not exposed" (the platform did not
+#     change; the compiler did). ray_shader writes the union out.
+#   - `Http.TransportErr` gains Busy, ResponseLimitUnsupported,
+#     ResponseTooLarge and Unavailable, and every sender gains a `_with!` twin
+#     taking an `Http.Config` whose fields default. ray_tasks matches all
+#     eight errors and sends with a 64 KiB limit.
+#   - `Draw.Frame` gains triangles!, triangle_fan!, triangle_strip!,
+#     line_strip!, circle_sector!, ellipse! and ring!. ray_draw fills its
+#     concave shape with `triangles!` instead of three `triangle!` calls.
+#   - Not taught by a topic, and indexed: `Files` `read_bytes_with!` (a
+#     per-file ceiling up to 64 MiB) and `open_cursor!`/`next!` for directory
+#     listing in batches; `Sqlite` `open_configured!`, `open_read_with!` and
+#     `open_memory_with!`; `Capture.PixelReadError` gains BudgetExceeded;
+#     `io.clipboard().set_text!` fails with `ClipboardWriteError`
+#     ([PermissionDenied, TooLarge, Unavailable]).
+compiler nightly-2026-11-24-ff5e544
 
 # The platform's header pins two packages, and neither is vendored here:
 #   roc-lang/http 1.0.0, unchanged since 0.10.0
 #   kili-ilo/roc-random 0.9.3 (HoULZB8QzktiNPYSe9myzy9JQzm1nMbjDPVWoA63QpVf.tar.zst),
-#     up from 0.9.2. corpus/packages/roc-random/ follows this pin.
+#     unchanged since 0.11.0. corpus/packages/roc-random/ follows this pin.
 
 index.json <- the release bundle's own .roc modules, parsed by
               `roc-syntax-mcp plugin index`. No source is vendored: the
               manifest names the bundle URL, and every app pins the same one
-examples/  <- roc-ray-examples-0.11.1.zip, one directory per example, flattened to
+examples/  <- roc-ray-examples-0.13.0.zip, one directory per example, flattened to
               examples/<name>.roc
 topics/    <- this package's own, not upstream's: programs written against
               this pin and declared in plugin.json so they answer by name
@@ -61,21 +81,22 @@ overview.md <- this package's own. Its setup, permission and shipping advice
 #   docs/*.adoc  the RocRay manual. It is AsciiDoc, and this host serves only
 #                Markdown from a `docs` directory, so to bundle it, this
 #                package would have to convert it
-#   roc-ray-manual-0.11.1.*, roc-ray-api-docs-0.11.1.zip  rendered copies of
-#                the same manual and of the API this corpus indexes
+#   roc-ray-0.13.0.pdf, roc-ray-docs-0.13.0.zip  rendered copies of the same
+#                manual and of the API this corpus indexes
 
 # The repin changes no vendored app. 0.11.0 dropped the `roc:` entry from every
-# example header and the release zip already pins the 0.11.1 bundle URL, so
+# example header and the release zip already pins the 0.13.0 bundle URL, so
 # examples/ is a flat copy of each example's main.roc. (At 0.10.0 the repin
-# removed `roc: "nightly-2026-09-27-a3ce7f1"` from each header.) The topics,
-# scaffold and verify/ were reformatted with `roc fmt` under the compiler line
-# above, as upstream's examples are: it parenthesizes the condition of a
-# braceless `if` and expands a call whose last argument is a multi-line closure.
+# removed `roc: "nightly-2026-09-27-a3ce7f1"` from each header.) At 0.11.1 the
+# topics, scaffold and verify/ were reformatted with `roc fmt`, as upstream's
+# examples are. The 0.13.0 edits were written by hand in that style, and
+# `roc fmt` was not run over them.
 #
 # After the repin, apply the patch series to examples/:
 #   patch -p1 < patches/0001-load-assets-beside-the-executable.patch
 # Upstream's sprite_and_sound and post_process open their assets at a path
-# relative to the working directory. Models copy that path, and a built game
+# relative to the working directory (`assets`, since 0.12.1 each example runs
+# from its own directory). Models copy that path, and a built game
 # then fails with NotFound when it starts from another directory. The patch
 # makes both examples read `assets/` beside the executable, and the source tree
 # only with `--dev`, as topics/ray_project.roc does. Regenerate the patch
@@ -84,7 +105,8 @@ overview.md <- this package's own. Its setup, permission and shipping advice
 
 # Parsed counts at this pin, for the next repin to diff against. These are what
 # `plugin validate` reports on its `corpus` line:
-# 1346 items in 101 modules: 302 host, 45 private, 999 public.
+# 1508 items in 109 modules: 325 host, 82 private, 1101 public.
+# At 0.11.1: 1346 items in 101 modules: 302 host, 45 private, 999 public.
 # At 0.10.0: 1260 items in 99 modules: 301 host, 37 private, 922 public.
 # At 0.10.0-rc3, with the types package: 1357 items in 112 modules: 276 host,
 # 36 private, 1045 public.

@@ -4,7 +4,7 @@
 ##
 ## This example shows how to draw a large composition into a render texture,
 ## display a scaled preview, and use a Task for an export that may take time.
-app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
+app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.13.0/default-8yWQXdFMfK8erQff7bMEjF6KjrwFR6sTq9EY4LURGgBw.tar.zst" }
 
 import rr.App
 import rr.Capture
@@ -156,7 +156,7 @@ update! = |model, input, io| {
 		else resolved.theme
 
 	save = devices.key_pressed(KeyS)
-	sun = if (resolved.demo) demo_sun(cycle) else devices.mouse.position()
+	sun = if (resolved.demo) demo_sun(cycle) else Math.Vec2.{ x: devices.mouse.x, y: devices.mouse.y }
 	next = {
 		..resolved,
 		theme,

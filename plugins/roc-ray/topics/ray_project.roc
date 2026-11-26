@@ -5,7 +5,7 @@
 ## is a release URL, and the first build downloads and caches it, so an author
 ## supplies only a Roc nightly. Since 0.11.0 the platform and its examples
 ## name no compiler: use a recent nightly. This release was built and tested
-## with `nightly-2026-10-23-18478ff`. A `roc:` entry in an app header from
+## with `nightly-2026-11-24-ff5e544`. A `roc:` entry in an app header from
 ## 0.10.0 has to be deleted, since it pins that old nightly and every other
 ## one then warns.
 ##
@@ -17,7 +17,7 @@
 ## handle from `io.files()`, and every directory beyond the app's own is
 ## declared in the config with `with_permission`. Each declaration grants that
 ## access.
-app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
+app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.13.0/default-8yWQXdFMfK8erQff7bMEjF6KjrwFR6sTq9EY4LURGgBw.tar.zst" }
 
 import rr.App
 import rr.Assets

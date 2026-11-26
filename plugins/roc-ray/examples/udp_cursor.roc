@@ -4,7 +4,7 @@
 ##
 ## This example shows immediate UDP sends, a Task for receiving data that may
 ## wait, and Messages that carry received batches back to `update!`.
-app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
+app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.13.0/default-8yWQXdFMfK8erQff7bMEjF6KjrwFR6sTq9EY4LURGgBw.tar.zst" }
 
 import rr.App
 import rr.Color
@@ -89,7 +89,7 @@ update! = |model, input, _io| {
 	# rather than another task. A full send buffer means this frame's position
 	# never left, which for a position update is the right outcome: the next
 	# frame carries a newer one anyway.
-	pointer = input.devices.mouse.position()
+	pointer = Draw.Vector2.{ x: input.devices.mouse.x, y: input.devices.mouse.y }
 	dropped = match Udp.Socket.send!(model.socket, model.peer, encode(pointer)) {
 		Ok({}) => model.dropped
 		Err(_) => model.dropped + 1

@@ -1,7 +1,7 @@
 ## Shipping: one executable per system, its assets beside it, in one zip.
 ##
 ## `roc build` makes an executable for the system it runs on. `--target` makes
-## one for another system. The 0.11.1 default bundle has four targets, and no
+## one for another system. The 0.13.0 default bundle has four targets, and no
 ## other target builds:
 ##
 ## | System               | Target       | Build it from                      |
@@ -33,7 +33,7 @@
 ## raylib's native Wayland backend. It is a different platform URL in the app
 ## header, and it has one target, `x64v1glibc`:
 ##
-## https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4HTCkB6nkWxGHMP3aMvifD5a9CfyNfVGsD5cEpZURxcf.tar.zst
+## https://github.com/lukewilliamboswell/roc-ray/releases/download/0.13.0/wayland-DtNESPBhqKozdsads2jCX1haCqNccMcySfVEKwxPchxp.tar.zst
 ##
 ## The default bundle's X11 build also runs under XWayland, so ship that one
 ## unless you need native Wayland.
@@ -75,7 +75,7 @@
 ## | macOS   | Gatekeeper refuses it. `xattr -dr com.apple.quarantine game`, then run. To stop the warning, sign with an Apple Developer ID and notarize |
 ## | Windows | SmartScreen says "Windows protected your PC". More info, then Run anyway |
 ## | Linux   | The execute bit must survive. `zip` and `unzip` keep it. If lost, `chmod +x game` |
-app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
+app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.13.0/default-8yWQXdFMfK8erQff7bMEjF6KjrwFR6sTq9EY4LURGgBw.tar.zst" }
 
 import rr.App
 import rr.Color

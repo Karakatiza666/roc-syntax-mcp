@@ -5,7 +5,7 @@
 ##
 ## This example shows one shared layout calculation for drawing and pointer hit
 ## testing, resizable-window settings, and monitor information.
-app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
+app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.13.0/default-8yWQXdFMfK8erQff7bMEjF6KjrwFR6sTq9EY4LURGgBw.tar.zst" }
 
 import rr.App
 import rr.Capture
@@ -352,7 +352,7 @@ update! = |model, input, _io| {
 	# Layout follows the window, pointing follows the mouse, and the preview
 	# animates on the clock -- three separate observations off one input.
 	view = Layout.from_size({ width: I32.to_f32(input.window.size.width), height: I32.to_f32(input.window.size.height) })
-	mouse = devices.mouse.position()
+	mouse = Math.Vec2.{ x: devices.mouse.x, y: devices.mouse.y }
 	hover_display = view.display_bounds.contains(mouse)
 	hover_audio = view.audio_bounds.contains(mouse)
 	hover_controls = view.controls_bounds.contains(mouse)

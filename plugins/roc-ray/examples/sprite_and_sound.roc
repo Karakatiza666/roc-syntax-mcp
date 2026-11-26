@@ -4,20 +4,20 @@
 ## This example introduces three ideas, in the order `init!` uses them:
 ##
 ## 1. A permission. An app may only read the directories it declares in its
-##    startup config. With `--dev`, this one declares
-##    `examples/sprite_and_sound/assets`, read-only, and nothing else.
+##    startup config. With `--dev`, this one declares `assets`, read-only,
+##    and nothing else.
 ## 2. An asset store. `Assets.open!` turns that directory into a store that
 ##    textures and sounds are loaded from by name.
 ## 3. Loaded resources. `Assets.load_texture!` reads `blob.png` into a texture
 ##    for drawing and `Audio.load_sound!` reads `boing.wav` into a sound.
 ##
 ## With `--dev`, the app reads the files from the source tree. That path is
-## relative to the directory you run from, so run it from the directory that
-## contains `examples/`. Without `--dev`, the app reads `assets/` beside its
-## executable, which needs no declaration and works from any directory. Copy
-## `assets/` next to a built executable. Both files were made by
+## relative to the directory you run from, so run it from the example's own
+## directory. Without `--dev`, the app reads `assets/` beside its executable,
+## which needs no declaration and works from any directory. Copy `assets/`
+## next to a built executable. Both files were made by
 ## `assets/make_assets.py` and are original to this repository.
-app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
+app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.13.0/default-8yWQXdFMfK8erQff7bMEjF6KjrwFR6sTq9EY4LURGgBw.tar.zst" }
 
 import rr.App
 import rr.Assets
@@ -39,7 +39,7 @@ dev_flag = "--dev"
 
 ## The one directory this app reads with `--dev`. The config declares it and
 ## `open_assets!` opens it, so both use this constant and cannot drift apart.
-assets_dir = "examples/sprite_and_sound/assets"
+assets_dir = "assets"
 
 ## The picture is 16 x 16 pixels; drawing each one 8 x 8 makes it 128 wide.
 scale = 8.F32

@@ -1,5 +1,5 @@
 diff --git a/examples/post_process.roc b/examples/post_process.roc
-index b9cb05f..bef5ea1 100644
+index b5a5ba4..1963da8 100644
 --- a/examples/post_process.roc
 +++ b/examples/post_process.roc
 @@ -9,6 +9,7 @@ import rr.App
@@ -22,7 +22,7 @@ index b9cb05f..bef5ea1 100644
 +## The directory that `--dev` loads the shader from, relative to the directory
 +## you run the example from. The config declares it and `open_assets!` opens
 +## it, so both read this one constant.
- assets_dir = "examples/post_process/assets"
+ assets_dir = "assets"
  
 +config : List(Str) -> App.Config
 +config = |args| {
@@ -60,17 +60,17 @@ index b9cb05f..bef5ea1 100644
  		target = Draw.RenderTexture.load!({ width: 800, height: 600 })?
  		shader = Shader.from_store!(assets, { vertex_path: "", fragment_path: "post_process.fs" }, { time: 0 })?
 diff --git a/examples/sprite_and_sound.roc b/examples/sprite_and_sound.roc
-index eb26707..8d58a01 100644
+index 596fcc9..28a4aab 100644
 --- a/examples/sprite_and_sound.roc
 +++ b/examples/sprite_and_sound.roc
 @@ -4,15 +4,18 @@
  ## This example introduces three ideas, in the order `init!` uses them:
  ##
  ## 1. A permission. An app may only read the directories it declares in its
--##    startup config. This one declares `examples/sprite_and_sound/assets`,
+-##    startup config. This one declares `assets`,
 -##    read-only, and nothing else.
-+##    startup config. With `--dev`, this one declares
-+##    `examples/sprite_and_sound/assets`, read-only, and nothing else.
++##    startup config. With `--dev`, this one declares `assets`, read-only,
++##    and nothing else.
  ## 2. An asset store. `Assets.open!` turns that directory into a store that
  ##    textures and sounds are loaded from by name.
  ## 3. Loaded resources. `Assets.load_texture!` reads `blob.png` into a texture
@@ -79,12 +79,12 @@ index eb26707..8d58a01 100644
 -## The paths are relative to the directory you run from, so run it from the
 -## directory that contains `examples/`. Both files were made by
 +## With `--dev`, the app reads the files from the source tree. That path is
-+## relative to the directory you run from, so run it from the directory that
-+## contains `examples/`. Without `--dev`, the app reads `assets/` beside its
-+## executable, which needs no declaration and works from any directory. Copy
-+## `assets/` next to a built executable. Both files were made by
++## relative to the directory you run from, so run it from the example's own
++## directory. Without `--dev`, the app reads `assets/` beside its executable,
++## which needs no declaration and works from any directory. Copy `assets/`
++## next to a built executable. Both files were made by
  ## `assets/make_assets.py` and are original to this repository.
- app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
+ app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.13.0/default-8yWQXdFMfK8erQff7bMEjF6KjrwFR6sTq9EY4LURGgBw.tar.zst" }
  
 @@ -21,6 +24,7 @@ import rr.Assets
  import rr.Audio
@@ -104,7 +104,7 @@ index eb26707..8d58a01 100644
 +
 +## The one directory this app reads with `--dev`. The config declares it and
 +## `open_assets!` opens it, so both use this constant and cannot drift apart.
- assets_dir = "examples/sprite_and_sound/assets"
+ assets_dir = "assets"
  
  ## The picture is 16 x 16 pixels; drawing each one 8 x 8 makes it 128 wide.
 @@ -46,14 +52,33 @@ program = { init!, update!, render! }

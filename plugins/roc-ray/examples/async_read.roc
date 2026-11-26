@@ -7,7 +7,7 @@
 ## model; every read names a path beneath it. The two files it reads ship
 ## beside it, `greeting.txt` and its own `main.roc`, so run it from the
 ## directory that contains `examples/`.
-app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
+app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.13.0/default-8yWQXdFMfK8erQff7bMEjF6KjrwFR6sTq9EY4LURGgBw.tar.zst" }
 
 import rr.App
 import rr.Files
@@ -226,8 +226,8 @@ draw_indicator! = |frame, center, phase, accent, elapsed|
 			)
 
 		Settled(color) => {
-			frame.circle!({ center: center, radius: 11, style: Draw.outlined(Color.with_alpha(color, 70), 1.5) })
-			frame.circle!({ center: center, radius: 5, style: Draw.filled(color) })
+			frame.circle!({ center: Draw.Vector2.{ x: center.x, y: center.y }, radius: 11, style: Draw.outlined(Color.with_alpha(color, 70), 1.5) })
+			frame.circle!({ center: Draw.Vector2.{ x: center.x, y: center.y }, radius: 5, style: Draw.filled(color) })
 		}
 	}
 

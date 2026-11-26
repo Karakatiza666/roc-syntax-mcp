@@ -6,7 +6,7 @@
 ## This example shows a frame-rate-independent particle update and drawing many
 ## copies of one texture in a single batch.
 app [Model, program] {
-	rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst",
+	rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.13.0/default-8yWQXdFMfK8erQff7bMEjF6KjrwFR6sTq9EY4LURGgBw.tar.zst",
 }
 
 import rr.App
@@ -196,7 +196,7 @@ update! = |model, input, _io| {
 	# A long first cycle or a resize stall must not teleport the fountain.
 	dt = Math.clamp(input.time.elapsed_seconds, 0, 0.05)
 	spread = if (model.demo or devices.key_down(KeySpace)) 1.9 else 0.7
-	pointer = devices.mouse.position()
+	pointer = Math.Vec2.{ x: devices.mouse.x, y: devices.mouse.y }
 	emitter =
 		if model.demo {
 			demo_emitter(input.time.cycle_count)

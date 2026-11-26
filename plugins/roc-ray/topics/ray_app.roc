@@ -4,7 +4,7 @@
 ## model, `update!` folds one `App.Input` into the next one, and `render!` draws
 ## it. Nothing here is optional. The platform's `requires` block names all
 ## three, plus two types that the app must declare.
-app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
+app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.13.0/default-8yWQXdFMfK8erQff7bMEjF6KjrwFR6sTq9EY4LURGgBw.tar.zst" }
 
 import rr.App
 import rr.Color
@@ -90,10 +90,16 @@ update! = |model, input, _io|
 		Ok({
 			..model,
 			seconds: model.seconds + input.time.elapsed_seconds,
-			pointer: input.devices.mouse.position(),
+			# `position()` returns a plain `{ x, y }` record, and a plain record
+			# is never a `Math.Vec2`, so the field needs `Math.vec2`. Only a
+			# record literal becomes a `Math.Vec2` where one is expected.
+			pointer: pointer_of(input.devices.mouse.position()),
 			clicks: model.clicks + if (input.devices.mouse.button_pressed(Left)) 1 else 0,
 		})
 	}
+
+pointer_of : { x : F32, y : F32 } -> Math.Vec2
+pointer_of = |p| Math.vec2(p.x, p.y)
 
 ## Draws, and only draws. It gets no `App.Io`, and its return type is
 ## `Try({}, ...)`, not `Try(Model, ...)`: the model cannot change here.

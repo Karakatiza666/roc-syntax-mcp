@@ -3,7 +3,7 @@
 ## Move with WASD or the arrow keys, zoom with the mouse wheel, rotate with
 ## Q/E, reset with R, and quit with Escape. This example demonstrates camera
 ## drawing and converting positions between world and screen coordinates.
-app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst" }
+app [Model, program] { rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.13.0/default-8yWQXdFMfK8erQff7bMEjF6KjrwFR6sTq9EY4LURGgBw.tar.zst" }
 
 import rr.App
 import rr.Camera
@@ -91,7 +91,7 @@ update! = |model, input, _io| {
 	rotation_dir = axis(devices.key_down(KeyQ), devices.key_down(KeyE))
 	rotation = if (devices.key_pressed(KeyR)) 0 else model.rotation + rotation_dir * 90 * dt
 
-	Ok({ ..model, player, zoom, rotation, mouse: devices.mouse.position() })
+	Ok({ ..model, player, zoom, rotation, mouse: Math.Vec2.{ x: devices.mouse.x, y: devices.mouse.y } })
 }
 
 ## Builds the camera and coordinate conversions from the latest Model. This

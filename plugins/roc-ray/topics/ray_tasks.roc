@@ -21,7 +21,7 @@
 ## `Request.from_method` "does not exist".
 app [Model, program] {
 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
-	rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.11.1/4NWnSt7bKCyVx4xDFH89pV11ekYbiGQ43kdjfZ9NBJQn.tar.zst",
+	rr: platform "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.13.0/default-8yWQXdFMfK8erQff7bMEjF6KjrwFR6sTq9EY4LURGgBw.tar.zst",
 }
 
 import rr.App
@@ -123,12 +123,17 @@ update! = |model, input, io| {
 ##
 ## `Http.Client.get_utf8!` takes a `Url`. A quoted literal becomes one at
 ## compile time. A URL held as a `Str` will not coerce, so it is parsed here.
+##
+## Each sending method has a `_with!` twin that takes an `Http.Config` first.
+## Every field of the config has a default, so a record literal names only the
+## limits it changes: `{}` is the 30-second, 8 MiB default, and
+## `max_response_bytes` goes up to 64 MiB.
 fetch! : Http.Client, U64, Str => Msg
 fetch! = |http, id, raw|
 	match Url.parse(raw) {
 		Err(_) => Failed(id, "not a URL")
 		Ok(url) =>
-			match http.send!(Request.from_method(GET).with_uri(url.to_str())) {
+			match http.send_with!({ max_response_bytes: 64 * 1024 }, Request.from_method(GET).with_uri(url.to_str())) {
 				Ok(response) =>
 					match Str.from_utf8(Response.body(response)) {
 						Ok(body) => Fetched(id, "${Response.status(response).to_str()}, ${List.len(Str.to_utf8(body)).to_str()} bytes")
@@ -141,6 +146,15 @@ fetch! = |http, id, raw|
 				Err(HttpErr(Timeout)) => Failed(id, "timed out")
 				Err(HttpErr(NetworkError)) => Failed(id, "network error")
 				Err(HttpErr(MalformedResponse)) => Failed(id, "malformed response")
+				# A match that lists the transport errors one by one needs these
+				# four too, or it is "non exhaustive". A body over the limit is
+				# `ResponseTooLarge`, a limit over 64 MiB is
+				# `ResponseLimitUnsupported`, and `Busy` is temporary host
+				# pressure, so a retry can succeed.
+				Err(HttpErr(ResponseTooLarge)) => Failed(id, "response over 64 KiB")
+				Err(HttpErr(ResponseLimitUnsupported)) => Failed(id, "limit too large")
+				Err(HttpErr(Busy)) => Failed(id, "busy, try again")
+				Err(HttpErr(Unavailable)) => Failed(id, "HTTP unavailable")
 				Err(HttpErr(Other(bytes))) => Failed(id, Str.from_utf8(bytes) ?? "failed")
 			}
 	}
