@@ -1,72 +1,74 @@
 # roc-parser
 
 `lukewilliamboswell/roc-parser`: parser combinators, and parsers for CSV, YAML,
-JSON, XML, Markdown, AsciiDoc, Roc source and HTTP/1.1 messages. It works on any
-platform and needs a Roc nightly from 2026-10-21 or later. The standard
-library's `Json` decodes JSON into records.
+JSON, XML, HTML, SVG, MathML, Markdown, AsciiDoc, Roc source, HTTP/1.1, QIF and
+OFX. It works on any platform, on a Roc nightly from 2026-11-13 or later. The
+standard library's `Json` decodes JSON into records.
 
 ```roc
 app [main!] {
-	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst",
-	parser: "https://github.com/lukewilliamboswell/roc-parser/releases/download/3.0.0/6xsRdRqenJrAb4wG7HaST4Xh349vD5sHAJDsKTK6E3dr.tar.zst",
+	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst",
+	parser: "https://github.com/lukewilliamboswell/roc-parser/releases/download/6.0.0/7j67bdgEMRsua6VnhcYASXRymN5pYgUC9qV4bHFupbf9.tar.zst",
 }
 
 import parser.Parser
-import parser.Utf8
+import parser.CSV
 ```
 
-| Module | Gives | Start with | Topic |
-|---|---|---|---|
-| `Parser`, `Utf8` | Combinators over bytes | `Utf8.parse_str(parser, text)` | `parser_combinators` |
-| `CSV` | Rows into your records | `CSV.parse(text)` | `parser_csv` |
-| `Yaml` | Config into a record, tree or tokens | `Yaml.decode(text)` | `parser_yaml` |
-| `JsonValue` | Any JSON, and a writer | `JsonValue.parse_str(text)` | `parser_json` |
-| `Xml` | A document tree | `Xml.parse_str(text)` | `parser_xml` |
-| `Markdown` | Blocks and inlines to render | `Markdown.parse_str(text)` | `parser_markdown` |
-| `AsciiDoc` | Blocks, HTML, includes | `AsciiDoc.parse_str(text)` | `parser_asciidoc` |
-| `RocSyntax` | Roc tokens and tree | `RocSyntax.parse_str(text)` | `parser_roc_syntax` |
-| `HTTP` | Requests and responses from bytes | `HTTP.parse_request(bytes)` | `parser_http` |
-| `Literal` | Checked literals and files | `Literal.require(result)` | `parser_compile_time` |
+| Module | Gives | Topic |
+|---|---|---|
+| `Parser` | Combinators over bytes | `parser_combinators` |
+| `CSV` | Rows into your records | `parser_csv` |
+| `Yaml` | Config into a record or tree | `parser_yaml` |
+| `JsonValue` | Any JSON, and a writer | `parser_json` |
+| `Xml` | A document tree | `parser_xml` |
+| `Html`, `Svg`, `MathML` | Checked markup trees | `parser_markup` |
+| `Markdown` | Blocks to render | `parser_markdown` |
+| `AsciiDoc` | Blocks, HTML, includes | `parser_asciidoc` |
+| `RocSyntax` | Roc tokens and tree | `parser_roc_syntax` |
+| `HTTP` | Messages from bytes | `parser_http` |
+| `QIF`, `OFX`, decoders | Input in chunks | `parser_streaming` |
+| `Parser.Quotation` | Checked literals and files | `parser_compile_time` |
 
 ## The style
 
+- Every entry point takes a props record: `CSV.decode_str(text, {})`. There
+  are no `_with` variants.
 - Each error is one open tag named after its format: `ParseError`,
-  `InvalidCsv`, `InvalidYaml`, `InvalidJsonValue`, `InvalidXml`, `InvalidHttp`.
-  So `?` joins them.
+  `InvalidCsv`, `InvalidYaml`, `InvalidJsonValue`, `InvalidXml`,
+  `InvalidMarkup`, `InvalidHttp`. So `?` joins them. Each holds
+  `{ problem, location, path }`. Match the `problem` tag; there is no message.
 - A value that can be absent is `Try(_, [Missing])`.
-- `CSV.parse` and `Yaml.decode` take the shape from the annotation:
+- `CSV.decode_str` and `Yaml.decode_str` take the shape from the annotation.
 
 ```roc
-setting : Parser(Utf8.Bytes, { key : Str, port : U64 })
-setting = Parser.const(|key| |port| { key, port }).keep(Utf8.string("port")).skip(Utf8.codeunit('=')).keep(Utf8.digits)
+setting : Parser(Parser.Utf8.Bytes, { key : Str, port : U64 }, _)
+setting = Parser.const(|key| |port| { key, port }).keep(Parser.Utf8.string("port")).skip(Parser.Utf8.codeunit('=')).keep(Parser.Utf8.digits({}))
 
 Row : { name : Str, qty : U64 }
 
-rows : Try(List(Row), [InvalidCsv(CSV.Error), MissingRequiredField(Str)])
-rows = CSV.parse("name,qty\nbolt,4\n")
+rows : Try(List(Row), [InvalidCsv(CSV.Error)])
+rows = CSV.decode_str("name,qty\nbolt,4\n", {})
 ```
 
 ## Traps
 
-- `import parser.Parser exposing [Parser]` is an error: a type module exposes
-  its type by itself.
+- `import parser.Utf8` is an error: the byte primitives are `Parser.Utf8`.
+- `Parser` takes three arguments; the third, the problem union, is `_`.
+- `digits({})`, `rest({})` and `CSV.string({})` are factories: call them.
 - `Parser.const` takes a curried function, one argument per `.keep`.
-- `Utf8.parse_str` must consume all the input. Use `Utf8.parse_str_partial` for
-  a prefix, which gives `{ value, rest }`.
-- A decoded record needs `MissingRequiredField(Str)` in its error annotation.
+- A recursive parser is a function `|{}|`, not a value.
+- `parser.parse_str(text)` must consume all the input. `run_str` parses a
+  prefix and gives `{ value, rest }`.
+- A missing column or key is `MissingRequiredField` inside `InvalidCsv` or
+  `InvalidYaml`, not a tag of its own.
 - `Markdown.parse_str` returns a `List`, not a `Try`, so `?` on it is an error.
-- `HTTP.parse_request` takes `List(U8)`: call `.to_utf8()` on a `Str`.
-- `RocSyntax.parse_str` never fails: read its `status`.
-- A literal annotated `CSV.Decoded(Row)`, `JsonValue` and so on is checked
-  during compilation.
+- HTTP takes `List(U8)`: call `.to_utf8()` on a `Str`.
+- `Html` checks and builds a tree. It does not render HTML text.
+- A literal annotated `CSV.Decoded(Row)`, `JsonValue`, `Html.Fragment` and so
+  on is checked during compilation.
 
-`CSV.Format`, `CSV.State`, `Yaml.Format` and `Yaml.Cursor` are the decoding
-protocol. Static dispatch uses them. Never call them.
+Full manual: https://github.com/lukewilliamboswell/roc-parser/tree/6.0.0/docs
 
-Full manual: https://github.com/lukewilliamboswell/roc-parser/tree/3.0.0/docs
-
-- Add the package, and read CSV into records in a first program:
-  https://github.com/lukewilliamboswell/roc-parser/blob/3.0.0/docs/getting-started.adoc
-- Which way to read your input: decode into your own type, read a document
-  tree, build a parser with combinators, or use no parser at all:
-  https://github.com/lukewilliamboswell/roc-parser/blob/3.0.0/docs/choosing-an-approach.adoc
+- Choose an approach: decode into your type, read a tree, combinators, or no
+  parser: https://github.com/lukewilliamboswell/roc-parser/blob/6.0.0/docs/choosing-an-approach.adoc

@@ -1,8 +1,8 @@
 ## Echo server: logs the request method and target, then replies with the request body.
 app [Context, program] {
-	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.19.0/4KBAoiBazDfi9UF6e3BYKwon6rA8mnx3dbLMLKFzdEMw.tar.zst",
+	pf: platform "https://github.com/roc-lang/basic-webserver/releases/download/0.22.0/BM2BUXA8mwbcoKPUfRV8cLtsUdnsSBPwjNLPRUJQAQ7Q.tar.zst",
 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
-	roc: "nightly-2026-10-24-f6c6cfb",
+	roc: "nightly-2026-11-15-f25da45",
 }
 
 import pf.Server
@@ -17,7 +17,7 @@ program = { init!, respond!, shutdown! }
 init! : () => Try({ config : Server.Config, context : Context }, [Exit(I64)])
 init! = ||
 	Ok({
-		config: Server.with_timeouts(
+		config: Server.Config.with_timeouts(
 			Server.default_config,
 			{
 				header_ms: 500,

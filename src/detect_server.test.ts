@@ -21,7 +21,7 @@ const ROOT = path.join(import.meta.dirname, "..");
 // resolve, so the loader is passed as an absolute URL.
 const TSX_LOADER = import.meta.resolve("tsx/esm");
 const url = (v: string) =>
-  `https://github.com/roc-lang/basic-webserver/releases/download/${v}/4KBAoiBazDfi9UF6e3BYKwon6rA8mnx3dbLMLKFzdEMw.tar.zst`;
+  `https://github.com/roc-lang/basic-webserver/releases/download/${v}/BM2BUXA8mwbcoKPUfRV8cLtsUdnsSBPwjNLPRUJQAQ7Q.tar.zst`;
 
 const appFile = (v: string) => `app [Context, program] {
 \tpf: platform "${url(v)}",
@@ -34,7 +34,7 @@ Context : {}
 
 /** An app that pins a package next to its platform, as every example does. */
 const appWithPin = (pin: string) => `app [Context, program] {
-\tpf: platform "${url("0.19.0")}",
+\tpf: platform "${url("0.22.0")}",
 \t${pin}
 }
 
@@ -44,7 +44,7 @@ Context : {}
 `;
 
 const cliUrl = (v: string) =>
-  `https://github.com/roc-lang/basic-cli/releases/download/${v}/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst`;
+  `https://github.com/roc-lang/basic-cli/releases/download/${v}/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst`;
 
 const cliAppFile = (v: string) => `app [main!] { pf: platform "${cliUrl(v)}" }
 
@@ -177,41 +177,41 @@ test("roots/list names the workspace, and the pin in it is detected", async () =
   const root = workspace("via-roots", { "main.roc": appFile("0.15.0") });
   // Launched somewhere unrelated, so only the roots answer can find this app.
   const [text] = await session({ cwd: ROOT, roots: root }, [scopes]);
-  assert.match(text, /Detected basic-webserver 0\.15\.0 from main\.roc, bundled 0\.19\.0\./);
+  assert.match(text, /Detected basic-webserver 0\.15\.0 from main\.roc, bundled 0\.22\.0\./);
   assert.match(text, /Omitting `scope` reads language \+ builtin \+ basic-webserver\./);
 });
 
 // The Claude Code desktop app sends no roots capability, and cwd is the launch
 // directory. Detection must work from the environment only.
 test("without a roots capability, detection falls back to the launch directory", async () => {
-  const root = workspace("via-cwd", { "server.roc": appFile("0.19.0") });
+  const root = workspace("via-cwd", { "server.roc": appFile("0.22.0") });
   const [text] = await session({ cwd: root }, [scopes]);
-  assert.match(text, /Detected basic-webserver 0\.19\.0 from server\.roc/);
+  assert.match(text, /Detected basic-webserver 0\.22\.0 from server\.roc/);
 });
 
 // For a client with neither roots nor CLAUDE_PROJECT_DIR, whose config can say
 // `--workspace=${workspaceFolder}`. The operator's flag has priority over the client's roots.
 test("--workspace= names the workspace over roots and the launch directory", async () => {
   const root = workspace("via-flag", { "main.roc": appFile("0.15.0") });
-  const other = workspace("via-flag-roots", { "main.roc": appFile("0.19.0") });
+  const other = workspace("via-flag-roots", { "main.roc": appFile("0.22.0") });
   const [text] = await session({ cwd: ROOT, roots: other, args: [`--workspace=${root}`] }, [scopes]);
   assert.match(text, /Detected basic-webserver 0\.15\.0 from main\.roc/);
 });
 
 test("a --workspace= that is not a folder falls back to the launch directory", async () => {
-  const root = workspace("via-flag-missing", { "main.roc": appFile("0.19.0") });
+  const root = workspace("via-flag-missing", { "main.roc": appFile("0.22.0") });
   const [text] = await session({ cwd: root, args: ["--workspace=${workspaceFolder}"] }, [scopes]);
-  assert.match(text, /Detected basic-webserver 0\.19\.0 from main\.roc/);
+  assert.match(text, /Detected basic-webserver 0\.22\.0 from main\.roc/);
 });
 
 // Launching from `src/` reports `src/` as both cwd and root.
 test("an app at the repo root is found when the server starts in a subdirectory", async () => {
   const root = workspace("via-walkup", {
-    "main.roc": appFile("0.19.0"),
+    "main.roc": appFile("0.22.0"),
     "src/helper.roc": "module [x]\n\nx = 1\n",
   });
   const [text] = await session({ cwd: path.join(root, "src") }, [scopes]);
-  assert.match(text, /Detected basic-webserver 0\.19\.0/);
+  assert.match(text, /Detected basic-webserver 0\.22\.0/);
 });
 
 test("a workspace with no app header keeps the default working set", async () => {
@@ -224,7 +224,7 @@ test("a workspace with no app header keeps the default working set", async () =>
 test("get_roc_syntax points at the platform page without folding it in", async () => {
   const root = workspace("overview", { "main.roc": appFile("0.15.0") });
   const [text] = await session({ cwd: root }, [{ name: "get_roc_syntax" }]);
-  assert.match(text, /Platform detected: basic-webserver 0\.19\.0 \(from main\.roc, pins 0\.15\.0\)/);
+  assert.match(text, /Platform detected: basic-webserver 0\.22\.0 \(from main\.roc, pins 0\.15\.0\)/);
   // The platform page must not be in the default answer. The scope parameter
   // exists to prevent that copy.
   assert.ok(!text.includes("basic-webserver in one page"), "the platform page was folded in");
@@ -236,7 +236,7 @@ test("the mismatch note fires on the first scoped response and not the second", 
   const root = workspace("warn-once", { "main.roc": appFile("0.15.0") });
   const call = { name: "get_roc_syntax", args: { topic: "webserver_handler", scope: "basic-webserver" } };
   const [first, second] = await session({ cwd: root }, [call, call]);
-  assert.match(first, /pins basic-webserver 0\.15\.0, this server bundles 0\.19\.0/);
+  assert.match(first, /pins basic-webserver 0\.15\.0, this server bundles 0\.22\.0/);
   assert.ok(!/this server bundles/.test(second), "the note repeated");
 });
 
@@ -289,15 +289,15 @@ test("each basic-cli topic loads from beside its platform", async () => {
 // about the type of roughly half of them. An app pins one platform, so the
 // server resolves over one platform, and the two never compete for a name.
 test("a pinned workspace answers from its own platform and not the other", async () => {
-  const root = workspace("cli-pinned", { "main.roc": cliAppFile("0.26.0") });
+  const root = workspace("cli-pinned", { "main.roc": cliAppFile("0.28.1") });
   const [scoped, shared, module] = await session({ cwd: root }, [
     scopes,
     { name: "search_symbols", args: { query: ["Cmd.exec!"] } },
     { name: "get_roc_module", args: { module: "Path" } },
   ]);
-  assert.match(scoped, /Detected basic-cli 0\.26\.0 from main\.roc, bundled 0\.26\.0\./);
+  assert.match(scoped, /Detected basic-cli 0\.28\.1 from main\.roc, bundled 0\.28\.1\./);
 
-  assert.match(shared, /basic-cli 0\.26\.0/);
+  assert.match(shared, /basic-cli 0\.28\.1/);
   assert.ok(!shared.includes("basic-webserver"), "the unpinned platform answered too");
   assert.ok(!shared.includes("declared by 2 bundled platforms"), "there was a collision to state");
 
@@ -314,21 +314,21 @@ test("a module name two namespaces share is listed per origin", async () => {
   const rand =
     "https://github.com/kili-ilo/roc-random/releases/download/0.9.3/HoULZB8QzktiNPYSe9myzy9JQzm1nMbjDPVWoA63QpVf.tar.zst";
   const root = workspace("cli-rand", {
-    "main.roc": `app [main!] {\n\tpf: platform "${cliUrl("0.26.0")}",\n\trand: "${rand}",\n}\n\nmain! = |_args| Ok({})\n`,
+    "main.roc": `app [main!] {\n\tpf: platform "${cliUrl("0.28.1")}",\n\trand: "${rand}",\n}\n\nmain! = |_args| Ok({})\n`,
   });
   const [shared, alone] = await session({ cwd: root }, [
     { name: "get_roc_module", args: { module: "Random" } },
     { name: "get_roc_module", args: { module: "Stdout" } },
   ]);
   assert.match(shared, /2 modules share this name/);
-  const cli = shared.indexOf("## basic-cli 0.26.0");
+  const cli = shared.indexOf("## basic-cli 0.28.1");
   const pkg = shared.indexOf("## roc-random 0.9.3");
   assert.ok(cli > 0 && pkg > 0, "a section per origin");
   assert.ok(shared.indexOf("seed_u64!") > cli && shared.indexOf("seed_u64!") < pkg, "basic-cli's method under basic-cli");
   assert.ok(shared.indexOf("bounded_u8") > pkg, "roc-random's method under roc-random");
 
   // Without a collision there are no sections. The common case stays one list.
-  assert.match(alone, /From basic-cli 0\.26\.0\./);
+  assert.match(alone, /From basic-cli 0\.28\.1\./);
   assert.ok(!alone.includes("## "), "a module with one origin was split");
 });
 
@@ -336,7 +336,7 @@ test("a module name two namespaces share is listed per origin", async () => {
 // steps. "No such builtin" for a name that exists is false. The note ends at a
 // concrete scope value, so the caller can act on it or ignore it.
 test("a name from the platform not pinned is reported as out of scope", async () => {
-  const root = workspace("cli-pinned-2", { "main.roc": cliAppFile("0.26.0") });
+  const root = workspace("cli-pinned-2", { "main.roc": cliAppFile("0.28.1") });
   const [name, module] = await session({ cwd: root }, [
     { name: "search_symbols", args: { query: ["Server.Outcome"] } },
     { name: "get_roc_module", args: { module: "Sse" } },
@@ -344,11 +344,11 @@ test("a name from the platform not pinned is reported as out of scope", async ()
   for (const text of [name, module]) {
     assert.match(
       text,
-      /is not in the builtins or basic-cli 0\.26\.0, the platform this app's header imports, so it will not compile here\./
+      /is not in the builtins or basic-cli 0\.28\.1, the platform this app's header imports, so it will not compile here\./
     );
     // One line per platform, each with its count. The shape is the same for any
     // number of platforms. A sentence joined by "and" does not have that property.
-    assert.match(text, /\nFound in:\nbasic-webserver 0\.19\.0: \d+\n/);
+    assert.match(text, /\nFound in:\nbasic-webserver 0\.22\.0: \d+\n/);
     assert.match(text, /Try again with `scope: basic-webserver` to see it\.$/);
   }
   assert.match(name, /^`Server\.Outcome`/);
@@ -358,13 +358,13 @@ test("a name from the platform not pinned is reported as out of scope", async ()
 // An explicit argument reaches any corpus. Thus the message above gives the
 // caller a next step that works.
 test("scope reaches the platform the workspace does not pin", async () => {
-  const root = workspace("cli-pinned-3", { "main.roc": cliAppFile("0.26.0") });
+  const root = workspace("cli-pinned-3", { "main.roc": cliAppFile("0.28.1") });
   const [name, module] = await session({ cwd: root }, [
     { name: "search_symbols", args: { query: ["Server.Outcome"], scope: "basic-webserver" } },
     { name: "get_roc_module", args: { module: "Path", scope: "basic-webserver" } },
   ]);
-  assert.match(name, /basic-webserver 0\.19\.0/);
-  assert.match(module, /basic-webserver 0\.19\.0/);
+  assert.match(name, /basic-webserver 0\.22\.0/);
+  assert.match(module, /basic-webserver 0\.22\.0/);
   assert.ok(!module.includes("replace_utf8!"), "the two Path modules were merged");
 });
 
@@ -381,7 +381,7 @@ test("with nothing pinned, no platform answers and the note says where to look",
     assert.match(text, /is not in the builtins, and no platform is in scope\./);
     assert.match(
       text,
-      /\nFound in:\nbasic-webserver 0\.19\.0: \d+\nbasic-cli 0\.26\.0: \d+\n/
+      /\nFound in:\nbasic-webserver 0\.22\.0: \d+\nbasic-cli 0\.28\.1: \d+\n/
     );
     // A retry line that names every candidate again does not scale. Thus, with
     // more than one candidate, the line points back to the list.
@@ -394,7 +394,7 @@ test("with nothing pinned, no platform answers and the note says where to look",
 // A retry into a platform that the app cannot use is the only hint to withhold,
 // because the result is code that does not compile.
 test("a footer never offers the platform the workspace does not pin", async () => {
-  const pinned = workspace("cli-pinned-4", { "main.roc": cliAppFile("0.26.0") });
+  const pinned = workspace("cli-pinned-4", { "main.roc": cliAppFile("0.28.1") });
   const [scoped] = await session({ cwd: pinned }, [
     { name: "get_roc_syntax", args: { topic: "sqlite", scope: "language" } },
   ]);
@@ -544,7 +544,7 @@ mkdir -p "${cache}/$hash" && cp -r "${dir}/trees/$tag/." "${cache}/$hash/"
 const FAKE_HASH = "FakeRe1easeHashForTests1234567891234567891234";
 const randUrl = (v: string) => `https://github.com/kili-ilo/roc-random/releases/download/${v}/${FAKE_HASH}.tar.zst`;
 const cliPinning = (pin: string) =>
-  `app [main!] {\n\tpf: platform "${cliUrl("0.26.0")}",\n\t${pin}\n}\n\nmain! = |_args| Ok({})\n`;
+  `app [main!] {\n\tpf: platform "${cliUrl("0.28.1")}",\n\t${pin}\n}\n\nmain! = |_args| Ok({})\n`;
 
 // The fetch delays the first answer. A "not fetched yet" answer would cost the
 // model one turn to fill the cache and one more turn to ask again.
@@ -624,12 +624,12 @@ test("a slow fetch stops holding up answers, and lands for a later one", async (
 // note says which part comes from which release.
 test("a platform pinned at another release is read from that release", async () => {
   const roc = fakeRoc("fetch-platform", {
-    "0.27.0": {
+    "0.29.0": {
       "main.roc": 'platform ""\n\texposes [Stdout]\n\tpackages {}\n',
-      "Stdout.roc": "Stdout := [].{\n\t## New in 0.27.0.\n\tline_new! : Str => {}\n}\n",
+      "Stdout.roc": "Stdout := [].{\n\t## New in 0.29.0.\n\tline_new! : Str => {}\n}\n",
     },
   });
-  const pinned = `https://github.com/roc-lang/basic-cli/releases/download/0.27.0/${FAKE_HASH}.tar.zst`;
+  const pinned = `https://github.com/roc-lang/basic-cli/releases/download/0.29.0/${FAKE_HASH}.tar.zst`;
   const root = workspace("fetch-platform-app", {
     "main.roc": `app [main!] { pf: platform "${pinned}" }\n\nmain! = |_args| Ok({})\n`,
   });
@@ -641,13 +641,13 @@ test("a platform pinned at another release is read from that release", async () 
     { name: "get_roc_syntax", args: { scope: "basic-cli" } },
   ]);
   assert.match(overview, /basic-cli/);
-  assert.ok(overview.length > 2000, "the 0.26.0 overview was withheld from a 0.27.0 app");
+  assert.ok(overview.length > 2000, "the 0.28.1 overview was withheld from a 0.29.0 app");
   // The page states no release, so the server says which one it documents: the bundled one, not the pin.
-  assert.match(overview, /^This page documents basic-cli (?!0\.27\.0)\d+\.\d+\.\d+\.$/m);
-  assert.match(found, /Stdout\.line_new! \(basic-cli 0\.27\.0\)/);
-  assert.match(searched, /Signatures here are read from that release\. The overview, topics and examples were written for 0\.26\.0/);
-  assert.doesNotMatch(old, /Stdout\.line! \(basic-cli/, "0.26.0's API is not served for a 0.27.0 app");
-  assert.match(listing, /Detected basic-cli 0\.27\.0 from main\.roc, bundled 0\.26\.0, signatures read from 0\.27\.0\./);
+  assert.match(overview, /^This page documents basic-cli (?!0\.29\.0)\d+\.\d+\.\d+\.$/m);
+  assert.match(found, /Stdout\.line_new! \(basic-cli 0\.29\.0\)/);
+  assert.match(searched, /Signatures here are read from that release\. The overview, topics and examples were written for 0\.28\.1/);
+  assert.doesNotMatch(old, /Stdout\.line! \(basic-cli/, "0.28.1's API is not served for a 0.29.0 app");
+  assert.match(listing, /Detected basic-cli 0\.29\.0 from main\.roc, bundled 0\.28\.1, signatures read from 0\.29\.0\./);
 });
 
 // -----------------------------------------------------------------------------
@@ -658,12 +658,12 @@ test("a platform pinned at another release is read from that release", async () 
 // basic-cli in every app, and split every answer about it in two. A bundled
 // package is not a package that the app chose.
 test("a bundled package is in the space only when the app pins it", async () => {
-  const bare = workspace("cli-no-rand", { "main.roc": cliAppFile("0.26.0") });
+  const bare = workspace("cli-no-rand", { "main.roc": cliAppFile("0.28.1") });
   const [module, missed] = await session({ cwd: bare }, [
     { name: "get_roc_module", args: { module: "Random" } },
     { name: "search_symbols", args: { query: ["Random.bounded_u8"] } },
   ]);
-  assert.match(module, /From basic-cli 0\.26\.0\./);
+  assert.match(module, /From basic-cli 0\.28\.1\./);
   assert.doesNotMatch(module, /roc-random/);
   // The miss carries the answer, the package, and the line that adds it, because
   // no `scope` retry reaches a package.
@@ -692,7 +692,7 @@ test("a bundled package is in the space only when the app pins it", async () => 
 });
 
 test("a bundled package has an overview and a topic", async () => {
-  const root = workspace("pkg-docs", { "main.roc": cliAppFile("0.26.0") });
+  const root = workspace("pkg-docs", { "main.roc": cliAppFile("0.28.1") });
   const [random, parser, topic, scopesList, tour] = await session({ cwd: root }, [
     { name: "get_roc_syntax", args: { topic: "roc-random" } },
     { name: "get_roc_syntax", args: { topic: "lukewilliamboswell/roc-parser", scope: "basic-cli" } },
@@ -712,7 +712,7 @@ test("a bundled package has an overview and a topic", async () => {
   assert.match(random, /This app does not pin it\. Add it to the app header/);
   assert.match(parser, /^# roc-parser\n/);
   assert.match(topic, /Parser\.lazy/);
-  assert.match(topic, /From roc-parser 3\.0\.0, a package this app does not pin\./);
+  assert.match(topic, /From roc-parser 6\.0\.0, a package this app does not pin\./);
   // Listed for attribution, and never as a scope.
   assert.match(scopesList, /^# Documented packages$/m);
   assert.match(scopesList, /roc-random\*\*: The roc-random package: pseudorandom integers.* Not pinned by this app\./);

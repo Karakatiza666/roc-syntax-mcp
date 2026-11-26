@@ -66,15 +66,18 @@ test("the corpora are the sizes the plan was written against", () => {
   assert.equal(bws.items.filter((i) => i.tier === "host").length, 141);
   // `Sse.from_state` is an annotated binding inside the body of `Sse.unfold!`,
   // so it is not a member of the module, and this count excludes it.
-  assert.equal(bws.items.filter((i) => i.tier === "public").length, 468);
-  assert.equal(bws.items.filter((i) => i.tier === "private").length, 2);
+  assert.equal(bws.items.filter((i) => i.tier === "public").length, 469);
+  // `Html.HtmlNode`, `MultipartFormData.ParsedFormData`, `Sqlite.SqliteStmt` and
+  // `Sqlite.SqliteTransaction` are file-level types that no app can name.
+  assert.equal(bws.items.filter((i) => i.tier === "private").length, 4);
 
   const cli = registry.index("basic-cli");
-  assert.equal(cli.items.filter((i) => i.tier === "host").length, 157);
-  assert.equal(cli.items.filter((i) => i.tier === "public").length, 396);
+  assert.equal(cli.items.filter((i) => i.tier === "host").length, 158);
+  assert.equal(cli.items.filter((i) => i.tier === "public").length, 398);
   // `Sqlite.RowView`, `Sqlite.Cursor` and `Sqlite.SqlState` are types of the
-  // decoder machinery that `Sqlite.roc` does not export.
-  assert.equal(cli.items.filter((i) => i.tier === "private").length, 3);
+  // decoder machinery that `Sqlite.roc` does not export. `Cmd.CommandConfig`
+  // carries the methods of `Cmd.Command`, which are indexed under the alias.
+  assert.equal(cli.items.filter((i) => i.tier === "private").length, 4);
 });
 
 // An app pins one platform, so one address space never resolves both platforms,
@@ -308,7 +311,7 @@ test("a namespace no provider can serve is left empty and says so", () => {
       "Install a package plugin at 1.0.0, or run this server with --force=roc-lang/http to read 1.2.0 anyway."
   );
   // No note when every namespace has a provider, as in the shipped corpora.
-  assert.equal(formatPackageNote("basic-cli", "0.26.0", registry.packages("basic-cli")), null);
+  assert.equal(formatPackageNote("basic-cli", "0.28.1", registry.packages("basic-cli")), null);
 });
 
 // -----------------------------------------------------------------------------
@@ -520,10 +523,32 @@ test("a file-level type that does not name its file is private, not public", () 
   }
 });
 
+// basic-cli 0.28.1 moved the methods of `Cmd.Command` onto a file-level
+// `CommandConfig`, and aliases `Command : CommandConfig` inside the block.
+// basic-webserver 0.22.0 did the same for `Sqlite.Stmt` and `Sqlite.Transaction`.
+// `Cmd.Command.arg(cmd, "-l")` compiles and `Cmd.CommandConfig` does not, so the
+// methods are found under the alias.
+test("methods of a file-level type are indexed under the alias that names it", () => {
+  for (const [scope, method, fileLevel] of [
+    ["basic-cli", "Cmd.Command.arg", "Cmd.CommandConfig"],
+    ["basic-cli", "Cmd.Command.call!", "Cmd.CommandConfig"],
+    ["basic-webserver", "Sqlite.Stmt.query!", "Sqlite.SqliteStmt"],
+    ["basic-webserver", "Sqlite.Transaction.commit!", "Sqlite.SqliteTransaction"],
+  ] as const) {
+    const idx = registry.index(scope);
+    const app = registry.appFacing(scope).map((i) => i.fullName);
+    assert.equal(idx.byFullName.get(method)?.tier, "public", `${method} is not public`);
+    assert.ok(app.includes(method), `${method} is missing from app-facing search`);
+    assert.equal(idx.byFullName.get(fileLevel)?.tier, "private", `${fileLevel} is not private`);
+    assert.ok(![...idx.byFullName.keys()].some((k) => k.startsWith(fileLevel.split(".")[1] + ".")),
+      `a method of ${fileLevel} kept its unqualified address`);
+  }
+});
+
 test("items carry the package they ship in", () => {
   const idx = registry.index("basic-webserver");
   assert.equal(idx.byFullName.get("Method")!.origin, "http 1.0.0");
-  assert.equal(idx.byFullName.get("Server.Outcome")!.origin, "basic-webserver 0.19.0");
+  assert.equal(idx.byFullName.get("Server.Outcome")!.origin, "basic-webserver 0.22.0");
   assert.equal(registry.index("builtin").byFullName.get("Str.concat")!.origin, "Builtin.roc");
 });
 
@@ -587,7 +612,8 @@ test("every platform name an overview mentions resolves", () => {
 test("every bundled package overview resolves, compiles and stays short", () => {
   const packages = PACKAGE_DOCS.filter((d) => d.bundled);
   assert.deepEqual(packages.map((d) => d.name), ["roc-parser", "roc-random"]);
-  const pattern = /\b[A-Z][A-Za-z0-9]*\.[a-z_][a-z_0-9]*!?/g;
+  // Nested module names too: roc-parser 6.0.0 writes `Parser.Utf8.digits`.
+  const pattern = /\b[A-Z][A-Za-z0-9]*(?:\.[A-Z][A-Za-z0-9]*)*\.[a-z_][a-z_0-9]*!?/g;
   for (const def of packages) {
     const scope = def.name;
     const page = fs.readFileSync(path.join(ROOT, def.overview!), "utf-8");
@@ -713,14 +739,14 @@ test("every checked-in scope is built from a manifest on disk", () => {
   assert.deepEqual(cli.modules, [
     {
       release:
-        "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst",
+        "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst",
       ns: "platform:basic-cli",
-      origin: "basic-cli 0.26.0",
+      origin: "basic-cli 0.28.1",
       moduleFromFilename: true,
       exposesFrom: "main.roc",
     },
   ]);
-  assert.equal(cli.version, "0.26.0");
+  assert.equal(cli.version, "0.28.1");
   assert.equal(cli.scaffold, "corpus/platforms/basic-cli/scaffold.roc");
   assert.equal(cli.examples, "corpus/platforms/basic-cli/examples");
   assert.equal(SCOPE_DEFS["basic-webserver"].docs, "corpus/platforms/basic-webserver/docs");
@@ -733,7 +759,7 @@ test("every checked-in scope is built from a manifest on disk", () => {
   ]);
   // A package is documented, never a scope.
   assert.deepEqual(PACKAGE_DOCS.map((d) => [d.name, d.id, d.version]), [
-    ["roc-parser", "lukewilliamboswell/roc-parser", "3.0.0"],
+    ["roc-parser", "lukewilliamboswell/roc-parser", "6.0.0"],
     ["roc-random", "kili-ilo/roc-random", "0.9.3"],
   ]);
   // The packages this server vendors, read from their own manifests.
@@ -743,8 +769,8 @@ test("every checked-in scope is built from a manifest on disk", () => {
     { id: "roc-lang/http", version: "1.0.0", release: HTTP_URL, from: "roc-syntax-mcp", tier: 3 },
     {
       id: "lukewilliamboswell/roc-parser",
-      version: "3.0.0",
-      release: gh("lukewilliamboswell/roc-parser", "3.0.0", "6xsRdRqenJrAb4wG7HaST4Xh349vD5sHAJDsKTK6E3dr"),
+      version: "6.0.0",
+      release: gh("lukewilliamboswell/roc-parser", "6.0.0", "7j67bdgEMRsua6VnhcYASXRymN5pYgUC9qV4bHFupbf9"),
       from: "roc-syntax-mcp",
       tier: 3,
     },

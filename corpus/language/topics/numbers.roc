@@ -57,16 +57,15 @@ expect 0x1e3 == 483
 #   I64.to_f64(10)            # 10.0
 #   U8.to_u64(5.U8)           # 5.U64
 
-# Literal defaulting. When nothing in the program pins a literal's type, the
-# compiler picks the first type in this order that satisfies all of the
-# literal's constraints:
+# Literal defaulting. When nothing in the program pins a literal's type, it is a
+# `Dec`. There is no fallback to an integer type: a literal used in a way that
+# `Dec` does not support, such as a method that only integers have, is a compile
+# error. If the default narrows a function's inferred type, the compiler emits a
+# `LITERAL DEFAULTED` warning. Add an annotation or a suffix (`5.U64`) to pick a
+# type deliberately.
 #
-#   Dec, I64, U64, I128, U128, I32, U32, I16, U16, I8, U8, F64, F32
-#
-# So a plain `5` becomes `Dec`, but a `5` whose surrounding code demands an
-# integer becomes the first integer type that fits. If a default narrows a
-# function's inferred type, the compiler emits a `LITERAL DEFAULTED` warning.
-# Add an annotation or a suffix (`5.U64`) to pick a type deliberately.
+# @rejects missing method
+# shifted = 5.shift_left_by(1)
 
 # `Dec` uses 16 bytes and has exactly 18 digits after the point. Its range is
 # about -1.7e20 to 1.7e20. It stores base-10 digits, so decimal fractions are

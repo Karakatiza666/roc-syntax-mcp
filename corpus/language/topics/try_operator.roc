@@ -34,6 +34,27 @@ question_with_err_lambda = |strings| {
 #       Err(e) => return Err(e)
 #   }
 
+# `Try` is a nominal type, so `Try(U64, [BadNumStr])` and
+# `Try(U64, [BadNumStr, Empty])` are different types. A call to a function can
+# stand where more errors are possible. A `Try` you already hold cannot: an
+# argument, a record field, or what a passed-in function returned. Take it apart
+# with `?` and wrap it again, or rebuild the error with `map_err`.
+parse_u64 : Str -> Try(U64, [BadNumStr])
+parse_u64 = |str| U64.from_str(str)
+
+parse_nonempty : Str -> Try(U64, [BadNumStr, Empty])
+parse_nonempty = |str| if str == "" Err(Empty) else parse_u64(str)
+
+or_empty : Try(U64, [BadNumStr]), Bool -> Try(U64, [BadNumStr, Empty])
+or_empty = |result, empty| if empty Err(Empty) else Ok(result?)
+
+expect or_empty(Ok(3), Bool.False) == Ok(3)
+expect parse_nonempty("") == Err(Empty)
+
+# @rejects type mismatch
+# widen : Try(U64, [BadNumStr]), Bool -> Try(U64, [BadNumStr, Empty])
+# widen = |result, empty| if empty Err(Empty) else result
+
 # Method-chain alternatives
 #
 # `Try` has methods that transform the value inside without unwrapping it, so

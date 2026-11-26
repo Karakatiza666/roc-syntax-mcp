@@ -1,11 +1,11 @@
 app [main!] {
-	cli: platform "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst",
-	parser: "https://github.com/lukewilliamboswell/roc-parser/releases/download/3.0.0/6xsRdRqenJrAb4wG7HaST4Xh349vD5sHAJDsKTK6E3dr.tar.zst",
+	cli: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst",
+	parser: "https://github.com/lukewilliamboswell/roc-parser/releases/download/6.0.0/7j67bdgEMRsua6VnhcYASXRymN5pYgUC9qV4bHFupbf9.tar.zst",
 }
 
 import cli.OsStr
 import cli.Stdout
-import parser.Utf8
+import parser.Parser
 import parser.Xml
 
 svg_input =
@@ -28,7 +28,7 @@ expected_html =
 main! : List(OsStr) => Try({}, _)
 main! = |_args| {
 	result =
-		Utf8.parse_str(Xml.parser, svg_input)
+		Xml.parser({}).parse_str(svg_input)
 			.map_ok(
 				|xml| {
 					html_to_roc_dsl(svg_to_html(xml.root), "", 0)

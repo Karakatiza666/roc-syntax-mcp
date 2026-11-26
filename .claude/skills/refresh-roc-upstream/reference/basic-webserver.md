@@ -48,7 +48,7 @@ release. Thus a fresh checkout never compiles against its own release.
 Since 0.17.0, upstream parks its gregorian examples as `.todoroc` files, so
 `0002` also renames them back to `.roc`. It also moves their `roc:` line to the
 nightly of the release, because the platform does not build on the older one
-that the TODO preamble names. At 0.19.0, five examples remain parked. Generate `0002` from a scratch git
+that the TODO preamble names. At 0.22.0, five examples remain parked. Generate `0002` from a scratch git
 repo (`git diff -M`), so that it records renames and not full-file deletes and
 adds.
 
@@ -56,7 +56,7 @@ Regenerate the patches against the new tag. Do not try to rebase the old ones.
 
 Do not change the `roc: "nightly-..."` line of an example. Upstream pins the
 nightly that the example was written for, and the gate checks the example with
-that nightly. At 0.19.0, that is f6c6cfb.
+that nightly. At 0.22.0, that is f25da45.
 Unpack each one at the repo root.
 
 Keep `0002` small. It exists because a third-party package broke. When gregorian

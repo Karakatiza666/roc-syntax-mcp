@@ -1,7 +1,7 @@
-## Markdown to your own output with lukewilliamboswell/roc-parser 3.0:
-## `Markdown.parse_str` gives a list of blocks, and two functions that call each
-## other (one for `Markdown` blocks, one for `Markdown.Inline`) walk the tree to
-## HTML, a table of contents or plain text. A leading `---` block is frontmatter,
+## Markdown to your own output with lukewilliamboswell/roc-parser 6.0:
+## `Markdown.parse_str(text, {})` gives a list of blocks, and two functions that
+## call each other (one for `Markdown` blocks, one for `Markdown.Inline`) walk
+## the tree to HTML, a table of contents or plain text. A leading `---` block is frontmatter,
 ## and `Yaml.parse_str` reads it. A `Markdown.Document` literal is checked at build
 ## time, with `unclosed_fences` as an opt-out lint (parser_compile_time).
 ##
@@ -11,12 +11,12 @@
 ## Full manual:
 ##
 ## - Blocks, inline content, reference links, frontmatter, walking the tree to
-##   produce output, and conformance limits: https://github.com/lukewilliamboswell/roc-parser/blob/3.0.0/docs/markdown.adoc
+##   produce output, and conformance limits: https://github.com/lukewilliamboswell/roc-parser/blob/6.0.0/docs/markdown.adoc
 ## - The YAML that frontmatter holds, decoded into a record or read as a tree:
-##   https://github.com/lukewilliamboswell/roc-parser/blob/3.0.0/docs/yaml.adoc
+##   https://github.com/lukewilliamboswell/roc-parser/blob/6.0.0/docs/yaml.adoc
 app [main!] {
-	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst",
-	parser: "https://github.com/lukewilliamboswell/roc-parser/releases/download/3.0.0/6xsRdRqenJrAb4wG7HaST4Xh349vD5sHAJDsKTK6E3dr.tar.zst",
+	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst",
+	parser: "https://github.com/lukewilliamboswell/roc-parser/releases/download/6.0.0/7j67bdgEMRsua6VnhcYASXRymN5pYgUC9qV4bHFupbf9.tar.zst",
 }
 
 import pf.Stdout
@@ -26,14 +26,15 @@ import parser.Yaml
 # --- Parse -------------------------------------------------------------------
 #
 # Markdown has no syntax errors, so `Markdown.parse_str` returns
-# `List(Markdown)` and not a `Try`. `Markdown.parse_str(text)?` does not compile.
-# The type is `Markdown`, the same name as the module.
+# `List(Markdown)` and not a `Try`. `Markdown.parse_str(text, {})?` does not
+# compile. It takes props like every other format; pass `{}`. `parse_inlines`
+# takes only the text. The type is `Markdown`, the same name as the module.
 
-expect Markdown.parse_str("## Setup").first() == Ok(Heading({ level: Two, content: [Text("Setup")] }))
+expect Markdown.parse_str("## Setup", {}).first() == Ok(Heading({ level: Two, content: [Text("Setup")] }))
 
 # A soft line break stays as "\n" inside `Text`. Only two trailing spaces or a
 # backslash give `HardBreak`.
-expect Markdown.parse_str("one\ntwo") == [Paragraph([Text("one\ntwo")])]
+expect Markdown.parse_str("one\ntwo", {}) == [Paragraph([Text("one\ntwo")])]
 
 # Entities are decoded, so `Text` holds "<", not "&lt;". Escape what you emit.
 expect Markdown.parse_inlines("1 &lt; 2") == [Text("1 < 2")]
@@ -46,13 +47,13 @@ expect Markdown.parse_inlines("a <b>x</b>") == [Text("a "), HtmlInline("<b>"), T
 # `parse_inlines` sees one fragment, so the brackets stay text.
 expect Markdown.parse_inlines("[docs][d]") == [Text("[docs][d]")]
 expect
-	Markdown.parse_str("[docs][d]\n\n[d]: /docs")
+	Markdown.parse_str("[docs][d]\n\n[d]: /docs", {})
 	== [Paragraph([Link({ label: [Text("docs")], target: { href: "/docs", title: Err(Missing) } })])]
 
 # A tight list still wraps each item's text in `Paragraph`. Read `loose` to
 # decide if the HTML gets `<p>` tags.
 expect {
-	match Markdown.parse_str("- a\n- b") {
+	match Markdown.parse_str("- a\n- b", {}) {
 		[ListBlock({ loose, items, .. })] => !loose and items.map(|item| item.blocks) == [[Paragraph([Text("a")])], [Paragraph([Text("b")])]]
 		_ => False
 	}
@@ -140,7 +141,7 @@ plain = |inlines| {
 	Str.join_with(pieces, "")
 }
 
-expect blocks_html(Markdown.parse_str("# A *b*\n\n- x\n- y")) == "<h1>A <em>b</em></h1>\n<ul>\n<li>x</li>\n<li>y</li>\n</ul>\n"
+expect blocks_html(Markdown.parse_str("# A *b*\n\n- x\n- y", {})) == "<h1>A <em>b</em></h1>\n<ul>\n<li>x</li>\n<li>y</li>\n</ul>\n"
 
 # --- Frontmatter -------------------------------------------------------------
 #
@@ -157,19 +158,19 @@ post =
 	\\
 	\\First **post**.
 
-expect Markdown.frontmatter(Markdown.parse_str(post)) == Ok("title: Hello\n")
+expect Markdown.frontmatter(Markdown.parse_str(post, {})) == Ok("title: Hello\n")
 
 # With no closing `---`, the opening line is a thematic break.
-expect Markdown.parse_str("---\nhi") == [ThematicBreak, Paragraph([Text("hi")])]
+expect Markdown.parse_str("---\nhi", {}) == [ThematicBreak, Paragraph([Text("hi")])]
 
-# `Yaml.parse_str` fails with `InvalidYaml(...)`, the lookups with `Missing` and
+# `Yaml.parse_str(raw, {})` fails with `InvalidYaml(...)`, the lookups with `Missing` and
 # `WrongType`. `?` passes each one up, so the error type is their union.
 page : Str -> Try(Str, [InvalidYaml(Yaml.Error), Missing, WrongType])
 page = |text| {
-	blocks = Markdown.parse_str(text)
+	blocks = Markdown.parse_str(text, {})
 	title =
 		match Markdown.frontmatter(blocks) {
-			Ok(raw) => Yaml.parse_str(raw)?.get_path(["title"])?.as_str()?
+			Ok(raw) => Yaml.parse_str(raw, {})?.get_path(["title"])?.as_str()?
 			Err(Missing) => "untitled"
 		}
 	# The `Frontmatter` block stays in the list. `block_html` renders it as "".

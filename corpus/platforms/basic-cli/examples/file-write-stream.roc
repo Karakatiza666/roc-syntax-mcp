@@ -1,6 +1,6 @@
 ## Write a file piece by piece: a report line by line, then a redacted copy
 ## made without holding more than one chunk of the file in memory.
-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst" }
+app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst" }
 
 import pf.OsStr
 import pf.Stdout
@@ -79,7 +79,7 @@ copy_redacted! = |source, destination| {
 ## Replace every digit with `#`.
 redact : List(U8) -> List(U8)
 redact = |bytes|
-	bytes.map(|byte| if byte >= '0' and byte <= '9' '#' else byte)
+	bytes.map(|byte| if (byte >= '0' and byte <= '9') '#' else byte)
 
 expect redact("pears,12\n".to_utf8()) == "pears,##\n".to_utf8()
 expect redact([]) == []

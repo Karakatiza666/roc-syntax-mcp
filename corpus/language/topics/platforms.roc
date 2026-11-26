@@ -18,12 +18,11 @@
 # through a function that the platform exposes. A platform can leave out an
 # effect that does not fit its domain (file I/O in a browser), so a package
 # that needs it does not build there, or guard one, e.g. with a prompt before a
-# file write. Concurrent I/O scheduled by the platform is planned.
+# file write.
 #
 # A host can see the address of any value it receives, and a platform API may
-# depend on it. The optimizer
-# assumes that allocation has no observable effect, so effects in a host
-# allocator may run differently between compiler releases.
+# depend on it. The optimizer assumes that allocation has no observable effect,
+# so effects in a host allocator may run differently between compiler releases.
 #
 #
 # 1. The platform header (platform/main.roc)
@@ -44,8 +43,8 @@
 # Field by field:
 #   `requires { main! : ... }` is the shape an application must provide.
 #     `requires {} { main! : ... }` also compiles, and `roc fmt` rewrites it
-#     to one record. The Try's error type is left open (`..`) so apps can
-#     return any platform-defined error and still satisfy the constraint.
+#     to one record. The Try's error type is open (`..`), so an app can
+#     return its own errors.
 #   `exposes [...]` lists the Roc modules the app can `import pf.X`.
 #   `packages { json: "../json/main.roc" }` declares package dependencies and
 #     their qualifiers.
@@ -86,8 +85,9 @@
 # `exports: []` exports none explicitly. Without the field, `roc build` fails
 # with "missing wasm exports". A wasm32 target also takes `import_memory`,
 # `minimum_memory`, `maximum_memory`, `initial_stack_size` and `global_base`
-# (the first address Roc may use). Any other field, or one of these on another
-# target, is "Invalid Target Configuration".
+# (the first address Roc may use). Memory sizes are bytes, whole 64 KiB pages,
+# up to 4 GiB. `initial_stack_size` is a multiple of 16. Any other value or
+# field, or one of these on another target, is "Invalid Target Configuration".
 #
 # The platform decides what to build. App authors never pass artifact-kind
 # flags to `roc build`. Without `--target`, `roc build` uses the first
@@ -108,11 +108,12 @@
 # `zig dlltool -m i386:x86-64 -d kernel32.def -l kernel32.lib` makes an import
 # library from a module-definition (`.def`) file.
 #
-# An app can also provide a type to the platform, using a `for` clause. The
-# `[Context : context]` syntax maps an uppercase alias the app defines to a
-# lowercase rigid type variable, so the type stays opaque to the platform.
-# basic-webserver's real header, which is bundled with this server under
-# `scope: "basic-webserver"`:
+# An app can also provide a type to the platform, using a `for` clause. In
+# `[Context : context]`, `context` is a rigid type variable, so the type stays
+# opaque to the platform, and `Context` names that same type everywhere in the
+# platform. Roc infers it from the app's value, so the app need not declare or
+# expose a type of that name. basic-webserver's real header, which is bundled
+# with this server under `scope: "basic-webserver"`:
 #
 # platform "webserver"
 #     requires {
@@ -123,9 +124,9 @@
 #         }
 #     }
 #
-# Three things to copy from it. The app names the alias (`Context : {}`) and
-# the record of functions (`program = { init!, respond!, shutdown! }`), and
-# annotates neither the record nor the alias against the platform's own shape.
+# Three things to copy from it. The app defines the record of functions
+# (`program = { init!, respond!, shutdown! }`) and does not annotate it against
+# the platform's own shape.
 # Every error type is open (`..`), so an app can return its own errors. The
 # rigid variable appears in all three signatures, so the whole application must
 # use one context type.
@@ -153,7 +154,7 @@
 #   Inspect any unhandled error for diagnostics, then return a non-zero code.
 #
 #
-# 3. Anatomy of a platform module (basic-cli 0.26.0)
+# 3. Anatomy of a platform module (basic-cli 0.28.1)
 #
 #
 # basic-cli declares every hosted effect in one module, Host.roc, and each
@@ -231,9 +232,8 @@
 # 6. App-side usage
 #
 #
-# An app imports the exposed modules (`import pf.File`). It can chain their
-# calls with `?`, because each call returns a `Try` with an open error union.
-# `Err(Exit(1))` from `main!` reaches the host as exit code 1 through
+# An app imports the exposed modules (`import pf.File`) and chains their calls
+# with `?`. `Err(Exit(1))` from `main!` reaches the host as exit code 1 through
 # `main_for_host!`. See the `error_design` topic.
 #
 #
@@ -241,7 +241,7 @@
 #
 #
 # A host that does all I/O can require a record of pure functions,
-# with `exposes []` and `hosted {}`. The app writes `app [Model, main]` and
+# with `exposes []` and `hosted {}`. The app writes `app [main]` and
 # `main = { init: |seed| ..., update: |model, input| ... }`, with no `!`:
 #
 #     requires { [Model : model] for main : { init : U64 -> model, update : model, U64 -> model } }
@@ -257,7 +257,7 @@
 # 7. Reading a real platform end to end
 #
 #
-# This server bundles basic-webserver 0.19.0 in full, so you can read all of it:
+# This server bundles basic-webserver 0.22.0 in full, so you can read all of it:
 #
 #   get_roc_syntax(scope: "basic-webserver")   the app-facing API in one page
 #   get_roc_module("Server")                   one module's methods and types

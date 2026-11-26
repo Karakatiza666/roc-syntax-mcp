@@ -497,9 +497,14 @@ requires {
 }
 ```
 
-Here, the application defines a type named `Model`, and the platform refers to it as the type
-variable `model`. That way, each application can choose its own `Model` type, and the platform
-code works with all of them without knowing what's inside.
+Here, `model` names the application's chosen type within this requirement, and `Model`
+names the same type throughout the platform module. Roc infers that type from the
+application's `main` value, so the application doesn't need to declare or expose a
+type named `Model`. The platform code works without knowing what's inside that type.
+
+Every use of the platform's `Model`, including uses in other requirements, refers
+to that same type. An application can name its own types however it likes; an
+application type also named `Model` has no special connection to the platform's alias.
 
 ### exposes
 
@@ -550,6 +555,10 @@ targets: {
   outside world, using `exports`. (`exports: []` exports none.)
 - WebAssembly targets can also set how the module's memory is laid out: `import_memory`,
   `minimum_memory`, `maximum_memory`, `initial_stack_size`, and `global_base`.
+  The two memory sizes are in bytes and have to be a multiple of 65536 (that's the size of a
+  WebAssembly page), from 65536 up to 4294967296. `initial_stack_size` is in bytes too, and has to be
+  a multiple of 16, from 16 up to 4294967280. Anything else is an "Invalid Target Configuration"
+  error, because there's no module `roc build` could produce that has, say, half a page of memory.
 - A target can't have any other fields, and the WebAssembly ones only go on WebAssembly targets.
   A misspelled or misplaced field is an "Invalid Target Configuration" error rather than something
   `roc build` quietly ignores.

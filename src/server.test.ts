@@ -377,7 +377,9 @@ test("a miss names the query shape that answers it", async () => {
   try {
     const call = (q: string) => s.call("search_symbols", { query: [q], scope: "roc-ray" });
     assert.equal(await call("Keys"), '`Keys` is a module. Call `get_roc_module("Keys")` for its page.');
-    assert.match(await call("Frame.text!"), /^`Frame` is a type in `Draw`\. Its functions are in their module, so search `text!`, or `Frame ->`/);
+    // roc-ray 0.13.0 gave `Draw.Frame` its drawing functions as methods, so the
+    // miss uses `Color.with_alpha`, which is still a function of its module.
+    assert.match(await call("Rgba.with_alpha"), /^`Rgba` is a type in `Color`\. Its functions are in their module, so search `with_alpha`, or `Rgba ->`/);
     const tags = await call("Space");
     assert.match(tags, /^No symbol is named `Space`\. Tags that contain it: .*`KeySpace` in `Keys\.Key`/);
     assert.doesNotMatch(tags, /Host\./, "a host tag is not one an app writes");

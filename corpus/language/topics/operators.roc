@@ -55,9 +55,11 @@ boolean_operators = |a, b| {
 #   ..<  range_exclusive_to   -x   negate
 #   ..=  range_inclusive_to
 #
-# Arithmetic dispatches on the left operand and returns its type. The right
-# operand may differ if the method signature allows it. Comparison and range
-# operators require both operands to have the same type.
+# Arithmetic dispatches on the left operand. Both operands and the result have
+# the same type, so in `count + 1` the `1` takes the type of `count`. Comparison
+# and range operators also require both operands to have the same type. A method
+# that mixes types, such as `Duration, I64 -> Duration`, is called as
+# `d.times(3)`, not `d * 3`.
 # Defining these methods is how a custom type opts into the operators. See the
 # `static_dispatch` topic.
 #

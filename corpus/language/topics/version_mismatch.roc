@@ -5,8 +5,8 @@
 # steps below in order, and do each step once. Do not try nightlies one by
 # one. The repo of each release records its nightly, so read it there.
 #
-# The table in step 2 was read for basic-webserver 0.19.0, basic-cli 0.26.0,
-# roc-parser 3.0.0 and http 1.0.0. The error in step 1 is basic-webserver
+# The table in step 2 was read for basic-webserver 0.22.0, basic-cli 0.28.1,
+# roc-parser 6.0.0 and http 1.0.0. The error in step 1 is basic-webserver
 # 0.17.0 on nightly-2026-10-09-258ab27.
 
 # ---------------------------------------------------------------------------
@@ -71,9 +71,9 @@
 #      Do not try the nightlies before and after it.
 #
 #   Release                  Source           Nightly
-#   basic-webserver 0.19.0   .roc-version     nightly-2026-10-24-f6c6cfb
-#   basic-cli 0.26.0         nightly-tag:     nightly-2026-10-12-2664a27
-#   roc-parser 3.0.0         none, rule 4     nightly-2026-10-21-5349569
+#   basic-webserver 0.22.0   .roc-version     nightly-2026-11-15-f25da45
+#   basic-cli 0.28.1         nightly-tag:     nightly-2026-11-13-03dce41
+#   roc-parser 6.0.0         none, rule 4     nightly-2026-11-23-b5c77fc
 #   http 1.0.0               none, rule 4     nightly-2026-July-05-c0cae66
 #
 # Old tags spell the month (`nightly-2026-July-05-...`). Copy a tag exactly.

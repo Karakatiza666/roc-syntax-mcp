@@ -42,9 +42,13 @@ fail=0
 for i in "${!names[@]}"; do
   case "${codes[$i]}" in
     # A script that needs roc exits with 2 when no compiler is on PATH. Report
-    # that gate as skipped, not as passed.
+    # that gate as skipped, not as passed. The first three gates need no roc,
+    # and tsc exits with 2 when it finds an error, so a 2 from them is a failure.
     0) printf 'ok      %s\n' "${names[$i]}" ;;
-    2) printf 'skipped %s (no roc, set ROC=/path/to/roc)\n' "${names[$i]}" ;;
+    2) case "${names[$i]}" in
+         build | test | check:index) printf 'FAIL    %s (exit 2)\n' "${names[$i]}"; fail=1 ;;
+         *) printf 'skipped %s (no roc, set ROC=/path/to/roc)\n' "${names[$i]}" ;;
+       esac ;;
     *) printf 'FAIL    %s (exit %s)\n' "${names[$i]}" "${codes[$i]}"; fail=1 ;;
   esac
 done

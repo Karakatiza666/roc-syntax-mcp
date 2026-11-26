@@ -1,6 +1,6 @@
 app [main!] {
-	cli: platform "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst",
-	parser: "https://github.com/lukewilliamboswell/roc-parser/releases/download/3.0.0/6xsRdRqenJrAb4wG7HaST4Xh349vD5sHAJDsKTK6E3dr.tar.zst",
+	cli: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst",
+	parser: "https://github.com/lukewilliamboswell/roc-parser/releases/download/6.0.0/7j67bdgEMRsua6VnhcYASXRymN5pYgUC9qV4bHFupbf9.tar.zst",
 }
 
 import cli.OsStr
@@ -42,7 +42,7 @@ content =
 main! : List(OsStr) => Try({}, _)
 main! = |args| {
 	markdown_input = args.get(1).map_ok(OsStr.display) ?? content
-	Stdout.line!(render_content(Markdown.parse_str(markdown_input), ""))?
+	Stdout.line!(render_content(Markdown.parse_str(markdown_input, {}), ""))?
 	Ok({})
 }
 

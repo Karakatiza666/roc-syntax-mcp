@@ -3835,9 +3835,7 @@ Builtin :: [].{
 
 		## Advance the stream by one step.
 		next! : Stream(item) => [One({ item : item, rest : Stream(item) }), Skip({ rest : Stream(item) }), Done]
-		next! = |source| match source {
-			{ step!, .. } => step!()
-		}
+		next! = |source| (source.step!)()
 
 		## Returns the stream's length if it is known up front.
 		len_if_known : Stream(item) -> Try(U64, [Unknown])
@@ -4022,16 +4020,25 @@ Builtin :: [].{
 		join = |lists| {
 			# `$total` counts exactly the items appended below, so every
 			# unchecked append stays in bounds.
+			lists_len = List.len(lists)
 			var $total = 0
-			for inner in lists {
-				$total = $total + List.len(inner)
+			var $counted = 0
+			while $counted < lists_len {
+				$total = $total + List.len(list_get_unsafe(lists, $counted))
+				$counted = $counted + 1
 			}
 
 			var $joined = List.with_capacity($total)
-			for inner in lists {
-				for item in inner {
-					$joined = list_append_unsafe($joined, item)
+			var $outer = 0
+			while $outer < lists_len {
+				inner = list_get_unsafe(lists, $outer)
+				inner_len = List.len(inner)
+				var $index = 0
+				while $index < inner_len {
+					$joined = list_append_unsafe($joined, list_get_unsafe(inner, $index))
+					$index = $index + 1
 				}
+				$outer = $outer + 1
 			}
 
 			$joined
@@ -4065,11 +4072,11 @@ Builtin :: [].{
 				# unchecked append stays in bounds.
 				var $new_list = List.with_capacity(2 * length - 1)
 				var $index = 0
-				for item in list {
+				while $index < length {
 					if $index > 0 {
 						$new_list = list_append_unsafe($new_list, separator)
 					}
-					$new_list = list_append_unsafe($new_list, item)
+					$new_list = list_append_unsafe($new_list, list_get_unsafe(list, $index))
 					$index = $index + 1
 				}
 				$new_list
@@ -4244,9 +4251,12 @@ Builtin :: [].{
 			where [item.to_hash : item, Hasher -> Hasher]
 		to_hash = |list, hasher| {
 			Item : item
-			var $next = Hasher.write_u64(hasher, List.len(list))
-			for item in list {
-				$next = Item.to_hash(item, $next)
+			length = List.len(list)
+			var $next = Hasher.write_u64(hasher, length)
+			var $index = 0
+			while $index < length {
+				$next = Item.to_hash(list_get_unsafe(list, $index), $next)
+				$index = $index + 1
 			}
 			$next
 		}
@@ -4499,12 +4509,12 @@ Builtin :: [].{
 		update = |list, index, func| {
 			if index < List.len(list) {
 				prepared_list = list_map_prepare_reuse(list)
-				match list_map_can_reuse(prepared_list, func) {
+				match list_owned_unique(prepared_list) {
 					1 => {
 						item = list_move_out_unsafe(prepared_list, index)
-						Ok(list_map_write_unsafe(prepared_list, index, func(item)))
+						Ok(list_move_in_unsafe(prepared_list, index, func(item)))
 					}
-					_ => Ok(list_replace_unsafe(prepared_list, index, func(list_get_unsafe(prepared_list, index))).list)
+					_ => Ok(list_set_unsafe(prepared_list, index, func(list_get_unsafe(prepared_list, index))))
 				}
 			} else {
 				Err(OutOfBounds)
@@ -4570,8 +4580,13 @@ Builtin :: [].{
 		}
 
 		for_each! : List(item), (item => {}) => {}
-		for_each! = |items, fun!| for item in items {
-			fun!(item)
+		for_each! = |items, fun!| {
+			length = List.len(items)
+			var $index = 0
+			while $index < length {
+				fun!(list_get_unsafe(items, $index))
+				$index = $index + 1
+			}
 		}
 
 		## Convert each item in the list to something new, by calling a conversion
@@ -4590,16 +4605,19 @@ Builtin :: [].{
 					var $out = list_map_cast_unsafe(prepared_list)
 					var $index = 0
 					while $index < length {
-						item = list_map_extract_unsafe($out, $index, transform)
+						item = list_map_extract_unsafe($out, $index, prepared_list)
 						$out = list_map_write_unsafe($out, $index, transform(item))
 						$index = $index + 1
 					}
 					$out
 				}
 				_ => {
-					var $new_list = List.with_capacity(prepared_list.len())
-					for item in prepared_list {
-						$new_list = list_append_unsafe($new_list, transform(item))
+					length = prepared_list.len()
+					var $new_list = List.with_capacity(length)
+					var $index = 0
+					while $index < length {
+						$new_list = list_append_unsafe($new_list, transform(list_get_unsafe(prepared_list, $index)))
+						$index = $index + 1
 					}
 					$new_list
 				}
@@ -4613,10 +4631,11 @@ Builtin :: [].{
 		## ```
 		map_with_index : List(a), (a, U64 -> b) -> List(b)
 		map_with_index = |list, transform| {
-			var $new_list = List.with_capacity(list.len())
+			length = list.len()
+			var $new_list = List.with_capacity(length)
 			var $index = 0
-			for item in list {
-				$new_list = list_append_unsafe($new_list, transform(item, $index))
+			while $index < length {
+				$new_list = list_append_unsafe($new_list, transform(list_get_unsafe(list, $index), $index))
 				$index = $index + 1
 			}
 			$new_list
@@ -4832,12 +4851,14 @@ Builtin :: [].{
 		keep_oks = |list, transform| {
 			# Allocated when the first Ok value needs a place, so a list with no
 			# Ok value allocates nothing.
+			length = List.len(list)
 			var $out = []
-			for item in list {
-				$out = match transform(item) {
+			var $index = 0
+			while $index < length {
+				$out = match transform(list_get_unsafe(list, $index)) {
 					Ok(after) => {
 						reserved = if $out.is_empty() {
-							List.with_capacity(list.len())
+							List.with_capacity(length)
 						} else {
 							$out
 						}
@@ -4845,6 +4866,7 @@ Builtin :: [].{
 					}
 					Err(_) => $out
 				}
+				$index = $index + 1
 			}
 			$out
 		}
@@ -4859,12 +4881,14 @@ Builtin :: [].{
 		keep_errs = |list, transform| {
 			# Allocated when the first Err value needs a place, so a list with no
 			# Err value allocates nothing.
+			length = List.len(list)
 			var $out = []
-			for item in list {
-				$out = match transform(item) {
+			var $index = 0
+			while $index < length {
+				$out = match transform(list_get_unsafe(list, $index)) {
 					Err(after) => {
 						reserved = if $out.is_empty() {
-							List.with_capacity(list.len())
+							List.with_capacity(length)
 						} else {
 							$out
 						}
@@ -4872,6 +4896,7 @@ Builtin :: [].{
 					}
 					Ok(_) => $out
 				}
+				$index = $index + 1
 			}
 			$out
 		}
@@ -4904,9 +4929,12 @@ Builtin :: [].{
 		## ```
 		map_try : List(a), (a -> Try(b, err)) -> Try(List(b), err)
 		map_try = |list, transform| {
-			var $out = List.with_capacity(list.len())
-			for item in list {
-				$out = list_append_unsafe($out, transform(item)?)
+			length = List.len(list)
+			var $out = List.with_capacity(length)
+			var $index = 0
+			while $index < length {
+				$out = list_append_unsafe($out, transform(list_get_unsafe(list, $index))?)
+				$index = $index + 1
 			}
 			Ok($out)
 		}
@@ -4918,9 +4946,12 @@ Builtin :: [].{
 		## ```
 		map_try! : List(a), (a => Try(b, err)) => Try(List(b), err)
 		map_try! = |list, transform!| {
-			var $out = List.with_capacity(list.len())
-			for item in list {
-				$out = list_append_unsafe($out, transform!(item)?)
+			length = List.len(list)
+			var $out = List.with_capacity(length)
+			var $index = 0
+			while $index < length {
+				$out = list_append_unsafe($out, transform!(list_get_unsafe(list, $index))?)
+				$index = $index + 1
 			}
 			Ok($out)
 		}
@@ -5047,9 +5078,12 @@ Builtin :: [].{
 		## ```
 		fold_try : List(item), state, (state, item -> Try(state, err)) -> Try(state, err)
 		fold_try = |list, initial, step| {
+			length = List.len(list)
 			var $state = initial
-			for item in list {
-				$state = step($state, item)?
+			var $index = 0
+			while $index < length {
+				$state = step($state, list_get_unsafe(list, $index))?
+				$index = $index + 1
 			}
 			Ok($state)
 		}
@@ -5061,9 +5095,12 @@ Builtin :: [].{
 		## ```
 		fold_try! : List(item), state, (state, item => Try(state, err)) => Try(state, err)
 		fold_try! = |list, initial, step!| {
+			length = List.len(list)
 			var $state = initial
-			for item in list {
-				$state = step!($state, item)?
+			var $index = 0
+			while $index < length {
+				$state = step!($state, list_get_unsafe(list, $index))?
+				$index = $index + 1
 			}
 			Ok($state)
 		}
@@ -5098,10 +5135,13 @@ Builtin :: [].{
 		## `fold_left`, or `foldl`.
 		fold : List(item), state, (state, item -> state) -> state
 		fold = |list, init, step| {
+			length = List.len(list)
 			var $state = init
+			var $index = 0
 
-			for item in list {
-				$state = step($state, item)
+			while $index < length {
+				$state = step($state, list_get_unsafe(list, $index))
+				$index = $index + 1
 			}
 
 			$state
@@ -5110,11 +5150,12 @@ Builtin :: [].{
 		## Like [List.fold], but at each step the function also receives the index of the current item.
 		fold_with_index : List(item), state, (state, item, U64 -> state) -> state
 		fold_with_index = |list, init, step| {
+			length = List.len(list)
 			var $state = init
 			var $index = 0
 
-			for item in list {
-				$state = step($state, item, $index)
+			while $index < length {
+				$state = step($state, list_get_unsafe(list, $index), $index)
 				$index = $index + 1
 			}
 
@@ -5134,10 +5175,12 @@ Builtin :: [].{
 		## if returning `Break` earlier than the last item is expected to be common.
 		fold_until : List(item), state, (state, item -> [Continue(state), Break(state)]) -> state
 		fold_until = |list, init, step| {
+			length = List.len(list)
 			var $state = init
+			var $index = 0
 
-			for item in list {
-				match step($state, item) {
+			while $index < length {
+				match step($state, list_get_unsafe(list, $index)) {
 					Continue(new_state) => {
 						$state = new_state
 					}
@@ -5146,6 +5189,7 @@ Builtin :: [].{
 						break
 					}
 				}
+				$index = $index + 1
 			}
 
 			$state
@@ -5154,11 +5198,12 @@ Builtin :: [].{
 		## Same as [List.fold_with_index], except you can stop folding early.
 		fold_with_index_until : List(item), state, (state, item, U64 -> [Continue(state), Break(state)]) -> state
 		fold_with_index_until = |list, init, step| {
+			length = List.len(list)
 			var $state = init
 			var $index = 0
 
-			for item in list {
-				match step($state, item, $index) {
+			while $index < length {
+				match step($state, list_get_unsafe(list, $index), $index) {
 					Continue(new_state) => {
 						$state = new_state
 					}
@@ -5235,10 +5280,13 @@ Builtin :: [].{
 		## ```
 		any : List(a), (a -> Bool) -> Bool
 		any = |list, predicate| {
-			for item in list {
-				if predicate(item) {
+			length = List.len(list)
+			var $index = 0
+			while $index < length {
+				if predicate(list_get_unsafe(list, $index)) {
 					return True
 				}
+				$index = $index + 1
 			}
 			False
 		}
@@ -5263,10 +5311,13 @@ Builtin :: [].{
 		## ```
 		all : List(a), (a -> Bool) -> Bool
 		all = |list, predicate| {
-			for item in list {
-				if Bool.not(predicate(item)) {
+			length = List.len(list)
+			var $index = 0
+			while $index < length {
+				if Bool.not(predicate(list_get_unsafe(list, $index))) {
 					return False
 				}
+				$index = $index + 1
 			}
 			True
 		}
@@ -5430,8 +5481,14 @@ Builtin :: [].{
 		## ```
 		find_first : List(a), (a -> Bool) -> Try(a, [NotFound])
 		find_first = |list, predicate| {
-			for item in list if predicate(item) {
-				return Ok(item)
+			length = List.len(list)
+			var $index = 0
+			while $index < length {
+				item = list_get_unsafe(list, $index)
+				if predicate(item) {
+					return Ok(item)
+				}
+				$index = $index + 1
 			}
 			Err(NotFound)
 		}
@@ -5442,8 +5499,13 @@ Builtin :: [].{
 		## ```
 		find_last : List(a), (a -> Bool) -> Try(a, [NotFound])
 		find_last = |list, predicate| {
-			for item in list.iter_rev() if predicate(item) {
-				return Ok(item)
+			var $remaining = List.len(list)
+			while $remaining > 0 {
+				$remaining = $remaining - 1
+				item = list_get_unsafe(list, $remaining)
+				if predicate(item) {
+					return Ok(item)
+				}
 			}
 			Err(NotFound)
 		}
@@ -5454,9 +5516,10 @@ Builtin :: [].{
 		## ```
 		find_first_index : List(a), (a -> Bool) -> Try(U64, [NotFound])
 		find_first_index = |list, predicate| {
+			length = List.len(list)
 			var $idx = 0
-			for item in list {
-				if predicate(item) {
+			while $idx < length {
+				if predicate(list_get_unsafe(list, $idx)) {
 					return Ok($idx)
 				}
 				$idx = $idx + 1
@@ -5517,16 +5580,20 @@ Builtin :: [].{
 		## ```
 		split_if : List(a), (a -> Bool) -> List(List(a))
 		split_if = |list, predicate| {
+			length = List.len(list)
 			var $acc = []
 			var $current = []
+			var $index = 0
 
-			for item in list {
+			while $index < length {
+				item = list_get_unsafe(list, $index)
 				if predicate(item) {
 					$acc = $acc.append($current)
 					$current = []
 				} else {
 					$current = $current.append(item)
 				}
+				$index = $index + 1
 			}
 			$acc.append($current)
 		}
@@ -5549,7 +5616,7 @@ Builtin :: [].{
 			var $skip = 0
 			var $i = 0
 
-			for item in list {
+			while $i < list_len {
 				if $skip > 0 {
 					$skip = $skip - 1
 				} else if $i + delim_len <= list_len
@@ -5558,7 +5625,7 @@ Builtin :: [].{
 					$current = []
 					$skip = delim_len - 1
 				} else {
-					$current = $current.append(item)
+					$current = $current.append(list_get_unsafe(list, $i))
 				}
 				$i = $i + 1
 			}
@@ -5760,7 +5827,7 @@ Builtin :: [].{
 		}
 	}
 
-	Box(item) :: [ProvidedByCompiler].{
+	Box(item) :: [ProvidedByCompiler(item)].{
 		parser_for : _
 		encoder_for : _
 
@@ -6159,11 +6226,15 @@ Builtin :: [].{
 			HashMap(data) => {
 				Key : k
 				Value : v
+				length = List.len(data.entries)
 				var $entry_hashes = 0
+				var $index = 0
 
-				for (key, value) in data.entries {
+				while $index < length {
+					(key, value) = list_get_unsafe(data.entries, $index)
 					entry_hash = hasher_finish(Value.to_hash(value, Key.to_hash(key, hasher)))
 					$entry_hashes = combine_unordered_hashes($entry_hashes, entry_hash)
+					$index = $index + 1
 				}
 
 				Hasher.write_u64(Hasher.write_u64(hasher, List.len(data.entries)), $entry_hashes)
@@ -6459,9 +6530,13 @@ Builtin :: [].{
 		keys : Dict(k, _v) -> List(k)
 		keys = |dict| match dict {
 			HashMap(data) => {
-				var $keys = List.with_capacity(List.len(data.entries))
-				for (key, _) in data.entries {
+				length = List.len(data.entries)
+				var $keys = List.with_capacity(length)
+				var $index = 0
+				while $index < length {
+					(key, _) = list_get_unsafe(data.entries, $index)
 					$keys = List.append($keys, key)
+					$index = $index + 1
 				}
 				$keys
 			}
@@ -6476,9 +6551,13 @@ Builtin :: [].{
 		values : Dict(_k, v) -> List(v)
 		values = |dict| match dict {
 			HashMap(data) => {
-				var $values = List.with_capacity(List.len(data.entries))
-				for (_, value) in data.entries {
+				length = List.len(data.entries)
+				var $values = List.with_capacity(length)
+				var $index = 0
+				while $index < length {
+					(_, value) = list_get_unsafe(data.entries, $index)
 					$values = List.append($values, value)
+					$index = $index + 1
 				}
 				$values
 			}
@@ -6497,9 +6576,13 @@ Builtin :: [].{
 		fold : Dict(k, v), state, (state, k, v -> state) -> state
 		fold = |dict, init, step| match dict {
 			HashMap(data) => {
+				length = List.len(data.entries)
 				var $state = init
-				for (key, value) in data.entries {
+				var $index = 0
+				while $index < length {
+					(key, value) = list_get_unsafe(data.entries, $index)
 					$state = step($state, key, value)
+					$index = $index + 1
 				}
 				$state
 			}
@@ -6519,8 +6602,11 @@ Builtin :: [].{
 		fold_until : Dict(k, v), state, (state, k, v -> [Continue(state), Break(state)]) -> state
 		fold_until = |dict, init, step| match dict {
 			HashMap(data) => {
+				length = List.len(data.entries)
 				var $state = init
-				for (key, value) in data.entries {
+				var $index = 0
+				while $index < length {
+					(key, value) = list_get_unsafe(data.entries, $index)
 					match step($state, key, value) {
 						Continue(new_state) => {
 							$state = new_state
@@ -6530,6 +6616,7 @@ Builtin :: [].{
 							break
 						}
 					}
+					$index = $index + 1
 				}
 				$state
 			}
@@ -6550,11 +6637,15 @@ Builtin :: [].{
 			where [k.to_hash : k, Hasher -> Hasher]
 		keep_if = |dict, predicate| match dict {
 			HashMap(data) => {
-				var $entries = List.with_capacity(List.len(data.entries))
-				for (key, value) in data.entries {
+				length = List.len(data.entries)
+				var $entries = List.with_capacity(length)
+				var $index = 0
+				while $index < length {
+					(key, value) = list_get_unsafe(data.entries, $index)
 					if predicate((key, value)) {
 						$entries = List.append($entries, (key, value))
 					}
+					$index = $index + 1
 				}
 				empty_buckets = List.map(data.buckets, |_| dict_empty_bucket)
 				shifts = dict_shifts_for_current_seed(data.shifts)
@@ -6594,9 +6685,13 @@ Builtin :: [].{
 		map : Dict(k, a), (k, a -> b) -> Dict(k, b)
 		map = |dict, transform| match dict {
 			HashMap(data) => {
-				var $entries = List.with_capacity(List.len(data.entries))
-				for (key, value) in data.entries {
+				length = List.len(data.entries)
+				var $entries = List.with_capacity(length)
+				var $index = 0
+				while $index < length {
+					(key, value) = list_get_unsafe(data.entries, $index)
 					$entries = List.append($entries, (key, transform(key, value)))
+					$index = $index + 1
 				}
 				HashMap({ entries: $entries, buckets: data.buckets, max_entries_before_grow: data.max_entries_before_grow, shifts: data.shifts })
 			}
@@ -6610,9 +6705,14 @@ Builtin :: [].{
 		join_map : Dict(a, b), (a, b -> Dict(x, y)) -> Dict(x, y)
 			where [x.is_eq : x, x -> Bool, x.to_hash : x, Hasher -> Hasher]
 		join_map = |dict, transform| {
+			entries = Dict.to_list(dict)
+			length = List.len(entries)
 			var $acc = Dict.empty()
-			for (k, v) in Dict.to_list(dict) {
+			var $index = 0
+			while $index < length {
+				(k, v) = list_get_unsafe(entries, $index)
 				$acc = Dict.insert_all($acc, transform(k, v))
+				$index = $index + 1
 			}
 			$acc
 		}
@@ -6633,8 +6733,13 @@ Builtin :: [].{
 			where [k.is_eq : k, k -> Bool, k.to_hash : k, Hasher -> Hasher]
 		insert_all = |xs, ys| {
 			var $acc = Dict.reserve(xs, Dict.len(ys))
-			for (k, v) in Dict.to_list(ys) {
+			entries = Dict.to_list(ys)
+			length = List.len(entries)
+			var $index = 0
+			while $index < length {
+				(k, v) = list_get_unsafe(entries, $index)
 				$acc = Dict.insert($acc, k, v)
+				$index = $index + 1
 			}
 			$acc
 		}
@@ -6660,13 +6765,18 @@ Builtin :: [].{
 			]
 		keep_shared = |xs, ys| {
 			var $acc = Dict.with_capacity(Dict.len(xs))
-			for (k, v) in Dict.to_list(xs) {
+			entries = Dict.to_list(xs)
+			length = List.len(entries)
+			var $index = 0
+			while $index < length {
+				(k, v) = list_get_unsafe(entries, $index)
 				match Dict.get(ys, k) {
 					Try.Ok(yv) => if yv == v {
 						$acc = Dict.insert($acc, k, v)
 					}
 					Try.Err(_) => {}
 				}
+				$index = $index + 1
 			}
 			$acc
 		}
@@ -6687,8 +6797,13 @@ Builtin :: [].{
 			where [k.is_eq : k, k -> Bool, k.to_hash : k, Hasher -> Hasher]
 		remove_all = |xs, ys| {
 			var $acc = xs
-			for (k, _) in Dict.to_list(ys) {
+			entries = Dict.to_list(ys)
+			length = List.len(entries)
+			var $index = 0
+			while $index < length {
+				(k, _) = list_get_unsafe(entries, $index)
 				$acc = Dict.remove($acc, k)
+				$index = $index + 1
 			}
 			$acc
 		}
@@ -6749,11 +6864,16 @@ Builtin :: [].{
 			where [a.to_hash : a, Hasher -> Hasher]
 		to_hash = |set, hasher| match set {
 			Set.(dict) => {
+				entries = Dict.to_list(dict)
+				length = List.len(entries)
 				var $item_hashes = 0
+				var $index = 0
 
-				for (item, _) in Dict.iter(dict) {
+				while $index < length {
+					(item, _) = list_get_unsafe(entries, $index)
 					item_hash = hasher_finish(item.to_hash(hasher))
 					$item_hashes = combine_unordered_hashes($item_hashes, item_hash)
+					$index = $index + 1
 				}
 
 				Hasher.write_u64(Hasher.write_u64(hasher, Dict.len(dict)), $item_hashes)
@@ -7101,7 +7221,7 @@ Builtin :: [].{
 			}
 		}
 
-		U8 :: [].{
+		U8 :: [ProvidedByCompiler].{
 			parser_for : _
 			encoder_for : _
 
@@ -7833,7 +7953,7 @@ Builtin :: [].{
 			}
 		}
 
-		I8 :: [].{
+		I8 :: [ProvidedByCompiler].{
 			parser_for : _
 			encoder_for : _
 
@@ -8754,7 +8874,7 @@ Builtin :: [].{
 			}
 		}
 
-		U16 :: [].{
+		U16 :: [ProvidedByCompiler].{
 			parser_for : _
 			encoder_for : _
 
@@ -9543,7 +9663,7 @@ Builtin :: [].{
 			}
 		}
 
-		I16 :: [].{
+		I16 :: [ProvidedByCompiler].{
 			parser_for : _
 			encoder_for : _
 
@@ -10503,7 +10623,7 @@ Builtin :: [].{
 			}
 		}
 
-		U32 :: [].{
+		U32 :: [ProvidedByCompiler].{
 			parser_for : _
 			encoder_for : _
 
@@ -11326,7 +11446,7 @@ Builtin :: [].{
 			}
 		}
 
-		I32 :: [].{
+		I32 :: [ProvidedByCompiler].{
 			parser_for : _
 			encoder_for : _
 
@@ -12303,7 +12423,7 @@ Builtin :: [].{
 			}
 		}
 
-		U64 :: [].{
+		U64 :: [ProvidedByCompiler].{
 			parser_for : _
 			encoder_for : _
 
@@ -13189,7 +13309,7 @@ Builtin :: [].{
 			}
 		}
 
-		I64 :: [].{
+		I64 :: [ProvidedByCompiler].{
 			parser_for : _
 			encoder_for : _
 
@@ -14192,7 +14312,7 @@ Builtin :: [].{
 			}
 		}
 
-		U128 :: [].{
+		U128 :: [ProvidedByCompiler].{
 			parser_for : _
 			encoder_for : _
 
@@ -15093,7 +15213,7 @@ Builtin :: [].{
 			}
 		}
 
-		I128 :: [].{
+		I128 :: [ProvidedByCompiler].{
 			parser_for : _
 			encoder_for : _
 
@@ -16126,7 +16246,7 @@ Builtin :: [].{
 			}
 		}
 
-		Dec :: [].{
+		Dec :: [ProvidedByCompiler].{
 			parser_for : _
 			encoder_for : _
 
@@ -16491,9 +16611,10 @@ Builtin :: [].{
 			## expect Dec.times_saturated(Dec.lowest, 2.0) == Dec.lowest
 			##
 			## expect Dec.times_saturated(2.5, 4.0) == 10.0
+			##
+			## expect Dec.times_saturated(1.0, 0.5) == 0.5
 			## ```
 			times_saturated : Dec, Dec -> Dec
-			times_saturated = |a, b| signed_times_saturated_rescaled(Dec.lowest, Dec.highest, 0.0, -1.0, a, b)
 
 			## Raise a [Dec] to a [Dec] power. Results are limited to [Dec]'s
 			## fixed 18 fractional decimal places. Fractional exponents require a
@@ -17376,7 +17497,7 @@ Builtin :: [].{
 			}
 		}
 
-		F32 :: [].{
+		F32 :: [ProvidedByCompiler].{
 			parser_for : _
 			encoder_for : _
 
@@ -18391,7 +18512,7 @@ Builtin :: [].{
 			}
 		}
 
-		F64 :: [].{
+		F64 :: [ProvidedByCompiler].{
 			parser_for : _
 			encoder_for : _
 
@@ -24873,12 +24994,16 @@ f64_round_to_whole = |self| {
 
 digits_to_bytes : List(U8) -> Try(List(U8), [OutOfRange])
 digits_to_bytes = |digits| {
+	length = List.len(digits)
 	var $bytes = []
-	for digit in digits {
+	var $index = 0
+	while $index < length {
+		digit = list_get_unsafe(digits, $index)
 		if digit > 9 {
 			return Err(OutOfRange)
 		}
 		$bytes = List.append($bytes, digit + 48)
+		$index = $index + 1
 	}
 	Ok($bytes)
 }
@@ -25004,9 +25129,12 @@ sort_impl = |list, compare_items| {
 	items = match list_owned_unique(prepared) {
 		1 => prepared
 		_ => {
+			prepared_len = List.len(prepared)
 			var $copy = List.with_capacity(len)
-			for item in prepared {
-				$copy = list_append_unsafe($copy, item)
+			var $index = 0
+			while $index < prepared_len {
+				$copy = list_append_unsafe($copy, list_get_unsafe(prepared, $index))
+				$index = $index + 1
 			}
 			$copy
 		}
@@ -25608,127 +25736,73 @@ quad_swap = |items, start, len, swap, compare_items| {
 	var $reverse_head = start
 	var $count = len // 8
 	var $skip_tail_swap = False
-	# The run the previous block of eight continued, if any.
-	var $run = NoRun
+	# Whether the previous block of eight was reversed, continuing a reversed
+	# run that starts at `$reverse_head`.
+	var $reversing = False
 	var $done = False
 	# `$count` blocks of eight remain from `$block` on, so while it is not
-	# zero the eight slots from `$block` exist; in the `Reversed` state a
-	# block came before this one, so the slot before `$block` exists too.
+	# zero the eight slots from `$block` exist; while `$reversing` a block
+	# came before this one, so the slot before `$block` exists too.
 	while !$done {
 		block = $block
 		at = |k| plus_infallible(block, k)
-		match $run {
-			NoRun => {
-				if $count == 0 {
-					$done = True
-				} else {
-					$count = minus_infallible($count, 1)
-					v1 = if (sort_after($items, block, at(1), compare_items)) 1 else 0
-					v2 = if (sort_after($items, at(2), at(3), compare_items)) 1 else 0
-					v3 = if (sort_after($items, at(4), at(5), compare_items)) 1 else 0
-					v4 = if (sort_after($items, at(6), at(7), compare_items)) 1 else 0
-					pairs = plus_infallible(plus_infallible(v1, v2), plus_infallible(v3, v4))
-					if pairs == 0 {
-						if !sort_after($items, at(1), at(2), compare_items) and !sort_after($items, at(3), at(4), compare_items) and !sort_after($items, at(5), at(6), compare_items) {
-							$run = Ordered
-						} else {
-							(merged, scratch) = quad_swap_merge($items, block, $swap, compare_items)
-							$items = merged
-							$swap = scratch
-						}
-					} else if pairs == 4 and sort_after($items, at(1), at(2), compare_items) and sort_after($items, at(3), at(4), compare_items) and sort_after($items, at(5), at(6), compare_items) {
-						$reverse_head = block
-						$run = Reversed
-					} else {
-						(merged, scratch) = quad_swap_merge(quad_swap_pairs($items, block, v1, v2, v3, v4), block, $swap, compare_items)
-						$items = merged
-						$swap = scratch
+		if $count == 0 {
+			if $reversing {
+				before = minus_infallible(block, 1)
+				# Reverse the run, including the tail if it continues it. The
+				# tail holds `rem` items, so each probe exists when its `rem`
+				# test lets it run.
+				rem = len % 8
+				tail_reversed = (rem < 7 or sort_after($items, at(5), at(6), compare_items)) and (rem < 6 or sort_after($items, at(4), at(5), compare_items)) and (rem < 5 or sort_after($items, at(3), at(4), compare_items)) and (rem < 4 or sort_after($items, at(2), at(3), compare_items)) and (rem < 3 or sort_after($items, at(1), at(2), compare_items)) and (rem < 2 or sort_after($items, block, at(1), compare_items)) and (rem < 1 or sort_after($items, before, block, compare_items))
+				if tail_reversed {
+					$items = quad_reversal($items, $reverse_head, minus_infallible(at(rem), 1))
+					if $reverse_head == start {
+						return { items: $items, swap: $swap, sorted: True }
 					}
-					$block = at(8)
+					$skip_tail_swap = True
+				} else {
+					$items = quad_reversal($items, $reverse_head, before)
 				}
 			}
-			Ordered => {
-				# The previous block was ordered; see whether this one continues it.
-				if $count == 0 {
-					$done = True
+			$done = True
+		} else {
+			$count = minus_infallible($count, 1)
+			# 1 for a pair whose first item orders after its second.
+			v1 = if (sort_after($items, block, at(1), compare_items)) 1 else 0
+			v2 = if (sort_after($items, at(2), at(3), compare_items)) 1 else 0
+			v3 = if (sort_after($items, at(4), at(5), compare_items)) 1 else 0
+			v4 = if (sort_after($items, at(6), at(7), compare_items)) 1 else 0
+			pairs = plus_infallible(plus_infallible(v1, v2), plus_infallible(v3, v4))
+			if ($reversing and pairs == 4 and sort_after($items, minus_infallible(block, 1), block, compare_items) and sort_after($items, at(1), at(2), compare_items) and sort_after($items, at(3), at(4), compare_items) and sort_after($items, at(5), at(6), compare_items)) {
+				# Still reversed, across the block boundary too.
+			} else {
+				# Any reversed run ends before this block.
+				ended_reversal = $reversing
+				if ended_reversal {
+					$items = quad_reversal($items, $reverse_head, minus_infallible(block, 1))
+				}
+				if pairs == 0 and !sort_after($items, at(1), at(2), compare_items) and !sort_after($items, at(3), at(4), compare_items) and !sort_after($items, at(5), at(6), compare_items) {
+					# Already ordered.
+					$reversing = False
+				} else if pairs == 4 and sort_after($items, at(1), at(2), compare_items) and sort_after($items, at(3), at(4), compare_items) and sort_after($items, at(5), at(6), compare_items) {
+					$reverse_head = block
+					$reversing = True
 				} else {
-					$count = minus_infallible($count, 1)
-					v1 = if (sort_after($items, block, at(1), compare_items)) 1 else 0
-					v2 = if (sort_after($items, at(2), at(3), compare_items)) 1 else 0
-					v3 = if (sort_after($items, at(4), at(5), compare_items)) 1 else 0
-					v4 = if (sort_after($items, at(6), at(7), compare_items)) 1 else 0
-					pairs = plus_infallible(plus_infallible(v1, v2), plus_infallible(v3, v4))
+					# Order the block's pairs, then merge them. After a reversed
+					# run they are merged only when they do not already form a
+					# sorted run.
 					if pairs != 0 {
-						if pairs == 4 and sort_after($items, at(1), at(2), compare_items) and sort_after($items, at(3), at(4), compare_items) and sort_after($items, at(5), at(6), compare_items) {
-							$reverse_head = block
-							$run = Reversed
-						} else {
-							(merged, scratch) = quad_swap_merge(quad_swap_pairs($items, block, v1, v2, v3, v4), block, $swap, compare_items)
-							$items = merged
-							$swap = scratch
-							$run = NoRun
-						}
-					} else if (!sort_after($items, at(1), at(2), compare_items) and !sort_after($items, at(3), at(4), compare_items) and !sort_after($items, at(5), at(6), compare_items)) {
-						# Still ordered.
-					} else {
+						$items = quad_swap_pairs($items, block, v1, v2, v3, v4)
+					}
+					if !ended_reversal or sort_after($items, at(1), at(2), compare_items) or sort_after($items, at(3), at(4), compare_items) or sort_after($items, at(5), at(6), compare_items) {
 						(merged, scratch) = quad_swap_merge($items, block, $swap, compare_items)
 						$items = merged
 						$swap = scratch
-						$run = NoRun
 					}
-					$block = at(8)
+					$reversing = False
 				}
 			}
-			Reversed => {
-				# The previous block was reversed; see whether this one continues it.
-				before = minus_infallible(block, 1)
-				if $count == 0 {
-					# Reverse the run, including the tail if it continues it. The
-					# tail holds `rem` items, so each probe exists when its `rem`
-					# test lets it run.
-					rem = len % 8
-					tail_reversed = (rem < 7 or sort_after($items, at(5), at(6), compare_items)) and (rem < 6 or sort_after($items, at(4), at(5), compare_items)) and (rem < 5 or sort_after($items, at(3), at(4), compare_items)) and (rem < 4 or sort_after($items, at(2), at(3), compare_items)) and (rem < 3 or sort_after($items, at(1), at(2), compare_items)) and (rem < 2 or sort_after($items, block, at(1), compare_items)) and (rem < 1 or sort_after($items, before, block, compare_items))
-					if tail_reversed {
-						$items = quad_reversal($items, $reverse_head, minus_infallible(at(rem), 1))
-						if $reverse_head == start {
-							return { items: $items, swap: $swap, sorted: True }
-						}
-						$skip_tail_swap = True
-					} else {
-						$items = quad_reversal($items, $reverse_head, before)
-					}
-					$done = True
-				} else {
-					$count = minus_infallible($count, 1)
-					# 1 for a pair that is in order, so not reversed.
-					u1 = if (sort_after($items, block, at(1), compare_items)) 0 else 1
-					u2 = if (sort_after($items, at(2), at(3), compare_items)) 0 else 1
-					u3 = if (sort_after($items, at(4), at(5), compare_items)) 0 else 1
-					u4 = if (sort_after($items, at(6), at(7), compare_items)) 0 else 1
-					ordered_pairs = plus_infallible(plus_infallible(u1, u2), plus_infallible(u3, u4))
-					if (ordered_pairs == 0 and sort_after($items, before, block, compare_items) and sort_after($items, at(1), at(2), compare_items) and sort_after($items, at(3), at(4), compare_items) and sort_after($items, at(5), at(6), compare_items)) {
-						# Still reversed, across the block boundary too.
-					} else {
-						$items = quad_reversal($items, $reverse_head, before)
-						if ordered_pairs == 4 and !sort_after($items, at(1), at(2), compare_items) and !sort_after($items, at(3), at(4), compare_items) and !sort_after($items, at(5), at(6), compare_items) {
-							$run = Ordered
-						} else if ordered_pairs == 0 and sort_after($items, at(1), at(2), compare_items) and sort_after($items, at(3), at(4), compare_items) and sort_after($items, at(5), at(6), compare_items) {
-							$reverse_head = block
-						} else {
-							# An unordered block: order its pairs in place, then
-							# merge them unless they already form a sorted run.
-							$items = quad_swap_pairs($items, block, minus_infallible(1, u1), minus_infallible(1, u2), minus_infallible(1, u3), minus_infallible(1, u4))
-							if sort_after($items, at(1), at(2), compare_items) or sort_after($items, at(3), at(4), compare_items) or sort_after($items, at(5), at(6), compare_items) {
-								(merged, scratch) = quad_swap_merge($items, block, $swap, compare_items)
-								$items = merged
-								$swap = scratch
-							}
-							$run = NoRun
-						}
-					}
-					$block = at(8)
-				}
-			}
+			$block = at(8)
 		}
 	}
 	if !$skip_tail_swap {
@@ -26970,56 +27044,6 @@ signed_times_try = |a, b|
 		Ok(a.times_wrap(b))
 	}
 
-signed_times_try_rescaled : item, item, item, item, item, item -> Try(item, [Overflow])
-	where [
-		item.is_gt : item, item -> Bool,
-		item.is_lt : item, item -> Bool,
-		item.is_eq : item, item -> Bool,
-		item.minus : item, item -> item,
-		item.times : item, item -> item,
-		item.div_trunc_by : item, item -> item,
-	]
-signed_times_try_rescaled = |lowest, highest, zero, neg_one, a, b|
-	if a == zero {
-		Ok(zero)
-	} else if b == zero {
-		Ok(zero)
-	} else if a == neg_one {
-		if b == lowest {
-			Err(Overflow)
-		} else {
-			Ok(zero - b)
-		}
-	} else if b == neg_one {
-		if a == lowest {
-			Err(Overflow)
-		} else {
-			Ok(zero - a)
-		}
-	} else if a > zero {
-		if b > zero {
-			if a > highest.div_trunc_by(b) {
-				Err(Overflow)
-			} else {
-				Ok(a * b)
-			}
-		} else if b < lowest.div_trunc_by(a) {
-			Err(Overflow)
-		} else {
-			Ok(a * b)
-		}
-	} else if b > zero {
-		if a < lowest.div_trunc_by(b) {
-			Err(Overflow)
-		} else {
-			Ok(a * b)
-		}
-	} else if a < highest.div_trunc_by(b) {
-		Err(Overflow)
-	} else {
-		Ok(a * b)
-	}
-
 signed_div_try : item, item, item, item, item -> Try(item, [DivByZero, Overflow])
 	where [item.is_eq : item, item -> Bool, item.div_by : item, item -> item]
 signed_div_try = |lowest, zero, neg_one, a, b|
@@ -27283,32 +27307,6 @@ signed_times_saturated = |lowest, highest, zero, a, b|
 		}
 	} else {
 		a.times_wrap(b)
-	}
-
-signed_times_saturated_rescaled : item, item, item, item, item, item -> item
-	where [
-		item.is_gt : item, item -> Bool,
-		item.is_lt : item, item -> Bool,
-		item.is_eq : item, item -> Bool,
-		item.minus : item, item -> item,
-		item.times : item, item -> item,
-		item.div_trunc_by : item, item -> item,
-	]
-signed_times_saturated_rescaled = |lowest, highest, zero, neg_one, a, b|
-	match signed_times_try_rescaled(lowest, highest, zero, neg_one, a, b) {
-		Ok(result) => result
-		Err(Overflow) =>
-			if a < zero {
-				if b > zero {
-					lowest
-				} else {
-					highest
-				}
-			} else if b < zero {
-				lowest
-			} else {
-				highest
-			}
 	}
 
 integer_is_even : item, item, item -> Bool
@@ -28012,10 +28010,10 @@ list_map_cast_unsafe : List(input) -> List(output)
 
 # Implemented by the compiler. Moves ownership of the item at the given
 # index out of the list's buffer; the slot keeps stale bytes until
-# list_map_write_unsafe stores its replacement. No bounds checks. The
-# transform is never evaluated: the list's type names only the output item,
-# so the transform's type is what says the slot holds an input item.
-list_map_extract_unsafe : List(output), U64, (input -> output) -> input
+# list_map_write_unsafe stores its replacement. No bounds checks. The input
+# list is never evaluated: the buffer's type names only the output item, so
+# the input list's type is what says the slot holds one of its items.
+list_map_extract_unsafe : List(output), U64, List(input) -> input
 
 # Implemented by the compiler. Stores an owned item into the slot at the
 # given index, which must have been vacated by list_map_extract_unsafe.
@@ -28343,6 +28341,27 @@ utf16_ascii_chunk = |bytes, index, little_endian| {
 	a.bitwise_or(b).gt_lanes(Num.U16x8.splat(127)).to_bitmask() == 0
 }
 
+# The UTF-8 width of the eight code units at `index` when every surrogate among
+# them is a high surrogate directly followed by a low one in the same block,
+# and otherwise 0. Every other unit is a scalar value of its own, so the width
+# is 8 plus one per unit above 0x7F and one more per unit above 0x7FF, less one
+# per surrogate, since a pair's two units encode as four bytes (the UTF-8
+# length computation of simdutf's UTF-16 kernels).
+utf16_block_utf8_width : List(U8), U64, Bool -> U64
+utf16_block_utf8_width = |bytes, index, little_endian| {
+	units = utf16_load(bytes, index, little_endian)
+	tags = units.bitwise_and(Num.U16x8.splat(0xFC00))
+	highs = tags.eq_lanes(Num.U16x8.splat(0xD800)).to_bitmask()
+	lows = tags.eq_lanes(Num.U16x8.splat(0xDC00)).to_bitmask()
+	if lows != highs.shl_wrap(1) or highs >= 0x80 {
+		0
+	} else {
+		above_7f = units.gt_lanes(Num.U16x8.splat(0x7F)).shr_zf_wrap(15)
+		above_7ff = units.gt_lanes(Num.U16x8.splat(0x7FF)).shr_zf_wrap(15)
+		8 + above_7f.plus_wrap(above_7ff).sum_lanes().to_u64() - highs.bitwise_or(lows).count_one_bits().to_u64()
+	}
+}
+
 utf16_step : List(U8), U64, Bool -> { scalar : U64, bytes : U64, status : U8 }
 utf16_step = |bytes, index, little_endian| {
 	remaining = List.len(bytes) - index
@@ -28371,9 +28390,28 @@ decode_utf16 = |bytes, little_endian, lossy| {
 	var $size = 0.U64
 	var $index = 0.U64
 	while $index < len {
-		if len - $index >= 32 and utf16_read(bytes, $index, little_endian) <= 127 and utf16_ascii_chunk(bytes, $index, little_endian) {
-			$size = $size + 16
-			$index = $index + 32
+		if len - $index >= 16 {
+			if len - $index >= 32 and utf16_read(bytes, $index, little_endian) <= 127 and utf16_ascii_chunk(bytes, $index, little_endian) {
+				$size = $size + 16
+				$index = $index + 32
+			} else {
+				block_width = utf16_block_utf8_width(bytes, $index, little_endian)
+				if block_width != 0 {
+					$size = $size + block_width
+					$index = $index + 16
+				} else {
+					# Surrogates not all paired within the block: size it unit by unit.
+					block_end = $index + 16
+					while $index < block_end {
+						step = utf16_step(bytes, $index, little_endian)
+						if step.status != 0 and !lossy {
+							return { index: $index, status: step.status, string: "" }
+						}
+						$size = $size + utf8_width(step.scalar)
+						$index = $index + step.bytes
+					}
+				}
+			}
 		} else {
 			step = utf16_step(bytes, $index, little_endian)
 			if step.status != 0 and !lossy {

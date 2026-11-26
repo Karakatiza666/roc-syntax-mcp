@@ -2,23 +2,56 @@
 # relative to this directory.
 
 repo     https://github.com/lukewilliamboswell/roc-parser
-tag      3.0.0
-commit   c542066
-tarball  6xsRdRqenJrAb4wG7HaST4Xh349vD5sHAJDsKTK6E3dr.tar.zst
-# The nightly the gates run the topics with: the one of basic-cli 0.26.0, which
-# they pin. The release notes say 3.0.0 was built with nightly-2026-10-21-5349569
-# and requires that or later; every program here also checks on the nightly below.
-compiler nightly-2026-10-12-2664a27
-depends  roc-lang/unicode 4.3.0 (7HGaK8HUHMs5judroSmUoS4TjPGZ1kAjPTyPDSCWiSKM), used by Markdown
+tag      6.0.0
+commit   4dd56b4
+tarball  7j67bdgEMRsua6VnhcYASXRymN5pYgUC9qV4bHFupbf9.tar.zst
+# The nightly the gates run the topics with: the one of basic-cli 0.28.1, which
+# they pin. The release record ("Built with" in the GitHub release notes) says
+# 6.0.0 was built and tested with nightly-2026-11-23-b5c77fc. The repo at the
+# tag pins no nightly (its CI takes the newest), and rule 4 of the
+# version_mismatch topic gives the same b5c77fc. Every program here also checks
+# on the nightly below and on nightly-2026-11-25-d5a4f1e. nightly-2026-11-07-ad3a5d2
+# rejects the package.
+compiler nightly-2026-11-13-03dce41
+depends  roc-lang/unicode 4.3.3 (AJfFMmhvmbgn7THAF1E1sofC3dZaVWPFmVV7GH8Bc7k7), used by Markdown
 
 index.json <- the tarball root, parsed by `npm run build:index` from the
               compiler's package cache. No source is vendored
-examples/  <- the release's examples archive, roc-parser-examples-3.0.0.zip,
+examples/  <- the release's examples archive, roc-parser-examples-6.0.0.zip,
               unchanged except that the zip's spec.json and README.md are not
-              bundled. It already pins basic-cli 0.25.0, so it needs no patch.
-              assets/ holds the files that compile-time-parsing.roc imports
-topics/    <- ours: one per module family, compiled by check:platforms. Each
-              ends with links to the manual pages at tag 3.0.0. The manual
-              itself is not bundled
+              bundled. It already pins basic-cli 0.28.1 and roc-parser 6.0.0 by
+              URL, so it needs no patch. assets/ holds the files that
+              compile-time-parsing.roc imports
+topics/    <- ours, compiled by check:platforms. Each ends its header comment
+              with links to the manual pages at tag 6.0.0. The manual itself is
+              not bundled. One topic per module family: the 3.0.0 topics kept
+              their names, parser_markup (Html, Svg, MathML, Markup) and
+              parser_streaming (decoders and encoders, QIF, OFX) are new in 6.0.0
 verify/    <- ours: every snippet on overview.md, in one app
 overview.md <- ours: the page get_roc_syntax(topic: "roc-parser") returns
+
+# Mapping notes, 3.0.0 -> 6.0.0 (the APIs the topics teach):
+#   Utf8, Literal              -> Parser.Utf8, Parser.Quotation (not modules of
+#                                 their own; `import parser.Utf8` is an error)
+#   Utf8.parse_str(p, text)    -> p.parse_str(text); parse_str_partial -> run_str
+#   Parser(input, a)           -> Parser(input, a, problem); primitives without
+#                                 an argument are factories: digits({})
+#   ParseError({ message, offset }) and every format's { line, column, message }
+#                              -> Parser.Diagnostic(problem): { problem, location, path }
+#   CSV.parse / parse_normalized / parse_headerless
+#                              -> CSV.decode_str(text, { header: Exact | Normalized | Absent })
+#   MissingRequiredField(Str) as its own tag -> a problem inside InvalidCsv / InvalidYaml
+#   CSV.parse_records / parse_with / decode -> CSV.parse_str(...).records,
+#                                 CSV.rows_parser({ row }), document.decode_rows
+#   Yaml.decode / Yaml.decoder(opts) -> Yaml.decode_str(text, { keys, unknown_keys })
+#   JsonValue.parse_with / to_str -> JsonValue.parse_str(text, props) / value.encode(props) (bytes)
+#   AsciiDoc.render / parse_with / select_include_with
+#                              -> document.render_html() / parse_str(text, props) /
+#                                 select_include(source, attributes, { tabsize })
+#   RocSyntax.parse_expr_str   -> RocSyntax.parse_str(text, { mode: Expression })
+#   HTTP.parse_request / parse_response / header / request
+#                              -> HTTP.Request.parse_bytes / HTTP.Response.parse_bytes /
+#                                 request.header(name) / HTTP.Request.parser({})
+#   HTTP.RequestLiteral        -> a literal annotated HTTP.Request
+#   new: Html, Svg, MathML, Markup, QIF, OFX, Xml.Namespaced, Xml.reader, and
+#        decoder/encoder receivers (read_iter, read_stream, write_stream)

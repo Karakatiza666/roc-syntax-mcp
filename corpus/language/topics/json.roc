@@ -47,6 +47,10 @@ parse_names = |text| Json.parse(text)
 
 expect parse_names("{\"module\":\"Json\"}").map_ok(|names| names.get("module")) == Ok(Ok("Json"))
 
+# A repeated key in a `Dict` keeps the later value, in every format. Keys
+# compare with `is_eq`, so the `F64` keys `0.0` and `-0.0` are one key.
+expect parse_names("{\"a\":\"1\",\"a\":\"2\"}").map_ok(|names| names.get("a")) == Ok(Ok("2"))
+
 Status : [Active, Banned(Str)]
 
 status_json : Status -> Str

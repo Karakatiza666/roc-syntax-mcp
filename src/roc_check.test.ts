@@ -207,7 +207,9 @@ test("a package alias is read off the header that pins it", () => {
   const aliases = packageAliases(`app [Context, program] {
 	pf: platform "https://example.com/0.16.0/AAAA.tar.zst",
 	gregorian: "https://cdn.example.com/rc.2/Ce3xuHN92F5oGRuzjUTmm65jULAEj8pvvrTBmZJzE1M4.tar.zst",
+	rr: platform "https://example.com/0.13.0/default-8yWQXdFMfK8erQff7bMEjF6KjrwFR6sTq9EY4LURGgBw.tar.zst",
 }`);
+  assert.equal(aliases.get("8yWQXdFMfK8erQff7bMEjF6KjrwFR6sTq9EY4LURGgBw"), "rr");
   assert.equal(aliases.get("AAAA"), "pf");
   assert.equal(aliases.get("Ce3xuHN92F5oGRuzjUTmm65jULAEj8pvvrTBmZJzE1M4"), "gregorian");
 });
@@ -251,7 +253,7 @@ test("a clean check says so, and a wrap says what it added", () => {
     wrappedIn: scaffold(HANDLER, "basic-webserver", CORE).wrappedIn,
     ok: true,
   });
-  assert.match(wrapped, /basic-webserver 0\.19\.0 app\. Scaffolded: init!/);
+  assert.match(wrapped, /basic-webserver 0\.22\.0 app\. Scaffolded: init!/);
 });
 
 // A compiler that cannot run prints nothing and exits non-zero. If no output

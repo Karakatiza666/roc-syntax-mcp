@@ -9,6 +9,9 @@ roc_nightly-*
 # A fork build that a plugin names as its compiler, roc_<branch>-<commit>/roc.
 # Anchored to root directories, so that it does not match src/roc_bin.ts.
 /roc_*/
+# A roc-lang/roc release that a plugin names as its compiler, such as 0.1.0-RC2.
+/roc-*-[0-9]*/
+/roc-*-[0-9]*.tar.gz
 .zig-toolchain/
 
 # Upstream forks cloned for local fixes (not submodules, not tracked)

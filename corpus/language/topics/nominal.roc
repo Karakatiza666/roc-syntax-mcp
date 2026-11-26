@@ -83,6 +83,26 @@ expect Point.origin == Point.{ x: 0, y: 0 }
 # to_distance_bare : U64 -> Distance
 # to_distance_bare = |n| n
 
+# A record that a function builds becomes a `Point` at the call only while its
+# type is inferred. An annotation means exactly the type it says, so a function
+# annotated to return `{ x : F64, y : F64 }` does not give a `Point`, and a
+# `Point` does not pass where that record type is written. Annotate `Point`, or
+# build it with `Point.{ ... }`. A tag union written in an annotation works the
+# same way (see `tag_unions`). An inferred record also cannot gain a missing
+# optional field or the `_` fields of a nominal record.
+make_inferred = |x| { x, y: 0 }
+
+inferred_point : Point
+inferred_point = make_inferred(1)
+
+expect point_x(inferred_point) == 1
+
+# @rejects type mismatch
+# make_plain : F64 -> { x : F64, y : F64 }
+# make_plain = |x| { x, y: 0 }
+# plain_point : Point
+# plain_point = make_plain(1)
+
 # Bool itself is a nominal type defined in the builtins:
 # Bool := [False, True].{ ... }
 # `True`/`False` work wherever a `Bool` is expected. `Bool.True` is the

@@ -32,11 +32,11 @@ try {
 const PATH_WITH_ROC = `${path.dirname(path.resolve(ROC))}${path.delimiter}${process.env.PATH}`;
 
 const PLATFORM =
-  "https://github.com/roc-lang/basic-webserver/releases/download/0.19.0/4KBAoiBazDfi9UF6e3BYKwon6rA8mnx3dbLMLKFzdEMw.tar.zst";
+  "https://github.com/roc-lang/basic-webserver/releases/download/0.22.0/BM2BUXA8mwbcoKPUfRV8cLtsUdnsSBPwjNLPRUJQAQ7Q.tar.zst";
 const HTTP =
   "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst";
 const CLI_PLATFORM =
-  "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst";
+  "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst";
 const GREGORIAN =
   "https://cdn.jasperwoudenberg.com/roc-gregorian-v1.0.0-rc.2/Ce3xuHN92F5oGRuzjUTmm65jULAEj8pvvrTBmZJzE1M4.tar.zst";
 
@@ -58,7 +58,7 @@ function rocFor(release, dirs = []) {
   if (!nightly || RUNNING.includes(nightly)) return [];
   const binary = compilerBinary(nightly);
   if (!binary) {
-    console.error(`${release} needs ${nightly}. Unpack that nightly at the repo root`);
+    console.error(`${release} needs ${nightly}. Unpack that compiler at the repo root`);
     process.exit(2);
   }
   return [`--roc=${binary}`];
@@ -246,12 +246,14 @@ const [clean, typo, gregorian] = await session(
   rocFor(PLATFORM)
 );
 
-check("detection scaffolds a bare handler nobody scoped", /Wrapped in the basic-webserver 0\.19\.0 app/.test(clean), clean);
+check("detection scaffolds a bare handler nobody scoped", /Wrapped in the basic-webserver 0\.22\.0 app/.test(clean), clean);
 check("a scaffolded handler that is correct passes", /`roc check` passed\./.test(clean), clean);
 check("errors report the caller's own line", /main\.roc:3:/.test(typo), typo);
 check("the temporary path never reaches the caller", !/roc-check-[A-Za-z0-9]+\/main\.roc/.test(typo), typo);
 check("the caller's error is stated first", /`roc check` failed: 1 error\./.test(gregorian), gregorian);
-check("a broken package is counted, not quoted", /gregorian\/Date\.roc: 14/.test(gregorian) && !/This map method/.test(gregorian), gregorian);
+// The count depends on the nightly, so the check reads only that a count is
+// there and that no diagnostic inside the package is quoted.
+check("a broken package is counted, not quoted", /gregorian\/Date\.roc: \d+/.test(gregorian) && !/── .*\/(Date|Time|Util)\.roc:\d+/.test(gregorian), gregorian);
 
 // With two platforms, detection must select the correct scaffold. Only
 // basic-cli has `Utc`, so this code compiles only under the basic-cli app
@@ -263,7 +265,7 @@ uptime! = || Ok(Utc.now!())
 const cliApp = `app [main!] { pf: platform "${CLI_PLATFORM}" }\n\nimport pf.Stdout\n`;
 const cliWorkspace = workspace("detected-cli", { "main.roc": cliApp });
 const [cliClean] = await session(cliWorkspace, [{ code: CLI_CLEAN }], rocFor(CLI_PLATFORM));
-check("detection scaffolds against the platform the workspace pins", /Wrapped in the basic-cli 0\.26\.0 app/.test(cliClean), cliClean);
+check("detection scaffolds against the platform the workspace pins", /Wrapped in the basic-cli 0\.28\.1 app/.test(cliClean), cliClean);
 check("a scaffolded basic-cli program that is correct passes", /`roc check` passed\./.test(cliClean), cliClean);
 
 // No app header here, so only the argument can name the platform.
@@ -275,7 +277,7 @@ const [cliScoped, unscoped] = await session(
   rocFor(CLI_PLATFORM)
 );
 check("an explicit scope scaffolds where detection found nothing", /`roc check` passed\./.test(scoped), scoped);
-check("the explicit scope selects between the platforms", /Wrapped in the basic-cli 0\.26\.0 app/.test(cliScoped) && /`roc check` passed\./.test(cliScoped), cliScoped);
+check("the explicit scope selects between the platforms", /Wrapped in the basic-cli 0\.28\.1 app/.test(cliScoped) && /`roc check` passed\./.test(cliScoped), cliScoped);
 check("without a scope or a detection, bare code is not wrapped", /failed/.test(unscoped) && !/Wrapped in the/.test(unscoped), unscoped);
 
 // `roc_fmt` reads a path as `roc_check` does. A unit test cannot run a real

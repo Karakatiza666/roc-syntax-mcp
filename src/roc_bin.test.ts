@@ -10,7 +10,9 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 import { LATEST_PROTOCOL_VERSION } from "@modelcontextprotocol/server";
-import { findRoc, installRoc, nightlyAsset, useRoc } from "./roc_bin.ts";
+import { findRoc, installRoc, isRocRelease, nightlyAsset, releaseRepo, useRoc } from "./roc_bin.ts";
+// @ts-expect-error a script, with no types
+import { isRelease as gateIsRelease } from "../scripts/nightlies.mjs";
 
 const ROOT = path.join(import.meta.dirname, "..");
 const TSX_LOADER = import.meta.resolve("tsx/esm");
@@ -64,12 +66,24 @@ test("each machine maps to the asset roc-lang/nightlies publishes for it", () =>
   assert.equal(nightlyAsset(tag, "freebsd", "x64"), null);
 });
 
+// A plugin's `compiler` can name a release of roc-lang/roc, which joy does.
+test("a release tag maps to the asset roc-lang/roc publishes, and the gates agree it is a release", () => {
+  assert.equal(nightlyAsset("0.1.0-RC2", "linux", "x64"), "roc-linux_x86_64-0.1.0-RC2.tar.gz");
+  assert.equal(nightlyAsset("0.1.0_RC1", "win32", "x64"), "roc-windows_x86_64-0.1.0_RC1.zip");
+  assert.equal(releaseRepo("0.1.0-RC2"), "roc-lang/roc");
+  assert.equal(releaseRepo("nightly-2026-10-06-c34079d"), "roc-lang/nightlies");
+  for (const tag of ["0.1.0-RC2", "0.1.0_RC1", "0.1.0", "nightly-2026-10-06-c34079d", "reify-" + "a".repeat(40), "alpha4-rolling"]) {
+    assert.equal(isRocRelease(tag), gateIsRelease(tag), tag);
+  }
+  assert.equal(isRocRelease("alpha4-rolling"), false);
+});
+
 /** GitHub's release API and its download host, from one archive. */
 async function fakeGithub(tag: string, archive: Buffer, digest: string) {
   const asset = nightlyAsset(tag)!;
   const server = http.createServer((req, res) => {
     const port = (server.address() as { port: number }).port;
-    if (req.url === `/repos/roc-lang/nightlies/releases/tags/${tag}`) {
+    if (req.url === `/repos/${releaseRepo(tag)}/releases/tags/${tag}`) {
       res.setHeader("content-type", "application/json");
       res.end(
         JSON.stringify({
@@ -110,6 +124,21 @@ test("install checks the digest, unpacks the nightly and records it", { skip: !u
     const choice = findRoc([], env);
     assert.equal(choice.source, "roc use");
     assert.equal(spawnSync(choice.command, ["version"], { encoding: "utf-8" }).stdout.trim(), `Roc compiler version ${tag}`);
+  } finally {
+    gh.close();
+  }
+});
+
+test("install takes a release of roc-lang/roc by its tag", { skip: !unix || !nightlyAsset("nightly-x") }, async () => {
+  const tag = "0.1.0-RC9";
+  const archive = nightlyArchive(tag);
+  const gh = await fakeGithub(tag, archive, crypto.createHash("sha256").update(archive).digest("hex"));
+  try {
+    const env = { ROC_MCP_HOME: path.join(tmp, "install-release") };
+    const result = await installRoc(tag, env, { api: gh.base, downloads: gh.base });
+    assert.equal(result.ok, true, result.message);
+    assert.match(result.message, /installed 0\.1\.0-RC9 \(sha256 checked/);
+    assert.equal(spawnSync(findRoc([], env).command, ["version"], { encoding: "utf-8" }).stdout.trim(), `Roc compiler version ${tag}`);
   } finally {
     gh.close();
   }

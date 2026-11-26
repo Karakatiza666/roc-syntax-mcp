@@ -1,7 +1,7 @@
 ## Read and write JSON of any shape with the `JsonValue` module of
-## lukewilliamboswell/roc-parser 3.0: `JsonValue.parse_str` into a lossless
-## value, `get`, `at` and `get_path` to walk it, `parse_with` to choose how
-## strict to be, and `to_str` to write it back.
+## lukewilliamboswell/roc-parser 6.0: `JsonValue.parse_str(text, props)` into a
+## lossless value, `get`, `at` and `get_path` to walk it, props to choose how
+## strict to be, and `value.encode(props)` to write it back as bytes.
 ##
 ## The module is `JsonValue`, not `Json`, because Roc auto-imports a builtin
 ## `Json`. Use the builtin to decode a document into a record whose shape you
@@ -9,21 +9,22 @@
 ## as `bom-ref`, items of different shapes, JSON Schema) or when the data must
 ## pass through unchanged: member order, every digit of a number, repeated keys.
 ##
-## The error tag is `InvalidJsonValue`, so that one function can use `?` on
-## both the builtin (`InvalidJson(Str)`) and this module.
+## The error tag is `InvalidJsonValue(Parser.Diagnostic(JsonValue.Problem))`,
+## so that one function can use `?` on both the builtin (`InvalidJson(Str)`)
+## and this module. JSON Lines too large for memory are read with
+## `JsonValue.record_decoder` (the parser_streaming topic).
 ##
 ## Full manual: walking a value, error positions, numbers, repeated keys, every
 ## option, writing, compile-time checks, and use inside a larger grammar:
-## https://github.com/lukewilliamboswell/roc-parser/blob/3.0.0/docs/json.adoc
+## https://github.com/lukewilliamboswell/roc-parser/blob/6.0.0/docs/json.adoc
 app [main!] {
-	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst",
-	parser: "https://github.com/lukewilliamboswell/roc-parser/releases/download/3.0.0/6xsRdRqenJrAb4wG7HaST4Xh349vD5sHAJDsKTK6E3dr.tar.zst",
+	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst",
+	parser: "https://github.com/lukewilliamboswell/roc-parser/releases/download/6.0.0/7j67bdgEMRsua6VnhcYASXRymN5pYgUC9qV4bHFupbf9.tar.zst",
 }
 
 import pf.Stdout
 import parser.JsonValue
 import parser.Parser
-import parser.Utf8
 
 # --- Parse, then walk --------------------------------------------------------
 #
@@ -32,13 +33,13 @@ import parser.Utf8
 # its members in source order. `get(key)`, `at(index)` and `get_path(path)`
 # give `Try(JsonValue, [Missing])`. A path segment on an array is a decimal
 # string such as "0". `as_str`, `as_bool`, `as_list` and `as_object` give
-# `Err(WrongType)` for another variant.
+# `Err(WrongType)` for another variant. `parse_str` takes props: pass `{}`.
 
 sbom_text =
 	\\{
 	\\  "components": [
-	\\    { "bom-ref": "pkg:roc/parser@3.0.0", "name": "roc-parser", "licenses": [{ "license": { "id": "UPL-1.0" } }] },
-	\\    { "bom-ref": "pkg:roc/unicode@4.3.0", "name": "unicode", "licenses": [{ "expression": "UPL-1.0 OR MIT" }] }
+	\\    { "bom-ref": "pkg:roc/parser@6.0.0", "name": "roc-parser", "licenses": [{ "license": { "id": "UPL-1.0" } }] },
+	\\    { "bom-ref": "pkg:roc/unicode@4.3.3", "name": "unicode", "licenses": [{ "expression": "UPL-1.0 OR MIT" }] }
 	\\  ]
 	\\}
 
@@ -57,29 +58,38 @@ licence = |component| {
 
 components : Str -> Try(List(Str), [InvalidJsonValue(JsonValue.Error), Missing, WrongType])
 components = |text| {
-	bom = JsonValue.parse_str(text)?
+	bom = JsonValue.parse_str(text, {})?
 	list = bom.get("components")?.as_list()?
 	Ok(list.map(|component| "${(component.get("name") ?? Null).as_str() ?? "?"}: ${licence(component)}"))
 }
 
 expect components(sbom_text) == Ok(["roc-parser: UPL-1.0", "unicode: UPL-1.0 OR MIT"])
 
-expect JsonValue.parse_str("{\"b\": 1, \"a\": 2}").map_ok(JsonValue.keys) == Ok(["b", "a"])
-expect JsonValue.parse_str("[10, 20]").map_ok(|v| v.at(1)) == Ok(Ok(Number("20")))
-expect JsonValue.parse_str("{}").map_ok(|v| v.get("x")) == Ok(Err(Missing))
-expect JsonValue.parse_str("[]").map_ok(|v| v.as_str()) == Ok(Err(WrongType))
+expect JsonValue.parse_str("{\"b\": 1, \"a\": 2}", {}).map_ok(JsonValue.keys) == Ok(["b", "a"])
+expect JsonValue.parse_str("[10, 20]", {}).map_ok(|v| v.at(1)) == Ok(Ok(Number("20")))
+expect JsonValue.parse_str("{}", {}).map_ok(|v| v.get("x")) == Ok(Err(Missing))
+expect JsonValue.parse_str("[]", {}).map_ok(|v| v.as_str()) == Ok(Err(WrongType))
 
-# --- Errors carry a position -------------------------------------------------
+# --- Errors are typed --------------------------------------------------------
 #
-# `InvalidJsonValue({ line, column, message })`. Lines and columns start at 1,
+# The payload is `{ problem, location, path }`. The problem is a tag. The
+# location is `Text({ offset, line, column })`: lines and columns start at 1,
 # and a column counts UTF-8 bytes, so the `é` moves the column by 2.
-expect JsonValue.parse_str("[\"café\", tru]") == Err(InvalidJsonValue({ line: 1, column: 11, message: "invalid literal: expected true, false or null" }))
+problem : Str -> Str
+problem = |text|
+	match JsonValue.parse_str(text, {}) {
+		Ok(_) => "valid"
+		Err(InvalidJsonValue({ problem: p, location: Text({ line, column, .. }), .. })) => "${line.to_str()}:${column.to_str()}: ${Str.inspect(p)}"
+		Err(InvalidJsonValue({ problem: p, .. })) => Str.inspect(p)
+	}
+
+expect problem("[\"café\", tru]") == "1:11: InvalidLiteral"
 
 # Strict means RFC 8259 and nothing else: no comments, no trailing comma, no
 # single quotes, and exactly one value in the document.
-expect JsonValue.parse_str("[1, 2,]").is_err()
-expect JsonValue.parse_str("// note\n{}").is_err()
-expect JsonValue.parse_str("{\"a\": 1} {\"b\": 2}").is_err()
+expect problem("[1, 2,]") == "1:6: TrailingComma"
+expect problem("// note\n{}") == "1:1: CommentsNotAllowed"
+expect problem("{\"a\": 1} {\"b\": 2}") == "1:10: UnexpectedContent"
 
 # --- Numbers keep their text -------------------------------------------------
 #
@@ -87,54 +97,56 @@ expect JsonValue.parse_str("{\"a\": 1} {\"b\": 2}").is_err()
 # `1.5`. Convert when you need arithmetic. `as_i64` and `as_u64` accept only
 # integers, `as_dec` any number that fits a `Dec`. For an `F64`, use
 # `F64.from_str` on the text.
-expect JsonValue.parse_str("1.50") != JsonValue.parse_str("1.5")
-expect JsonValue.parse_str("18446744073709551615").map_ok(JsonValue.as_u64) == Ok(Ok(18446744073709551615))
-expect JsonValue.parse_str("1e3").map_ok(JsonValue.as_i64) == Ok(Err(WrongType))
-expect JsonValue.parse_str("1.50").map_ok(JsonValue.as_dec) == Ok(Ok(1.5))
-expect JsonValue.parse_str("18446744073709551616").map_ok(JsonValue.as_u64) == Ok(Err(OutOfRange))
+expect JsonValue.parse_str("1.50", {}) != JsonValue.parse_str("1.5", {})
+expect JsonValue.parse_str("18446744073709551615", {}).map_ok(JsonValue.as_u64) == Ok(Ok(18446744073709551615))
+expect JsonValue.parse_str("1e3", {}).map_ok(JsonValue.as_i64) == Ok(Err(WrongType))
+expect JsonValue.parse_str("1.50", {}).map_ok(JsonValue.as_dec) == Ok(Ok(1.5))
+expect JsonValue.parse_str("18446744073709551616", {}).map_ok(JsonValue.as_u64) == Ok(Err(OutOfRange))
 
 # --- Repeated keys are an error by default ------------------------------------
 #
 # Readers disagree about `{"id": 1, "id": 2}`, so `parse_str` rejects it. The
-# `duplicates` option is `Reject`, `CollapseIdentical` (equal copies only),
+# `duplicates` prop is `Reject`, `CollapseIdentical` (equal copies only),
 # `KeepFirst` or `KeepLast`.
 repeated = "{\"id\": 1, \"name\": \"web\", \"id\": 2}"
 
-expect JsonValue.parse_str(repeated).is_err()
-expect JsonValue.parse_with(repeated, { duplicates: KeepLast }).map_ok(|v| v.get("id")) == Ok(Ok(Number("2")))
-expect JsonValue.parse_with(repeated, { duplicates: KeepFirst }).map_ok(|v| v.get("id")) == Ok(Ok(Number("1")))
-expect JsonValue.parse_with(repeated, { duplicates: CollapseIdentical }).is_err()
+expect problem(repeated) == "1:26: DuplicateKey(\"id\")"
+expect JsonValue.parse_str(repeated, { duplicates: KeepLast }).map_ok(|v| v.get("id")) == Ok(Ok(Number("2")))
+expect JsonValue.parse_str(repeated, { duplicates: KeepFirst }).map_ok(|v| v.get("id")) == Ok(Ok(Number("1")))
+expect JsonValue.parse_str(repeated, { duplicates: CollapseIdentical }).is_err()
 
-# --- Options: pass only the fields you change --------------------------------
+# --- Props: pass only the fields you change ----------------------------------
 #
-# `JsonValue.parse_str(text)` is `parse_with(text, {})`. Limits: `max_depth`
-# (default 128), `max_items`, `max_string_bytes`, `max_number_digits`.
-# Relaxations, all off by default: `comments` and `trailing_commas` (JSONC),
-# `bom`, `non_finite` (`NaN`, `Infinity`), `control_characters`, and
-# `lone_surrogates: Replace`. Checks: `duplicates`, `top_level` (`Any`,
-# `ObjectOrArray` or `Object`) and `interoperable_numbers` (I-JSON).
+# There is no `parse_with`: every option is a prop of `parse_str`. Limits:
+# `max_depth`, `max_items`, `max_string_bytes`, `max_number_digits`,
+# `max_bytes`. Relaxations, all off by default: `comments` and
+# `trailing_commas` (JSONC), `bom`, `non_finite` (`NaN`, `Infinity`). Checks:
+# `duplicates`, `top_level` (`Any`, `ObjectOrArray` or `Object`) and
+# `interoperable_numbers` (I-JSON).
 read_jsonc : Str -> Try(JsonValue, [InvalidJsonValue(JsonValue.Error)])
-read_jsonc = |text| JsonValue.parse_with(text, { comments: True, trailing_commas: True })
+read_jsonc = |text| JsonValue.parse_str(text, { comments: True, trailing_commas: True })
 
 expect read_jsonc("{\n  // target\n  \"strict\": true, /* on */\n}").map_ok(|v| v.get("strict")) == Ok(Ok(Bool(True)))
 
 # `/*` inside a string is text, not a comment.
 expect read_jsonc("[\"src/**/*.ts\"]") == Ok(Array([String("src/**/*.ts")]))
 
-# Options for a document from the network.
-untrusted : JsonValue.Options
+# Props held in a value, for a document from the network. Fields you leave
+# out keep their defaults.
+untrusted : JsonValue.Props
 untrusted = { max_depth: 32, max_items: 1000, max_string_bytes: 4096, top_level: Object, interoperable_numbers: True }
 
-expect JsonValue.parse_with("[1, 2, 3]", untrusted).is_err()
-expect JsonValue.parse_with("{\"id\": 9007199254740993}", untrusted).is_err()
-expect JsonValue.parse_with("{\"ids\": [1, 2, 3]}", untrusted).is_ok()
+expect JsonValue.parse_str("[1, 2, 3]", untrusted).is_err()
+expect JsonValue.parse_str("{\"id\": 9007199254740993}", untrusted).is_err()
+expect JsonValue.parse_str("{\"ids\": [1, 2, 3]}", untrusted).is_ok()
 
 # --- Write it back -----------------------------------------------------------
 #
-# `to_str` writes compact JSON and `to_str_with` takes `{ indent, sort_keys }`.
-# Both return a `Try`, because a value built in code can hold what JSON cannot
-# say: `InvalidNumber(text)`, `DuplicateKey(key)` or `TooDeep`. Numbers are
-# written as their text. A parsed value reads back as itself.
+# `value.encode(props)` writes compact JSON as `List(U8)`, not a `Str`; props
+# take `indent` and `sort_keys`. It returns a `Try`, because a value built in
+# code can hold what JSON cannot say: a bad number or a repeated key is an
+# `InvalidJsonValue` with location `Unavailable(GeneratedValue)`. Numbers are
+# written as their text. There is no `to_str`.
 release : JsonValue
 release = Object([
 	{ key: "name", value: String("roc-parser") },
@@ -142,18 +154,28 @@ release = Object([
 	{ key: "assets", value: Object([]) },
 ])
 
-expect JsonValue.to_str(release) == Ok("{\"name\":\"roc-parser\",\"sizes\":[1.50,2E3],\"assets\":{}}")
-expect JsonValue.to_str_with(Array([Number("1")]), { indent: 2 }) == Ok("[\n  1\n]")
-expect JsonValue.to_str(Array([Number("0x10")])) == Err(InvalidNumber("0x10"))
-expect JsonValue.to_str(Object([{ key: "a", value: Null }, { key: "a", value: Null }])) == Err(DuplicateKey("a"))
-expect JsonValue.to_str(Array([Number("NaN")])) == Err(InvalidNumber("NaN"))
+write : JsonValue, JsonValue.WriteProps -> Try(Str, [InvalidJsonValue(JsonValue.Error)])
+write = |value, props| value.encode(props).map_ok(Str.from_utf8_lossy)
+
+expect write(release, {}) == Ok("{\"name\":\"roc-parser\",\"sizes\":[1.50,2E3],\"assets\":{}}")
+expect write(Array([Number("1")]), { indent: 2 }) == Ok("[\n  1\n]")
+
+write_problem : JsonValue -> Str
+write_problem = |value|
+	match write(value, {}) {
+		Ok(text) => text
+		Err(InvalidJsonValue({ problem: p, .. })) => Str.inspect(p)
+	}
+
+expect write_problem(Array([Number("0x10")])) == "InvalidNumber({ bytes: [48, 120, 49, 48], total_bytes: 4 })"
+expect write_problem(Object([{ key: "a", value: Null }, { key: "a", value: Null }])) == "DuplicateKey(\"a\")"
 
 # --- Inside a larger parser --------------------------------------------------
 #
-# `JsonValue.parser` and `parser_with(options)` are `Parser(Utf8.Bytes, JsonValue)`
-# values. This reads JSON Lines, one document per line.
-json_lines : Str -> Try(List(JsonValue), [ParseError({ message : Str, offset : U64 })])
-json_lines = |text| Utf8.parse_str(Parser.many(JsonValue.parser), text)
+# `JsonValue.parser(props)` is a `Parser(Parser.Utf8.Bytes, JsonValue, _)`.
+# This reads JSON Lines, one document per line.
+json_lines : Str -> Try(List(JsonValue), _)
+json_lines = |text| Parser.many(JsonValue.parser({})).parse_str(text)
 
 expect json_lines("{\"e\": 1}\n{\"e\": 2}\n").map_ok(List.len) == Ok(2)
 
@@ -174,7 +196,7 @@ print_components! = |text| {
 				Stdout.line!(line)?
 			}
 
-		Err(problem) => Stdout.line!("cannot read the SBOM: ${Str.inspect(problem)}")?
+		Err(err) => Stdout.line!("cannot read the SBOM: ${Str.inspect(err)}")?
 	}
 	Ok({})
 }

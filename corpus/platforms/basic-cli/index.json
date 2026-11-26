@@ -1,8 +1,8 @@
 {
  "format": 1,
  "releases": {
-  "GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t": {
-   "url": "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst",
+  "7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr": {
+   "url": "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst",
    "snapshot": {
     "kind": "platform",
     "exposes": [
@@ -167,211 +167,11 @@
         "name": "Command",
         "modulePath": "Cmd",
         "fullName": "Cmd.Command",
-        "signature": "{\n\t\targs : List(OsStr),\n\t\tclear_envs : Bool,\n\t\tenvs : List((OsStr, OsStr)),\n\t\tprogram : OsStr,\n\t\tcwd_value : [Inherit, Dir(Path)],\n\t\tstdin_value : [Unset, Set([Inherit, Null, Bytes(List(U8)), Pipe])],\n\t\tstdout_value : [Unset, Set(StdoutMode)],\n\t\tstderr_value : [Unset, Set(StderrMode)],\n\t\ttimeout_value : [NoTimeout, After(Duration)],\n\t\toutput_limit_value : [NoLimit, MaxBytes(U64)],\n\t\tpending_limit_value : U64,\n\t\tmanage_tree_value : Bool,\n\t}",
+        "signature": "CommandConfig",
         "docs": "A reusable command configuration.",
         "line": 172,
-        "decl": "::",
+        "decl": ":",
         "head": "Command"
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "arg",
-        "modulePath": "Cmd.Command",
-        "fullName": "Cmd.Command.arg",
-        "signature": "Command, OsStr -> Command",
-        "docs": "Add a single argument to the command.\n❗ Shell features like variable substitution (e.g. `$FOO`), glob patterns (e.g. `*.txt`), ... are not available.\n\n```roc\ncmd = Cmd.new(\"ls\").arg(\"-l\")\n```",
-        "line": 193
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "args",
-        "modulePath": "Cmd.Command",
-        "fullName": "Cmd.Command.args",
-        "signature": "Command, List(OsStr) -> Command",
-        "docs": "Add multiple arguments to the command.\n❗ Shell features like variable substitution (e.g. `$FOO`), glob patterns (e.g. `*.txt`), ... are not available.\n\n```roc\ncmd = Cmd.new(\"ls\").args([\"-l\", \"-a\"])\n```\n\nFor a `List(Str)` use `cmd.args(names.map(OsStr.from_str))`.",
-        "line": 207
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "env",
-        "modulePath": "Cmd.Command",
-        "fullName": "Cmd.Command.env",
-        "signature": "Command, OsStr, OsStr -> Command",
-        "docs": "Add a single environment variable to the command.\n\n```roc\ncmd = Cmd.new(\"env\").env(\"FOO\", \"bar\") # add the environment variable \"FOO\" with value \"bar\"\n```",
-        "line": 218
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "envs",
-        "modulePath": "Cmd.Command",
-        "fullName": "Cmd.Command.envs",
-        "signature": "Command, List((OsStr, OsStr)) -> Command",
-        "docs": "Add multiple environment variables to the command.\n\n```roc\ncmd = Cmd.new(\"env\").envs([(\"FOO\", \"bar\"), (\"BAZ\", \"qux\")])\n```",
-        "line": 228
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "clear_envs",
-        "modulePath": "Cmd.Command",
-        "fullName": "Cmd.Command.clear_envs",
-        "signature": "Command -> Command",
-        "docs": "Clear all environment variables before running the command.\nOnly environment variables added via `env` or `envs` will be available.\nUseful if you want a clean command run that does not behave unexpectedly if the user has some env var set.\n\n```roc\ncmd =\n    Cmd.new(\"env\")\n        .clear_envs()\n        .env(\"ONLY_THIS\", \"visible\")\n```",
-        "line": 241
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "cwd",
-        "modulePath": "Cmd.Command",
-        "fullName": "Cmd.Command.cwd",
-        "signature": "Command, Path -> Command",
-        "docs": "Set the child working directory without changing the parent directory.\nUse an absolute executable path or a bare PATH name: resolving a relative\nexecutable against cwd is platform-specific.",
-        "line": 247
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "stdin",
-        "modulePath": "Cmd.Command",
-        "fullName": "Cmd.Command.stdin",
-        "signature": "Command, StdinMode -> Command",
-        "docs": "Choose the child's standard input; see [StdinMode].\n\nWhen this is not called, [run!] gives the child `Null`, and [call!],\n[capture!] and [spawn!] let it inherit the parent's standard input.",
-        "line": 254
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "stdout",
-        "modulePath": "Cmd.Command",
-        "fullName": "Cmd.Command.stdout",
-        "signature": "Command, StdoutMode -> Command",
-        "docs": "Choose where the child's standard output goes; see [StdoutMode].\n\nWhen this is not called, [run!] and [capture!] capture it, and [call!] and\n[spawn!] let it go to the parent's standard output.",
-        "line": 261
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "stderr",
-        "modulePath": "Cmd.Command",
-        "fullName": "Cmd.Command.stderr",
-        "signature": "Command, StderrMode -> Command",
-        "docs": "Choose where the child's standard error goes; see [StderrMode].\n\nWhen this is not called, [run!] captures it, and [call!], [capture!] and\n[spawn!] let it go to the parent's standard error.",
-        "line": 268
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "inherit_stdio",
-        "modulePath": "Cmd.Command",
-        "fullName": "Cmd.Command.inherit_stdio",
-        "signature": "Command -> Command",
-        "docs": "Let the child use the parent's standard input, output and error, however\nthe command is run. With [run!] this gives the exit status of a command\nthat prints to the terminal:\n\n```roc\nstatus = Cmd.new(\"roc\").args([\"check\", \"main.roc\"]).inherit_stdio().run!()?.status\n```",
-        "line": 278
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "timeout",
-        "modulePath": "Cmd.Command",
-        "fullName": "Cmd.Command.timeout",
-        "signature": "Command, Duration -> Command",
-        "docs": "Stop the command when it has run for longer than `duration`. The deadline\ncovers the whole run, including reading the rest of its output.\n\nA command that reaches its deadline is killed, and the result is\n`Err(CmdErr(TimedOut(partial)))` with the output captured so far. That is\nalso what [Child.wait!] and [Child.poll!] return for a child started with\n[spawn!]. When `timeout` is not called there is no deadline;\n`Duration.zero` expires immediately.",
-        "line": 289
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "output_limit",
-        "modulePath": "Cmd.Command",
-        "fullName": "Cmd.Command.output_limit",
-        "signature": "Command, [NoLimit, MaxBytes(U64)] -> Command",
-        "docs": "Limit how many bytes of standard output and standard error are captured,\ncounted together. The default is `MaxBytes(16777216)`, 16 MiB.\n\nA command that prints more is killed, and the result is\n`Err(CmdErr(OutputLimitExceeded(partial)))` with the output captured up to\nthe limit. `NoLimit` captures whatever the command prints.",
-        "line": 298
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "pending_limit",
-        "modulePath": "Cmd.Command",
-        "fullName": "Cmd.Command.pending_limit",
-        "signature": "Command, U64 -> Command",
-        "docs": "Limit how many bytes of `Pipe` output may wait to be read with\n[Child.read!], counted over both streams (default 1 MiB). A child that\ngets further ahead of its reader is killed, and [Child.wait!] returns\n`Err(CmdErr(OutputLimitExceeded(partial)))`.",
-        "line": 305
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "manage_tree",
-        "modulePath": "Cmd.Command",
-        "fullName": "Cmd.Command.manage_tree",
-        "signature": "Command, Bool -> Command",
-        "docs": "Also terminate descendants on cancellation, using a Unix process group\nor Windows Job Object. Disabled by default; descendants must not escape it.",
-        "line": 310
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "call!",
-        "modulePath": "Cmd.Command",
-        "fullName": "Cmd.Command.call!",
-        "signature": "Command => Try({}, [CmdErr(Err), BadExitStatus(Output), Interrupted])",
-        "docs": "Run the command on the parent's terminal and require it to succeed.\n\nStandard input, output and error are inherited unless the command sets\nthem. Any status other than exit code 0 is `Err(BadExitStatus(output))`.\n\n```roc\nCmd.new(\"cargo\").args([\"build\", \"--release\"]).call!()?\n```",
-        "line": 327
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "capture!",
-        "modulePath": "Cmd.Command",
-        "fullName": "Cmd.Command.capture!",
-        "signature": "Command => Try(Str, [CmdErr(Err), BadExitStatus(Output), BadUtf8({ problem : Str.Utf8Problem, index : U64 }), Interrupted])",
-        "docs": "Run the command, require it to succeed, and return its standard output as\ntext.\n\nStandard output is captured unless the command sets it. Standard input and\nstandard error are inherited unless the command sets them, so warnings\nstill reach the terminal, as with a shell's `$(..)`. Any status other than\nexit code 0 is `Err(BadExitStatus(output))`, and output that is not UTF-8\nis `Err(BadUtf8(..))`.\n\nThe text is returned as printed, including a final newline:\n\n```roc\nsha = Cmd.new(\"git\").args([\"rev-parse\", \"${branch}\"]).capture!()?.trim()\n```",
-        "line": 353
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "run!",
-        "modulePath": "Cmd.Command",
-        "fullName": "Cmd.Command.run!",
-        "signature": "Command => Try(Output, [CmdErr(Err), Interrupted])",
-        "docs": "Run the command and return its exit status and output as data. A non-zero\nexit code or a signal is not an error here: match on `output.status`, or\ncall [Output.require_success].\n\nStandard output and standard error are captured, and standard input is\n`Null`, unless the command sets them. The result is returned once the\ncommand has exited and all of its output has been read.\n\n```roc\noutput = Cmd.new(\"roc\").args([\"check\", \"main.roc\"]).run!()?\n```",
-        "line": 380
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "spawn!",
-        "modulePath": "Cmd.Command",
-        "fullName": "Cmd.Command.spawn!",
-        "signature": "Command => Try(Child, [CmdErr(Err), Interrupted])",
-        "docs": "Start the command and return a [Child] without waiting for it.\n\nStandard input, output and error are inherited unless the command sets\nthem. Set a stream to `Pipe` to exchange data with the child while it runs.\nKeep the returned child for later reads, waits or cleanup; an unused\nbinding such as `_child` does not keep the process alive. See [Child].",
-        "line": 394
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "to_str",
-        "modulePath": "Cmd.Command",
-        "fullName": "Cmd.Command.to_str",
-        "signature": "Command -> Str",
-        "docs": "The program and its arguments, separated by spaces, for messages and logs.\nAn argument that is empty or contains a space or a quote is written as a\nquoted, escaped string. The environment, the working directory and the\nother settings are not included.\n\n```roc\nexpect Cmd.new(\"git\").args([\"commit\", \"-m\", \"first draft\"]).to_str() == \"git commit -m \\\"first draft\\\"\"\n```",
-        "line": 418
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "to_inspect",
-        "modulePath": "Cmd.Command",
-        "fullName": "Cmd.Command.to_inspect",
-        "signature": "Command -> Str",
-        "docs": "Customize command output for `Str.inspect`: the full configuration, with\nthe names of the environment variables it sets but never their values, and\nthe length of `Bytes` input but not its content.",
-        "line": 425
        },
        {
         "kind": "value",
@@ -381,7 +181,7 @@
         "fullName": "Cmd.check_available!",
         "signature": "Str => Bool",
         "docs": "Report whether `command` can be found on the system as something runnable.\n\nA bare name (like `\"git\"`) is looked up across the `PATH` entries; a name\ncontaining a path separator is checked as-is. On Windows the candidate\nextensions come from `%PATHEXT%`.\n\nOn Unix this checks for an executable bit; a directory is not reported even\nthough it carries one, though a symbolic link to a directory is a rare\nexception.",
-        "line": 447
+        "line": 183
        },
        {
         "kind": "type",
@@ -391,7 +191,7 @@
         "fullName": "Cmd.Err",
         "signature": "[StartFailed(IOErr, OsStr), TimedOut(PartialOutput), OutputLimitExceeded(PartialOutput), IOErr(IOErr)]",
         "docs": "Why a command could not be started or did not run to completion. A\nnon-zero exit code is not one of these: it is `BadExitStatus`, or the\n`status` of an [Output].\n\n- `StartFailed(err, program)`: the program could not be started, for\n  example `StartFailed(NotFound, program)` when it does not exist.\n- `TimedOut(partial)`: the command reached the deadline set with\n  [Command.timeout] and was killed.\n- `OutputLimitExceeded(partial)`: the command printed more than\n  [Command.output_limit] or [Command.pending_limit] allows and was killed.\n- `IOErr(err)`: an operating-system failure while the command ran. A\n  [Child.read!] or [Child.write_bytes!] that waited for its whole\n  `Duration` is `IOErr(TimedOut)`.",
-        "line": 486,
+        "line": 222,
         "decl": ":=",
         "head": "Err"
        },
@@ -403,7 +203,7 @@
         "fullName": "Cmd.Err.is_eq",
         "signature": "_",
         "docs": "Compare two errors, so results that contain one work with `==`.",
-        "line": 489
+        "line": 225
        },
        {
         "kind": "value",
@@ -413,7 +213,7 @@
         "fullName": "Cmd.Err.to_str",
         "signature": "Err -> Str",
         "docs": "Describe the error in a sentence, without the captured output.",
-        "line": 492
+        "line": 228
        },
        {
         "kind": "value",
@@ -423,7 +223,7 @@
         "fullName": "Cmd.Err.to_inspect",
         "signature": "Err -> Str",
         "docs": "Customize error output for `Str.inspect`. Captured output is shown as\ntext, with invalid UTF-8 replaced, not as a list of bytes.",
-        "line": 503
+        "line": 239
        },
        {
         "kind": "type",
@@ -433,7 +233,7 @@
         "fullName": "Cmd.Output",
         "signature": "{ command : Str, status : ExitStatus, stdout_bytes : List(U8), stderr_bytes : List(U8) }",
         "docs": "The result of a command that ran to completion: how it ended and what it\nprinted. `command` is the program and arguments, as [Command.to_str] renders them.\nOutput is empty for a stream that was not captured.",
-        "line": 516,
+        "line": 252,
         "decl": ":=",
         "head": "Output"
        },
@@ -445,7 +245,7 @@
         "fullName": "Cmd.Output.is_eq",
         "signature": "_",
         "docs": "Compare two outputs, so results that contain one work with `==`.",
-        "line": 519
+        "line": 255
        },
        {
         "kind": "value",
@@ -455,7 +255,7 @@
         "fullName": "Cmd.Output.require_success",
         "signature": "Output -> Try(Output, [BadExitStatus(Output)])",
         "docs": "Turn any status other than exit code 0 into `Err(BadExitStatus(output))`.\n\n```roc\nbytes = cmd.run!()?.require_success()?.stdout_bytes\n```",
-        "line": 526
+        "line": 262
        },
        {
         "kind": "value",
@@ -465,7 +265,7 @@
         "fullName": "Cmd.Output.stdout_utf8",
         "signature": "Output -> Try(Str, [BadUtf8({ problem : Str.Utf8Problem, index : U64 })])",
         "docs": "The captured standard output as text, or `BadUtf8` when it is not\nvalid UTF-8.",
-        "line": 535
+        "line": 271
        },
        {
         "kind": "value",
@@ -475,7 +275,7 @@
         "fullName": "Cmd.Output.stdout_utf8_lossy",
         "signature": "Output -> Str",
         "docs": "The captured standard output as text, with invalid UTF-8 replaced by\nthe Unicode replacement character.",
-        "line": 546
+        "line": 282
        },
        {
         "kind": "value",
@@ -485,7 +285,7 @@
         "fullName": "Cmd.Output.stderr_utf8_lossy",
         "signature": "Output -> Str",
         "docs": "The captured standard error as text, with invalid UTF-8 replaced by\nthe Unicode replacement character.",
-        "line": 551
+        "line": 287
        },
        {
         "kind": "value",
@@ -495,7 +295,7 @@
         "fullName": "Cmd.Output.to_inspect",
         "signature": "Output -> Str",
         "docs": "Customize output for `Str.inspect`. Captured output is shown as text,\nwith invalid UTF-8 replaced, not as a list of bytes.",
-        "line": 556
+        "line": 292
        },
        {
         "kind": "type",
@@ -505,7 +305,7 @@
         "fullName": "Cmd.Child",
         "signature": "{ host : Resource.Child, pid_value : U32, command : Str, program : OsStr }",
         "docs": "A running command started with [spawn!].\n\nWhen the last reference to a child is released, a child that is still\nrunning is killed and reaped. Use [Child.close!] to do that at a chosen\npoint. After `close!` every other operation returns `Err(Closed)`.\nAn unused binding, including `_child`, can release the last reference\nimmediately. Keep a reference that a later read, wait or cleanup uses.",
-        "line": 568,
+        "line": 304,
         "decl": "::",
         "head": "Child"
        },
@@ -517,7 +317,7 @@
         "fullName": "Cmd.Child.pid",
         "signature": "Child -> U32",
         "docs": "The operating-system process identifier the child was started with.",
-        "line": 576
+        "line": 312
        },
        {
         "kind": "value",
@@ -527,7 +327,7 @@
         "fullName": "Cmd.Child.wait!",
         "signature": "Child => Try(Output, [CmdErr(Cmd.Err), Closed, Interrupted])",
         "docs": "Wait for the child to exit and for all of its output to be read, then\nreturn its status and captured output. A piped standard input is\nclosed first, so exchange data with [write_bytes!] and [read!] before\nwaiting. Waiting again returns the same result.\n\n`Pipe` output is available only through [read!]; its output field in\nthis result is empty. Choose `Capture` to retain that stream for\n`wait!`, subject to the command's [Command.output_limit].",
-        "line": 587
+        "line": 323
        },
        {
         "kind": "value",
@@ -537,7 +337,7 @@
         "fullName": "Cmd.Child.poll!",
         "signature": "Child => Try([Running, Finished(Output)], [CmdErr(Cmd.Err), Closed])",
         "docs": "Check on the child without waiting: `Running`, or `Finished(output)`\nonce it has exited and all of its output has been read.",
-        "line": 598
+        "line": 334
        },
        {
         "kind": "value",
@@ -547,7 +347,7 @@
         "fullName": "Cmd.Child.kill!",
         "signature": "Child => Try({}, [CmdErr(Cmd.Err), Closed])",
         "docs": "Ask the operating system to kill the child. This does not wait: use\n[wait!] to see it end. Killing a child that has exited does nothing.",
-        "line": 609
+        "line": 345
        },
        {
         "kind": "value",
@@ -557,7 +357,7 @@
         "fullName": "Cmd.Child.close_stdin!",
         "signature": "Child => Try({}, [CmdErr(Cmd.Err), Closed])",
         "docs": "Close a piped standard input so the child sees the end of its input.\nClosing it again does nothing.",
-        "line": 619
+        "line": 355
        },
        {
         "kind": "value",
@@ -567,7 +367,7 @@
         "fullName": "Cmd.Child.close!",
         "signature": "Child => Try({}, [CmdErr(Cmd.Err)])",
         "docs": "Kill a child that is still running, reap it, and close the handle for\nevery reference to it. Closing again does nothing.",
-        "line": 629
+        "line": 365
        },
        {
         "kind": "value",
@@ -577,7 +377,7 @@
         "fullName": "Cmd.Child.read!",
         "signature": "Child, Duration => Try([Stdout(List(U8)), Stderr(List(U8))], [EndOfInput, CmdErr(Cmd.Err), Closed, Interrupted])",
         "docs": "Return the next chunk of `Pipe` output, from whichever stream has\none, waiting up to `wait` for it. The host picks the chunk size.\n\n`Duration.zero` does not wait: it returns a chunk that is ready, and\notherwise times out. A wait that expires is\n`Err(CmdErr(IOErr(TimedOut)))`; the child keeps running and may be\nread again. Once the child has exited and every chunk has been\nreturned, the result is `Err(EndOfInput)`.\n\n```roc\nchunk = child.read!(Duration.seconds(1))?\n```",
-        "line": 648
+        "line": 384
        },
        {
         "kind": "value",
@@ -587,7 +387,7 @@
         "fullName": "Cmd.Child.write_bytes!",
         "signature": "Child, List(U8), Duration => Try({}, [CmdErr(Cmd.Err), Closed, Interrupted])",
         "docs": "Write bytes to a piped standard input, waiting up to `wait` for the\nchild to accept all of them. `Duration.zero` makes one attempt that\ndoes not wait.\n\nA wait that expires is `Err(CmdErr(IOErr(TimedOut)))`. Part of the\ninput may have been delivered by then, or before `Interrupted`, so writing all of it again can\nduplicate bytes. Writing when standard input is not a pipe, or after\n[close_stdin!], is `Err(CmdErr(IOErr(BrokenPipe)))`.",
-        "line": 667
+        "line": 403
        },
        {
         "kind": "value",
@@ -597,7 +397,219 @@
         "fullName": "Cmd.Child.write_utf8!",
         "signature": "Child, Str, Duration => Try({}, [CmdErr(Cmd.Err), Closed, Interrupted])",
         "docs": "Write text to a piped standard input as UTF-8; see [write_bytes!].",
-        "line": 677
+        "line": 413
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "CommandConfig",
+        "modulePath": "",
+        "fullName": "CommandConfig",
+        "signature": "{\n\targs : List(OsStr),\n\tclear_envs : Bool,\n\tenvs : List((OsStr, OsStr)),\n\tprogram : OsStr,\n\tcwd_value : [Inherit, Dir(Path)],\n\tstdin_value : [Unset, Set([Inherit, Null, Bytes(List(U8)), Pipe])],\n\tstdout_value : [Unset, Set(Cmd.StdoutMode)],\n\tstderr_value : [Unset, Set(Cmd.StderrMode)],\n\ttimeout_value : [NoTimeout, After(Duration)],\n\toutput_limit_value : [NoLimit, MaxBytes(U64)],\n\tpending_limit_value : U64,\n\tmanage_tree_value : Bool,\n}",
+        "docs": "A reusable command configuration.",
+        "line": 421,
+        "decl": "::",
+        "head": "CommandConfig"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "arg",
+        "modulePath": "CommandConfig",
+        "fullName": "CommandConfig.arg",
+        "signature": "CommandConfig, OsStr -> CommandConfig",
+        "docs": "Add a single argument to the command.\n❗ Shell features like variable substitution (e.g. `$FOO`), glob patterns (e.g. `*.txt`), ... are not available.\n\n```roc\ncmd = Cmd.new(\"ls\").arg(\"-l\")\n```",
+        "line": 442
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "args",
+        "modulePath": "CommandConfig",
+        "fullName": "CommandConfig.args",
+        "signature": "CommandConfig, List(OsStr) -> CommandConfig",
+        "docs": "Add multiple arguments to the command.\n❗ Shell features like variable substitution (e.g. `$FOO`), glob patterns (e.g. `*.txt`), ... are not available.\n\n```roc\ncmd = Cmd.new(\"ls\").args([\"-l\", \"-a\"])\n```\n\nFor a `List(Str)` use `cmd.args(names.map(OsStr.from_str))`.",
+        "line": 456
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "env",
+        "modulePath": "CommandConfig",
+        "fullName": "CommandConfig.env",
+        "signature": "CommandConfig, OsStr, OsStr -> CommandConfig",
+        "docs": "Add a single environment variable to the command.\n\n```roc\ncmd = Cmd.new(\"env\").env(\"FOO\", \"bar\") # add the environment variable \"FOO\" with value \"bar\"\n```",
+        "line": 467
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "envs",
+        "modulePath": "CommandConfig",
+        "fullName": "CommandConfig.envs",
+        "signature": "CommandConfig, List((OsStr, OsStr)) -> CommandConfig",
+        "docs": "Add multiple environment variables to the command.\n\n```roc\ncmd = Cmd.new(\"env\").envs([(\"FOO\", \"bar\"), (\"BAZ\", \"qux\")])\n```",
+        "line": 477
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "clear_envs",
+        "modulePath": "CommandConfig",
+        "fullName": "CommandConfig.clear_envs",
+        "signature": "CommandConfig -> CommandConfig",
+        "docs": "Clear all environment variables before running the command.\nOnly environment variables added via `env` or `envs` will be available.\nUseful if you want a clean command run that does not behave unexpectedly if the user has some env var set.\n\n```roc\ncmd =\n    Cmd.new(\"env\")\n        .clear_envs()\n        .env(\"ONLY_THIS\", \"visible\")\n```",
+        "line": 490
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "cwd",
+        "modulePath": "CommandConfig",
+        "fullName": "CommandConfig.cwd",
+        "signature": "CommandConfig, Path -> CommandConfig",
+        "docs": "Set the child working directory without changing the parent directory.\nUse an absolute executable path or a bare PATH name: resolving a relative\nexecutable against cwd is platform-specific.",
+        "line": 496
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "stdin",
+        "modulePath": "CommandConfig",
+        "fullName": "CommandConfig.stdin",
+        "signature": "CommandConfig, Cmd.StdinMode -> CommandConfig",
+        "docs": "Choose the child's standard input; see [Cmd.StdinMode].\n\nWhen this is not called, [run!] gives the child `Null`, and [call!],\n[capture!] and [spawn!] let it inherit the parent's standard input.",
+        "line": 503
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "stdout",
+        "modulePath": "CommandConfig",
+        "fullName": "CommandConfig.stdout",
+        "signature": "CommandConfig, Cmd.StdoutMode -> CommandConfig",
+        "docs": "Choose where the child's standard output goes; see [Cmd.StdoutMode].\n\nWhen this is not called, [run!] and [capture!] capture it, and [call!] and\n[spawn!] let it go to the parent's standard output.",
+        "line": 510
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "stderr",
+        "modulePath": "CommandConfig",
+        "fullName": "CommandConfig.stderr",
+        "signature": "CommandConfig, Cmd.StderrMode -> CommandConfig",
+        "docs": "Choose where the child's standard error goes; see [Cmd.StderrMode].\n\nWhen this is not called, [run!] captures it, and [call!], [capture!] and\n[spawn!] let it go to the parent's standard error.",
+        "line": 517
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "inherit_stdio",
+        "modulePath": "CommandConfig",
+        "fullName": "CommandConfig.inherit_stdio",
+        "signature": "CommandConfig -> CommandConfig",
+        "docs": "Let the child use the parent's standard input, output and error, however\nthe command is run. With [run!] this gives the exit status of a command\nthat prints to the terminal:\n\n```roc\nstatus = Cmd.new(\"roc\").args([\"check\", \"main.roc\"]).inherit_stdio().run!()?.status\n```",
+        "line": 527
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "timeout",
+        "modulePath": "CommandConfig",
+        "fullName": "CommandConfig.timeout",
+        "signature": "CommandConfig, Duration -> CommandConfig",
+        "docs": "Stop the command when it has run for longer than `duration`. The deadline\ncovers the whole run, including reading the rest of its output.\n\nA command that reaches its deadline is killed, and the result is\n`Err(CmdErr(TimedOut(partial)))` with the output captured so far. That is\nalso what [Cmd.Child.wait!] and [Cmd.Child.poll!] return for a child started with\n[spawn!]. When `timeout` is not called there is no deadline;\n`Duration.zero` expires immediately.",
+        "line": 538
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "output_limit",
+        "modulePath": "CommandConfig",
+        "fullName": "CommandConfig.output_limit",
+        "signature": "CommandConfig, [NoLimit, MaxBytes(U64)] -> CommandConfig",
+        "docs": "Limit how many bytes of standard output and standard error are captured,\ncounted together. The default is `MaxBytes(16777216)`, 16 MiB.\n\nA command that prints more is killed, and the result is\n`Err(CmdErr(OutputLimitExceeded(partial)))` with the output captured up to\nthe limit. `NoLimit` captures whatever the command prints.",
+        "line": 547
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "pending_limit",
+        "modulePath": "CommandConfig",
+        "fullName": "CommandConfig.pending_limit",
+        "signature": "CommandConfig, U64 -> CommandConfig",
+        "docs": "Limit how many bytes of `Pipe` output may wait to be read with\n[Cmd.Child.read!], counted over both streams (default 1 MiB). A child that\ngets further ahead of its reader is killed, and [Cmd.Child.wait!] returns\n`Err(CmdErr(OutputLimitExceeded(partial)))`.",
+        "line": 554
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "manage_tree",
+        "modulePath": "CommandConfig",
+        "fullName": "CommandConfig.manage_tree",
+        "signature": "CommandConfig, Bool -> CommandConfig",
+        "docs": "Also terminate descendants on cancellation, using a Unix process group\nor Windows Job Object. Disabled by default; descendants must not escape it.",
+        "line": 559
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "call!",
+        "modulePath": "CommandConfig",
+        "fullName": "CommandConfig.call!",
+        "signature": "CommandConfig => Try({}, [CmdErr(Cmd.Err), BadExitStatus(Cmd.Output), Interrupted])",
+        "docs": "Run the command on the parent's terminal and require it to succeed.\n\nStandard input, output and error are inherited unless the command sets\nthem. Any status other than exit code 0 is `Err(BadExitStatus(output))`.\n\n```roc\nCmd.new(\"cargo\").args([\"build\", \"--release\"]).call!()?\n```",
+        "line": 576
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "capture!",
+        "modulePath": "CommandConfig",
+        "fullName": "CommandConfig.capture!",
+        "signature": "CommandConfig => Try(Str, [CmdErr(Cmd.Err), BadExitStatus(Cmd.Output), BadUtf8({ problem : Str.Utf8Problem, index : U64 }), Interrupted])",
+        "docs": "Run the command, require it to succeed, and return its standard output as\ntext.\n\nStandard output is captured unless the command sets it. Standard input and\nstandard error are inherited unless the command sets them, so warnings\nstill reach the terminal, as with a shell's `$(..)`. Any status other than\nexit code 0 is `Err(BadExitStatus(output))`, and output that is not UTF-8\nis `Err(BadUtf8(..))`.\n\nThe text is returned as printed, including a final newline:\n\n```roc\nsha = Cmd.new(\"git\").args([\"rev-parse\", \"${branch}\"]).capture!()?.trim()\n```",
+        "line": 602
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "run!",
+        "modulePath": "CommandConfig",
+        "fullName": "CommandConfig.run!",
+        "signature": "CommandConfig => Try(Cmd.Output, [CmdErr(Cmd.Err), Interrupted])",
+        "docs": "Run the command and return its exit status and output as data. A non-zero\nexit code or a signal is not an error here: match on `output.status`, or\ncall [Cmd.Output.require_success].\n\nStandard output and standard error are captured, and standard input is\n`Null`, unless the command sets them. The result is returned once the\ncommand has exited and all of its output has been read.\n\n```roc\noutput = Cmd.new(\"roc\").args([\"check\", \"main.roc\"]).run!()?\n```",
+        "line": 629
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "spawn!",
+        "modulePath": "CommandConfig",
+        "fullName": "CommandConfig.spawn!",
+        "signature": "CommandConfig => Try(Cmd.Child, [CmdErr(Cmd.Err), Interrupted])",
+        "docs": "Start the command and return a [Cmd.Child] without waiting for it.\n\nStandard input, output and error are inherited unless the command sets\nthem. Set a stream to `Pipe` to exchange data with the child while it runs.\nKeep the returned child for later reads, waits or cleanup; an unused\nbinding such as `_child` does not keep the process alive. See [Cmd.Child].",
+        "line": 643
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_str",
+        "modulePath": "CommandConfig",
+        "fullName": "CommandConfig.to_str",
+        "signature": "CommandConfig -> Str",
+        "docs": "The program and its arguments, separated by spaces, for messages and logs.\nAn argument that is empty or contains a space or a quote is written as a\nquoted, escaped string. The environment, the working directory and the\nother settings are not included.\n\n```roc\nexpect Cmd.new(\"git\").args([\"commit\", \"-m\", \"first draft\"]).to_str() == \"git commit -m \\\"first draft\\\"\"\n```",
+        "line": 667
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_inspect",
+        "modulePath": "CommandConfig",
+        "fullName": "CommandConfig.to_inspect",
+        "signature": "CommandConfig -> Str",
+        "docs": "Customize command output for `Str.inspect`: the full configuration, with\nthe names of the environment variables it sets but never their values, and\nthe length of `Bytes` input but not its content.",
+        "line": 674
        }
       ]
      },
@@ -2268,7 +2280,7 @@
         "name": "signal_catch!",
         "modulePath": "Host",
         "fullName": "Host.signal_catch!",
-        "signature": "List([Interrupt, Terminate(System.Unix)]) => Try({}, [SignalErr(IOErr)])",
+        "signature": "List([Interrupt, Terminate(System.Unix), User1(System.Unix), User2(System.Unix), WindowResize(System.Unix)]) => Try({}, [SignalErr(IOErr)])",
         "docs": "",
         "line": 171
        },
@@ -2278,9 +2290,19 @@
         "name": "signal_poll!",
         "modulePath": "Host",
         "fullName": "Host.signal_poll!",
-        "signature": "() => List([Interrupt, Terminate])",
+        "signature": "() => List([Interrupt, Terminate, User1, User2, WindowResize])",
         "docs": "",
         "line": 172
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "signal_interrupted_exit_code!",
+        "modulePath": "Host",
+        "fullName": "Host.signal_interrupted_exit_code!",
+        "signature": "() => I32",
+        "docs": "",
+        "line": 173
        },
        {
         "kind": "type",
@@ -2290,7 +2312,7 @@
         "fullName": "Host.ExecFailure",
         "signature": "[Interrupted, Failed(IOErr)]",
         "docs": "",
-        "line": 174,
+        "line": 175,
         "decl": ":",
         "head": "ExecFailure"
        },
@@ -2302,7 +2324,7 @@
         "fullName": "Host.cmd_exec!",
         "signature": "System.Unix, NativePath, List(NativeOsStr) => ExecFailure",
         "docs": "",
-        "line": 175
+        "line": 176
        },
        {
         "kind": "value",
@@ -2312,7 +2334,7 @@
         "fullName": "Host.path_set_permissions!",
         "signature": "NativePath, [OwnerOnly, PublicRead] => Try({}, IOErr)",
         "docs": "",
-        "line": 176
+        "line": 177
        },
        {
         "kind": "value",
@@ -2322,7 +2344,7 @@
         "fullName": "Host.path_symlink!",
         "signature": "NativePath, NativePath, [File, Directory] => Try({}, IOErr)",
         "docs": "",
-        "line": 177
+        "line": 178
        },
        {
         "kind": "value",
@@ -2332,7 +2354,7 @@
         "fullName": "Host.path_read_link!",
         "signature": "NativePath => Try(NativePath, IOErr)",
         "docs": "",
-        "line": 178
+        "line": 179
        },
        {
         "kind": "value",
@@ -2342,7 +2364,7 @@
         "fullName": "Host.http_close_body!",
         "signature": "Resource.HttpResponse => {}",
         "docs": "",
-        "line": 179
+        "line": 180
        },
        {
         "kind": "value",
@@ -2352,7 +2374,7 @@
         "fullName": "Host.sqlite_rollback_cleanup!",
         "signature": "Resource.SqliteDb => Try({}, InternalSqlite.Problem)",
         "docs": "",
-        "line": 180
+        "line": 181
        },
        {
         "kind": "value",
@@ -2362,7 +2384,7 @@
         "fullName": "Host.unix_socket_connect!",
         "signature": "NativePath, U64 => Try(Resource.UnixSocketConnection, [UnixSocketErr(IOErr)])",
         "docs": "",
-        "line": 181
+        "line": 182
        },
        {
         "kind": "value",
@@ -2372,7 +2394,7 @@
         "fullName": "Host.unix_socket_read_up_to!",
         "signature": "Resource.UnixSocketConnection, U64, U64 => Try(List(U8), [EndOfInput, UnixSocketErr(IOErr)])",
         "docs": "",
-        "line": 182
+        "line": 183
        },
        {
         "kind": "value",
@@ -2382,7 +2404,7 @@
         "fullName": "Host.unix_socket_read_exactly!",
         "signature": "Resource.UnixSocketConnection, U64, U64 => Try(List(U8), [UnixSocketErr(IOErr), UnexpectedEndOfInput])",
         "docs": "",
-        "line": 183
+        "line": 184
        },
        {
         "kind": "value",
@@ -2392,7 +2414,7 @@
         "fullName": "Host.unix_socket_read_until!",
         "signature": "Resource.UnixSocketConnection, U8, U64, U64 => Try(List(U8), [EndOfInput, ReadLimitExceeded(U64), UnixSocketErr(IOErr)])",
         "docs": "",
-        "line": 184
+        "line": 185
        },
        {
         "kind": "value",
@@ -2402,7 +2424,7 @@
         "fullName": "Host.unix_socket_read_line!",
         "signature": "Resource.UnixSocketConnection, U64, U64 => Try(List(U8), [EndOfInput, ReadLimitExceeded(U64), UnixSocketErr(IOErr)])",
         "docs": "",
-        "line": 185
+        "line": 186
        },
        {
         "kind": "value",
@@ -2412,7 +2434,7 @@
         "fullName": "Host.unix_socket_write!",
         "signature": "Resource.UnixSocketConnection, List(U8), U64 => Try({}, [UnixSocketErr(IOErr)])",
         "docs": "",
-        "line": 186
+        "line": 187
        },
        {
         "kind": "value",
@@ -2422,7 +2444,7 @@
         "fullName": "Host.unix_socket_listen!",
         "signature": "NativePath => Try(Resource.UnixSocketListener, [UnixSocketErr(IOErr)])",
         "docs": "",
-        "line": 187
+        "line": 188
        },
        {
         "kind": "value",
@@ -2432,7 +2454,7 @@
         "fullName": "Host.unix_socket_accept!",
         "signature": "Resource.UnixSocketListener, [NoTimeout, After(U64)] => Try(Resource.UnixSocketConnection, [Closed, UnixSocketErr(IOErr)])",
         "docs": "",
-        "line": 188
+        "line": 189
        },
        {
         "kind": "value",
@@ -2442,7 +2464,7 @@
         "fullName": "Host.unix_socket_listener_close!",
         "signature": "Resource.UnixSocketListener => Try({}, [UnixSocketErr(IOErr)])",
         "docs": "",
-        "line": 189
+        "line": 190
        }
       ]
      },
@@ -3216,7 +3238,7 @@
         "name": "from_interpolation",
         "modulePath": "OsStr",
         "fullName": "OsStr.from_interpolation",
-        "signature": "List(Str) -> Try((List(Str) -> OsStr), [InvalidInterpolation(Str)])",
+        "signature": "List(Str) -> Try((Iter(Str) -> OsStr), [InvalidInterpolation(Str)])",
         "docs": "Build a UTF-8 OS string from an interpolated string literal.",
         "line": 45
        },
@@ -3734,7 +3756,7 @@
         "name": "from_interpolation",
         "modulePath": "Path",
         "fullName": "Path.from_interpolation",
-        "signature": "List(Str) -> Try((List(Str) -> Path), [InvalidInterpolation(Str)])",
+        "signature": "List(Str) -> Try((Iter(Str) -> Path), [InvalidInterpolation(Str)])",
         "docs": "Create a UTF-8 path from an interpolated string literal.\nThis performs textual concatenation; use [join] for path-component joining.",
         "line": 311
        },
@@ -3851,12 +3873,32 @@
        {
         "kind": "value",
         "tier": "public",
+        "name": "parent",
+        "modulePath": "Path",
+        "fullName": "Path.parent",
+        "signature": "Path -> Try(Path, [NoParent])",
+        "docs": "Remove the final path component without accessing the filesystem. The\nreturned path preserves the input representation. UTF-8 and Unix paths\nuse `/`. Windows paths recognize drive and share roots and use both\nseparators, except inside verbatim paths, which use `\\`.\n\nTrailing separators and `.` components are ignored, except for a leading\nrelative `.` and for `.` in a Windows verbatim path. `..` is kept as a\ncomponent. An empty path, root, or Windows prefix alone has `NoParent`.\nThe parent of a one-component relative path is the empty path.\n\n```roc\nexpect Path.parent(\"src/main.roc\") == Ok(Path.utf8(\"src\"))\nexpect Path.parent(\"/src/\") == Ok(Path.utf8(\"/\"))\nexpect Path.parent(\"/\") == Err(NoParent)\n```",
+        "line": 410
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "ancestors",
+        "modulePath": "Path",
+        "fullName": "Path.ancestors",
+        "signature": "Path -> Iter(Path)",
+        "docs": "Iterate over this path and its successive [parent] paths, starting with\nthe original path and ending when there is no parent.",
+        "line": 420
+       },
+       {
+        "kind": "value",
+        "tier": "public",
         "name": "filename",
         "modulePath": "Path",
         "fullName": "Path.filename",
         "signature": "Path -> Try(Path, [IsDirPath, EndsInDots])",
         "docs": "Returns everything after the last directory separator.",
-        "line": 396
+        "line": 433
        },
        {
         "kind": "value",
@@ -3866,7 +3908,7 @@
         "fullName": "Path.ext",
         "signature": "Path -> Try(Path, [IsDirPath, EndsInDots])",
         "docs": "Returns everything after the first dot in the filename that is not a\nleading dot: `txt` for `notes.txt`, `tar.gz` for `archive.tar.gz`, and\nnothing for `.gitignore`.",
-        "line": 442
+        "line": 479
        },
        {
         "kind": "value",
@@ -3876,7 +3918,7 @@
         "fullName": "Path.join",
         "signature": "Path, Str -> Path",
         "docs": "Adds a separator and a string component to the path.",
-        "line": 452
+        "line": 489
        },
        {
         "kind": "value",
@@ -3886,7 +3928,7 @@
         "fullName": "Path.to_raw",
         "signature": "Path -> [Utf8(Str), UnixBytes(List(U8)), WindowsU16s(List(U16))]",
         "docs": "Expose the raw OS-specific representation.",
-        "line": 461
+        "line": 498
        },
        {
         "kind": "value",
@@ -3896,7 +3938,7 @@
         "fullName": "Path.from_raw",
         "signature": "[Utf8(Str), UnixBytes(List(U8)), WindowsU16s(List(U16))] -> Path",
         "docs": "Build a path from the raw OS-specific representation.",
-        "line": 470
+        "line": 507
        }
       ]
      },
@@ -4074,9 +4116,9 @@
         "name": "Kind",
         "modulePath": "Signal",
         "fullName": "Signal.Kind",
-        "signature": "[Interrupt, Terminate]",
+        "signature": "[Interrupt, Terminate, User1, User2, WindowResize]",
         "docs": "",
-        "line": 12,
+        "line": 17,
         "decl": ":",
         "head": "Kind"
        },
@@ -4086,9 +4128,9 @@
         "name": "Request",
         "modulePath": "Signal",
         "fullName": "Signal.Request",
-        "signature": "[Interrupt, Terminate(System.Unix)]",
+        "signature": "[Interrupt, Terminate(System.Unix), User1(System.Unix), User2(System.Unix), WindowResize(System.Unix)]",
         "docs": "",
-        "line": 13,
+        "line": 18,
         "decl": ":",
         "head": "Request"
        },
@@ -4099,8 +4141,8 @@
         "modulePath": "Signal",
         "fullName": "Signal.catch!",
         "signature": "List(Request) => Try({}, [SignalErr(IOErr)])",
-        "docs": "Add events to those caught for the lifetime of this process.\n`Interrupt` catches Ctrl-C. `Terminate(unix)` catches Unix SIGTERM,\nincluding systemd's default stop request. Duplicate registrations and an\nempty list do nothing. Repeated events coalesce and never force exit.",
-        "line": 19
+        "docs": "Add events to those caught for the lifetime of this process.\n`Interrupt` catches Ctrl-C. `Terminate(unix)` catches Unix SIGTERM,\nincluding systemd's default stop request. `User1(unix)` and `User2(unix)`\ncatch SIGUSR1 and SIGUSR2. `WindowResize(unix)` catches SIGWINCH.\nDuplicate registrations and an empty list do nothing. Repeated events\ncoalesce and never force exit.",
+        "line": 26
        },
        {
         "kind": "value",
@@ -4109,8 +4151,8 @@
         "modulePath": "Signal",
         "fullName": "Signal.poll!",
         "signature": "() => List(Kind)",
-        "docs": "Acknowledge pending events, returning each kind at most once, in\nInterrupt/Terminate order. An interrupted effect does not acknowledge\nevents itself. Native forced termination cannot be caught.",
-        "line": 29
+        "docs": "Acknowledge pending events, returning each kind at most once, in\nthe order Interrupt, Terminate, User1, User2, WindowResize. An interrupted\neffect does not acknowledge events itself. Native forced termination\ncannot be caught.",
+        "line": 37
        }
       ]
      },
@@ -4308,7 +4350,7 @@
         "name": "from_interpolation",
         "modulePath": "Sqlite.Query",
         "fullName": "Sqlite.Query.from_interpolation",
-        "signature": "List(Str) -> Try((List(Value) -> Query), [InvalidInterpolation(Str)])",
+        "signature": "List(Str) -> Try((Iter(Value) -> Query), [InvalidInterpolation(Str)])",
         "docs": "An interpolated string literal: each `${…}` is a bound parameter.",
         "line": 375
        },
@@ -4911,8 +4953,8 @@
         "modulePath": "Tcp",
         "fullName": "Tcp.listen!",
         "signature": "Str, U16, Duration => Try(Listener, [Interrupted, TcpErr(IOErr)])",
-        "docs": "Bind an address and listen for connections. Port zero asks the operating\nsystem for a free port, which [Listener.local_port!] reports. The\ntimeout covers hostname resolution.\n\n```roc\nlistener = Tcp.listen!(\"127.0.0.1\", 0, Duration.seconds(5))?\nport = listener.local_port!()?\n```",
-        "line": 120
+        "docs": "Bind an address and listen for connections. Port zero asks the operating\nsystem for a free port, which [Listener.local_port!] reports. The\ntimeout covers hostname resolution.\n\nOn Unix, a restarted server can bind again while connections from its\nprevious listener are still in TCP `TIME_WAIT`.\n\n```roc\nlistener = Tcp.listen!(\"127.0.0.1\", 0, Duration.seconds(5))?\nport = listener.local_port!()?\n```",
+        "line": 123
        },
        {
         "kind": "type",
@@ -4922,7 +4964,7 @@
         "fullName": "Tcp.Connection",
         "signature": "{ host : Resource.TcpConnection, timeout : Duration, line_limit : U64 }",
         "docs": "A buffered TCP connection, with the I/O timeout and line limit its\nreads and writes use.\n\nThe connection is closed when the last reference to it is released.\nCopies of a connection share one socket and one buffer, so every read,\nwhether of lines, delimited bytes or binary data, continues where the\nprevious one stopped. [Connection.with_timeout] and\n[Connection.with_line_limit] change the settings of the copy they return,\nnot the socket.\n\nEvery read ends the same way: once the peer has closed its side and all\ndata has been returned, the next read is `Err(EndOfInput)`. An empty\n`Ok` is real data, such as an empty line.\n\nA read that times out consumes nothing. Bytes that had arrived stay\nbuffered for the next read, so a client may simply read again. A write\nthat times out may have sent any prefix of its bytes: drop the\nconnection unless the protocol can resynchronise.",
-        "line": 146,
+        "line": 149,
         "decl": "::",
         "head": "Connection"
        },
@@ -4934,7 +4976,7 @@
         "fullName": "Tcp.Connection.to_inspect",
         "signature": "Connection -> Str",
         "docs": "Render the connection without exposing its host handle.",
-        "line": 149
+        "line": 152
        },
        {
         "kind": "value",
@@ -4944,7 +4986,7 @@
         "fullName": "Tcp.Connection.with_timeout",
         "signature": "Connection, Duration -> Connection",
         "docs": "The same connection with another I/O timeout. Each read or write\nthrough the result is bounded as a whole by `timeout`.\n\n```roc\n# Poll: is a line already here?\nmatch conn.with_timeout(Duration.millis(10)).read_line!() {\n    Ok(line) => handle!(line)?\n    Err(TcpErr(TimedOut)) => {}\n    Err(err) => { return Err(err) }\n}\n```",
-        "line": 163
+        "line": 166
        },
        {
         "kind": "value",
@@ -4954,7 +4996,7 @@
         "fullName": "Tcp.Connection.with_line_limit",
         "signature": "Connection, U64 -> Connection",
         "docs": "The same connection with another limit, in bytes, on one record read\nby [read_until!], [read_line!] or [Connection.lines]. The delimiter\nor line terminator counts towards the limit. The default is\n1,048,576 (1 MiB).",
-        "line": 170
+        "line": 173
        },
        {
         "kind": "value",
@@ -4964,7 +5006,7 @@
         "fullName": "Tcp.Connection.read_up_to!",
         "signature": "Connection, U64 => Try(List(U8), [EndOfInput, Interrupted, TcpErr(IOErr)])",
         "docs": "Read at most `max_bytes` bytes, returning as soon as any have\narrived. Short reads are valid. Asking for zero bytes returns\n`Ok([])` without waiting; otherwise the result is never empty, and a\nclosed peer is `Err(EndOfInput)`.",
-        "line": 177
+        "line": 180
        },
        {
         "kind": "value",
@@ -4974,7 +5016,7 @@
         "fullName": "Tcp.Connection.read_exactly!",
         "signature": "Connection, U64 => Try(List(U8), [UnexpectedEndOfInput, Interrupted, TcpErr(IOErr)])",
         "docs": "Read exactly `count` bytes. Zero succeeds without waiting.\n\nIf the peer closes before `count` bytes arrive the result is\n`Err(UnexpectedEndOfInput)`. The bytes that did arrive are not\nconsumed: [read_up_to!] returns them.",
-        "line": 191
+        "line": 194
        },
        {
         "kind": "value",
@@ -4984,7 +5026,7 @@
         "fullName": "Tcp.Connection.read_until!",
         "signature": "Connection, U8 => Try(List(U8), [EndOfInput, Interrupted, ReadLimitExceeded(U64), TcpErr(IOErr)])",
         "docs": "Read bytes through and including the next `delimiter`.\n\nIf the peer closes first, the bytes before the end are returned\nwithout a delimiter, and the read after that is `Err(EndOfInput)`.\nSo the result is never empty, and its last byte shows whether the\ndelimiter arrived.\n\nA record longer than the connection's line limit is\n`Err(ReadLimitExceeded(limit))`. The rest of that record, through\nits delimiter, is then discarded before the next read returns, as\npart of that read and within its timeout.\n\n```roc\nfield = conn.read_until!('|')?\n```",
-        "line": 215
+        "line": 218
        },
        {
         "kind": "value",
@@ -4994,7 +5036,7 @@
         "fullName": "Tcp.Connection.read_line!",
         "signature": "Connection => Try(Str, [EndOfInput, ReadLimitExceeded(U64), BadUtf8({ problem : Str.Utf8Problem, index : U64 }), Interrupted, TcpErr(IOErr)])",
         "docs": "Read a line of text.\n\nA line ends at `\\n`. The terminator is not returned, and one `\\r`\nbefore it is removed. If the peer closes without a final `\\n` the\nlast line is still returned; after that the result is\n`Err(EndOfInput)`. An empty line is `Ok(\"\")`.\n\nA line longer than the connection's line limit is\n`Err(ReadLimitExceeded(limit))`, and a line that is not valid UTF-8\nis `BadUtf8`. Either way that line is skipped and the next call\nreads the line after it. For the bytes of a line, use\n`conn.read_until!('\\n')`.",
-        "line": 237
+        "line": 240
        },
        {
         "kind": "value",
@@ -5004,7 +5046,7 @@
         "fullName": "Tcp.Connection.write_bytes!",
         "signature": "Connection, List(U8) => Try({}, [Interrupted, TcpErr(IOErr)])",
         "docs": "Write all of `bytes`. They are sent at once, not buffered.",
-        "line": 248
+        "line": 251
        },
        {
         "kind": "value",
@@ -5014,7 +5056,7 @@
         "fullName": "Tcp.Connection.write_utf8!",
         "signature": "Connection, Str => Try({}, [Interrupted, TcpErr(IOErr)])",
         "docs": "Write a string as UTF-8. It is sent at once, not buffered.",
-        "line": 257
+        "line": 260
        },
        {
         "kind": "value",
@@ -5024,7 +5066,7 @@
         "fullName": "Tcp.Connection.chunks",
         "signature": "Connection -> Stream(Try(List(U8), [Interrupted, TcpErr(IOErr)]))",
         "docs": "Lazily read this connection as non-empty chunks of at most 64 KiB,\neach returned as soon as it arrives. Chunk boundaries do not\ncorrespond to the peer's writes, records, or text encoding\nboundaries. For a chosen size, call [read_up_to!] in a loop.\n\nBuilding the stream reads nothing; each item is one read with the\nconnection's timeout. The stream ends when the peer closes. A\n`TcpErr` item, including `TcpErr(TimedOut)`, is the last one; the\nconnection stays usable and a new stream may be started.\n\n```roc\nfor! item in conn.chunks() {\n    bytes = item?\n    $total = $total + bytes.len()\n}\n```\n\nThe stream holds no data of its own, so it can be mixed with the\nother reads and with writes. It keeps the connection open until it\nhas finished or is released.",
-        "line": 281
+        "line": 284
        },
        {
         "kind": "value",
@@ -5034,7 +5076,7 @@
         "fullName": "Tcp.Connection.lines",
         "signature": "Connection -> Stream(Try(Str, [ReadLimitExceeded(U64), BadUtf8({ problem : Str.Utf8Problem, index : U64 }), Interrupted, TcpErr(IOErr)]))",
         "docs": "Lazily read this connection a line at a time, as [read_line!] does.\n\nBuilding the stream reads nothing; each item is one read with the\nconnection's timeout and line limit. The stream ends when the peer\ncloses. `BadUtf8` and `ReadLimitExceeded` items concern one line, and\nthe stream continues with the next. A `TcpErr` item, including\n`TcpErr(TimedOut)`, is the last one; the connection stays usable, so\na client that tolerates idle periods calls `conn.lines()` again.\n\n```roc\nfor! item in conn.lines() {\n    match item {\n        Ok(line) => Stdout.line!(line)?\n        Err(BadUtf8(_)) => {}\n        Err(ReadLimitExceeded(_)) => {}\n        Err(TcpErr(err)) => { return Err(TcpErr(err)) }\n    }\n}\n```\n\nThe stream holds no data of its own, so it can be mixed with the\nother reads and with writes, and leaving the loop early loses\nnothing. It keeps the connection open until it has finished or is\nreleased.",
-        "line": 326
+        "line": 329
        },
        {
         "kind": "value",
@@ -5044,7 +5086,7 @@
         "fullName": "Tcp.connect!",
         "signature": "Str, U16, { connect_timeout : Duration, io_timeout : Duration } => Try(Connection, [Interrupted, TcpErr(IOErr)])",
         "docs": "Open a TCP connection.\n\n`connect_timeout` bounds this call, across hostname resolution and every\naddress the name resolves to. `io_timeout` is the timeout the new\n[Connection] holds for its reads and writes.\n\nA port nobody listens on is `Err(TcpErr(ConnectionRefused))` once the\noperating system reports it. Windows retries for about two seconds\nfirst, so a shorter `connect_timeout` gives `Err(TcpErr(TimedOut))` there.\n\n```roc\nconn = Tcp.connect!(\"localhost\", 8080, { connect_timeout: Duration.seconds(1), io_timeout: Duration.seconds(5) })?\n```\n\nValid hostnames look like `127.0.0.1`, `::1`, `localhost`, or `roc-lang.org`.",
-        "line": 365
+        "line": 368
        }
       ]
      },

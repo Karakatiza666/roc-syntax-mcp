@@ -1,6 +1,6 @@
 ## The basic-cli application contract: `main!`, arguments, exit codes, and where
 ## to turn error tags into messages.
-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst" }
+app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst" }
 
 import pf.OsStr
 import pf.IOErr

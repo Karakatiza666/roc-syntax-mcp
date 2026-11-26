@@ -4,7 +4,8 @@
 # exist here.
 #
 # Measured on nightly-2026-10-31-f7bef6b, with basic-cli 0.26.0. The help of
-# every command is the same in nightly-2026-11-14-a87808d.
+# every command is the same in nightly-2026-11-25-d5a4f1e, except for the
+# `--specialize` default below and the wasm sizes in `roc build --help`.
 
 # ---------------------------------------------------------------------------
 # The loop: check, test, run, build
@@ -77,6 +78,11 @@ expect [1, 2, 3].len() == 3
 # shows only under `--opt=speed` does not show in `roc run`. Reproduce it with
 # `roc run --opt=speed app.roc`.
 #
+# Only `--opt=speed` compiles each generic function once per type
+# (monomorphization). The other levels compile it once and pass it boxed
+# values, which builds faster and runs slower. `--specialize=yes` or
+# `--specialize=no` overrides the default.
+#
 # `dbg` still prints in an optimized build. `roc build` warns once for each
 # `dbg` (exit 2), so remove them before you ship.
 
@@ -95,7 +101,7 @@ expect [1, 2, 3].len() == 3
 #
 # The link uses no toolchain on the build machine. The `platforms` topic says
 # which files a target must list. From Linux, the x64 and arm64 Linux targets, x64freebsd, x64netbsd and wasm32 link
-# with no other tools. So do x64win and x64mac on basic-cli 0.26.0, because it
+# with no other tools. So do x64win and x64mac on basic-cli 0.28.1, because it
 # ships their startup objects and libraries. A Windows target whose platform
 # lists no startup object fails with "undefined symbol: mainCRTStartup". A
 # macOS target fails with "library not found for -lSystem" unless the platform

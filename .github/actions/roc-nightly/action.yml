@@ -3,18 +3,19 @@
 
 # Puts one roc nightly on PATH, and links each nightly at the repo root, where
 # the gates look for the nightly of a program (scripts/nightlies.mjs). It reads
-# the nightlies from the cache when it can.
+# the nightlies from the cache when it can. A tag such as 0.1.0-RC2 names a
+# release of roc-lang/roc instead, which unpacks as roc-linux_arm64-<tag>/.
 #
 # One cache entry holds the whole set, so a change to the set downloads every
 # nightly again. GitHub evicts a cache entry that no run read for 7 days, and
 # this period is not configurable.
 
 name: Roc nightly
-description: Download roc-lang/nightlies releases and put one roc on PATH.
+description: Download roc-lang/nightlies (or roc-lang/roc) releases and put one roc on PATH.
 
 inputs:
   tag:
-    description: The release tag to put on PATH, for example nightly-2026-10-04-130536d.
+    description: The release tag to put on PATH, for example nightly-2026-10-04-130536d or 0.1.0-RC2.
     required: true
   more:
     description: Other release tags, one per line, that only the repo root gets.
@@ -31,7 +32,10 @@ runs:
         TAG: ${{ inputs.tag }}
         MORE: ${{ inputs.more }}
       run: |
-        names="$(printf '%s\n' "$TAG" $MORE | sed 's/^nightly-/roc_nightly-linux_arm64-/' | sort -u)"
+        # A nightly unpacks as roc_nightly-<target>-<date>-<commit>, a release
+        # of roc-lang/roc as roc-<target>-<tag>.
+        name_of() { case "$1" in nightly-*) echo "roc_nightly-linux_arm64-${1#nightly-}" ;; *) echo "roc-linux_arm64-$1" ;; esac; }
+        names="$(for t in "$TAG" $MORE; do name_of "$t"; done | sort -u)"
         echo "$names"
         {
           echo "key=roc-nightlies-$(sha256sum <<<"$names" | cut -c1-16)"
@@ -39,7 +43,7 @@ runs:
           echo "paths<<EOF"
           sed "s|^|$RUNNER_TOOL_CACHE/roc/|" <<<"$names"
           echo "EOF"
-          echo "dir=$RUNNER_TOOL_CACHE/roc/roc_nightly-linux_arm64-${TAG#nightly-}"
+          echo "dir=$RUNNER_TOOL_CACHE/roc/$(name_of "$TAG")"
         } >> "$GITHUB_OUTPUT"
     - name: Restore the nightlies
       id: restore
@@ -55,9 +59,11 @@ runs:
       run: |
         mkdir -p "$RUNNER_TOOL_CACHE/roc"
         for name in $NAMES; do
-          tag="nightly-${name#roc_nightly-linux_arm64-}"
-          curl -fsSL "https://github.com/roc-lang/nightlies/releases/download/$tag/$name.tar.gz" \
-            | tar xz -C "$RUNNER_TOOL_CACHE/roc"
+          case "$name" in
+            roc_nightly-*) url="https://github.com/roc-lang/nightlies/releases/download/nightly-${name#roc_nightly-linux_arm64-}/$name.tar.gz" ;;
+            *) url="https://github.com/roc-lang/roc/releases/download/${name#roc-linux_arm64-}/$name.tar.gz" ;;
+          esac
+          curl -fsSL "$url" | tar xz -C "$RUNNER_TOOL_CACHE/roc"
           test -x "$RUNNER_TOOL_CACHE/roc/$name/roc"
         done
     # Save the nightlies before any gate runs, so that the cache keeps the

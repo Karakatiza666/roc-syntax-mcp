@@ -1,0 +1,381 @@
+diff -ruN a/examples/bytes-stdin-stdout.roc b/examples/bytes-stdin-stdout.roc
+--- a/examples/bytes-stdin-stdout.roc	2026-11-26 01:35:15.855533935 +0200
++++ b/examples/bytes-stdin-stdout.roc	2026-11-26 01:35:15.862907505 +0200
+@@ -1,5 +1,5 @@
+ ## Copy raw bytes from standard input to standard output and report the total.
+-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.0/2yhxoR7cZPSYbyUzPWULFw8AA6QEcdsgFNRmzu7pZbst.tar.zst" }
++app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst" }
+ 
+ import pf.OsStr
+ import pf.Stdin
+diff -ruN a/examples/check-command.roc b/examples/check-command.roc
+--- a/examples/check-command.roc	2026-11-26 01:35:15.855593026 +0200
++++ b/examples/check-command.roc	2026-11-26 01:35:15.863131405 +0200
+@@ -1,5 +1,5 @@
+ ## Check whether commands are available before trying to run them.
+-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.0/2yhxoR7cZPSYbyUzPWULFw8AA6QEcdsgFNRmzu7pZbst.tar.zst" }
++app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst" }
+ 
+ import pf.OsStr
+ import pf.Stdout
+diff -ruN a/examples/command-line-args.roc b/examples/command-line-args.roc
+--- a/examples/command-line-args.roc	2026-11-26 01:35:15.855619856 +0200
++++ b/examples/command-line-args.roc	2026-11-26 01:35:15.863242243 +0200
+@@ -1,5 +1,5 @@
+ ## Read native command-line arguments without losing non-Unicode data.
+-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.0/2yhxoR7cZPSYbyUzPWULFw8AA6QEcdsgFNRmzu7pZbst.tar.zst" }
++app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst" }
+ 
+ import pf.OsStr
+ import pf.Env
+diff -ruN a/examples/command.roc b/examples/command.roc
+--- a/examples/command.roc	2026-11-26 01:35:15.855650073 +0200
++++ b/examples/command.roc	2026-11-26 01:35:15.863332923 +0200
+@@ -1,5 +1,5 @@
+ ## Run commands, capture their output, and set their env vars.
+-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.0/2yhxoR7cZPSYbyUzPWULFw8AA6QEcdsgFNRmzu7pZbst.tar.zst" }
++app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst" }
+ 
+ import pf.OsStr
+ import pf.Stdout
+diff -ruN a/examples/dir.roc b/examples/dir.roc
+--- a/examples/dir.roc	2026-11-26 01:35:15.855894892 +0200
++++ b/examples/dir.roc	2026-11-26 01:35:15.863435245 +0200
+@@ -1,5 +1,5 @@
+ ## Create, inspect, and clean up a small directory tree.
+-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.0/2yhxoR7cZPSYbyUzPWULFw8AA6QEcdsgFNRmzu7pZbst.tar.zst" }
++app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst" }
+ 
+ import pf.OsStr
+ import pf.Stdout
+diff -ruN a/examples/env-var.roc b/examples/env-var.roc
+--- a/examples/env-var.roc	2026-11-26 01:35:15.855932393 +0200
++++ b/examples/env-var.roc	2026-11-26 01:35:15.863488725 +0200
+@@ -1,5 +1,5 @@
+ ## Read native and UTF-8 environment variables.
+-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.0/2yhxoR7cZPSYbyUzPWULFw8AA6QEcdsgFNRmzu7pZbst.tar.zst" }
++app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst" }
+ 
+ import pf.OsStr
+ import pf.Stdout
+diff -ruN a/examples/error-handling.roc b/examples/error-handling.roc
+--- a/examples/error-handling.roc	2026-11-26 01:35:15.855961187 +0200
++++ b/examples/error-handling.roc	2026-11-26 01:35:15.863540352 +0200
+@@ -1,5 +1,5 @@
+ ## Handle errors with tag-pattern matching.
+-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.0/2yhxoR7cZPSYbyUzPWULFw8AA6QEcdsgFNRmzu7pZbst.tar.zst" }
++app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst" }
+ 
+ import pf.OsStr
+ import pf.Stdout
+diff -ruN a/examples/file-accessed-modified-created-time.roc b/examples/file-accessed-modified-created-time.roc
+--- a/examples/file-accessed-modified-created-time.roc	2026-11-26 01:35:15.855988858 +0200
++++ b/examples/file-accessed-modified-created-time.roc	2026-11-26 01:35:15.863583894 +0200
+@@ -1,5 +1,5 @@
+ ## Read a file's accessed, modified, and creation timestamps.
+-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.0/2yhxoR7cZPSYbyUzPWULFw8AA6QEcdsgFNRmzu7pZbst.tar.zst" }
++app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst" }
+ 
+ import pf.Duration
+ import pf.OsStr
+diff -ruN a/examples/file-append.roc b/examples/file-append.roc
+--- a/examples/file-append.roc	2026-11-26 01:35:15.856017632 +0200
++++ b/examples/file-append.roc	2026-11-26 01:35:15.863624600 +0200
+@@ -1,5 +1,5 @@
+ ## Append lines to a log file without replacing its existing contents.
+-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.0/2yhxoR7cZPSYbyUzPWULFw8AA6QEcdsgFNRmzu7pZbst.tar.zst" }
++app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst" }
+ 
+ import pf.OsStr
+ import pf.Stdout
+diff -ruN a/examples/file-permissions.roc b/examples/file-permissions.roc
+--- a/examples/file-permissions.roc	2026-11-26 01:35:15.856045224 +0200
++++ b/examples/file-permissions.roc	2026-11-26 01:35:15.863672600 +0200
+@@ -1,5 +1,5 @@
+ ## Inspect whether a file is executable, readable, and writable.
+-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.0/2yhxoR7cZPSYbyUzPWULFw8AA6QEcdsgFNRmzu7pZbst.tar.zst" }
++app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst" }
+ 
+ import pf.OsStr
+ import pf.Stdout
+diff -ruN a/examples/file-read-binary.roc b/examples/file-read-binary.roc
+--- a/examples/file-read-binary.roc	2026-11-26 01:35:15.856083035 +0200
++++ b/examples/file-read-binary.roc	2026-11-26 01:35:15.863718235 +0200
+@@ -1,5 +1,5 @@
+ ## Count binary file bytes in bounded chunks after inspecting its header.
+-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.0/2yhxoR7cZPSYbyUzPWULFw8AA6QEcdsgFNRmzu7pZbst.tar.zst" }
++app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst" }
+ 
+ import pf.File
+ import pf.OsStr
+diff -ruN a/examples/file-read-buffered.roc b/examples/file-read-buffered.roc
+--- a/examples/file-read-buffered.roc	2026-11-26 01:35:15.856108423 +0200
++++ b/examples/file-read-buffered.roc	2026-11-26 01:35:15.863767458 +0200
+@@ -3,7 +3,7 @@
+ ## This can be useful to process large files without using a lot of RAM or
+ ## requiring the user to wait until the complete file is processed when they
+ ## only wanted to look at the first page.
+-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.0/2yhxoR7cZPSYbyUzPWULFw8AA6QEcdsgFNRmzu7pZbst.tar.zst" }
++app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst" }
+ 
+ import pf.OsStr
+ import pf.Stdout
+diff -ruN a/examples/file-read-write.roc b/examples/file-read-write.roc
+--- a/examples/file-read-write.roc	2026-11-26 01:35:15.856134131 +0200
++++ b/examples/file-read-write.roc	2026-11-26 01:35:15.863813584 +0200
+@@ -1,5 +1,5 @@
+ ## Write a UTF-8 file, read it back, and delete it.
+-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.0/2yhxoR7cZPSYbyUzPWULFw8AA6QEcdsgFNRmzu7pZbst.tar.zst" }
++app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst" }
+ 
+ import pf.OsStr
+ import pf.Stdout
+diff -ruN a/examples/file-replace.roc b/examples/file-replace.roc
+--- a/examples/file-replace.roc	2026-11-26 01:35:15.856159258 +0200
++++ b/examples/file-replace.roc	2026-11-26 01:35:15.863862997 +0200
+@@ -1,5 +1,5 @@
+ ## Replace every occurrence of a substring in a UTF-8 file in place.
+-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.0/2yhxoR7cZPSYbyUzPWULFw8AA6QEcdsgFNRmzu7pZbst.tar.zst" }
++app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst" }
+ 
+ import pf.OsStr
+ import pf.Stdout
+diff -ruN a/examples/file-size.roc b/examples/file-size.roc
+--- a/examples/file-size.roc	2026-11-26 01:35:15.856187060 +0200
++++ b/examples/file-size.roc	2026-11-26 01:35:15.863908062 +0200
+@@ -1,5 +1,5 @@
+ ## Report the size in bytes of a path supplied on the command line.
+-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.0/2yhxoR7cZPSYbyUzPWULFw8AA6QEcdsgFNRmzu7pZbst.tar.zst" }
++app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst" }
+ 
+ import pf.OsStr
+ import pf.Stdout
+diff -ruN a/examples/filesystem-tools.roc b/examples/filesystem-tools.roc
+--- a/examples/filesystem-tools.roc	2026-11-26 01:35:15.856215213 +0200
++++ b/examples/filesystem-tools.roc	2026-11-26 01:35:15.863957995 +0200
+@@ -1,6 +1,6 @@
+ ## Prepare a distributable directory without changing its source files.
+ ## Usage: roc filesystem-tools.roc -- path/to/site path/to/new-release
+-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.0/2yhxoR7cZPSYbyUzPWULFw8AA6QEcdsgFNRmzu7pZbst.tar.zst" }
++app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst" }
+ 
+ import pf.Env
+ import pf.OsStr
+diff -ruN a/examples/file-write-stream.roc b/examples/file-write-stream.roc
+--- a/examples/file-write-stream.roc	2026-11-26 01:35:15.856240210 +0200
++++ b/examples/file-write-stream.roc	2026-11-26 01:35:15.864008530 +0200
+@@ -1,6 +1,6 @@
+ ## Write a file piece by piece: a report line by line, then a redacted copy
+ ## made without holding more than one chunk of the file in memory.
+-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.0/2yhxoR7cZPSYbyUzPWULFw8AA6QEcdsgFNRmzu7pZbst.tar.zst" }
++app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst" }
+ 
+ import pf.OsStr
+ import pf.Stdout
+diff -ruN a/examples/hello.roc b/examples/hello.roc
+--- a/examples/hello.roc	2026-11-26 01:35:15.856265327 +0200
++++ b/examples/hello.roc	2026-11-26 01:35:15.864053594 +0200
+@@ -1,5 +1,5 @@
+ ## Greet a name supplied as a native command-line argument.
+-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.0/2yhxoR7cZPSYbyUzPWULFw8AA6QEcdsgFNRmzu7pZbst.tar.zst" }
++app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst" }
+ 
+ import pf.OsStr
+ import pf.Stdout
+diff -ruN a/examples/hello-world.roc b/examples/hello-world.roc
+--- a/examples/hello-world.roc	2026-11-26 01:35:15.856294612 +0200
++++ b/examples/hello-world.roc	2026-11-26 01:35:15.864100292 +0200
+@@ -1,5 +1,5 @@
+ ## Print a minimal greeting to standard output.
+-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.0/2yhxoR7cZPSYbyUzPWULFw8AA6QEcdsgFNRmzu7pZbst.tar.zst" }
++app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst" }
+ 
+ import pf.OsStr
+ import pf.Stdout
+diff -ruN a/examples/http-client.roc b/examples/http-client.roc
+--- a/examples/http-client.roc	2026-11-26 01:35:15.856330309 +0200
++++ b/examples/http-client.roc	2026-11-26 01:35:15.864160044 +0200
+@@ -1,7 +1,7 @@
+ ## Send HTTP requests and handle UTF-8, JSON, and transport failures.
+ app [main!] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+-	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.0/2yhxoR7cZPSYbyUzPWULFw8AA6QEcdsgFNRmzu7pZbst.tar.zst",
++	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst",
+ }
+ 
+ import pf.OsStr
+diff -ruN a/examples/http-download.roc b/examples/http-download.roc
+--- a/examples/http-download.roc	2026-11-26 01:35:15.856357480 +0200
++++ b/examples/http-download.roc	2026-11-26 01:35:15.864215157 +0200
+@@ -2,7 +2,7 @@
+ ## as it arrives.
+ app [main!] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+-	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.0/2yhxoR7cZPSYbyUzPWULFw8AA6QEcdsgFNRmzu7pZbst.tar.zst",
++	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst",
+ }
+ 
+ import pf.Duration
+diff -ruN a/examples/http-simple.roc b/examples/http-simple.roc
+--- a/examples/http-simple.roc	2026-11-26 01:35:15.856385332 +0200
++++ b/examples/http-simple.roc	2026-11-26 01:35:15.864260733 +0200
+@@ -1,7 +1,7 @@
+ ## Fetch UTF-8, JSON, and HTML responses from a local HTTP server.
+ app [main!] {
+ 	http: "https://github.com/roc-lang/http/releases/download/1.0.0/6ZUwqYhCS8PU9Mo6MF7oV82ET2o7KYb57CLKDq4cq4sS.tar.zst",
+-	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.0/2yhxoR7cZPSYbyUzPWULFw8AA6QEcdsgFNRmzu7pZbst.tar.zst",
++	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst",
+ }
+ 
+ import pf.OsStr
+diff -ruN a/examples/locale.roc b/examples/locale.roc
+--- a/examples/locale.roc	2026-11-26 01:35:15.856411130 +0200
++++ b/examples/locale.roc	2026-11-26 01:35:15.864306028 +0200
+@@ -1,5 +1,5 @@
+ ## Parse, encode, and inspect the system's preferred locales.
+-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.0/2yhxoR7cZPSYbyUzPWULFw8AA6QEcdsgFNRmzu7pZbst.tar.zst" }
++app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst" }
+ 
+ import pf.OsStr
+ import pf.Stdout
+diff -ruN a/examples/path.roc b/examples/path.roc
+--- a/examples/path.roc	2026-11-26 01:35:15.856448691 +0200
++++ b/examples/path.roc	2026-11-26 01:35:15.864353146 +0200
+@@ -1,5 +1,5 @@
+ ## Inspect a path's parent, filename, extension, and type (file/dir/symlink).
+-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.0/2yhxoR7cZPSYbyUzPWULFw8AA6QEcdsgFNRmzu7pZbst.tar.zst" }
++app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst" }
+ 
+ import pf.OsStr
+ import pf.Stdout
+diff -ruN a/examples/print.roc b/examples/print.roc
+--- a/examples/print.roc	2026-11-26 01:35:15.856473688 +0200
++++ b/examples/print.roc	2026-11-26 01:35:15.864398862 +0200
+@@ -1,5 +1,5 @@
+ ## Write text, lines and lists to standard output and standard error.
+-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.0/2yhxoR7cZPSYbyUzPWULFw8AA6QEcdsgFNRmzu7pZbst.tar.zst" }
++app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst" }
+ 
+ import pf.OsStr
+ import pf.Stdout
+diff -ruN a/examples/process-control.roc b/examples/process-control.roc
+--- a/examples/process-control.roc	2026-11-26 01:35:15.856500999 +0200
++++ b/examples/process-control.roc	2026-11-26 01:35:15.864458073 +0200
+@@ -1,6 +1,6 @@
+ ## Run a build command with live output and a five-minute deadline.
+ ## Usage: roc process-control.roc -- cargo build --release
+-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.0/2yhxoR7cZPSYbyUzPWULFw8AA6QEcdsgFNRmzu7pZbst.tar.zst" }
++app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst" }
+ 
+ import pf.Cmd
+ import pf.Duration
+diff -ruN a/examples/random.roc b/examples/random.roc
+--- a/examples/random.roc	2026-11-26 01:35:15.856534832 +0200
++++ b/examples/random.roc	2026-11-26 01:35:15.864497547 +0200
+@@ -1,5 +1,5 @@
+ ## Generate random 32-bit and 64-bit seed values.
+-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.0/2yhxoR7cZPSYbyUzPWULFw8AA6QEcdsgFNRmzu7pZbst.tar.zst" }
++app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst" }
+ 
+ import pf.OsStr
+ import pf.Stdout
+diff -ruN a/examples/sqlite-basic.roc b/examples/sqlite-basic.roc
+--- a/examples/sqlite-basic.roc	2026-11-26 01:35:15.856561873 +0200
++++ b/examples/sqlite-basic.roc	2026-11-26 01:35:15.864544375 +0200
+@@ -1,5 +1,5 @@
+ ## Query a SQLite database and decode rows into records.
+-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.0/2yhxoR7cZPSYbyUzPWULFw8AA6QEcdsgFNRmzu7pZbst.tar.zst" }
++app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst" }
+ 
+ import pf.OsStr
+ import pf.Env
+diff -ruN a/examples/sqlite-everything.roc b/examples/sqlite-everything.roc
+--- a/examples/sqlite-everything.roc	2026-11-26 01:35:15.856590908 +0200
++++ b/examples/sqlite-everything.roc	2026-11-26 01:35:15.864600911 +0200
+@@ -1,5 +1,5 @@
+ ## Shows SQLite queries, decoders, nullable values, transactions, and errors.
+-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.0/2yhxoR7cZPSYbyUzPWULFw8AA6QEcdsgFNRmzu7pZbst.tar.zst" }
++app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst" }
+ 
+ import pf.OsStr
+ import pf.Env
+diff -ruN a/examples/stdin-basic.roc b/examples/stdin-basic.roc
+--- a/examples/stdin-basic.roc	2026-11-26 01:35:15.856632816 +0200
++++ b/examples/stdin-basic.roc	2026-11-26 01:35:15.864691030 +0200
+@@ -1,5 +1,5 @@
+ ## Prompt for two lines of standard input and print a greeting.
+-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.0/2yhxoR7cZPSYbyUzPWULFw8AA6QEcdsgFNRmzu7pZbst.tar.zst" }
++app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst" }
+ 
+ import pf.OsStr
+ import pf.Stdin
+diff -ruN a/examples/stdin-pipe.roc b/examples/stdin-pipe.roc
+--- a/examples/stdin-pipe.roc	2026-11-26 01:35:15.856658544 +0200
++++ b/examples/stdin-pipe.roc	2026-11-26 01:35:15.864736595 +0200
+@@ -1,5 +1,5 @@
+ ## Number each line of piped text, reading one line at a time.
+-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.0/2yhxoR7cZPSYbyUzPWULFw8AA6QEcdsgFNRmzu7pZbst.tar.zst" }
++app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst" }
+ 
+ import pf.OsStr
+ import pf.Stderr
+diff -ruN a/examples/tcp-client.roc b/examples/tcp-client.roc
+--- a/examples/tcp-client.roc	2026-11-26 01:35:15.856683401 +0200
++++ b/examples/tcp-client.roc	2026-11-26 01:35:15.864788613 +0200
+@@ -1,5 +1,5 @@
+ ## Exchange lines with a local TCP echo server over a buffered connection.
+-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.0/2yhxoR7cZPSYbyUzPWULFw8AA6QEcdsgFNRmzu7pZbst.tar.zst" }
++app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst" }
+ 
+ import pf.Duration
+ import pf.OsStr
+diff -ruN a/examples/temp-dir.roc b/examples/temp-dir.roc
+--- a/examples/temp-dir.roc	2026-11-26 01:35:15.856707386 +0200
++++ b/examples/temp-dir.roc	2026-11-26 01:35:15.864836102 +0200
+@@ -1,5 +1,5 @@
+ ## Print the operating system's default temporary directory.
+-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.0/2yhxoR7cZPSYbyUzPWULFw8AA6QEcdsgFNRmzu7pZbst.tar.zst" }
++app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst" }
+ 
+ import pf.OsStr
+ import pf.Stdout
+diff -ruN a/examples/terminal-app-snake.roc b/examples/terminal-app-snake.roc
+--- a/examples/terminal-app-snake.roc	2026-11-26 01:35:15.856733255 +0200
++++ b/examples/terminal-app-snake.roc	2026-11-26 01:35:15.864898249 +0200
+@@ -1,5 +1,5 @@
+ ## Build a small full-screen snake game using terminal raw mode.
+-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.0/2yhxoR7cZPSYbyUzPWULFw8AA6QEcdsgFNRmzu7pZbst.tar.zst" }
++app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst" }
+ 
+ import pf.OsStr
+ import pf.Stdin
+diff -ruN a/examples/time.roc b/examples/time.roc
+--- a/examples/time.roc	2026-11-26 01:35:15.856767479 +0200
++++ b/examples/time.roc	2026-11-26 01:35:15.864962038 +0200
+@@ -1,5 +1,5 @@
+ ## Measure a sleep interval and format the current UTC time.
+-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.0/2yhxoR7cZPSYbyUzPWULFw8AA6QEcdsgFNRmzu7pZbst.tar.zst" }
++app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst" }
+ 
+ import pf.Duration
+ import pf.Monotonic
+diff -ruN a/examples/tty.roc b/examples/tty.roc
+--- a/examples/tty.roc	2026-11-26 01:35:15.856795702 +0200
++++ b/examples/tty.roc	2026-11-26 01:35:15.865007824 +0200
+@@ -1,5 +1,5 @@
+ ## Enable terminal raw mode, read one key, and restore normal behavior.
+-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.0/2yhxoR7cZPSYbyUzPWULFw8AA6QEcdsgFNRmzu7pZbst.tar.zst" }
++app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst" }
+ 
+ import pf.OsStr
+ import pf.Stdout
+diff -ruN a/examples/url.roc b/examples/url.roc
+--- a/examples/url.roc	2026-11-26 01:35:15.856822342 +0200
++++ b/examples/url.roc	2026-11-26 01:35:15.865054201 +0200
+@@ -1,5 +1,5 @@
+ ## Build a validated search URL while encoding path and query components.
+-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.0/2yhxoR7cZPSYbyUzPWULFw8AA6QEcdsgFNRmzu7pZbst.tar.zst" }
++app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst" }
+ 
+ import pf.OsStr
+ import pf.Stdout

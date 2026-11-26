@@ -185,7 +185,7 @@ operators#with-a-handler                                    try_operator, error_
 operators#pipe                                              operators, static_dispatch
 operators#unary-prefix-operators                            operators
 operators#negate                                            operators
-operators#not                                               operators
+operators#bool-not                                          operators, static_dispatch
 operators#unary-postfix-operators                           try_operator
 operators#unwrap-if-ok-early-return-if-err                  try_operator, error_design, testing
 operators#subscript-operator                                operators
@@ -258,6 +258,7 @@ records#nominal-records                                     nominal, opaque
 records#opaque-nominal-records                              opaque
 records#defaulted-fields                                    record_fields
 records#empty-record                                        records, imports, platform_abi
+records#methods-on-open-records                             static_dispatch
 records#performance                                         skip: heading only, no text of its own
 records#memory-layout                                       records, memory
 records#field-order-and-padding                             platform_abi
@@ -300,6 +301,7 @@ static-dispatch#iteration                                   iterators
 static-dispatch#parsing-and-encoding                        json
 static-dispatch#number-literal-defaulting                   numbers
 static-dispatch#where-clauses                               types, static_dispatch
+static-dispatch#tags-a-required-method-can-return           static_dispatch
 static-dispatch#calling-methods-on-type-variables           types, json
 static-dispatch#aliases                                     types, json
 static-dispatch#performance                                 static_dispatch
@@ -332,6 +334,7 @@ tag-unions#tags                                             tag_unions
 tag-unions#structural-tag-unions                            tag_unions, idioms
 tag-unions#extending-structural-tag-unions                  tag_unions, error_design
 tag-unions#structural-tag-union-type-parameters             tag_unions
+tag-unions#methods-on-open-tag-unions                       static_dispatch
 tag-unions#closed-tag-unions                                tag_unions, idioms, platform_abi
 tag-unions#structural-tag-unions-limitations                types, platform_abi
 tag-unions#nominal-tag-unions                               tag_unions, nominal
@@ -382,6 +385,7 @@ boxes#equality                                              memory
 errors                                                      error_design, dbg_crash
 errors#try                                                  error_design, try_operator
 errors#error-types-are-tag-unions                           error_design, try_operator
+errors#more-errors                                          try_operator
 errors#handling-errors                                      skip: one-sentence intro to the next sections, no rule for code
 errors#returning-errors-early                               try_operator
 errors#using-a-default-value                                operators, try_operator

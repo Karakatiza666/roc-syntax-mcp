@@ -27,8 +27,8 @@ difference is kept beside the tree.
 | Tree | Change |
 |---|---|
 | `corpus/platforms/basic-cli/examples/` | Repinned to the bundled platform release. See `patches/` |
-| `corpus/platforms/basic-webserver/examples/` | Repinned to the bundled platform release, the gregorian dependency removed because it does not compile under the pinned nightly, and one effectful helper renamed to end in `!`. See `patches/` |
-| `corpus/packages/roc-parser/examples/` | The basic-cli pin moved to the release this server bundles, which builds on the pinned nightly. See `patches/` |
+| `corpus/platforms/basic-webserver/examples/` | Repinned to the bundled platform release, the gregorian dependency removed because it does not compile under the pinned nightly. See `patches/` |
+| `corpus/packages/roc-parser/examples/` | None. Exact copies of the release's examples archive, without its `spec.json` and `README.md` |
 | `corpus/language/Builtin.roc`, `corpus/language/langref/`, `corpus/language/examples/all_roc_syntax.roc` | None. Exact copies |
 | Every `index.json` | Not a copy. The signatures, docstrings and header of each module in the release, as `scripts/build-index.ts` parses them |
 

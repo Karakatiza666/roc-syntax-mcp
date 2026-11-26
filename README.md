@@ -201,7 +201,7 @@ descriptions. The agent gets a topic through `get_roc_syntax(topic:)`, by its na
 | Language | `idioms`, `iterators`, `ranges`, `record_fields`, `derived_methods`, `json`, `hashing`, `operators`, `pattern_matching`, `list_patterns`, `tag_unions`, `try_operator`, `strings`, `effects`, `loops`, `conditionals`, `tuples`, `records`, `types`, `naming`, `numbers`, `opaque`, `nominal`, `functions`, `compile_time`, `memory`, `dict_set`, `static_dispatch`, `imports`, `modules`, `packages`, `comments`, `testing`, `compiler`, `app_header`, `dbg_crash`, `platforms`, `platform_abi`, `builder_pattern`, `scripting`, `error_design` |
 | basic-webserver | `webserver_handler`, `webserver_sqlite`, `webserver_sse`, `webserver_html`, `webserver_forms`, `webserver_static` |
 | basic-cli | `cli_app`, `cli_files`, `cli_command`, `cli_http`, `cli_sqlite`, `cli_terminal`, `cli_net` |
-| roc-parser | `parser_combinators`, `parser_csv`, `parser_yaml`, `parser_json`, `parser_xml`, `parser_markdown`, `parser_asciidoc`, `parser_roc_syntax`, `parser_http`, `parser_compile_time` |
+| roc-parser | `parser_combinators`, `parser_csv`, `parser_yaml`, `parser_json`, `parser_xml`, `parser_markdown`, `parser_asciidoc`, `parser_roc_syntax`, `parser_http`, `parser_markup`, `parser_streaming`, `parser_compile_time` |
 | roc-random | `random_generators` |
 
 The platform and package topics are complete apps. Each one passes

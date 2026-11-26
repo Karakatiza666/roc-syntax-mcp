@@ -20,6 +20,7 @@ import { pluginHome } from "./plugins.ts";
 
 const ROOT = path.join(import.meta.dirname, "..");
 const NIGHTLIES = "roc-lang/nightlies";
+const RELEASES = "roc-lang/roc";
 const EXE = process.platform === "win32" ? "roc.exe" : "roc";
 
 /** The nightly every bundled corpus was checked against, from `corpus/language/UPSTREAM`. */
@@ -90,9 +91,17 @@ export function rocMissing(
   );
 }
 
+/**
+ * Whether a tag names a release of roc-lang/roc, such as `0.1.0-RC2`, rather
+ * than a nightly. `isRelease` in scripts/nightlies.mjs must give the same answer.
+ */
+export const isRocRelease = (tag: string): boolean => /^\d+\.\d+\.\d+(?:[-_][\w.]+)?$/.test(tag);
+
+/** The repository that publishes `tag`: roc-lang/roc for a release, else roc-lang/nightlies. */
+export const releaseRepo = (tag: string): string => (isRocRelease(tag) ? RELEASES : NIGHTLIES);
+
 /** The release asset name for this machine, or null where no nightly is built. */
 export function nightlyAsset(tag: string, platform = process.platform, arch = process.arch): string | null {
-  const stamp = tag.replace(/^nightly-/, "");
   const target =
     platform === "linux" && arch === "x64"
       ? "linux_x86_64"
@@ -106,7 +115,9 @@ export function nightlyAsset(tag: string, platform = process.platform, arch = pr
               ? "windows_x86_64"
               : null;
   if (!target) return null;
-  return `roc_nightly-${target}-${stamp}.${platform === "win32" ? "zip" : "tar.gz"}`;
+  const ext = platform === "win32" ? "zip" : "tar.gz";
+  // roc-lang/roc names a release's asset roc-<target>-<tag>, without `_nightly`.
+  return isRocRelease(tag) ? `roc-${target}-${tag}.${ext}` : `roc_nightly-${target}-${tag.replace(/^nightly-/, "")}.${ext}`;
 }
 
 /** The `roc version` line of a binary, or null when it does not run. */
@@ -147,9 +158,9 @@ export interface InstallOptions {
 }
 
 /**
- * Download a nightly into the server's folder, check its digest, unpack it and
- * record it. The digest comes from the GitHub release, so a download that was
- * cut short or altered is refused.
+ * Download a nightly, or a release of roc-lang/roc, into the server's folder,
+ * check its digest, unpack it and record it. The digest comes from the GitHub
+ * release, so a download that was cut short or altered is refused.
  */
 export async function installRoc(
   tag: string,
@@ -158,15 +169,16 @@ export async function installRoc(
 ): Promise<{ ok: boolean; message: string }> {
   const asset = nightlyAsset(tag);
   if (!asset) return { ok: false, message: `no Roc nightly is built for ${process.platform} ${process.arch}` };
+  const repo = releaseRepo(tag);
   const api = opts.api ?? "https://api.github.com";
   const downloads = opts.downloads ?? "https://github.com";
-  let url = `${downloads}/${NIGHTLIES}/releases/download/${tag}/${asset}`;
+  let url = `${downloads}/${repo}/releases/download/${tag}/${asset}`;
   let digest: string | null = null;
   try {
-    const res = await fetch(`${api}/repos/${NIGHTLIES}/releases/tags/${tag}`, {
+    const res = await fetch(`${api}/repos/${repo}/releases/tags/${tag}`, {
       headers: { accept: "application/vnd.github+json" },
     });
-    if (res.status === 404) return { ok: false, message: `${NIGHTLIES} has no release ${tag}` };
+    if (res.status === 404) return { ok: false, message: `${repo} has no release ${tag}` };
     if (res.ok) {
       const found = ((await res.json()).assets ?? []).find((a: { name: string }) => a.name === asset);
       if (!found) return { ok: false, message: `${tag} has no ${asset}` };
@@ -222,7 +234,8 @@ const USAGE = `usage: roc-syntax-mcp roc [install [nightly] | use <path>]
 
   roc                 show which compiler the server runs, and where that choice came from
   install [nightly]   download a nightly from ${NIGHTLIES} and use it. Defaults to the one
-                      this server was checked against, such as nightly-2026-11-14-a87808d
+                      this server was checked against, such as nightly-2026-11-25-d5a4f1e.
+                      A release tag of ${RELEASES}, such as 0.1.0-RC2, installs that release
   use <path>          use a compiler you already have
 
 The server looks again on every call, so neither needs a restart. --roc=<path> and
@@ -244,7 +257,7 @@ export async function main(args: readonly string[], env = process.env): Promise<
   let result: { ok: boolean; message: string };
   if (cmd === "install" && rest.length <= 1) {
     const tag = rest[0] ?? bundledNightly();
-    console.log(`Installing ${tag} from ${NIGHTLIES} into ${rocHome(env)}`);
+    console.log(`Installing ${tag} from ${releaseRepo(tag)} into ${rocHome(env)}`);
     result = await installRoc(tag, env);
   } else if (cmd === "use" && rest.length === 1) {
     result = useRoc(rest[0], env);

@@ -130,7 +130,9 @@ deadline=${ROC_CHECK_TIMEOUT:-300}
 # with no release for the bundled nightly does not fail the gate. The nightly is
 # the `roc:` pin of the program, else the `compiler` line in the UPSTREAM file
 # of the platform release it pins, else the running compiler. Unpack each such
-# nightly at the repo root, as roc_nightly-<target>-<date>-<commit>/.
+# nightly at the repo root, as roc_nightly-<target>-<date>-<commit>/. A plugin
+# whose `compiler` is a roc-lang/roc release tag (`0.1.0-RC2`) needs that
+# release unpacked there, as roc-<target>-<tag>/.
 #
 # A plugin whose `compiler` names a fork (`<branch>-<40-hex commit>`) has every
 # program checked with that fork, whatever the program pins, because its
@@ -155,10 +157,10 @@ compiler_for() {
     done <<<"$NIGHTLIES"
   fi
   if [ -z "$pin" ] || [[ "$RUNNING" == *"$pin"* ]]; then printf '%s' "$ROC"; return; fi
-  for dir in "$ROOT"/roc_nightly-*-"${pin#nightly-}"/; do
+  for dir in "$ROOT"/roc_nightly-*-"${pin#nightly-}"/ "$ROOT"/roc-*-"$pin"/; do
     [ -x "${dir}roc" ] && { printf '%s' "${dir}roc"; return; }
   done
-  printf 'needs %s. Unpack that nightly at the repo root' "$pin"
+  printf 'needs %s. Unpack that compiler at the repo root' "$pin"
   return 1
 }
 

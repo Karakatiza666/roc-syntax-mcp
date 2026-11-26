@@ -1,5 +1,5 @@
 ## Read a file's accessed, modified, and creation timestamps.
-app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst" }
+app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst" }
 
 import pf.Duration
 import pf.OsStr
@@ -24,14 +24,13 @@ main! = |args| {
 
 	# The time between two instants is a Duration, which compares with others.
 	age = Utc.now!().since(modified)
-	freshness = if age > Duration.minutes(5) "stale" else "fresh"
+	freshness = if (age > Duration.minutes(5)) "stale" else "fresh"
 
 	Stdout.line!(
 		\\${file.display()} file time metadata:
 		\\    Modified: ${modified.to_iso_8601()} (${freshness})
 		\\    Accessed: ${accessed.to_iso_8601()}
 		\\${created_line}
-		,
 	)?
 
 	Ok({})

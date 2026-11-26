@@ -1207,9 +1207,36 @@ function indexTree(
     // are named. `Host`, `Internal*` and `SplitList` are the six such modules.
     const hidden = exposed !== null && !exposed.has(moduleName);
 
+    // A file-level type can carry the methods of a type that the module block
+    // names with an alias. basic-cli 0.28.1 declares `CommandConfig :: {...}.{
+    // arg, call!, ... }` beside the module, and `Command : CommandConfig`
+    // inside it, and roc-websocket 0.0.7 writes `Request(b, e) : ServerRequest(b, e)`.
+    // An app writes `Cmd.Command.arg`, never `Cmd.CommandConfig`,
+    // so the methods are indexed under the alias. The type itself stays private.
+    const fileLevel = new Set(
+      md.moduleFromFilename
+        ? mod.items.filter((i) => i.kind === "type" && i.modulePath === "" && i.name !== moduleName).map((i) => i.name)
+        : []
+    );
+    const aliasOf = new Map<string, string>();
+    for (const i of mod.items) {
+      // `Table(row) : SurrealTable(row)` names the type with its arguments.
+      const target = (i.signature?.trim() ?? "").replace(/\(.*\)$/, "");
+      if (i.kind === "type" && i.decl === ":" && i.modulePath === moduleName && fileLevel.has(target) && !aliasOf.has(target)) {
+        aliasOf.set(target, i.fullName);
+      }
+    }
+
     for (const item of mod.items) {
       let { modulePath, fullName, tier } = item;
-      if (md.moduleFromFilename && modulePath === "" && item.name !== moduleName) {
+      const owner = modulePath.split(".")[0];
+      if (modulePath !== "" && fileLevel.has(owner)) {
+        // A method of a file-level type: under its alias, or private like the type.
+        const home = aliasOf.get(owner);
+        modulePath = home ? home + modulePath.slice(owner.length) : `${moduleName}.${modulePath}`;
+        fullName = `${modulePath}.${item.name}`;
+        if (!home) tier = "private";
+      } else if (md.moduleFromFilename && modulePath === "" && item.name !== moduleName) {
         // A file-level declaration that does not name its file sits outside the
         // module block, so no application can write it: `Html.HtmlNode` does not
         // compile, and `Html.Node` is the alias inside the block that does. It

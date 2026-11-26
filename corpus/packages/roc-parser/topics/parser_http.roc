@@ -1,39 +1,42 @@
 ## Raw HTTP/1.1 messages, parsed from bytes with the `HTTP` module of
-## lukewilliamboswell/roc-parser: one request or response, a pipeline of
+## lukewilliamboswell/roc-parser 6.0: one request or response, a pipeline of
 ## requests, header lookup, chunked bodies, and the messages it rejects.
 ##
 ## This module only parses bytes, from a socket or a capture file. It is not
 ## the roc-lang/http package (the `http` package topic), and not the request
-## type that basic-webserver gives to a handler. `HTTP.RequestLiteral` and
-## `ResponseLiteral` check a message at build time (parser_compile_time).
+## type that basic-webserver gives to a handler. `HTTP.Request` and
+## `HTTP.Response` are the types and also hold the functions:
+## `HTTP.Request.parse_bytes`, `.parser`, `.decoder` and `.header`. A message
+## that arrives in pieces is read with `HTTP.Request.decoder` (the
+## parser_streaming topic). An `HTTP.Request` literal is checked at build time
+## (parser_compile_time).
 ##
 ## Full manual: requests, header fields, responses, how the body is found,
 ## chunked bodies, pipelined messages, use inside a larger grammar, rejected
 ## messages and request smuggling, and what is out of scope:
-## https://github.com/lukewilliamboswell/roc-parser/blob/3.0.0/docs/http.adoc
-## (`conformance.adoc` says that the parser rejects a lowercase method. It does not.)
+## https://github.com/lukewilliamboswell/roc-parser/blob/6.0.0/docs/http.adoc
 app [main!] {
-	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst",
-	parser: "https://github.com/lukewilliamboswell/roc-parser/releases/download/3.0.0/6xsRdRqenJrAb4wG7HaST4Xh349vD5sHAJDsKTK6E3dr.tar.zst",
+	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst",
+	parser: "https://github.com/lukewilliamboswell/roc-parser/releases/download/6.0.0/7j67bdgEMRsua6VnhcYASXRymN5pYgUC9qV4bHFupbf9.tar.zst",
 }
 
 import pf.Stdout
 import parser.Parser
-import parser.Utf8
 import parser.HTTP
 
 # --- One request -------------------------------------------------------------
 #
-# Every `parse_*` function takes `List(U8)`, not `Str`. A string literal is a
-# type mismatch, so call `.to_utf8()` on text.
+# `HTTP.Request.parse_bytes(bytes, {})` takes `List(U8)`, not `Str`. A string
+# literal is a type mismatch, so call `.to_utf8()` on text. It returns the
+# request itself, and the input must hold exactly one message.
 
 post : List(U8)
 post = "POST /notes?id=1 HTTP/1.1\r\nHost: example.com\r\nContent-Type: text/plain\r\nContent-Length: 5\r\n\r\nhello".to_utf8()
 
 expect {
-	{ request, rest } = HTTP.parse_request(post) ?? crash "unreachable"
+	request = HTTP.Request.parse_bytes(post, {}) ?? crash "unreachable"
 	# `target` is as sent: not decoded, not split at `?`.
-	request.target == "/notes?id=1" and request.body == "hello".to_utf8() and rest == []
+	request.target == "/notes?id=1" and request.body == "hello".to_utf8()
 }
 
 # A match on `Method` must have an `Extension` branch, or it is not exhaustive.
@@ -53,21 +56,22 @@ method_name = |method| match method {
 }
 
 method_of : Str -> Try(HTTP.Method, [InvalidHttp(HTTP.Error)])
-method_of = |text| HTTP.parse_request(text.to_utf8()).map_ok(|parsed| parsed.request.method)
+method_of = |text| HTTP.Request.parse_bytes(text.to_utf8(), {}).map_ok(|request| request.method)
 
 expect method_of("get / HTTP/1.1\r\nHost: a\r\n\r\n") == Ok(Extension("get"))
 
 # --- Header fields -----------------------------------------------------------
 #
-# `HTTP.header` compares names without case and gives the first match, or
-# `Err(Missing)`. A repeated field stays in `headers` once per line, so walk
-# the list to see every value. Values lose the spaces around them.
+# `request.header(name)` compares names without case and gives the first
+# match, or `Err(Missing)`. There is no `HTTP.header`. A repeated field stays
+# in `headers` once per line, so walk the list to see every value. Values lose
+# the spaces around them.
 
 expect {
 	text = "GET / HTTP/1.1\r\nHost: a\r\nX-Tag: one\r\nx-tag:  two \r\n\r\n"
-	{ request, rest: _ } = HTTP.parse_request(text.to_utf8()) ?? crash "unreachable"
-	HTTP.header(request.headers, "X-TAG") == Ok("one")
-	and HTTP.header(request.headers, "Accept") == Err(Missing)
+	request = HTTP.Request.parse_bytes(text.to_utf8(), {}) ?? crash "unreachable"
+	request.header("X-TAG") == Ok("one")
+	and request.header("Accept") == Err(Missing)
 	and request.headers.map(|h| h.value) == ["a", "one", "two"]
 }
 
@@ -76,79 +80,82 @@ expect {
 # The headers decide where a body ends. With no `Content-Length` and no
 # `Transfer-Encoding`, a request has no body, but a response body runs to the
 # end of the input. A 1xx, 204 or 304 response has no body. A response to HEAD
-# also has none, but the parser cannot see the request, so it reads the next
-# bytes as the body. Do not give it such a response with bytes after it.
+# also has none, but `parse_bytes` cannot see the request: the response
+# decoder takes the request methods for that.
 
-expect {
-	r = HTTP.parse_response("HTTP/1.1 200 OK\r\n\r\nbody then more".to_utf8())
-	r.map_ok(|ok| (ok.response.body.len(), ok.rest.len())) == Ok((14, 0))
-}
+expect HTTP.Response.parse_bytes("HTTP/1.1 200 OK\r\n\r\nbody then more".to_utf8(), {}).map_ok(|r| r.body.len()) == Ok(14)
 
 # A chunked body is decoded. Chunk extensions and trailers are checked, then
 # dropped.
 expect {
 	text = "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n4\r\nWiki\r\n6;note=x\r\npedia \r\n0\r\n\r\n"
-	HTTP.parse_response(text.to_utf8()).map_ok(|ok| ok.response.body) == Ok("Wikipedia ".to_utf8())
+	HTTP.Response.parse_bytes(text.to_utf8(), {}).map_ok(|r| r.body) == Ok("Wikipedia ".to_utf8())
 }
 
 # --- Pipelines and short input -----------------------------------------------
 #
-# `parse_request` reads one message and returns the bytes after it as `rest`.
-# `parse_requests` reads all of them, and fails unless the input ends exactly
-# at the end of a message.
+# `parse_bytes` fails on bytes after the message. For one message and the
+# bytes after it, run the parser: `HTTP.Request.parser({}).run(bytes)` gives
+# `{ value, rest }`. `HTTP.parse_requests(bytes, {})` reads all of them, and
+# fails unless the input ends exactly at the end of a message.
 
 two : List(U8)
 two = "GET /a HTTP/1.1\r\nHost: a\r\n\r\nGET /b HTTP/1.1\r\nHost: a\r\n\r\n".to_utf8()
 
-expect HTTP.parse_requests(two).map_ok(|all| all.map(|r| r.target)) == Ok(["/a", "/b"])
+expect HTTP.Request.parse_bytes(two, {}).is_err()
+expect HTTP.Request.parser({}).run(two).map_ok(|r| (r.value.target, r.rest.len())) == Ok(("/a", 28))
+expect HTTP.parse_requests(two, {}).map_ok(|all| all.map(|r| r.target)) == Ok(["/a", "/b"])
 
-# There is no "need more bytes" result. A message cut short is an error, the
-# same as a bad one. Read a whole message before you parse. The parser has no
-# size limits either, so limit the bytes you read from a socket.
-expect HTTP.parse_requests("GET /a HTTP/1.1\r\nHost: a\r\n\r\nGET /b".to_utf8()).is_err()
-expect HTTP.parse_request("POST / HTTP/1.1\r\nHost: a\r\nContent-Length: 10\r\n\r\nhi".to_utf8()) == Err(InvalidHttp({ offset: 50, message: "body is shorter than Content-Length" }))
+# The error is `InvalidHttp(Parser.Diagnostic(HTTP.Problem))`: match the
+# problem tag. A message cut short is an error, the same as a bad one, so
+# read a whole message before `parse_bytes`, or feed pieces to the decoder.
+problem : Str -> Str
+problem = |text|
+	match HTTP.Request.parse_bytes(text.to_utf8(), {}) {
+		Ok(_) => "accepted"
+		Err(InvalidHttp({ problem: p, .. })) => Str.inspect(p)
+	}
+
+expect problem("POST / HTTP/1.1\r\nHost: a\r\nContent-Length: 10\r\n\r\nhi") == "IncompleteBody"
 
 # --- Rejected messages -------------------------------------------------------
 #
 # To prevent request smuggling, the parser rejects a message whose end a proxy
 # could read differently. Close the connection. Do not retry a cleaned copy.
 
-rejected : Str -> Str
-rejected = |text| match HTTP.parse_request(text.to_utf8()) {
-	Ok(_) => "accepted"
-	Err(InvalidHttp({ message, offset: _ })) => message
-}
-
-expect rejected("POST / HTTP/1.1\r\nHost: a\r\nContent-Length: 3\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\n") == "both Transfer-Encoding and Content-Length"
-expect rejected("POST / HTTP/1.1\r\nHost: a\r\nTransfer-Encoding: gzip, chunked\r\n\r\n") == "unsupported transfer coding (only a single chunked is supported)"
-expect rejected("GET / HTTP/1.1\r\nHost : a\r\n\r\n") == "whitespace between a field name and its colon"
+expect problem("POST / HTTP/1.1\r\nHost: a\r\nContent-Length: 3\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\n") == "ConflictingFraming"
+expect problem("POST / HTTP/1.1\r\nHost: a\r\nTransfer-Encoding: gzip, chunked\r\n\r\n") == "UnsupportedTransferCoding"
+expect problem("GET / HTTP/1.1\r\nHost : a\r\n\r\n") == "WhitespaceBeforeColon"
 # Only CRLF ends a line. A bare LF fails.
-expect rejected("GET / HTTP/1.1\nHost: a\n\n") == "LF not preceded by CR"
+expect problem("GET / HTTP/1.1\nHost: a\n\n") == "LfWithoutCr"
 # HTTP/1.1 needs exactly one Host. HTTP/1.0 needs none.
-expect rejected("GET / HTTP/1.1\r\n\r\n") == "an HTTP/1.1 request needs a Host field"
-expect rejected("GET / HTTP/1.0\r\n\r\n") == "accepted"
+expect problem("GET / HTTP/1.1\r\n\r\n") == "MissingHost"
+expect problem("GET / HTTP/1.0\r\n\r\n") == "accepted"
 
 # --- Inside a larger parser --------------------------------------------------
 #
-# `HTTP.request` and `HTTP.response` are `Parser(Utf8.Bytes, _)`. They leave
-# the bytes after the message for the next parser, and fail with
-# `ParseError({ message, offset })`, where the message starts with
-# "invalid HTTP request:".
+# `HTTP.Request.parser({})` is a `Parser(Parser.Utf8.Bytes, HTTP.Request, _)`.
+# Give it a tag of your own with `map_problem`, so a caller can tell an HTTP
+# failure from a failure of the rest of the grammar.
 
-capture : Parser(Utf8.Bytes, { label : Str, request : HTTP.Request })
+capture : Parser(Parser.Utf8.Bytes, { label : Str, request : HTTP.Request }, _)
 capture =
 	Parser.const(|label| |request| { label, request })
 		.keep(Parser.chomp_while(|byte| byte != '\n').map(|bytes| Str.from_utf8_lossy(bytes)))
-		.skip(Utf8.codeunit('\n'))
-		.keep(HTTP.request)
+		.skip(Parser.Utf8.codeunit('\n'))
+		.keep(HTTP.Request.parser({}).map_problem(|p| HttpProblem(p)))
 
-expect Utf8.parse_str(capture, "health\nGET /up HTTP/1.1\r\nHost: a\r\n\r\n").map_ok(|c| c.request.target) == Ok("/up")
-expect Utf8.parse_str(HTTP.request, "GET / HTTP/1.1\r\n\r\n").map_ok(|_| {}) == Err(ParseError({ message: "invalid HTTP request: an HTTP/1.1 request needs a Host field", offset: 0 }))
+expect capture.parse_str("health\nGET /up HTTP/1.1\r\nHost: a\r\n\r\n").map_ok(|c| c.request.target) == Ok("/up")
+expect
+	match capture.parse_str("health\nGET / HTTP/1.1\r\n\r\n") {
+		Err(ParseError({ problem: HttpProblem(MissingHost), .. })) => True
+		_ => False
+	}
 
 main! = |_args| {
 	# `InvalidHttp` is an open tag, so `?` adds it to the error of `main!`.
-	{ request, rest: _ } = HTTP.parse_request(post)?
-	content_type = HTTP.header(request.headers, "content-type") ?? "none"
+	request = HTTP.Request.parse_bytes(post, {})?
+	content_type = request.header("content-type") ?? "none"
 	Stdout.line!("${method_name(request.method)} ${request.target} (${content_type})")?
 	Ok({})
 }

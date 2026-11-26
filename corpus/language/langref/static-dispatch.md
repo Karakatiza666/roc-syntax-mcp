@@ -74,7 +74,7 @@ Here are all the method names that the language or the builtins use:
 | `range_exclusive_from : T, T -> Range(T)`, `range_inclusive_from : T, T -> Range(T)` | `Range.iter_rev` | The type's ranges can be reversed exactly. |
 | `range_iter` | `Range.iter`, `Range.iter_rev` | The type's ranges can be iterated. |
 | `range_len_if_known` | Numeric range constructors, `Range.step_by` | The type can say how many numbers are in a range (when that fits in a `U64`). |
-| `negate`, `not` | Unary `-`, unary `!` | The type has a negation or complement operation. |
+| `negate` | Unary `-` | The type has a negation operation. |
 | `from_numeral : Numeral -> Try(T, [InvalidNumeral(Str)])` | Number literals | You want number literals to work as values of the type. |
 | `from_quote : Str -> Try(T, [BadQuotedBytes(Str)])` | String literals | You want string literals to work as values of the type. |
 | `from_interpolation : List(Str) -> Try((Iter(item) -> T), [InvalidInterpolation(Str)])` | String literals with interpolation | You want interpolated string literals to work as values of the type. |
@@ -225,9 +225,9 @@ Vec := { x : I64, y : I64 }.{
 sum = Vec.{ x: 1, y: 2 } + Vec.{ x: 3, y: 4 } # calls Vec.plus
 ```
 
-The result of an arithmetic operator has the left operand's type. The right operand usually has
-the same type, but it doesn't have to; that's up to the method. For example, it can make sense to
-multiply a `Duration` by a plain number:
+Both operands of an arithmetic operator, and its result, all have the same type. So an operator
+can only call a method that takes two values of one type and returns that type, like `Vec.plus`
+above. A method that mixes types still works as an ordinary method call, but not as an operator:
 
 ```roc
 Duration := { millis : I64 }.{
@@ -235,8 +235,15 @@ Duration := { millis : I64 }.{
     times = |duration, scale| { millis: duration.millis * scale }
 }
 
-longer = Duration.{ millis: 10 } * 3
+longer = Duration.{ millis: 10 }.times(3)
+
+# ERROR! Both operands of * must have the same type.
+also_longer = Duration.{ millis: 10 } * 3
 ```
+
+That's because having one type on both sides is what lets an operator work out the type of a
+number literal. In `total + 1`, the `1` is whatever type `total` is. If the two sides could
+differ, there would be nothing to say what type the `1` should be.
 
 The comparison operators (`<`, `<=`, `>`, `>=`) call methods that return a `Bool`, and both
 operands must have the same type.
@@ -412,18 +419,16 @@ field. (`Encoding : encoding` is explained in
 
 ### Number Literal Defaulting
 
-When nothing says what type a number literal should be, the compiler picks the first type in this
-list that works with everything the literal is used for:
+When nothing says what type a number literal should be, it becomes a `Dec` (see
+[Defaulting to `Dec`](numbers#defaulting-to-dec)).
 
-`Dec`, `I64`, `U64`, `I128`, `U128`, `I32`, `U32`, `I16`, `U16`, `I8`, `U8`, `F64`, `F32`
+If that literal is used in a way `Dec` doesn't support, like calling a method `Dec` doesn't have,
+you get a compile error. You can fix it by saying which type you want, with a type annotation or a
+suffix (like `5.U64`).
 
-So a plain `5` becomes a `Dec` (see [Defaulting to `Dec`](numbers#defaulting-to-dec)), but a `5`
-that's used in a way `Dec` doesn't support moves on down the list to the first type that does
-support it.
-
-If picking a default this way makes a function's inferred type more specific than it would
-otherwise be, the compiler gives a `LITERAL DEFAULTED` warning. To choose a type yourself, add a
-type annotation or a suffix (like `5.U64`).
+If defaulting to `Dec` makes a function's inferred type more specific than it would otherwise be,
+the compiler gives a `LITERAL DEFAULTED` warning. To choose a type yourself, add a type annotation
+or a suffix.
 
 ## Where Clauses
 
@@ -464,6 +469,79 @@ convert_all : List(a) -> List(b) where [a.to_b : a -> b, b.is_valid : b -> Bool]
 ```
 
 See [Where Clauses](types#where-clauses) in the types page for more on the syntax.
+
+### Tags a Required Method Can Return {#tags-a-required-method-can-return}
+
+When a method in a `where` clause has a [tag union](tag-unions) in its return type, the tag union
+says which tags a type's method is allowed to return:
+
+```roc
+describe : a -> Str where [a.parse : a -> [BadNum, Fine]]
+describe = |x|
+    match x.parse() {
+        Fine => "ok"
+        BadNum => "bad number"
+    }
+```
+
+Here `parse` can only return `BadNum` or `Fine`, so the `match` doesn't need a catch-all branch.
+In exchange, `describe` only accepts types whose `parse` method returns those tags. Passing a
+value whose `parse` returns `[BadNum, Fine, TooBig]` gives an error at compile time.
+
+Ending the tag union with `..` accepts those types too. It means a type's method may return more
+tags than the ones listed:
+
+```roc
+describe : a -> Str where [a.parse : a -> [BadNum, Fine, ..]]
+describe = |x|
+    match x.parse() {
+        Fine => "ok"
+        BadNum => "bad number"
+        _ => "something else"
+    }
+```
+
+Now `parse` can return `BadNum`, `Fine`, or tags `describe` knows nothing about, so the `match`
+needs the catch-all branch. Leaving it out gives an [exhaustiveness](pattern-matching#exhaustiveness)
+error.
+
+`..` means the same thing wherever the tag union appears in the method's return type, including
+inside another type. This is how a required method that returns a [`Try`](errors#try) says
+whether a type's method may fail in other ways:
+
+```roc
+load : a -> Str where [a.fetch : a -> Try(Str, [NotFound, ..])]
+load = |x|
+    match x.fetch() {
+        Ok(contents) => contents
+        Err(NotFound) => "not found"
+        Err(_) => "something else went wrong"
+    }
+```
+
+A named `..others` works the same way as `..`, and lets you refer to the other tags elsewhere
+in the annotation, for example to return them:
+
+```roc
+parse_twice : a -> [BadNum, Fine, ..others] where [a.parse : a -> [BadNum, Fine, ..others]]
+```
+
+This is different from a function's own return type, where writing `..` gives a warning that
+it's redundant. That's because a function produces its own return value, so it already decides
+which tags are in it. A method listed in a `where` clause is produced by whichever type the
+function is called with, so the `..` is how the function says how much it's willing to accept.
+
+Without `..`, the function knows every tag the method can return, so it can also use the
+method's result as part of a bigger tag union of its own:
+
+```roc
+parse_or_skip : a, Bool -> [BadNum, Fine, Skipped] where [a.parse : a -> [BadNum, Fine]]
+parse_or_skip = |x, skip| if skip Skipped else x.parse()
+```
+
+That works when the tag union is the method's whole return type. When it's inside another type,
+like the error type of a `Try`, [take the `Try` apart with `?`](errors#more-errors) instead:
+`Ok(x.fetch()?)`.
 
 ### Calling Methods on Type Variables
 

@@ -76,7 +76,7 @@ example3 = Counter.new().increment()
 #   is_gt is_gte       `>` `>=`
 #   range_exclusive_to `..<`
 #   range_inclusive_to `..=`
-#   negate not         unary `-` and unary `!`
+#   negate             unary `-`. Unary `!` is `Bool.not` and takes only a Bool
 #   from_numeral       a number literal typed as this type
 #   from_quote         a quoted string literal typed as this type
 #   from_interpolation an interpolated string literal typed as this type
@@ -91,6 +91,52 @@ example3 = Counter.new().increment()
 # define and require its own method names rather than only the well-known ones.
 stringify : a -> Str where [a.to_str : a -> Str]
 stringify = |value| value.to_str()
+
+# A tag union in the return type of a required method lists the tags that the
+# method may return. A type whose method returns more tags is rejected at the
+# call, so the `match` needs no catch-all branch. End the union with `..` to
+# accept more tags. Then the `match` needs a catch-all, and so does an
+# `Err(_)` inside `Try(Str, [NotFound, ..])`. In a `where` clause `..` is not
+# redundant, as it is in a function's own return type.
+describe_parse : a -> Str where [a.parse : a -> [BadNum, Fine, ..]]
+describe_parse = |x| match x.parse() {
+	Fine => "ok"
+	BadNum => "bad number"
+	_ => "something else"
+}
+
+Reading := [Big].{
+	parse : Reading -> [BadNum, Fine, TooBig]
+	parse = |_| TooBig
+}
+
+expect describe_parse(Reading.Big) == "something else"
+
+# @rejects type mismatch
+# describe_closed : a -> Str where [a.parse : a -> [BadNum, Fine]]
+# describe_closed = |x| match x.parse() {
+# 	Fine => "ok"
+# 	BadNum => "bad number"
+# }
+# closed_big = describe_closed(Reading.Big)
+
+# A method call on a whole open record or open tag union, `==` included, needs a
+# `where` clause on the named extension. The caller may pass a record with more
+# fields or a nominal type, and its own method runs. In the clause, `others`
+# stands for the whole record, not only the extra fields. A plain `..` cannot
+# carry a clause, so name it. Reading a field needs no clause.
+same_account : { id : U64, ..others }, { id : U64, ..others } -> Bool where [others.is_eq : others, others -> Bool]
+same_account = |a, b| a.id == b.id and a == b
+
+is_red : [Red, ..others] -> Bool where [others.is_eq : others, others -> Bool]
+is_red = |color| color == Red
+
+expect same_account({ id: 1, name: "Sam" }, { id: 1, name: "Sam" })
+expect !is_red(Green)
+
+# @rejects missing method
+# same_id : { id : U64, ..others }, { id : U64, ..others } -> Bool
+# same_id = |a, b| a.id == b.id and a == b
 
 # The `types` topic has the `where` rules, `where` aliases, and `Thing : thing`
 # for a method that takes no value of the type.

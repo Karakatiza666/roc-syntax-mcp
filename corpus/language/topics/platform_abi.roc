@@ -1,6 +1,6 @@
 # The ABI between a platform's Roc code and its host: the cases that compile
 # and then fail at run time. The `platforms` topic covers the header, the
-# hosted functions and the host side. These sections follow basic-cli 0.26.0.
+# hosted functions and the host side. These sections follow basic-cli 0.28.1.
 #
 #
 # 1. A hosted result is a closed union
@@ -91,7 +91,7 @@ Pad(rest) := { z : U64, _ : U8, ..rest }
 #   get!             : () => Try(Locale, [NotAvailable])
 #   enable_raw_mode! : () => Try({}, [TtyErr(IOErr)])
 #
-# The caller writes `Utc.now!()`. Every such function in basic-cli 0.26.0
+# The caller writes `Utc.now!()`. Every such function in basic-cli 0.28.1
 # takes `()`, so a platform that follows it matches what its users expect.
 #
 #

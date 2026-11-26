@@ -16,8 +16,8 @@
 ## `cli_terminal`). This topic connects them: from the arguments to the exit
 ## code, and the formats that a script reads and writes.
 app [main!] {
-	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst",
-	parser: "https://github.com/lukewilliamboswell/roc-parser/releases/download/3.0.0/6xsRdRqenJrAb4wG7HaST4Xh349vD5sHAJDsKTK6E3dr.tar.zst",
+	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst",
+	parser: "https://github.com/lukewilliamboswell/roc-parser/releases/download/6.0.0/7j67bdgEMRsua6VnhcYASXRymN5pYgUC9qV4bHFupbf9.tar.zst",
 }
 
 import pf.Cmd
@@ -30,7 +30,6 @@ import pf.Stdin
 import pf.Stdout
 import parser.CSV
 import parser.Parser
-import parser.Utf8
 import parser.Yaml
 
 # One entry point, one dispatch, one place that turns a failure into a message
@@ -76,15 +75,15 @@ expect explain(MissingKey("name")).0 == "config is missing name"
 
 # --- CSV in, report out ------------------------------------------------------
 #
-# `CSV.parse` matches the header row to the record fields by name, and the
-# annotation says which record. A field the header lacks is
-# `MissingRequiredField`, so that tag must be in the annotation too. The
-# `parser_csv` topic has the rest of the module.
+# `CSV.decode_str` matches the header row to the record fields by name, and
+# the annotation says which record. Every failure, a column the header lacks
+# included, is `InvalidCsv` with a typed `problem` inside. The `parser_csv`
+# topic has the rest of the module.
 
 Sale : { region : Str, units : U64 }
 
-parse_sales : Str -> Try(List(Sale), [InvalidCsv(CSV.Error), MissingRequiredField(Str)])
-parse_sales = |text| CSV.parse(text)
+parse_sales : Str -> Try(List(Sale), [InvalidCsv(CSV.Error)])
+parse_sales = |text| CSV.decode_str(text, {})
 
 expect parse_sales("region,units\nnorth,3\nsouth,4\n") == Ok([{ region: "north", units: 3 }, { region: "south", units: 4 }])
 
@@ -112,44 +111,50 @@ report_csv! = |path| {
 
 # --- YAML config -------------------------------------------------------------
 #
-# `Yaml.decode` builds the annotated record. A required key that is absent is
-# `MissingRequiredField`. A key that may be absent is `Try(_, [Missing])`, and
-# `??` gives its default. The `parser_yaml` topic also shows how to walk a tree.
+# `Yaml.decode_str` builds the annotated record. A required key that is absent
+# is `InvalidYaml` with the problem `MissingRequiredField(key)`. A key that may
+# be absent is `Try(_, [Missing])`, and `??` gives its default. The
+# `parser_yaml` topic also shows how to walk a tree.
 
 Config : { name : Str, port : Try(U64, [Missing]) }
 
-parse_config : Str -> Try(Config, [InvalidYaml(Yaml.Error), MissingRequiredField(Str)])
-parse_config = |text| Yaml.decode(text)
+parse_config : Str -> Try(Config, [InvalidYaml(Yaml.Error)])
+parse_config = |text| Yaml.decode_str(text, {})
 
 expect parse_config("name: api\n").map_ok(|config| config.port ?? 8080) == Ok(8080)
-expect parse_config("port: 1\n") == Err(MissingRequiredField("name"))
+expect
+	match parse_config("port: 1\n") {
+		Err(InvalidYaml({ problem: MissingRequiredField(key), .. })) => key == "name"
+		_ => False
+	}
 
 show_config! : Path => Try({}, _)
 show_config! = |path| {
 	config = parse_config(path.read_utf8!()?) ? |err|
 		match err {
-			# `err` also carries a one-based `line` and `column` for the message.
-			InvalidYaml(problem) => BadConfig(problem.message)
-			MissingRequiredField(key) => MissingKey(key)
+			InvalidYaml({ problem: MissingRequiredField(key), .. }) => MissingKey(key)
+			# The error also carries a `location` with a one-based line and column.
+			InvalidYaml({ problem, .. }) => BadConfig(Str.inspect(problem))
 		}
 	Stdout.line!("${config.name} on ${(config.port ?? 8080).to_str()}")
 }
 
 # The package also parses XML (`parser.Xml`), Markdown with frontmatter
 # (`parser.Markdown`), and raw HTTP messages (`parser.HTTP`). Each has a
-# `parser_*` topic. JSON is not in this package. It is in the standard library,
-# with derived codecs. See the `json` topic.
+# `parser_*` topic. For JSON into a record, use the standard library's derived
+# codecs (the `json` topic).
 
-# For a format that has no module, build the parser from
-# `parser.Parser` combinators over `parser.Utf8`. See `parser_combinators`.
-duration : Parser(Utf8.Bytes, U64)
+# For a format that has no module, build the parser from `parser.Parser`
+# combinators and the byte primitives in `Parser.Utf8`. See
+# `parser_combinators`.
+duration : Parser(Parser.Utf8.Bytes, U64, _)
 duration =
 	Parser.const(|amount| |per_unit| amount * per_unit)
-		.keep(Utf8.digits)
-		.keep(Parser.one_of([Utf8.string("m").map(|_| 60), Utf8.string("s").map(|_| 1)]))
+		.keep(Parser.Utf8.digits({}))
+		.keep(Parser.one_of([Parser.Utf8.string("m").map(|_| 60), Parser.Utf8.string("s").map(|_| 1)]))
 
-expect Utf8.parse_str(duration, "90s") == Ok(90)
-expect Utf8.parse_str(duration, "2m") == Ok(120)
+expect duration.parse_str("90s") == Ok(90)
+expect duration.parse_str("2m") == Ok(120)
 
 # --- stdin to stdout ---------------------------------------------------------
 #

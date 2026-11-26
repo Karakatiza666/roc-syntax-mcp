@@ -117,7 +117,7 @@ function packagePlugin(dir: string): string {
 const WEAVE_PIN =
   "https://github.com/someone/weave/releases/download/0.8.0/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.tar.zst";
 const CLI_PIN =
-  "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst";
+  "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst";
 
 /** A one-platform manifest. Its name, version and detection come from the release. */
 const ray = (corpus: Record<string, unknown> = {}, top: Record<string, unknown> = {}) => ({
@@ -462,7 +462,7 @@ test("a package plugin claiming a documented package's name loses it", async () 
 // -----------------------------------------------------------------------------
 
 /** An app that pins a platform that this server bundles, so that detection finds a platform. */
-const CLI_APP = `app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.26.0/GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar.zst" }
+const CLI_APP = `app [main!] { pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst" }
 
 import pf.Stdout
 `;
@@ -792,11 +792,38 @@ test("a name two namespaces declare is answered with both, and says so", async (
   });
   for (const text of texts.slice(0, 2)) {
     assert.match(text, /`Random\.seed_u64!` is declared by 2 modules/);
-    assert.match(text, /^## Random\.seed_u64! \(basic-cli 0\.26\.0\)/m);
+    assert.match(text, /^## Random\.seed_u64! \(basic-cli 0\.28\.1\)/m);
     assert.match(text, /^## Random\.seed_u64! \(roc-random 0\.9\.2\)/m);
   }
   // One declaration, no note.
   assert.doesNotMatch(texts[2], /declared by/);
+});
+
+// roc-reify-surrealdb 0.0.6 declares `SurrealTable(row) :: ...` beside the module
+// and `Table(row) : SurrealTable(row)` inside it. An app writes
+// `Surreal.Table.create`, so the methods are found there, type arguments and all.
+test("methods of a file-level type with arguments are found under its alias", async () => {
+  const url = release("someone/surreal", "0.0.6", "SurrealAliasArgs");
+  const dir = write(path.join(tmp, "surreal-alias"), {
+    "plugin.json": JSON.stringify({ schema: 1, corpora: [{ name: "surreal-alias", release: url }] }),
+    "index.json": indexed({
+      [url]: {
+        "main.roc": "package [Surreal] {}\n",
+        "Surreal.roc":
+          "Surreal :: [].{\n\tTable(row) : SurrealTable(row)\n}\n\n" +
+          "SurrealTable(row) :: { name : Str }.{\n\tcreate : SurrealTable(row), row -> Str\n\tcreate = |t, _| t.name\n}\n",
+      },
+    }),
+  });
+  const root = write(path.join(tmp, "surreal-alias-app"), {
+    "main.roc": `app [main!] {\n    pf: platform "${CLI_PIN}",\n    db: "${url}",\n}\n\nmain! = |_args| Ok({})\n`,
+  });
+  const { texts } = await session({
+    argv: [`--plugin=${dir}`],
+    cwd: root,
+    calls: [{ name: "search_symbols", args: { query: ["Surreal.Table.create"] } }],
+  });
+  assert.match(texts[0], /^## Surreal\.Table\.create /m);
 });
 
 // A package is not a scope. Its name selects its page, and no tool offers it

@@ -159,8 +159,9 @@ export function snapshotDir(dir: string, headerFile?: string): TreeSnapshot | nu
 export function releaseHash(url: string): string | null {
   // The pattern is loose because the compiler checks the hash. A placeholder
   // such as REPLACE_WITH_THE_TARBALL from `plugin init` must load, and then
-  // fail at `plugin index`.
-  const m = url.match(/^https:\/\/.+\/(\w{16,64})\.tar\.(?:zst|br|gz)$/);
+  // fail at `plugin index`. A name can carry a prefix before the hash, as in
+  // roc-ray's `default-<hash>.tar.zst`, and the compiler caches it by the hash.
+  const m = url.match(/^https:\/\/.+\/(?:[\w.]+-)?(\w{16,64})\.tar\.(?:zst|br|gz)$/);
   return m ? m[1] : null;
 }
 

@@ -19,6 +19,10 @@
 // build, so it lives at the repo root as roc_<compiler>/roc, often a symlink.
 // Every program of that plugin is checked with the fork, because a program that
 // uses the fork's language does not build on any nightly.
+//
+// A `compiler` can also name a release of roc-lang/roc by its tag, such as
+// `0.1.0-RC2`. It is used like a nightly, but it is downloaded from the releases
+// of roc-lang/roc and unpacks at the repo root as roc-<target>-<tag>/.
 
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -52,6 +56,13 @@ export function releaseNightlies(dirs = []) {
  */
 export const isFork = (compiler) => typeof compiler === "string" && /^(?!nightly-)[\w.-]+-[0-9a-f]{40}$/.test(compiler);
 
+/**
+ * Whether a `compiler` value names a release of roc-lang/roc (its tag, such as
+ * `0.1.0-RC2` or `0.1.0_RC1`) rather than a nightly or a fork.
+ * `isRocRelease` in src/roc_bin.ts must give the same answer.
+ */
+export const isRelease = (compiler) => typeof compiler === "string" && /^\d+\.\d+\.\d+(?:[-_][\w.]+)?$/.test(compiler);
+
 const EXE = process.platform === "win32" ? "roc.exe" : "roc";
 
 /** Where the gates look for the binary of a fork. */
@@ -59,12 +70,13 @@ export const forkPath = (fork) => path.join(ROOT, `roc_${fork}`, EXE);
 
 /**
  * The binary of `compiler`, or null. A nightly is unpacked at the repo root as
- * the refresh skill does. A fork is at `forkPath`.
+ * the refresh skill does, and a release as its archive unpacks. A fork is at
+ * `forkPath`.
  */
 export function compilerBinary(compiler) {
   if (isFork(compiler)) return fs.existsSync(forkPath(compiler)) ? forkPath(compiler) : null;
-  const stamp = compiler.replace(/^nightly-/, "");
-  const dir = fs.readdirSync(ROOT).find((d) => d.startsWith("roc_nightly-") && d.endsWith(`-${stamp}`));
+  const [prefix, stamp] = isRelease(compiler) ? ["roc-", compiler] : ["roc_nightly-", compiler.replace(/^nightly-/, "")];
+  const dir = fs.readdirSync(ROOT).find((d) => d.startsWith(prefix) && d.endsWith(`-${stamp}`));
   const binary = dir && path.join(ROOT, dir, EXE);
   return binary && fs.existsSync(binary) ? binary : null;
 }

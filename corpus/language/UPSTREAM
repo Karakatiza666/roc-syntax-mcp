@@ -4,14 +4,14 @@
 # Builtin.roc or langref/, so that the next refresh can diff against it.
 
 repo     https://github.com/roc-lang/roc
-commit   a87808d2e79cc5e347871cb17e531ea528bf85df
-date     2026-11-14
+commit   d5a4f1e9e128359a8d4d3caea40fe3ba7e6eb1e2
+date     2026-11-25
 
 # The bundled nightly: the one that checks the language corpus, and every
 # program that names no nightly of its own. A platform or package corpus names
 # the nightly of its release on its own `compiler` line, and the gates check its
 # programs with that one (scripts/nightlies.mjs).
-compiler nightly-2026-11-14-a87808d
+compiler nightly-2026-11-25-d5a4f1e
 
 examples/all_roc_syntax.roc  <- test/echo/all_syntax_test.roc
 Builtin.roc                  <- src/build/roc/Builtin.roc

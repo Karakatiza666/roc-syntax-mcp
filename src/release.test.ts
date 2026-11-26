@@ -58,6 +58,11 @@ test("a release hash is read off the tarball URL", () => {
   assert.equal(releaseHash("../platform/main.roc"), null);
   assert.equal(releaseHash(rand("0.9.2", "AAAA")), null);
   assert.equal(releaseHash(rand("0.9.2", "REPLACE_WITH_THE_TARBALL")), "REPLACE_WITH_THE_TARBALL");
+  // roc-ray 0.12.3 and later name each bundle `<variant>-<hash>`, and the
+  // compiler caches it under the hash alone.
+  const ray = "https://github.com/lukewilliamboswell/roc-ray/releases/download/0.13.0/";
+  assert.equal(releaseHash(`${ray}default-8yWQXdFMfK8erQff7bMEjF6KjrwFR6sTq9EY4LURGgBw.tar.zst`), "8yWQXdFMfK8erQff7bMEjF6KjrwFR6sTq9EY4LURGgBw");
+  assert.equal(releaseHash(`${ray}wayland-8yWQXdFMfK8erQff7bMEjF6KjrwFR6sTq9EY4LURGgBw.tar.zst`), "8yWQXdFMfK8erQff7bMEjF6KjrwFR6sTq9EY4LURGgBw");
 });
 
 // If the stub pins basic-cli 0.24.0 as a package, the 10 MB package limit of

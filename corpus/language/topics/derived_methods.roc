@@ -184,12 +184,17 @@ expect greeting("<b>").to_str() == "<p>Hi, &lt;b>!</p>"
 # script_page : Html
 # script_page = "<script>${"x"}</script>"
 
-# Arithmetic operators dispatch on the left operand and return its type, but the
-# right operand can differ if the signature allows it.
+# Both operands of an arithmetic operator and its result have one type, which is
+# how `total + 1` gives the `1` its type. A method that mixes types still works
+# as a method call, but not as an operator.
 Duration := { millis : I64 }.{
 	times : Duration, I64 -> Duration
 	times = |duration, scale| { millis: duration.millis * scale }
 }
 
 longer : Duration
-longer = Duration.{ millis: 10 } * 3
+longer = Duration.{ millis: 10 }.times(3)
+
+# @rejects type mismatch
+# also_longer : Duration
+# also_longer = Duration.{ millis: 10 } * 3

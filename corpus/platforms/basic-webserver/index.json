@@ -1,8 +1,8 @@
 {
  "format": 1,
  "releases": {
-  "4KBAoiBazDfi9UF6e3BYKwon6rA8mnx3dbLMLKFzdEMw": {
-   "url": "https://github.com/roc-lang/basic-webserver/releases/download/0.19.0/4KBAoiBazDfi9UF6e3BYKwon6rA8mnx3dbLMLKFzdEMw.tar.zst",
+  "BM2BUXA8mwbcoKPUfRV8cLtsUdnsSBPwjNLPRUJQAQ7Q": {
+   "url": "https://github.com/roc-lang/basic-webserver/releases/download/0.22.0/BM2BUXA8mwbcoKPUfRV8cLtsUdnsSBPwjNLPRUJQAQ7Q.tar.zst",
    "snapshot": {
     "kind": "platform",
     "exposes": [
@@ -2189,32 +2189,32 @@
        {
         "kind": "value",
         "tier": "public",
-        "name": "default_config",
-        "modulePath": "Http",
-        "fullName": "Http.default_config",
-        "signature": "Config",
-        "docs": "The finite timeout and response-size policy used by [`send!`](#Http.send!).",
-        "line": 36
-       },
-       {
-        "kind": "value",
-        "tier": "public",
         "name": "with_timeout_millis",
-        "modulePath": "Http",
-        "fullName": "Http.with_timeout_millis",
+        "modulePath": "Http.Config",
+        "fullName": "Http.Config.with_timeout_millis",
         "signature": "Config, U64 -> Config",
         "docs": "Set the complete deadline, including bounded admission wait. Zero is\nnormalized to one millisecond so every request remains finite.",
-        "line": 44
+        "line": 37
        },
        {
         "kind": "value",
         "tier": "public",
         "name": "with_max_response_bytes",
-        "modulePath": "Http",
-        "fullName": "Http.with_max_response_bytes",
+        "modulePath": "Http.Config",
+        "fullName": "Http.Config.with_max_response_bytes",
         "signature": "Config, U64 -> Config",
         "docs": "Set the maximum response body retained in memory.",
-        "line": 56
+        "line": 49
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "default_config",
+        "modulePath": "Http",
+        "fullName": "Http.default_config",
+        "signature": "Config",
+        "docs": "The finite timeout and response-size policy used by [`send!`](#Http.send!).",
+        "line": 55
        },
        {
         "kind": "type",
@@ -2224,7 +2224,7 @@
         "fullName": "Http.TransportErr",
         "signature": "InternalHttp.TransportErr",
         "docs": "Errors raised by the host while sending a request, before a real HTTP\nresponse is available.",
-        "line": 62,
+        "line": 63,
         "decl": ":",
         "head": "TransportErr"
        },
@@ -2236,7 +2236,7 @@
         "fullName": "Http.send!",
         "signature": "Request => Try(Response, [InvalidUrl(Url.ParseErr), InvalidRequest(Str), HttpErr(TransportErr)])",
         "docs": "Validate and send an HTTP request.\n\nThe request URI must be an absolute HTTP or HTTPS URL accepted by Url.\nInvalid URLs return InvalidUrl before any host effect occurs. Fragments\nare removed because they are client-side identifiers and are not sent.\n\n```roc\nrequest = Request.from_method(GET).with_uri(\"https://www.roc-lang.org\")\nresponse = Http.send!(request)?\n```",
-        "line": 74
+        "line": 75
        },
        {
         "kind": "value",
@@ -2246,7 +2246,7 @@
         "fullName": "Http.send_with!",
         "signature": "Request, Config => Try(Response, [InvalidUrl(Url.ParseErr), InvalidRequest(Str), HttpErr(TransportErr)])",
         "docs": "Send using an explicit finite resource policy. A timeout attached to the\nshared http Request takes precedence; NoTimeout uses this config.",
-        "line": 79
+        "line": 80
        },
        {
         "kind": "value",
@@ -2256,7 +2256,7 @@
         "fullName": "Http.with_json_body",
         "signature": "Request, _ => Try(Request, [JsonErr(_)])",
         "docs": "Encode a value as JSON and set it as the request body.\n\nThis uses Roc's builtin JSON encoder, so the value's type determines the\nencoder through static dispatch.",
-        "line": 92
+        "line": 93
        },
        {
         "kind": "value",
@@ -2266,7 +2266,7 @@
         "fullName": "Http.send_json!",
         "signature": "Request, _ => Try(Response, [JsonErr(_), InvalidUrl(Url.ParseErr), InvalidRequest(Str), HttpErr(TransportErr)])",
         "docs": "Encode a value as JSON, attach it to the request body, and send it.",
-        "line": 104
+        "line": 105
        },
        {
         "kind": "value",
@@ -2276,7 +2276,7 @@
         "fullName": "Http.get_utf8!",
         "signature": "Url.Url => Try(Str, [BadBody(Str), InvalidRequest(Str), HttpErr(TransportErr)])",
         "docs": "Perform an HTTP GET and decode the response body as a UTF-8 `Str`.\n\nThe argument is a validated Url. Quoted literals work through\nUrl.from_quote; dynamic strings should be passed through Url.parse.\n\n```roc\nhello_str = Http.get_utf8!(\"http://localhost:8000\")?\n```",
-        "line": 119
+        "line": 120
        },
        {
         "kind": "value",
@@ -2286,7 +2286,7 @@
         "fullName": "Http.decode_json_response",
         "signature": "Response => Try(_, [BadBody(Str), JsonErr(_)])",
         "docs": "Decode a response body as JSON.\n\nThis uses Roc's builtin JSON parser, so the expected result type\ndetermines the parser through static dispatch.",
-        "line": 131
+        "line": 132
        },
        {
         "kind": "value",
@@ -2296,7 +2296,7 @@
         "fullName": "Http.get!",
         "signature": "Url.Url => Try(_, [BadBody(Str), InvalidRequest(Str), HttpErr(TransportErr), JsonErr(_)])",
         "docs": "Perform an HTTP GET and decode the response body as JSON.\n\nThe argument is a validated Url. JSON parser failures are returned as\nJsonErr(_).\n\n```roc\npayload : Try({ foo : Str }, _)\npayload = Http.get!(\"http://localhost:8000\")\n```",
-        "line": 148
+        "line": 149
        }
       ]
      },
@@ -2852,7 +2852,7 @@
         "name": "from_interpolation",
         "modulePath": "OsStr",
         "fullName": "OsStr.from_interpolation",
-        "signature": "List(Str) -> Try((List(Str) -> OsStr), [InvalidInterpolation(Str)])",
+        "signature": "List(Str) -> Try((Iter(Str) -> OsStr), [InvalidInterpolation(Str)])",
         "docs": "Build a UTF-8 OS string from an interpolated string literal.",
         "line": 58
        },
@@ -3250,7 +3250,7 @@
         "name": "from_interpolation",
         "modulePath": "Path",
         "fullName": "Path.from_interpolation",
-        "signature": "List(Str) -> Try((List(Str) -> Path), [InvalidInterpolation(Str)])",
+        "signature": "List(Str) -> Try((Iter(Str) -> Path), [InvalidInterpolation(Str)])",
         "docs": "Create a UTF-8 path from an interpolated string literal.\nThis performs textual concatenation; use [join] for path-component joining.",
         "line": 204
        },
@@ -4194,13 +4194,163 @@
        },
        {
         "kind": "value",
+        "tier": "public",
+        "name": "with_listen",
+        "modulePath": "Server.Config",
+        "fullName": "Server.Config.with_listen",
+        "signature": "Config, { host : Str, port : U16 } -> Config",
+        "docs": "Set the listener host and port. The default is loopback-only on port 8000.",
+        "line": 662
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "with_limits",
+        "modulePath": "Server.Config",
+        "fullName": "Server.Config.with_limits",
+        "signature": "Config, { max_connections : U32, max_handlers : U16, max_queued_handlers : U16 } -> Config",
+        "docs": "Set connection, active-handler, and queued-handler capacity together.\nSaturated handler queues receive 503 responses.",
+        "line": 667
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "with_request_body_limits",
+        "modulePath": "Server.Config",
+        "fullName": "Server.Config.with_request_body_limits",
+        "signature": "Config, { max_bytes : U64, chunk_bytes : U32, buffered_chunks : U16 } -> Config",
+        "docs": "Set all finite inbound request-body limits.",
+        "line": 671
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "with_request_body_limit",
+        "modulePath": "Server.Config",
+        "fullName": "Server.Config.with_request_body_limit",
+        "signature": "Config, U64 -> Config",
+        "docs": "Set only the maximum total bytes accepted for each request body.",
+        "line": 675
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "with_timeouts",
+        "modulePath": "Server.Config",
+        "fullName": "Server.Config.with_timeouts",
+        "signature": "Config, { header_ms : U64, body_idle_ms : U64, keep_alive_idle_ms : U64, handler_queue_ms : U64, response_idle_ms : U64 } -> Config",
+        "docs": "Set the complete inbound and outbound transport timeout policy. Every\nvalue is milliseconds in the inclusive range 1 through 86_400_000; zero\nis invalid and startup fails before listening.\n\n`header_ms` is an idle deadline while completing a request head and\nresets whenever head bytes arrive. `body_idle_ms` begins when the host\nwaits for the next body frame and resets only after non-empty body data\narrives. `keep_alive_idle_ms` begins after a response has completed and\nbounds the gap before the next request. `handler_queue_ms` begins after a\nrequest takes a queue slot and ends before Roc execution begins.\n`response_idle_ms` begins when response transmission starts and resets\nwhenever the socket or HTTP/2 stream flow-control window makes progress.",
+        "line": 691
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "with_request_metadata_limits",
+        "modulePath": "Server.Config",
+        "fullName": "Server.Config.with_request_metadata_limits",
+        "signature": "Config, { max_target_bytes : U32, max_header_bytes : U32, max_header_fields : U16 } -> Config",
+        "docs": "Set the exact, finite request-target and decoded request-header budgets.\nInvalid values fail startup atomically before the listener is bound.",
+        "line": 696
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "with_graceful_shutdown",
+        "modulePath": "Server.Config",
+        "fullName": "Server.Config.with_graceful_shutdown",
+        "signature": "Config, { drain_timeout_ms : U64, hook_timeout_ms : U64 } -> Config",
+        "docs": "Set the request-drain deadline and final shutdown-hook deadline.",
+        "line": 701
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "with_file_roots",
+        "modulePath": "Server.Config",
+        "fullName": "Server.Config.with_file_roots",
+        "signature": "Config, List(FileRoot) -> Config",
+        "docs": "Replace the complete set of startup-declared file roots.",
+        "line": 705
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "with_writable_roots",
+        "modulePath": "Server.Config",
+        "fullName": "Server.Config.with_writable_roots",
+        "signature": "Config, List(WritableRoot) -> Config",
+        "docs": "Replace the complete set of startup-declared writable roots. Writable\nauthority is never inferred from read-only file roots.",
+        "line": 710
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "with_native_routes",
+        "modulePath": "Server.Config",
+        "fullName": "Server.Config.with_native_routes",
+        "signature": "Config, NativeRoutes -> Config",
+        "docs": "Replace the complete immutable host-native route table.",
+        "line": 714
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "with_file_transfer_limits",
+        "modulePath": "Server.Config",
+        "fullName": "Server.Config.with_file_transfer_limits",
+        "signature": "Config, { max_concurrent : U16, chunk_bytes : U32 } -> Config",
+        "docs": "Set the active-transfer bound and streaming chunk size for host-managed\nfile responses. Saturation returns 503 without queueing. Each transfer\nowns at most one queued chunk and one active read buffer.",
+        "line": 720
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "with_body_sink_limits",
+        "modulePath": "Server.Config",
+        "fullName": "Server.Config.with_body_sink_limits",
+        "signature": "Config, { max_concurrent : U16, timeout_ms : U64 } -> Config",
+        "docs": "Set the active staging-file bound and whole-operation deadline for\nhost-managed request-body sinks. Saturation is typed and does not queue.",
+        "line": 725
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "with_sse_limits",
+        "modulePath": "Server.Config",
+        "fullName": "Server.Config.with_sse_limits",
+        "signature": "Config, { max_streams : U16, max_event_bytes : U32 } -> Config",
+        "docs": "Set independent admitted-stream and per-event bounds for typed SSE\nresponses. Both values must be non-zero; events above 16 MiB fail startup.\nSaturated stream admission returns 503 before response commitment.",
+        "line": 731
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "with_access_log",
+        "modulePath": "Server.Config",
+        "fullName": "Server.Config.with_access_log",
+        "signature": "Config, AccessLog -> Config",
+        "docs": "Configure host-owned structured request-completion logging.",
+        "line": 735
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "with_metrics",
+        "modulePath": "Server.Config",
+        "fullName": "Server.Config.with_metrics",
+        "signature": "Config, Metrics -> Config",
+        "docs": "Configure the host-owned fixed-cardinality metrics exporter.",
+        "line": 740
+       },
+       {
+        "kind": "value",
         "tier": "host",
         "name": "to_host",
         "modulePath": "Server.Config",
         "fullName": "Server.Config.to_host",
         "signature": "Config -> {\n\t\t\thost : Str,\n\t\t\tport : U16,\n\t\t\tbody_max_bytes : U64,\n\t\t\tbody_chunk_bytes : U32,\n\t\t\tbody_buffered_chunks : U16,\n\t\t\theader_timeout_ms : U64,\n\t\t\tbody_idle_timeout_ms : U64,\n\t\t\tkeep_alive_idle_timeout_ms : U64,\n\t\t\thandler_queue_timeout_ms : U64,\n\t\t\tresponse_idle_timeout_ms : U64,\n\t\t\trequest_target_max_bytes : U32,\n\t\t\trequest_header_max_bytes : U32,\n\t\t\trequest_header_max_fields : U16,\n\t\t\tdrain_timeout_ms : U64,\n\t\t\thook_timeout_ms : U64,\n\t\t\tmax_connections : U32,\n\t\t\tmax_handlers : U16,\n\t\t\tmax_queued_handlers : U16,\n\t\t\tfile_roots : List(\n\t\t\t\t{\n\t\t\t\t\tid : Str,\n\t\t\t\t\tpath_tag : U8,\n\t\t\t\t\tpath_utf8 : Str,\n\t\t\t\t\tpath_unix_bytes : List(U8),\n\t\t\t\t\tpath_windows_u16s : List(U16),\n\t\t\t\t\tcache_tag : U8,\n\t\t\t\t\tcache_max_age_seconds : U32,\n\t\t\t\t},\n\t\t\t),\n\t\t\twritable_roots : List(\n\t\t\t\t{\n\t\t\t\t\tid : Str,\n\t\t\t\t\tpath_tag : U8,\n\t\t\t\t\tpath_utf8 : Str,\n\t\t\t\t\tpath_unix_bytes : List(U8),\n\t\t\t\t\tpath_windows_u16s : List(U16),\n\t\t\t\t},\n\t\t\t),\n\t\t\tnative_file_routes : List(\n\t\t\t\t{\n\t\t\t\t\tat : Str,\n\t\t\t\t\troot_id : Str,\n\t\t\t\t\tkind : U8,\n\t\t\t\t\trelative : Str,\n\t\t\t\t\tcache_override : Bool,\n\t\t\t\t\tcache_tag : U8,\n\t\t\t\t\tcache_max_age_seconds : U32,\n\t\t\t\t},\n\t\t\t),\n\t\t\tliveness_routes : List(Str),\n\t\t\treadiness_routes : List({ at : Str, readiness : Host.Readiness }),\n\t\t\tfile_max_concurrent : U16,\n\t\t\tfile_chunk_bytes : U32,\n\t\t\tbody_sink_max_concurrent : U16,\n\t\t\tbody_sink_timeout_ms : U64,\n\t\t\tsse_max_streams : U16,\n\t\t\tsse_max_event_bytes : U32,\n\t\t\taccess_log_enabled : Bool,\n\t\t\taccess_log_target : U8,\n\t\t\taccess_log_buffer_events : U16,\n\t\t\tmetrics_enabled : Bool,\n\t\t\tmetrics_path : Str,\n\t\t}",
         "docs": "Platform ABI conversion hook; not an application API. Applications\nshould use [`default_config`](#Server.default_config) and the `with_*`\nbuilders.",
-        "line": 664
+        "line": 747
        },
        {
         "kind": "value",
@@ -4210,157 +4360,7 @@
         "fullName": "Server.default_config",
         "signature": "Config",
         "docs": "Safe defaults: loopback-only; finite connection, handler, handler queue,\nrequest-target, request-header, and request-body limits; one buffered\n64 KiB body chunk; and bounded graceful shutdown.\n\nRequest metadata limits are exact and checked before native route\nselection or Roc. Target overflow returns 414 and header byte/count\noverflow returns 431 whenever the protocol parser can safely construct a\nresponse. HTTP/1 closes after a parser-level overflow. An initial HTTP/2\nrequest beyond the advertised hard decoding envelope receives a\nheader-only 431; an overflow that cannot safely receive a response resets\nonly the affected stream. Zero values, target limits above 65,534 bytes,\nheader limits above 1 MiB, and field limits above 1,024 fail startup\nbefore the listener is bound.\n\nExceeding the drain deadline forces process exit without running the\nshutdown hook, because a request handler may still be using the\napplication context.",
-        "line": 787
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "with_listen",
-        "modulePath": "Server",
-        "fullName": "Server.with_listen",
-        "signature": "Config, { host : Str, port : U16 } -> Config",
-        "docs": "Set the listener host and port. The default is loopback-only on port 8000.",
-        "line": 838
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "with_limits",
-        "modulePath": "Server",
-        "fullName": "Server.with_limits",
-        "signature": "Config, { max_connections : U32, max_handlers : U16, max_queued_handlers : U16 } -> Config",
-        "docs": "Set connection, active-handler, and queued-handler capacity together.\nSaturated handler queues receive 503 responses.",
-        "line": 843
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "with_request_body_limits",
-        "modulePath": "Server",
-        "fullName": "Server.with_request_body_limits",
-        "signature": "Config, { max_bytes : U64, chunk_bytes : U32, buffered_chunks : U16 } -> Config",
-        "docs": "Set all finite inbound request-body limits.",
-        "line": 847
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "with_request_body_limit",
-        "modulePath": "Server",
-        "fullName": "Server.with_request_body_limit",
-        "signature": "Config, U64 -> Config",
-        "docs": "Set only the maximum total bytes accepted for each request body.",
-        "line": 851
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "with_timeouts",
-        "modulePath": "Server",
-        "fullName": "Server.with_timeouts",
-        "signature": "Config, { header_ms : U64, body_idle_ms : U64, keep_alive_idle_ms : U64, handler_queue_ms : U64, response_idle_ms : U64 } -> Config",
-        "docs": "Set the complete inbound and outbound transport timeout policy. Every\nvalue is milliseconds in the inclusive range 1 through 86_400_000; zero\nis invalid and startup fails before listening.\n\n`header_ms` is an idle deadline while completing a request head and\nresets whenever head bytes arrive. `body_idle_ms` begins when the host\nwaits for the next body frame and resets only after non-empty body data\narrives. `keep_alive_idle_ms` begins after a response has completed and\nbounds the gap before the next request. `handler_queue_ms` begins after a\nrequest takes a queue slot and ends before Roc execution begins.\n`response_idle_ms` begins when response transmission starts and resets\nwhenever the socket or HTTP/2 stream flow-control window makes progress.",
-        "line": 867
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "with_request_metadata_limits",
-        "modulePath": "Server",
-        "fullName": "Server.with_request_metadata_limits",
-        "signature": "Config, { max_target_bytes : U32, max_header_bytes : U32, max_header_fields : U16 } -> Config",
-        "docs": "Set the exact, finite request-target and decoded request-header budgets.\nInvalid values fail startup atomically before the listener is bound.",
-        "line": 872
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "with_graceful_shutdown",
-        "modulePath": "Server",
-        "fullName": "Server.with_graceful_shutdown",
-        "signature": "Config, { drain_timeout_ms : U64, hook_timeout_ms : U64 } -> Config",
-        "docs": "Set the request-drain deadline and final shutdown-hook deadline.",
-        "line": 877
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "with_file_roots",
-        "modulePath": "Server",
-        "fullName": "Server.with_file_roots",
-        "signature": "Config, List(FileRoot) -> Config",
-        "docs": "Replace the complete set of startup-declared file roots.",
-        "line": 881
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "with_writable_roots",
-        "modulePath": "Server",
-        "fullName": "Server.with_writable_roots",
-        "signature": "Config, List(WritableRoot) -> Config",
-        "docs": "Replace the complete set of startup-declared writable roots. Writable\nauthority is never inferred from read-only file roots.",
-        "line": 886
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "with_native_routes",
-        "modulePath": "Server",
-        "fullName": "Server.with_native_routes",
-        "signature": "Config, NativeRoutes -> Config",
-        "docs": "Replace the complete immutable host-native route table.",
-        "line": 890
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "with_file_transfer_limits",
-        "modulePath": "Server",
-        "fullName": "Server.with_file_transfer_limits",
-        "signature": "Config, { max_concurrent : U16, chunk_bytes : U32 } -> Config",
-        "docs": "Set the active-transfer bound and streaming chunk size for host-managed\nfile responses. Saturation returns 503 without queueing. Each transfer\nowns at most one queued chunk and one active read buffer.",
-        "line": 896
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "with_body_sink_limits",
-        "modulePath": "Server",
-        "fullName": "Server.with_body_sink_limits",
-        "signature": "Config, { max_concurrent : U16, timeout_ms : U64 } -> Config",
-        "docs": "Set the active staging-file bound and whole-operation deadline for\nhost-managed request-body sinks. Saturation is typed and does not queue.",
-        "line": 901
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "with_sse_limits",
-        "modulePath": "Server",
-        "fullName": "Server.with_sse_limits",
-        "signature": "Config, { max_streams : U16, max_event_bytes : U32 } -> Config",
-        "docs": "Set independent admitted-stream and per-event bounds for typed SSE\nresponses. Both values must be non-zero; events above 16 MiB fail startup.\nSaturated stream admission returns 503 before response commitment.",
-        "line": 907
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "with_access_log",
-        "modulePath": "Server",
-        "fullName": "Server.with_access_log",
-        "signature": "Config, AccessLog -> Config",
-        "docs": "Configure host-owned structured request-completion logging.",
-        "line": 911
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "with_metrics",
-        "modulePath": "Server",
-        "fullName": "Server.with_metrics",
-        "signature": "Config, Metrics -> Config",
-        "docs": "Configure the host-owned fixed-cardinality metrics exporter.",
-        "line": 916
+        "line": 870
        },
        {
         "kind": "type",
@@ -5227,12 +5227,22 @@
        {
         "kind": "value",
         "tier": "public",
+        "name": "missing_field",
+        "modulePath": "Sqlite.RowEncoding",
+        "fullName": "Sqlite.RowEncoding.missing_field",
+        "signature": "RowEncoding, Str -> QueryError",
+        "docs": "",
+        "line": 325
+       },
+       {
+        "kind": "value",
+        "tier": "public",
         "name": "parse_record_field",
         "modulePath": "Sqlite.RowEncoding",
         "fullName": "Sqlite.RowEncoding.parse_record_field",
         "signature": "RowEncoding,\n\t\tEncoding.FieldName.FieldNames(_shape),\n\t\tRowState -> Try(\n\t\t\t[\n\t\t\t\tField({ field : Encoding.FieldName(_shape), rest : RowState }),\n\t\t\t\tTryField({ name : Str, rest : RowState }),\n\t\t\t\tTryFieldCaseless({ name : Str, rest : RowState }),\n\t\t\t\tContinue(RowState),\n\t\t\t\tDone(RowState),\n\t\t\t],\n\t\t\tQueryError,\n\t\t)",
         "docs": "",
-        "line": 325
+        "line": 328
        },
        {
         "kind": "value",
@@ -5242,7 +5252,7 @@
         "fullName": "Sqlite.RowEncoding.parse_record_after_field",
         "signature": "RowEncoding, RowState -> Try([Continue(RowState), Done(RowState)], QueryError)",
         "docs": "",
-        "line": 364
+        "line": 367
        },
        {
         "kind": "value",
@@ -5252,7 +5262,7 @@
         "fullName": "Sqlite.RowEncoding.skip_record_field",
         "signature": "RowEncoding, RowState -> Try(RowState, QueryError)",
         "docs": "",
-        "line": 372
+        "line": 375
        },
        {
         "kind": "type",
@@ -5260,51 +5270,11 @@
         "name": "Stmt",
         "modulePath": "Sqlite",
         "fullName": "Sqlite.Stmt",
-        "signature": "{ columns : List(Str), host : Host.SqliteStmt }",
+        "signature": "SqliteStmt",
         "docs": "Represents a prepared statement that can be executed many times.",
-        "line": 383,
-        "decl": "::",
+        "line": 386,
+        "decl": ":",
         "head": "Stmt"
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "to_inspect",
-        "modulePath": "Sqlite.Stmt",
-        "fullName": "Sqlite.Stmt.to_inspect",
-        "signature": "Stmt -> Str",
-        "docs": "",
-        "line": 385
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "execute!",
-        "modulePath": "Sqlite.Stmt",
-        "fullName": "Sqlite.Stmt.execute!",
-        "signature": "Stmt, params => Try({}, QueryError)\n\t\t\twhere [\n\t\t\t\tparams.encoder_for : ParamsEncoding -> (params, ParamsState -> Try(ParamsState, QueryError)),\n\t\t\t]",
-        "docs": "Execute a prepared statement that must not return rows.",
-        "line": 389
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "query!",
-        "modulePath": "Sqlite.Stmt",
-        "fullName": "Sqlite.Stmt.query!",
-        "signature": "Stmt, params, QueryLimits => Try(row, QueryError)\n\t\t\twhere [\n\t\t\t\tparams.encoder_for : ParamsEncoding -> (params, ParamsState -> Try(ParamsState, QueryError)),\n\t\t\t\trow.parser_for : RowEncoding -> (RowState -> Try({ value : row, rest : RowState }, QueryError)),\n\t\t\t]",
-        "docs": "Decode exactly one row as the expected result type.",
-        "line": 406
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "query_many!",
-        "modulePath": "Sqlite.Stmt",
-        "fullName": "Sqlite.Stmt.query_many!",
-        "signature": "Stmt, params, QueryLimits => Try(List(row), QueryError)\n\t\t\twhere [\n\t\t\t\tparams.encoder_for : ParamsEncoding -> (params, ParamsState -> Try(ParamsState, QueryError)),\n\t\t\t\trow.parser_for : RowEncoding -> (RowState -> Try({ value : row, rest : RowState }, QueryError)),\n\t\t\t]",
-        "docs": "Decode all rows as the expected list item type.",
-        "line": 420
        },
        {
         "kind": "type",
@@ -5312,81 +5282,11 @@
         "name": "Transaction",
         "modulePath": "Sqlite",
         "fullName": "Sqlite.Transaction",
-        "signature": "{ host : Host.SqliteTxn }",
+        "signature": "SqliteTransaction",
         "docs": "A transaction pinned to one pooled connection. Dropping its final Roc\nreference before `commit!` or `rollback!` rolls it back automatically.\nOperations within one transaction are sequential; overlapping use returns\n`ConcurrentTransactionUse`.",
-        "line": 438,
-        "decl": "::",
+        "line": 392,
+        "decl": ":",
         "head": "Transaction"
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "to_inspect",
-        "modulePath": "Sqlite.Transaction",
-        "fullName": "Sqlite.Transaction.to_inspect",
-        "signature": "Transaction -> Str",
-        "docs": "",
-        "line": 440
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "prepare!",
-        "modulePath": "Sqlite.Transaction",
-        "fullName": "Sqlite.Transaction.prepare!",
-        "signature": "Transaction, Str => Try(Stmt, QueryError)",
-        "docs": "",
-        "line": 443
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "execute!",
-        "modulePath": "Sqlite.Transaction",
-        "fullName": "Sqlite.Transaction.execute!",
-        "signature": "Transaction, { query : Str, params : params } => Try({}, QueryError)\n\t\t\twhere [\n\t\t\t\tparams.encoder_for : ParamsEncoding -> (params, ParamsState -> Try(ParamsState, QueryError)),\n\t\t\t]",
-        "docs": "",
-        "line": 451
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "query!",
-        "modulePath": "Sqlite.Transaction",
-        "fullName": "Sqlite.Transaction.query!",
-        "signature": "Transaction, { query : Str, params : params, limits : QueryLimits } => Try(row, QueryError)\n\t\t\twhere [\n\t\t\t\tparams.encoder_for : ParamsEncoding -> (params, ParamsState -> Try(ParamsState, QueryError)),\n\t\t\t\trow.parser_for : RowEncoding -> (RowState -> Try({ value : row, rest : RowState }, QueryError)),\n\t\t\t]",
-        "docs": "",
-        "line": 460
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "query_many!",
-        "modulePath": "Sqlite.Transaction",
-        "fullName": "Sqlite.Transaction.query_many!",
-        "signature": "Transaction, { query : Str, params : params, limits : QueryLimits } => Try(List(row), QueryError)\n\t\t\twhere [\n\t\t\t\tparams.encoder_for : ParamsEncoding -> (params, ParamsState -> Try(ParamsState, QueryError)),\n\t\t\t\trow.parser_for : RowEncoding -> (RowState -> Try({ value : row, rest : RowState }, QueryError)),\n\t\t\t]",
-        "docs": "",
-        "line": 470
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "commit!",
-        "modulePath": "Sqlite.Transaction",
-        "fullName": "Sqlite.Transaction.commit!",
-        "signature": "Transaction => Try({}, QueryError)",
-        "docs": "",
-        "line": 480
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "rollback!",
-        "modulePath": "Sqlite.Transaction",
-        "fullName": "Sqlite.Transaction.rollback!",
-        "signature": "Transaction => Try({}, QueryError)",
-        "docs": "",
-        "line": 483
        },
        {
         "kind": "type",
@@ -5396,7 +5296,7 @@
         "fullName": "Sqlite.TransactionMode",
         "signature": "[Deferred, Immediate, Exclusive]",
         "docs": "",
-        "line": 487,
+        "line": 394,
         "decl": ":",
         "head": "TransactionMode"
        },
@@ -5408,7 +5308,7 @@
         "fullName": "Sqlite.ErrCode",
         "signature": "[\n\t\tError,\n\t\tInternal,\n\t\tPerm,\n\t\tAbort,\n\t\tBusy,\n\t\tLocked,\n\t\tNoMem,\n\t\tReadOnly,\n\t\tInterrupt,\n\t\tIOErr,\n\t\tCorrupt,\n\t\tNotFound,\n\t\tFull,\n\t\tCanNotOpen,\n\t\tProtocol,\n\t\tEmpty,\n\t\tSchema,\n\t\tTooBig,\n\t\tConstraint,\n\t\tMismatch,\n\t\tMisuse,\n\t\tNoLFS,\n\t\tAuthDenied,\n\t\tFormat,\n\t\tOutOfRange,\n\t\tNotADatabase,\n\t\tNotice,\n\t\tWarning,\n\t\tRow,\n\t\tDone,\n\t\tUnknown(I64),\n\t]",
         "docs": "Represents SQLite result codes.",
-        "line": 490,
+        "line": 397,
         "decl": ":",
         "head": "ErrCode"
        },
@@ -5420,7 +5320,7 @@
         "fullName": "Sqlite.open!",
         "signature": "Config => Try(Db, QueryError)",
         "docs": "Open and validate a bounded database pool.",
-        "line": 525
+        "line": 432
        },
        {
         "kind": "value",
@@ -5430,7 +5330,7 @@
         "fullName": "Sqlite.prepare!",
         "signature": "{ db : Db, query : Str } => Try(Stmt, QueryError)",
         "docs": "Prepare a reusable logical statement and cache its result-column metadata.",
-        "line": 550
+        "line": 457
        },
        {
         "kind": "value",
@@ -5440,7 +5340,7 @@
         "fullName": "Sqlite.execute!",
         "signature": "{ db : Db, query : Str, params : params } => Try({}, QueryError)\n\t\twhere [\n\t\t\tparams.encoder_for : ParamsEncoding -> (params, ParamsState -> Try(ParamsState, QueryError)),\n\t\t]",
         "docs": "Execute a one-shot statement that must not return rows.",
-        "line": 559
+        "line": 466
        },
        {
         "kind": "value",
@@ -5450,7 +5350,7 @@
         "fullName": "Sqlite.query!",
         "signature": "{ db : Db, query : Str, params : params, limits : QueryLimits } => Try(row, QueryError)\n\t\twhere [\n\t\t\tparams.encoder_for : ParamsEncoding -> (params, ParamsState -> Try(ParamsState, QueryError)),\n\t\t\trow.parser_for : RowEncoding -> (RowState -> Try({ value : row, rest : RowState }, QueryError)),\n\t\t]",
         "docs": "Execute a one-shot query returning exactly one inferred result value.",
-        "line": 569
+        "line": 476
        },
        {
         "kind": "value",
@@ -5460,7 +5360,7 @@
         "fullName": "Sqlite.query_many!",
         "signature": "{ db : Db, query : Str, params : params, limits : QueryLimits } => Try(List(row), QueryError)\n\t\twhere [\n\t\t\tparams.encoder_for : ParamsEncoding -> (params, ParamsState -> Try(ParamsState, QueryError)),\n\t\t\trow.parser_for : RowEncoding -> (RowState -> Try({ value : row, rest : RowState }, QueryError)),\n\t\t]",
         "docs": "Execute a one-shot query returning a list of inferred result values.",
-        "line": 580
+        "line": 487
        },
        {
         "kind": "value",
@@ -5470,7 +5370,7 @@
         "fullName": "Sqlite.begin!",
         "signature": "Db, TransactionMode => Try(Transaction, QueryError)",
         "docs": "Begin a transaction on one connection leased from the pool.",
-        "line": 591
+        "line": 498
        },
        {
         "kind": "value",
@@ -5480,8 +5380,142 @@
         "fullName": "Sqlite.errcode_to_str",
         "signature": "|code|",
         "docs": "Convert an `ErrCode` to a display string.",
-        "line": 604,
+        "line": 511,
         "unannotated": true
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "SqliteStmt",
+        "modulePath": "",
+        "fullName": "SqliteStmt",
+        "signature": "{ columns : List(Str), host : Host.SqliteStmt }",
+        "docs": "",
+        "line": 549,
+        "decl": "::",
+        "head": "SqliteStmt"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_inspect",
+        "modulePath": "SqliteStmt",
+        "fullName": "SqliteStmt.to_inspect",
+        "signature": "Sqlite.Stmt -> Str",
+        "docs": "",
+        "line": 551
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "execute!",
+        "modulePath": "SqliteStmt",
+        "fullName": "SqliteStmt.execute!",
+        "signature": "Sqlite.Stmt, params => Try({}, Sqlite.QueryError)\n\t\twhere [\n\t\t\tparams.encoder_for : Sqlite.ParamsEncoding -> (params, Sqlite.ParamsState -> Try(Sqlite.ParamsState, Sqlite.QueryError)),\n\t\t]",
+        "docs": "Execute a prepared statement that must not return rows.",
+        "line": 555
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "query!",
+        "modulePath": "SqliteStmt",
+        "fullName": "SqliteStmt.query!",
+        "signature": "Sqlite.Stmt, params, Sqlite.QueryLimits => Try(row, Sqlite.QueryError)\n\t\twhere [\n\t\t\tparams.encoder_for : Sqlite.ParamsEncoding -> (params, Sqlite.ParamsState -> Try(Sqlite.ParamsState, Sqlite.QueryError)),\n\t\t\trow.parser_for : Sqlite.RowEncoding -> (Sqlite.RowState -> Try({ value : row, rest : Sqlite.RowState }, Sqlite.QueryError)),\n\t\t]",
+        "docs": "Decode exactly one row as the expected result type.",
+        "line": 572
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "query_many!",
+        "modulePath": "SqliteStmt",
+        "fullName": "SqliteStmt.query_many!",
+        "signature": "Sqlite.Stmt, params, Sqlite.QueryLimits => Try(List(row), Sqlite.QueryError)\n\t\twhere [\n\t\t\tparams.encoder_for : Sqlite.ParamsEncoding -> (params, Sqlite.ParamsState -> Try(Sqlite.ParamsState, Sqlite.QueryError)),\n\t\t\trow.parser_for : Sqlite.RowEncoding -> (Sqlite.RowState -> Try({ value : row, rest : Sqlite.RowState }, Sqlite.QueryError)),\n\t\t]",
+        "docs": "Decode all rows as the expected list item type.",
+        "line": 586
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "SqliteTransaction",
+        "modulePath": "",
+        "fullName": "SqliteTransaction",
+        "signature": "{ host : Host.SqliteTxn }",
+        "docs": "",
+        "line": 600,
+        "decl": "::",
+        "head": "SqliteTransaction"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "to_inspect",
+        "modulePath": "SqliteTransaction",
+        "fullName": "SqliteTransaction.to_inspect",
+        "signature": "Sqlite.Transaction -> Str",
+        "docs": "",
+        "line": 602
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "prepare!",
+        "modulePath": "SqliteTransaction",
+        "fullName": "SqliteTransaction.prepare!",
+        "signature": "Sqlite.Transaction, Str => Try(Sqlite.Stmt, Sqlite.QueryError)",
+        "docs": "",
+        "line": 605
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "execute!",
+        "modulePath": "SqliteTransaction",
+        "fullName": "SqliteTransaction.execute!",
+        "signature": "Sqlite.Transaction, { query : Str, params : params } => Try({}, Sqlite.QueryError)\n\t\twhere [\n\t\t\tparams.encoder_for : Sqlite.ParamsEncoding -> (params, Sqlite.ParamsState -> Try(Sqlite.ParamsState, Sqlite.QueryError)),\n\t\t]",
+        "docs": "",
+        "line": 613
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "query!",
+        "modulePath": "SqliteTransaction",
+        "fullName": "SqliteTransaction.query!",
+        "signature": "Sqlite.Transaction, { query : Str, params : params, limits : Sqlite.QueryLimits } => Try(row, Sqlite.QueryError)\n\t\twhere [\n\t\t\tparams.encoder_for : Sqlite.ParamsEncoding -> (params, Sqlite.ParamsState -> Try(Sqlite.ParamsState, Sqlite.QueryError)),\n\t\t\trow.parser_for : Sqlite.RowEncoding -> (Sqlite.RowState -> Try({ value : row, rest : Sqlite.RowState }, Sqlite.QueryError)),\n\t\t]",
+        "docs": "",
+        "line": 622
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "query_many!",
+        "modulePath": "SqliteTransaction",
+        "fullName": "SqliteTransaction.query_many!",
+        "signature": "Sqlite.Transaction, { query : Str, params : params, limits : Sqlite.QueryLimits } => Try(List(row), Sqlite.QueryError)\n\t\twhere [\n\t\t\tparams.encoder_for : Sqlite.ParamsEncoding -> (params, Sqlite.ParamsState -> Try(Sqlite.ParamsState, Sqlite.QueryError)),\n\t\t\trow.parser_for : Sqlite.RowEncoding -> (Sqlite.RowState -> Try({ value : row, rest : Sqlite.RowState }, Sqlite.QueryError)),\n\t\t]",
+        "docs": "",
+        "line": 632
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "commit!",
+        "modulePath": "SqliteTransaction",
+        "fullName": "SqliteTransaction.commit!",
+        "signature": "Sqlite.Transaction => Try({}, Sqlite.QueryError)",
+        "docs": "",
+        "line": 642
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "rollback!",
+        "modulePath": "SqliteTransaction",
+        "fullName": "SqliteTransaction.rollback!",
+        "signature": "Sqlite.Transaction => Try({}, Sqlite.QueryError)",
+        "docs": "",
+        "line": 645
        }
       ]
      },

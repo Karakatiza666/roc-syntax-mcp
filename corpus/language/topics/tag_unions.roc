@@ -130,6 +130,23 @@ expect expected_color == Color.Red
 # to_purple : Bool -> Color
 # to_purple = |flag| if flag Color.Red else Purple
 
+# Tags become a nominal union only where the compiler inferred their type. A
+# structural union written in an annotation means exactly that type, so it is
+# not a `Color`, and a `Color` does not pass where `[Red, Green, Blue]` is
+# written. Annotate `Color` instead.
+pick_inferred = |n| if n > 0 Red else Green
+
+picked : Color
+picked = pick_inferred(1)
+
+expect picked == Color.Red
+
+# @rejects type mismatch
+# pick_plain : U64 -> [Red, Green]
+# pick_plain = |n| if n > 0 Red else Green
+# picked_plain : Color
+# picked_plain = pick_plain(1)
+
 # `[]` is the empty union, and it has no values. A `Try(U64, [])` can never be
 # an `Err`, so a match with only `Ok` is exhaustive, and so is `Ok(n) = ...`.
 always_ok : U64 -> Try(U64, [])

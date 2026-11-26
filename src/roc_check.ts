@@ -13,6 +13,7 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import { releaseHash } from "./release.ts";
 import { type Catalog, type ScopeName } from "./scopes.ts";
 
 const ROOT = path.join(import.meta.dirname, "..");
@@ -279,8 +280,8 @@ export function remap(d: Diagnostic, target: string, offset: number): Diagnostic
 export function packageAliases(source: string): Map<string, string> {
   const out = new Map<string, string>();
   for (const m of source.matchAll(/(\w+)\s*:\s*(?:platform\s+)?"(https?:[^"]+)"/g)) {
-    const base = m[2].split("/").pop() ?? "";
-    const dir = base.replace(/\.tar\.[a-z]+$/, "");
+    // The cache directory is the hash, without a prefix such as `default-`.
+    const dir = releaseHash(m[2]) ?? (m[2].split("/").pop() ?? "").replace(/\.tar\.[a-z]+$/, "");
     if (dir) out.set(dir, m[1]);
   }
   return out;

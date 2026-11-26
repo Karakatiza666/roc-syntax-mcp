@@ -138,9 +138,10 @@ export function parseBuiltin(
     // A trailing `.{}` is an empty method block, not part of the type.
     const body = rawBody.replace(/\.\{\s*\}$/, "").trim();
     // `[]`, `{}`, and `[ProvidedByCompiler]` declare a namespace or a compiler
-    // primitive. If indexed, `Str :: [ProvidedByCompiler]` comes before the `Str`
-    // module on an exact-name lookup.
-    if (!d.emit || /^(\[\s*\]|\{\s*\}|\[\s*ProvidedByCompiler\s*\])$/.test(body)) return;
+    // primitive, and so does `[ProvidedByCompiler(item)]` (`Box`). If indexed,
+    // `Str :: [ProvidedByCompiler]` comes before the `Str` module on an
+    // exact-name lookup.
+    if (!d.emit || /^(\[\s*\]|\{\s*\}|\[\s*ProvidedByCompiler(\([^()]*\))?\s*\])$/.test(body)) return;
     const modulePath = modulePathAt();
     items.push({
       kind: "type",

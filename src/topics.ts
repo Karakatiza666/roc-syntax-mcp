@@ -101,8 +101,8 @@ const BUILTIN_TOPICS: Record<string, TopicMeta> = {
   },
   try_operator: {
     file: "try_operator.roc",
-    description: "The `?` postfix operator for short-circuiting on `Err`, including err mapping.",
-    keywords: ["?", "try", "question mark", "early return", "result", "err"],
+    description: "The `?` postfix operator for short-circuiting on `Err`, including err mapping, and `Ok(x?)` to widen a `Try` you already hold.",
+    keywords: ["?", "try", "question mark", "early return", "result", "err", "widen", "more errors"],
   },
   strings: {
     file: "strings.roc",
@@ -189,10 +189,10 @@ const BUILTIN_TOPICS: Record<string, TopicMeta> = {
   },
   static_dispatch: {
     file: "static_dispatch.roc",
-    description: "`.method()` static dispatch, calling a function stored in a record field, the `|>` pipe operator, and well-known methods.",
+    description: "`.method()` static dispatch, calling a function stored in a record field, the `|>` pipe operator, well-known methods, and `where` clauses on required methods' tags and on open records.",
     keywords: ["pipe", "|>", "pizza", "static dispatch", ".method", "pipeline", "where", "well-known method",
       "missing method", "function in record", "function stored", "stored function", "function field",
-      "field function"],
+      "field function", "open record", "..others"],
   },
   imports: {
     file: "imports.roc",
