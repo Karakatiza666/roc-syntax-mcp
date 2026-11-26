@@ -4,15 +4,25 @@
 # diff tag to tag.
 
 repo     https://github.com/Karakatiza666/roc-websocket
-tag      0.0.6
-commit   25316892ced542edede77f1b9ff76f7f02e8befb
-tarball  6rcitHh7bVV7D4A2aubD6H6yLHUgtXLi6jRwxjomSwVv.tar.zst
+tag      0.0.7
+commit   52dad281c63be9df0345ea460156c04f92011ff1
+tarball  EBNZjRmQ5PZiJAE5UMUFePtQFdb1FnsQX1qagVuiCwM9.tar.zst
 
-# The nightly every app here was checked under, and the manifest's `compiler`
-# line. It is the `.roc-version` of the tag, which is also the one the commit
-# after the tag pins for CI.
-compiler nightly-2026-11-07-ad3a5d2
+# The manifest's `compiler` line: the `.roc-version` of the tag, the nightly the
+# release was built and tested with. Which nightly the gates use for each
+# program is under "The platform the topics pin" below.
+compiler nightly-2026-11-15-f25da45
 
+# 0.0.7 over 0.0.6: no API change; calls do not change. It moves to
+# nightly-2026-11-15-f25da45, which warns when a local or a nested member has the
+# name of a top-level definition, so three names moved: `Protocol.new` takes
+# `limit` (was `max_message`), `Session.start!` takes `first_link` (was `link`),
+# and `Server.Request` is now an alias of a top-level type `ServerRequest`
+# (`Request(b, e) : ServerRequest(b, e)`) that carries its methods, because its
+# method `accept!` has the name of `Server.accept!`. An app still writes
+# `request.accept!(...)` and `Server.Request` in annotations; the topics and the
+# overview needed no change beyond the URLs.
+#
 # 0.0.6 over 0.0.5: no API change. It moves to nightly-2026-11-07-ad3a5d2
 # (`Stream.custom` takes `Err(Unknown)`, so it does not build on an older
 # nightly), and documents `poll!` as an idle deadline (any frame restarts it)
@@ -37,9 +47,10 @@ index.json  <- package/ (src/), parsed by `roc-syntax-mcp plugin index`. Public
                and private modules; `package [...]` in src/main.roc is what
                separates them. No source is vendored
 examples/   <- examples/sans_io.roc and echo_server.roc, repinned with two edits per file. Upstream pins the
-               package as `../src/main.roc`, a path that resolves only inside a
-               checkout, so the header's entry is replaced with the 0.0.6
-               tarball above under the name `ws`; and the file gains one `##`
+               package as `pkg: "../src/main.roc"`, a path that resolves only inside a
+               checkout, so the header's entry is replaced with the 0.0.7
+               tarball above under the name `ws` (and `import pkg.X` with
+               `import ws.X`); and the file gains one `##`
                line above its header, because that line is the title
                `list_roc_index(kind: "examples")` prints. Nothing else differs.
 topics/     <- this package's own, not upstream's: programs written against
@@ -49,18 +60,18 @@ overview.md <- this package's own. Every API claim on it was compiled, and every
                fenced block appears in verify/overview-snippets.roc.
 
 # Related packages, the platform adapters the overview documents. Changes of the
-# newest releases: roc-basic-cli-websocket 0.0.4 moves to basic-cli 0.27.0,
-# roc-websocket 0.0.6 and nightly-2026-11-07-ad3a5d2; roc-basic-webserver-websocket
-# 0.0.3 moves to basic-webserver 0.21.0, roc-websocket 0.0.6 and the same
+# newest releases: roc-basic-cli-websocket 0.0.5 moves to basic-cli 0.28.1,
+# roc-websocket 0.0.7 and nightly-2026-11-15-f25da45; roc-basic-webserver-websocket
+# 0.0.4 moves to basic-webserver 0.22.0, roc-websocket 0.0.7 and the same
 # nightly. Neither changes its API. roc-cloudflare-workers-websocket has no
-# release on roc-websocket 0.0.6 yet, so its row still names 0.0.5.
-#   roc-basic-cli-websocket 0.0.4, client and server, basic-cli 0.27.0,
-#     roc-websocket 0.0.6, built with nightly-2026-11-07-ad3a5d2
-#     https://github.com/Karakatiza666/roc-basic-cli-websocket/releases/download/0.0.4/B5j45zNdyW8Qxq6GpQ6ZVNmcPC5hwx3TxPRW4cq8wiLV.tar.zst
-#   roc-basic-webserver-websocket 0.0.3, client only, basic-webserver 0.21.0
-#     (it refuses 1xx, so it cannot answer an upgrade), roc-websocket 0.0.6,
-#     nightly-2026-11-07-ad3a5d2. No program here pins it
-#     https://github.com/Karakatiza666/roc-basic-webserver-websocket/releases/download/0.0.3/BjBcDpMFYd2ybt1xpiKiSHf2AgrnRnT6qRdFe2bQ2fgL.tar.zst
+# release on roc-websocket 0.0.6 or 0.0.7 yet, so its row still names 0.0.5.
+#   roc-basic-cli-websocket 0.0.5, client and server, basic-cli 0.28.1,
+#     roc-websocket 0.0.7, built with nightly-2026-11-15-f25da45
+#     https://github.com/Karakatiza666/roc-basic-cli-websocket/releases/download/0.0.5/AZpgG3RszEahBa67zc9yCJcAKe4MKw5HucDouNpi727b.tar.zst
+#   roc-basic-webserver-websocket 0.0.4, client only, basic-webserver 0.22.0
+#     (it refuses 1xx, so it cannot answer an upgrade), roc-websocket 0.0.7,
+#     nightly-2026-11-15-f25da45. No program here pins it
+#     https://github.com/Karakatiza666/roc-basic-webserver-websocket/releases/download/0.0.4/CVdw532jo8EfTqYFZjfGismeWHjfuVPTfj6ofaKGcAmU.tar.zst
 #   roc-cloudflare-workers-websocket 0.0.3, client and server,
 #     cloudflare-workers 0.0.6, roc-websocket 0.0.5, nightly-2026-11-03-34bd006
 #     https://github.com/Karakatiza666/roc-cloudflare-workers-websocket/releases/download/0.0.3/FTAaUpFV8tZKVVbLUaB4SdMKykJNsC9q6MtXRwwqKTJi.tar.zst
@@ -68,11 +79,18 @@ overview.md <- this package's own. Every API claim on it was compiled, and every
 # mentioned in the overview's table only; the cloudflare-workers plugin teaches
 # that platform's own WebSocket module.
 #
-# The platform the topics pin is basic-cli 0.27.0, the release the basic-cli
-# adapter is built for. This server bundles basic-cli 0.26.0, whose nightly
-# (nightly-2026-10-12-2664a27) cannot build roc-websocket 0.0.6. Because 0.27.0
-# is not a bundled release, the gates check the topics with the manifest's
-# `compiler` (scripts/nightlies.mjs).
+# The platform the topics pin is basic-cli 0.28.1. It is the release the basic-cli
+# adapter 0.0.5 is built for, and the adapter's header pins it, so an app must
+# name the same release (any other is a different type at the boundary). It is
+# also the basic-cli this server bundles, whose nightly is
+# nightly-2026-11-13-03dce41. The gates take the nightly of the first release a
+# file pins in the list of scripts/nightlies.mjs, and the bundled platforms come
+# first, so the topics and verify/ (which pin basic-cli 0.28.1) are checked with
+# 03dce41 and the examples (which pin only roc-websocket) with the manifest's
+# f25da45. At this pin all 7 programs also check with f25da45 and with the
+# bundled nightly-2026-11-25-d5a4f1e, so the choice of nightly does not matter
+# here. basic-webserver 0.22.0 (nightly f25da45, bundled) is named only in the
+# overview's adapter table; no program pins it.
 #
 # Earlier findings that named older nightlies (the adapter's README example on
 # nightly-2026-10-12-2664a27, the freed Tcp handle on nightly-2026-11-01-48d3369)
@@ -90,4 +108,7 @@ overview.md <- this package's own. Every API claim on it was compiled, and every
 
 # Parsed counts at this pin, for the next repin to diff against. These are what
 # `plugin validate` reports on its `corpus` line:
-# 162 items in 13 modules: 15 host, 147 public.
+# 163 items in 13 modules: 15 host, 1 private, 147 public. The private item is
+# the file-level type `ServerRequest`. The host files its four methods
+# (`map_link`, `upgrade`, `accept!`, `refuse!`) under the alias that names it,
+# `Request(b, e) : ServerRequest(b, e)`, so they stay `Server.Request.*`.

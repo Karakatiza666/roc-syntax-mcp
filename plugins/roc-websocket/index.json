@@ -1,8 +1,8 @@
 {
  "format": 1,
  "releases": {
-  "6rcitHh7bVV7D4A2aubD6H6yLHUgtXLi6jRwxjomSwVv": {
-   "url": "https://github.com/Karakatiza666/roc-websocket/releases/download/0.0.6/6rcitHh7bVV7D4A2aubD6H6yLHUgtXLi6jRwxjomSwVv.tar.zst",
+  "EBNZjRmQ5PZiJAE5UMUFePtQFdb1FnsQX1qagVuiCwM9": {
+   "url": "https://github.com/Karakatiza666/roc-websocket/releases/download/0.0.7/EBNZjRmQ5PZiJAE5UMUFePtQFdb1FnsQX1qagVuiCwM9.tar.zst",
    "snapshot": {
     "kind": "package",
     "exposes": [
@@ -793,7 +793,7 @@
         "modulePath": "Protocol",
         "fullName": "Protocol.new",
         "signature": "[Client, Server], U64 -> Protocol",
-        "docs": "A protocol in the open state, for an endpoint of `role`, accepting\nmessages of at most `max_message` bytes.",
+        "docs": "A protocol in the open state, for an endpoint of `role`, accepting\nmessages of at most `limit` bytes.",
         "line": 33
        },
        {
@@ -1128,51 +1128,11 @@
         "name": "Request",
         "modulePath": "Server",
         "fullName": "Server.Request",
-        "signature": "{ transport : Server.Transport(b, e), link : b, upgrade : Handshake.Upgrade, rest : List(U8) }",
+        "signature": "ServerRequest(b, e)",
         "docs": "An upgrade request read from the link and validated, not answered\nyet, from `Server.read_request!`. It keeps the bytes the client sent\nafter the request head, the start of its first frames.",
         "line": 124,
-        "decl": "::",
+        "decl": ":",
         "head": "Request(b, e)"
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "map_link",
-        "modulePath": "Server.Request",
-        "fullName": "Server.Request.map_link",
-        "signature": "Server.Request(b, e), (b -> b) -> Server.Request(b, e)",
-        "docs": "The same request with its link value changed by `change`, for an\nadapter that reads the request with one deadline and runs the\nconnection with another (a short handshake timeout, for example).",
-        "line": 129
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "upgrade",
-        "modulePath": "Server.Request",
-        "fullName": "Server.Request.upgrade",
-        "signature": "Server.Request(b, e) -> Ws.Upgrade",
-        "docs": "The request: its resource, `Host`, the subprotocols the client\noffered in order, and every header (names lowercased).",
-        "line": 134
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "accept!",
-        "modulePath": "Server.Request",
-        "fullName": "Server.Request.accept!",
-        "signature": "Server.Request(b, e), Ws.AcceptOptions => Try(Ws.Opened(Server.Conn(b, e)), Server.Error(e))",
-        "docs": "Accept the upgrade: write the 101 response with the first\nsubprotocol of `options.protocols` that the client offered (the\nserver's order of preference; none when nothing matches), and\nreturn the connection. No\nextension is accepted, so `extensions` is `Reported([])`. Bytes the\nclient sent after its request are then read as frames.\n\nTo choose a subprotocol another way, pick one from\n`request.upgrade().protocols` and pass `protocols: [chosen]`.",
-        "line": 149
-       },
-       {
-        "kind": "value",
-        "tier": "public",
-        "name": "refuse!",
-        "modulePath": "Server.Request",
-        "fullName": "Server.Request.refuse!",
-        "signature": "Server.Request(b, e), Ws.Refusal => Try(b, Server.Error(e))",
-        "docs": "Refuse the upgrade: write a response with `refusal.status`, its\nheaders and body, and give the link back for the adapter to close.\nAny final status is allowed (a 3xx with a `Location` header, a 401\nwith `WWW-Authenticate`, a 4xx or 5xx). A status outside 200-599\n(a 1xx, 101 among them, which ends no exchange, or no HTTP status)\nis `InvalidStatus` and writes nothing.\n\n```roc\nlink = request.refuse!({ status: 403, body: \"no access to ${request.upgrade().resource}\" })?\n```",
-        "line": 174
        },
        {
         "kind": "value",
@@ -1182,7 +1142,7 @@
         "fullName": "Server.default_max_message",
         "signature": "U64",
         "docs": "The largest message accepted when the options do not say: 16 MiB.",
-        "line": 186
+        "line": 127
        },
        {
         "kind": "value",
@@ -1192,7 +1152,7 @@
         "fullName": "Server.max_request_head",
         "signature": "U64",
         "docs": "The largest request head accepted, `\\r\\n\\r\\n` included: 16 KiB. A\nlonger one is answered with 431.",
-        "line": 191
+        "line": 132
        },
        {
         "kind": "value",
@@ -1202,7 +1162,7 @@
         "fullName": "Server.ops",
         "signature": "{} -> Server.Ops(b, e)",
         "docs": "The operations as a record, for code generic over features\n(`Ws.drive!`, `Ws.close_and_wait!`, `Ws.messages`).",
-        "line": 196
+        "line": 137
        },
        {
         "kind": "value",
@@ -1212,7 +1172,7 @@
         "fullName": "Server.read_request!",
         "signature": "Server.Transport(b, e), b => Try(Server.Request(b, e), Server.Error(e))",
         "docs": "Read the upgrade request from a link the adapter has accepted, and\nvalidate it (RFC 6455 section 4.2.1). Each read asks for at most the\nbytes still allowed by `max_request_head`, and bytes after the head are\nkept in the request.\n\nA request that is not a valid upgrade is answered (400, 405, 426, or\n431 for a head over `max_request_head`) and gives `NotUpgrade(why)`;\nthe stream ending, or the platform's read deadline passing, before the\nend of the head gives `NotUpgrade(why)` with nothing written.",
-        "line": 217
+        "line": 158
        },
        {
         "kind": "value",
@@ -1222,7 +1182,59 @@
         "fullName": "Server.accept!",
         "signature": "Server.Transport(b, e), b, Ws.AcceptOptions => Try(Ws.Opened(Server.Conn(b, e)), Server.Error(e))",
         "docs": "Read the request and accept it with `options`: `read_request!`, then\n`request.accept!(options)`.",
-        "line": 245
+        "line": 186
+       },
+       {
+        "kind": "type",
+        "tier": "public",
+        "name": "ServerRequest",
+        "modulePath": "",
+        "fullName": "ServerRequest",
+        "signature": "{ transport : Server.Transport(b, e), link : b, upgrade : Handshake.Upgrade, rest : List(U8) }",
+        "docs": "The type of `Server.Request`. It is a private top-level type behind a\npublic alias, because its method `accept!` has the name of `Server.accept!`.",
+        "line": 215,
+        "decl": "::",
+        "head": "ServerRequest(b, e)"
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "map_link",
+        "modulePath": "ServerRequest",
+        "fullName": "ServerRequest.map_link",
+        "signature": "Server.Request(b, e), (b -> b) -> Server.Request(b, e)",
+        "docs": "The same request with its link value changed by `change`, for an\nadapter that reads the request with one deadline and runs the\nconnection with another (a short handshake timeout, for example).",
+        "line": 220
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "upgrade",
+        "modulePath": "ServerRequest",
+        "fullName": "ServerRequest.upgrade",
+        "signature": "Server.Request(b, e) -> Ws.Upgrade",
+        "docs": "The request: its resource, `Host`, the subprotocols the client\noffered in order, and every header (names lowercased).",
+        "line": 225
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "accept!",
+        "modulePath": "ServerRequest",
+        "fullName": "ServerRequest.accept!",
+        "signature": "Server.Request(b, e), Ws.AcceptOptions => Try(Ws.Opened(Server.Conn(b, e)), Server.Error(e))",
+        "docs": "Accept the upgrade: write the 101 response with the first\nsubprotocol of `options.protocols` that the client offered (the\nserver's order of preference; none when nothing matches), and\nreturn the connection. No\nextension is accepted, so `extensions` is `Reported([])`. Bytes the\nclient sent after its request are then read as frames.\n\nTo choose a subprotocol another way, pick one from\n`request.upgrade().protocols` and pass `protocols: [chosen]`.",
+        "line": 240
+       },
+       {
+        "kind": "value",
+        "tier": "public",
+        "name": "refuse!",
+        "modulePath": "ServerRequest",
+        "fullName": "ServerRequest.refuse!",
+        "signature": "Server.Request(b, e), Ws.Refusal => Try(b, Server.Error(e))",
+        "docs": "Refuse the upgrade: write a response with `refusal.status`, its\nheaders and body, and give the link back for the adapter to close.\nAny final status is allowed (a 3xx with a `Location` header, a 401\nwith `WWW-Authenticate`, a 4xx or 5xx). A status outside 200-599\n(a 1xx, 101 among them, which ends no exchange, or no HTTP status)\nis `InvalidStatus` and writes nothing.\n\n```roc\nlink = request.refuse!({ status: 403, body: \"no access to ${request.upgrade().resource}\" })?\n```",
+        "line": 265
        }
       ]
      },

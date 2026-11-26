@@ -14,9 +14,9 @@ alias, `search_symbols Client.open!` for one signature.
 
 ```roc
 app [main!] {
-	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.27.0/9yjxqdGTP4xSpSEmDazwTmRsehfRZzA19pwEKkR6fj1g.tar.zst",
-	ws: "https://github.com/Karakatiza666/roc-websocket/releases/download/0.0.6/6rcitHh7bVV7D4A2aubD6H6yLHUgtXLi6jRwxjomSwVv.tar.zst",
-	cli_ws: "https://github.com/Karakatiza666/roc-basic-cli-websocket/releases/download/0.0.4/B5j45zNdyW8Qxq6GpQ6ZVNmcPC5hwx3TxPRW4cq8wiLV.tar.zst",
+	pf: platform "https://github.com/roc-lang/basic-cli/releases/download/0.28.1/7brgwR8YUqfeGrkdfF1V4GPPN7DnP7ftqub9KcrTEZtr.tar.zst",
+	ws: "https://github.com/Karakatiza666/roc-websocket/releases/download/0.0.7/EBNZjRmQ5PZiJAE5UMUFePtQFdb1FnsQX1qagVuiCwM9.tar.zst",
+	cli_ws: "https://github.com/Karakatiza666/roc-basic-cli-websocket/releases/download/0.0.5/AZpgG3RszEahBa67zc9yCJcAKe4MKw5HucDouNpi727b.tar.zst",
 }
 ```
 
@@ -118,8 +118,8 @@ the package does the handshake, masking, fragments and Ping replies. A platform 
 
 | Adapter | Release | Platform | Side | Why a side is missing |
 | --- | --- | --- | --- | --- |
-| `roc-basic-cli-websocket`, modules `WsClient` and `WsServer` | `https://github.com/Karakatiza666/roc-basic-cli-websocket/releases/download/0.0.4/B5j45zNdyW8Qxq6GpQ6ZVNmcPC5hwx3TxPRW4cq8wiLV.tar.zst` | basic-cli 0.27.0, roc-websocket 0.0.6 | client and server | none |
-| `roc-basic-webserver-websocket`, module `WsClient` | `https://github.com/Karakatiza666/roc-basic-webserver-websocket/releases/download/0.0.3/BjBcDpMFYd2ybt1xpiKiSHf2AgrnRnT6qRdFe2bQ2fgL.tar.zst` | basic-webserver 0.21.0, roc-websocket 0.0.6 | client | basic-webserver refuses 1xx responses, so it cannot answer an upgrade |
+| `roc-basic-cli-websocket`, modules `WsClient` and `WsServer` | `https://github.com/Karakatiza666/roc-basic-cli-websocket/releases/download/0.0.5/AZpgG3RszEahBa67zc9yCJcAKe4MKw5HucDouNpi727b.tar.zst` | basic-cli 0.28.1, roc-websocket 0.0.7 | client and server | none |
+| `roc-basic-webserver-websocket`, module `WsClient` | `https://github.com/Karakatiza666/roc-basic-webserver-websocket/releases/download/0.0.4/CVdw532jo8EfTqYFZjfGismeWHjfuVPTfj6ofaKGcAmU.tar.zst` | basic-webserver 0.22.0, roc-websocket 0.0.7 | client | basic-webserver refuses 1xx responses, so it cannot answer an upgrade |
 | `roc-cloudflare-workers-websocket`, modules `Conn` (pull, connect and accept) and `Push` (Durable Object sockets) | `https://github.com/Karakatiza666/roc-cloudflare-workers-websocket/releases/download/0.0.3/FTAaUpFV8tZKVVbLUaB4SdMKykJNsC9q6MtXRwwqKTJi.tar.zst` | cloudflare-workers 0.0.6, roc-websocket 0.0.5 | client and server | none |
 
 The app pins the platform release an adapter was built for, with this package's

@@ -1,10 +1,10 @@
 {
   "schema": 1,
   "maintainer": "roc-syntax-mcp, from the Karakatiza666/roc-websocket releases",
-  "compiler": "nightly-2026-11-07-ad3a5d2",
+  "compiler": "nightly-2026-11-15-f25da45",
   "corpora": [
     {
-      "release": "https://github.com/Karakatiza666/roc-websocket/releases/download/0.0.6/6rcitHh7bVV7D4A2aubD6H6yLHUgtXLi6jRwxjomSwVv.tar.zst",
+      "release": "https://github.com/Karakatiza666/roc-websocket/releases/download/0.0.7/EBNZjRmQ5PZiJAE5UMUFePtQFdb1FnsQX1qagVuiCwM9.tar.zst",
       "description": "The roc-websocket package: WebSocket (RFC 6455) for Roc, independent of any platform. Shared message and feature types, a pure core of frames, handshake and protocol state machine, and a client over a byte stream; platform adapters are separate packages.",
       "purpose": "WebSocket clients and servers, via a platform adapter",
       "overview": "overview.md",

@@ -29,8 +29,8 @@ Then `get_roc_syntax(topic: "roc-websocket")` for the page,
 | `UPSTREAM` | What was vendored, from where, and what was changed |
 
 The package does no I/O. A platform adapter, a separate package, supplies it:
-`roc-basic-cli-websocket` (client and server for basic-cli 0.27.0),
-`roc-basic-webserver-websocket` (a client for basic-webserver 0.21.0, which
+`roc-basic-cli-websocket` (client and server for basic-cli 0.28.1),
+`roc-basic-webserver-websocket` (a client for basic-webserver 0.22.0, which
 cannot answer an upgrade) and
 `roc-cloudflare-workers-websocket` (client and server for cloudflare-workers).
 The overview has the table with their release URLs.
@@ -39,5 +39,5 @@ The package is UPL-1.0, and so is this plugin. [`LICENSE`](LICENSE) is upstream'
 file.
 
 Checked with `roc-syntax-mcp plugin validate .` against the nightly the
-`compiler` line in `plugin.json` names. The topics pin basic-cli 0.27.0, the
-platform that the basic-cli adapter is built for.
+`compiler` line in `plugin.json` names. The topics pin basic-cli 0.28.1, the
+platform that the basic-cli adapter is built for and the one this server bundles.
